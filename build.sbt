@@ -12,7 +12,9 @@ libraryDependencies ++= Seq(
   // redis connector
   "com.digital-achiever" %% "brando" % "2.0.2",
   // test framework
-  "org.specs2" %% "specs2-core" % "2.4.15" % "test"
+  "org.specs2" %% "specs2-core" % "2.4.15" % "test",
+  // test module for play framework
+  "com.typesafe.play" %% "play-test" % "2.3.8" % "test"
 )
 
 resolvers ++= Seq(
