@@ -16,10 +16,10 @@ class ExtendedRedisCache( protected val cacheAPI: CacheAPI ) extends ExtendedCac
 
   protected def config = ConfigFactory.load( ).getConfig( "play.redis" )
 
-  protected val expiration = ConfigFactory.load( ).getConfig( "play.redis.expiration" )
+  protected val expiration = config.getConfig( "expiration" )
 
   /** by default, values expires in .. */
-  private val DefaultExpiration: Int = config.getInt( "expiration.default" )
+  private val DefaultExpiration: Int = expiration.getInt( "default" )
 
   /** in production mode serializer is just one, in development mode it is reloaded */
   private var serializer: Serialization = null

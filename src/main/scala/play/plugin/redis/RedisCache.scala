@@ -24,7 +24,7 @@ class RedisCache( implicit app: Application ) extends CacheAPI {
   protected def config = com.typesafe.config.ConfigFactory.load( ).getConfig( "play.redis" )
 
   /** timeout of cache requests */
-  private implicit val Timeout = akka.util.Timeout( config.getInt( "play.redis.timeout" ), TimeUnit.MILLISECONDS )
+  private implicit val Timeout = akka.util.Timeout( config.getInt( "timeout" ), TimeUnit.MILLISECONDS )
 
   /** communication module to Redis cache */
   private var redis: RedisRef = null
