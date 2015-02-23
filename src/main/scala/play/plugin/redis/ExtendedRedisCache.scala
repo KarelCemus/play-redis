@@ -1,5 +1,6 @@
 package play.plugin.redis
 
+import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
 import scala.util._
 
@@ -12,7 +13,7 @@ import com.typesafe.config.ConfigFactory
 /**
  * <p>Implementation of ExtendedCacheAPI using Akka serializers.</p>
  */
-class ExtendedRedisCache( protected val cacheAPI: CacheAPI ) extends ExtendedCacheImpl {
+class ExtendedRedisCache( protected val cacheAPI: CacheAPI )( implicit app: Application ) extends ExtendedCacheImpl {
 
   protected def config = ConfigFactory.load( ).getConfig( "play.redis" )
 
@@ -21,8 +22,11 @@ class ExtendedRedisCache( protected val cacheAPI: CacheAPI ) extends ExtendedCac
   /** by default, values expires in .. */
   private val DefaultExpiration: Int = expiration.getInt( "default" )
 
+  /** default invocation context of all cache commands */
+  override protected implicit var context: ExecutionContext = Akka.system.dispatchers.lookup( config.getString( "dispatcher" ) )
+
   /** in production mode serializer is just one, in development mode it is reloaded */
-  private var serializer: Serialization = null
+  private val serializer: Serialization = SerializationExtension( Akka.system )
 
   /** produces BASE64 encoded string from an array of bytes */
   private def toBase64( bytes: Array[ Byte ] ): String = new sun.misc.BASE64Encoder( ).encode( bytes )
@@ -37,8 +41,6 @@ class ExtendedRedisCache( protected val cacheAPI: CacheAPI ) extends ExtendedCac
   /** decode given value from string to object */
   override protected def decode[ T ]( value: String )( implicit classTag: ClassTag[ T ] ): Try[ T ] =
     serializer.deserialize( toBinary( value ), classTag.runtimeClass.asInstanceOf[ Class[ T ] ] )
-
-  def start( )( implicit app: Application ) = serializer = SerializationExtension( Akka.system )
 
   /** computes expiration for given key, possibly uses default value */
   @scala.annotation.tailrec

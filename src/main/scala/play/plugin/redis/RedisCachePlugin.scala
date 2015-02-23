@@ -17,8 +17,6 @@ trait ExtendedCachePlugin extends Plugin {
 /** <p>Non-blocking simple cache plugin implementation. Implementation provides simple access to Redis cache.</p> */
 class RedisCachePlugin( implicit app: Application ) extends CachePlugin {
 
-  import play.api.libs.concurrent.Execution.Implicits.defaultContext
-
   /** instance of cache */
   lazy val api: RedisCache = new RedisCache
 
@@ -40,8 +38,6 @@ class ExtendedRedisCachePlugin( implicit app: Application ) extends ExtendedCach
     // create advanced wrapper
     new ExtendedRedisCache( internal )
   }
-
-  override def onStart( ): Unit = api.start( )
 }
 
 

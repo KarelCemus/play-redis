@@ -23,6 +23,9 @@ class RedisCache( implicit app: Application ) extends CacheAPI {
 
   protected def config = com.typesafe.config.ConfigFactory.load( ).getConfig( "play.redis" )
 
+  /** default invocation context of all cache commands */
+  protected implicit val context: ExecutionContext = Akka.system.dispatchers.lookup( config.getString( "dispatcher" ) )
+
   /** timeout of cache requests */
   private implicit val Timeout = akka.util.Timeout( config.getInt( "timeout" ), TimeUnit.MILLISECONDS )
 
@@ -30,7 +33,7 @@ class RedisCache( implicit app: Application ) extends CacheAPI {
   private var redis: RedisRef = null
 
   /** Retrieve a value from the cache. */
-  def get( key: String )( implicit context: ExecutionContext ): Future[ Option[ String ] ] =
+  def get( key: String ): Future[ Option[ String ] ] =
     redis ? Request( "GET", key ) map {
       case Success( Some( response: ByteString ) ) =>
         log.trace( s"[Cache] Hit on key '$key'." )
@@ -47,7 +50,7 @@ class RedisCache( implicit app: Application ) extends CacheAPI {
     }
 
   /** Determines whether exists the value with given key */
-  def exists( key: String )( implicit context: ExecutionContext ): Future[ Boolean ] =
+  def exists( key: String ): Future[ Boolean ] =
     redis ? Request( "EXISTS", key ) map {
       case Success( Some( 1L ) ) =>
         log.trace( s"[Cache] Key '$key' exists." )
@@ -64,7 +67,7 @@ class RedisCache( implicit app: Application ) extends CacheAPI {
     }
 
   /** Set a value into the cache. */
-  def set( key: String, value: String, expiration: Int )( implicit context: ExecutionContext ): Future[ Try[ String ] ] =
+  def set( key: String, value: String, expiration: Int ): Future[ Try[ String ] ] =
     redis ? Request( "SETEX", key, expiration.toString, value ) map {
       case Success( Some( Ok ) ) =>
         log.debug( s"[Cache] Set on key '$key' on $expiration seconds." )
@@ -81,7 +84,7 @@ class RedisCache( implicit app: Application ) extends CacheAPI {
     }
 
   /** Remove a value from the cache */
-  def remove( key: String )( implicit context: ExecutionContext ): Future[ Try[ String ] ] =
+  def remove( key: String ): Future[ Try[ String ] ] =
     redis ? Request( "DEL", key ) map {
       case Success( Some( 1 ) ) => // One entry was removed
         log.debug( s"[Cache] Remove on key '$key'." )
@@ -95,7 +98,7 @@ class RedisCache( implicit app: Application ) extends CacheAPI {
     }
 
   /** Remove all keys in cache */
-  def invalidate( )( implicit context: ExecutionContext ): Future[ Try[ String ] ] =
+  def invalidate( ): Future[ Try[ String ] ] =
     redis ? Request( "FLUSHDB" ) map {
       case Success( Some( Ok ) ) => // cache was invalidated
         log.info( "[Cache] Invalidated." )
@@ -111,7 +114,7 @@ class RedisCache( implicit app: Application ) extends CacheAPI {
         Failure( new IllegalStateException( "Invalidated failed." ) )
     }
 
-  def start( )( implicit context: ExecutionContext ) = {
+  def start( )  = {
     val host = config.getString( "host" )
     val port = config.getInt( "port" )
     val database = config.getInt( "database" )
@@ -120,7 +123,7 @@ class RedisCache( implicit app: Application ) extends CacheAPI {
     log.info( s"[Cache] Started Redis cache actor. Actor is connected to $host:$port?database=$database" )
   }
 
-  def stop( )( implicit context: ExecutionContext ) = {
+  def stop( )  = {
     // stop running brando actor
     if ( redis != null ) Akka.system.stop( redis.actor.actorRef )
     log.info( "[Cache] Stopped Redis cache actor." )
@@ -130,7 +133,7 @@ class RedisCache( implicit app: Application ) extends CacheAPI {
 
     private[ RedisCache ] val actor = new AskableActorRef( brando )
 
-    def ?( request: Request )( implicit context: ExecutionContext ): Future[ Try[ Option[ Any ] ] ] =
+    def ?( request: Request ): Future[ Try[ Option[ Any ] ] ] =
       actor ask request map ( any => Success( any.asInstanceOf[ Option[ Any ] ] ) ) recover {
         case ex => Failure( ex ) // execution failed, recover
       }
