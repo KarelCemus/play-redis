@@ -19,7 +19,7 @@ import brando._
  */
 class RedisCache( implicit app: Application ) extends CacheAPI {
 
-  override protected val log = Logger( "play.redis" )
+  protected val log = Logger( "play.redis" )
 
   protected def config = com.typesafe.config.ConfigFactory.load( ).getConfig( "play.redis" )
 

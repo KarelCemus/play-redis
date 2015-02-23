@@ -12,9 +12,7 @@ import com.typesafe.config.ConfigFactory
 /**
  * <p>Implementation of ExtendedCacheAPI using Akka serializers.</p>
  */
-class ExtendedRedisCache( protected val cacheAPI: CacheAPI ) extends ExtendedCacheAPI {
-
-  override protected val log = Logger( "play.redis" )
+class ExtendedRedisCache( protected val cacheAPI: CacheAPI ) extends ExtendedCacheImpl {
 
   protected def config = ConfigFactory.load( ).getConfig( "play.redis" )
 

@@ -6,15 +6,10 @@ import scala.util._
 
 import play.api.Logger
 
-/**
- * <p>Advanced non-blocking API. It extends basic [[play.api.cache.CacheAPI]] and adds additional functionality built
- * on its improved interface [[play.plugin.redis.CacheAPI]].</p>
- *
- * @author Karel Cemus
- */
-trait ExtendedCacheAPI {
+/** Partial implementation of ExtendedCacheAPI in terms of more specific operations */
+trait ExtendedCacheImpl extends ExtendedCacheAPI {
 
-  protected val log: Logger
+  protected val log = Logger( "play.redis" )
 
   /** Implementation of basic API */
   protected val cacheAPI: CacheAPI
@@ -42,11 +37,11 @@ trait ExtendedCacheAPI {
     }
 
   /** Retrieve a value from the cache for the given type */
-  def get[ T ]( key: String )( implicit classTag: ClassTag[ T ], context: ExecutionContext ): Future[ Option[ T ] ] =
+  override def get[ T ]( key: String )( implicit classTag: ClassTag[ T ], context: ExecutionContext ): Future[ Option[ T ] ] =
     cacheAPI.get( key ).map( _.flatMap( decode[ T ]( key, _ ).toOption ) )
 
   /** Retrieve a value from the cache, or set it from a default function. */
-  def getOrElse[ T ]( key: String, expiration: Option[ Int ] )( orElse: () => Future[ T ] )( implicit classTag: ClassTag[ T ], context: ExecutionContext ): Future[ T ] =
+  override def getOrElse[ T ]( key: String, expiration: Option[ Int ] = None )( orElse: () => Future[ T ] )( implicit classTag: ClassTag[ T ], context: ExecutionContext ): Future[ T ] =
     get( key ) flatMap {
       // cache hit, return the unwrapped value
       case Some( value ) => Future.successful( value )
@@ -55,14 +50,14 @@ trait ExtendedCacheAPI {
     }
 
   /** Set a value into the cache.  */
-  def set[ T ]( key: String, value: T, expiration: Option[ Int ] )( implicit classTag: ClassTag[ T ], context: ExecutionContext ): Future[ Try[ String ] ] =
+  override def set[ T ]( key: String, value: T, expiration: Option[ Int ] = None )( implicit classTag: ClassTag[ T ], context: ExecutionContext ): Future[ Try[ String ] ] =
     encode( key, value ) match {
       case Success( string ) => cacheAPI.set( key, string, expiration.getOrElse( duration( key ) ) )
       case Failure( ex ) => Future.successful( Failure( ex ) )
     }
 
   /** Retrieve a value from the cache, or set it from a default function. */
-  def setIfNotExists[ T ]( key: String, expiration: Option[ Int ] )( orElse: () => Future[ T ] )( implicit classTag: ClassTag[ T ], context: ExecutionContext ): Future[ Try[ String ] ] =
+  override def setIfNotExists[ T ]( key: String, expiration: Option[ Int ] = None )( orElse: () => Future[ T ] )( implicit classTag: ClassTag[ T ], context: ExecutionContext ): Future[ Try[ String ] ] =
     cacheAPI.exists( key ) flatMap {
       // hit, value exists, do nothing
       case true => Future.successful( Success( key ) )
@@ -71,10 +66,10 @@ trait ExtendedCacheAPI {
     }
 
   /** remove key from cache */
-  def remove( key: String )( implicit context: ExecutionContext ): Future[ Try[ String ] ] = cacheAPI.remove( key )
+  override def remove( key: String )( implicit context: ExecutionContext ): Future[ Try[ String ] ] = cacheAPI.remove( key )
 
   /** invalidate cache */
-  def invalidate( )( implicit context: ExecutionContext ): Future[ Try[ String ] ] = cacheAPI.invalidate( )
+  override def invalidate( )( implicit context: ExecutionContext ): Future[ Try[ String ] ] = cacheAPI.invalidate( )
 
   /** computes expiration for given key, possibly uses default value */
   protected def duration( key: String ): Int

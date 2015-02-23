@@ -1,16 +1,13 @@
 package play.plugin.redis
 
 import scala.concurrent._
+import scala.reflect.ClassTag
 import scala.util.Try
-
-import play.api.Logger
 
 /**
  * <p>Non-blocking cache API, inspired by basic Play [[play.api.cache.CacheAPI]].</p>
  */
 trait CacheAPI {
-
-  protected val log: Logger
 
   /** Retrieve a value from the cache.
     *
@@ -45,5 +42,32 @@ trait CacheAPI {
     *
     * @return operation success
     */
+  def invalidate( )( implicit context: ExecutionContext ): Future[ Try[ String ] ]
+}
+
+/**
+ * <p>Advanced non-blocking API. It extends basic [[play.api.cache.CacheAPI]] and adds additional functionality built
+ * on its improved interface [[play.plugin.redis.CacheAPI]].</p>
+ *
+ * @author Karel Cemus
+ */
+trait ExtendedCacheAPI {
+
+  /** Retrieve a value from the cache for the given type */
+  def get[ T ]( key: String )( implicit classTag: ClassTag[ T ], context: ExecutionContext ): Future[ Option[ T ] ]
+
+  /** Retrieve a value from the cache, or set it from a default function. */
+  def getOrElse[ T ]( key: String, expiration: Option[ Int ] = None )( orElse: () => Future[ T ] )( implicit classTag: ClassTag[ T ], context: ExecutionContext ): Future[ T ]
+
+  /** Set a value into the cache.  */
+  def set[ T ]( key: String, value: T, expiration: Option[ Int ] = None )( implicit classTag: ClassTag[ T ], context: ExecutionContext ): Future[ Try[ String ] ]
+
+  /** Retrieve a value from the cache, or set it from a default function. */
+  def setIfNotExists[ T ]( key: String, expiration: Option[ Int ] = None )( orElse: () => Future[ T ] )( implicit classTag: ClassTag[ T ], context: ExecutionContext ): Future[ Try[ String ] ]
+
+  /** remove key from cache */
+  def remove( key: String )( implicit context: ExecutionContext ): Future[ Try[ String ] ]
+
+  /** invalidate cache */
   def invalidate( )( implicit context: ExecutionContext ): Future[ Try[ String ] ]
 }
