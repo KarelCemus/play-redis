@@ -44,12 +44,12 @@ trait ExtendedCacheImpl extends ExtendedCacheAPI {
     cacheAPI.get( key ).map( _.flatMap( decode[ T ]( key, _ ).toOption ) )
 
   /** Retrieve a value from the cache, or set it from a default function. */
-  override def getOrElse[ T ]( key: String, expiration: Option[ Int ] = None )( orElse: () => Future[ T ] )( implicit classTag: ClassTag[ T ] ): Future[ T ] =
+  override def getOrElse[ T ]( key: String, expiration: Option[ Int ] = None )( orElse: => Future[ T ] )( implicit classTag: ClassTag[ T ] ): Future[ T ] =
     get( key ) flatMap {
       // cache hit, return the unwrapped value
       case Some( value ) => Future.successful( value )
       // cache miss, compute the value, store it into cache and return the value
-      case None => orElse( ) flatMap ( future => set( key, future, expiration ).map( _ => future ) )
+      case None => orElse flatMap ( future => set( key, future, expiration ).map( _ => future ) )
     }
 
   /** Set a value into the cache.  */

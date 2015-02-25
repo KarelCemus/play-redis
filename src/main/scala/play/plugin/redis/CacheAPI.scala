@@ -48,8 +48,6 @@ trait CacheAPI {
 /**
  * <p>Advanced non-blocking API. It extends basic [[play.api.cache.CacheAPI]] and adds additional functionality built
  * on its improved interface [[play.plugin.redis.CacheAPI]].</p>
- *
- * @author Karel Cemus
  */
 trait ExtendedCacheAPI {
 
@@ -57,7 +55,7 @@ trait ExtendedCacheAPI {
   def get[ T ]( key: String )( implicit classTag: ClassTag[ T ] ): Future[ Option[ T ] ]
 
   /** Retrieve a value from the cache, or set it from a default function. */
-  def getOrElse[ T ]( key: String, expiration: Option[ Int ] = None )( orElse: () => Future[ T ] )( implicit classTag: ClassTag[ T ] ): Future[ T ]
+  def getOrElse[ T ]( key: String, expiration: Option[ Int ] = None )( orElse: => Future[ T ] )( implicit classTag: ClassTag[ T ] ): Future[ T ]
 
   /** Set a value into the cache.  */
   def set[ T ]( key: String, value: T, expiration: Option[ Int ] = None )( implicit classTag: ClassTag[ T ] ): Future[ Try[ String ] ]
