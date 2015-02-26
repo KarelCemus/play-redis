@@ -24,7 +24,7 @@ resolvers ++= Seq(
 
 javacOptions ++= Seq( "-source", "1.6", "-target", "1.6", "-Xlint:unchecked", "-encoding", "UTF-8" )
 
-scalacOptions ++= Seq( "-deprecation", "-feature" )
+scalacOptions ++= Seq( "-deprecation", "-feature", "-unchecked" )
 
 homepage := Some( url( "https://github.com/karelcemus/play-redis" ) )
 
