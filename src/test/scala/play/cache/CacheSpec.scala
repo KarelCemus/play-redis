@@ -1,4 +1,4 @@
-package play.plugin.redis
+package play.cache
 
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -23,8 +23,8 @@ class CacheSpec extends Specification with AroundExample with BeforeExample {
   /** application context to perform operations in */
   protected def application = new FakeApplication( additionalPlugins = Seq(
     "play.api.libs.concurrent.AkkaPlugin",
-    "play.plugin.redis.RedisCachePlugin",
-    "play.plugin.redis.ExtendedRedisCachePlugin"
+    "play.cache.redis.RedisCachePlugin",
+    "play.cache.redis.RedisCachePlugin20"
   ) )
 
   override def around[ T: AsResult ]( t: => T ): Result = {

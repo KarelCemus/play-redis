@@ -1,4 +1,4 @@
-package play.plugin.redis
+package play.cache
 
 import java.util.concurrent.TimeUnit
 
