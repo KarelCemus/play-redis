@@ -16,8 +16,6 @@ import org.specs2.mutable.Specification
 
 /**
  * <p>Test of brando to be sure that it works etc.</p>
- *
- * @author Karel Cemus
  */
 class BrandoSpec extends Specification {
 

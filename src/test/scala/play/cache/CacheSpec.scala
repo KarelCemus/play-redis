@@ -17,8 +17,6 @@ import org.specs2.specification._
 
 /**
  * <p>Test of cache to be sure that keys are differentiated, expires etc.</p>
- *
- * @author Karel Cemus
  */
 class CacheSpec extends Specification with AroundExample with BeforeExample {
 
