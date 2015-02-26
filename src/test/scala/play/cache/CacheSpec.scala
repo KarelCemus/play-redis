@@ -18,7 +18,12 @@ import org.specs2.specification._
 /**
  * <p>Test of cache to be sure that keys are differentiated, expires etc.</p>
  */
-class CacheSpec extends Specification with AroundExample with BeforeExample {
+class CacheSpec extends Specification with AroundExample {
+
+  lazy val invalidate = {
+    // invalidate cache for test
+    invoke inFuture Cache.invalidate( )
+  }
 
   /** application context to perform operations in */
   protected def application = new FakeApplication( additionalPlugins = Seq(
@@ -29,6 +34,10 @@ class CacheSpec extends Specification with AroundExample with BeforeExample {
 
   override def around[ T: AsResult ]( t: => T ): Result = {
     Helpers.running( application ) {
+      // reload internal plugins
+      Cache.reload()
+      // ensure clear cache before first run
+      invalidate
       // run in fake application to let cache working
       AsResult.effectively( t )
     }
@@ -203,14 +212,6 @@ class CacheSpec extends Specification with AroundExample with BeforeExample {
     counter.incrementAndGet( )
     // return the value to cache
     Future.successful( "value" )
-  }
-
-  // clear cache
-  protected def before = {
-    // internally initialise
-    Cache.reload( )
-    // invalidate cache for test
-    invoke inFuture Cache.invalidate( )
   }
 }
 

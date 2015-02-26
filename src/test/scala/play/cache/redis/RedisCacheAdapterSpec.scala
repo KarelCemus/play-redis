@@ -16,7 +16,12 @@ import org.specs2.specification._
 /**
  * <p>Test of cache to be sure that keys are differentiated, expires etc.</p>
  */
-class RedisCacheAdapterSpec extends Specification with AroundExample with BeforeExample {
+class RedisCacheAdapterSpec extends Specification with AroundExample {
+
+  lazy val invalidate = {
+    // invalidate redis cache for test
+    Await.result( play.cache.Cache.invalidate( ), Duration( "5s" ) )
+  }
 
   /** application context to perform operations in */
   protected def application = new FakeApplication( additionalPlugins = Seq(
@@ -28,14 +33,16 @@ class RedisCacheAdapterSpec extends Specification with AroundExample with Before
 
   override def around[ T: AsResult ]( t: => T ): Result = {
     Helpers.running( application ) {
+      // internally initialise
+      play.cache.Cache.reload( )
+      // invalidate redis cache for test
+      invalidate
       // run in fake application to let cache working
       AsResult.effectively( t )
     }
   }
 
   "Cache Adapter" should {
-
-    sequential
 
     import play.api.Play.current
 
@@ -90,11 +97,5 @@ class RedisCacheAdapterSpec extends Specification with AroundExample with Before
       Cache.set( "test-int-key", true )
       Cache.get( "test-int-key" ) must beSome( true )
     }
-  }
-
-  // clear cache
-  protected def before = {
-    // invalidate redis cache for test
-    Await.result( play.cache.Cache.invalidate( ), Duration( "5s" ) )
   }
 }
