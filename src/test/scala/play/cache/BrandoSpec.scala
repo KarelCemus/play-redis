@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
+import play.api.{Application, Play}
 import play.api.libs.concurrent.Akka
 import play.api.test.FakeApplication
 
@@ -16,17 +17,15 @@ import org.specs2.mutable.Specification
 
 /**
  * <p>Test of brando to be sure that it works etc.</p>
- *
- * @author Karel Cemus
  */
-class BrandoSpec extends Specification {
+class BrandoSpec extends Specification with RedisCacheSupport {
 
   sequential
 
   "Brando" should {
 
     /** instance of brando */
-    val redis = Akka.system( FakeApplication( ) ).actorOf( Brando( "localhost", 6379, database = Some( 1 ) ) )
+    val redis = Akka.system( application ).actorOf( Brando( "localhost", 6379, database = Some( 1 ) ) )
 
     /** timeout of cache requests */
     implicit val timeout = Timeout( 1000, TimeUnit.MILLISECONDS )

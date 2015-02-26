@@ -11,7 +11,7 @@ class RedisCachePlugin20( implicit app: Application ) extends CachePlugin20 {
     // load internal cache api
     val internal = Play.current.plugin[ CachePlugin ] match {
       case Some( plugin ) => plugin.api
-      case None => throw new Exception( "There is no cache plugin registered. Make sure at least one play.plugin.redis.CachePlugin implementation is enabled." )
+      case None => throw new Exception( "There is no cache plugin registered. Make sure at least one play.cache.redis.CachePlugin implementation is enabled." )
     }
     // create advanced wrapper
     new RedisCache20( internal )

@@ -120,13 +120,18 @@ class RedisCache20( protected val cacheAPI: CacheAPI )( implicit app: Applicatio
   /** invalidate cache */
   override def invalidate( ): Future[ Try[ String ] ] = cacheAPI.invalidate( )
 
+  protected def duration( key: String ): Int = {
+    // drop prefix from 'prefix:key' and look up the key in the configuration
+    lookUp( key.drop( key.lastIndexOf( ':' ) + 1 ) )
+  }
+
   /** computes expiration for given key, possibly uses default value */
   @scala.annotation.tailrec
-  protected final def duration( key: String ): Int = key match {
+  private def lookUp( key: String ): Int = key match {
     // look up configuration "play.redis.expiration.key" or "play.redis.expiration.partOfTheKey"
     case hit if expiration.hasPath( hit ) => expiration.getInt( hit )
     // key is not in configuration, drop its appendix and try it again
-    case miss if key.lastIndexOf( '.' ) > -1 => duration( miss.substring( 0, miss.lastIndexOf( '.' ) ) )
+    case miss if key.lastIndexOf( '.' ) > -1 => lookUp( miss.substring( 0, miss.lastIndexOf( '.' ) ) )
     // no specific configuration for this key, use default expiration
     case _ => DefaultExpiration
   }
