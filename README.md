@@ -95,6 +95,8 @@ While the Play framework's version is `play.api.Cache`, the new version is `play
 **Example:**
 
 ```scala
+import play.cache.Cache
+
 // returns Future[ Try[ String ] ] where the value string
 // should be Success( "OK" ) or Failure( ex )
 Cache.set( "key", 1.23 )
