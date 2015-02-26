@@ -34,7 +34,7 @@ class RedisCache20( protected val cacheAPI: CacheAPI )( implicit app: Applicatio
   /** encode given object to string */
   protected def encode[ T ]( value: T )( implicit classTag: ClassTag[ T ] ): Try[ String ] = value match {
     // null is special case
-    case null => Try( NullSerializer.nullAsBytes ).map( toBase64 )
+    case null => throw new UnsupportedOperationException( "Null is not supported by redis cache connector." )
     // AnyVal is not supported by default, have to be implemented manually
     case v if classTag.runtimeClass.isPrimitive => Success( v.toString )
     // AnyRef is supported by Akka serializers, but it does not consider classTag, thus it is done manually
@@ -59,6 +59,7 @@ class RedisCache20( protected val cacheAPI: CacheAPI )( implicit app: Applicatio
   /** decode given value from string to object */
   protected def decode[ T ]( value: String )( implicit classTag: ClassTag[ T ] ): Try[ T ] = ( value match {
     // AnyVal is not supported by default, have to be implemented manually
+    case "" => Success( null )
     case boolean if classTag == ClassTag.Boolean => Try( boolean.toBoolean )
     case byte if classTag == ClassTag.Byte => Try( byte.toByte )
     case char if classTag == ClassTag.Char => Try( char.charAt( 0 ) )
@@ -98,7 +99,8 @@ class RedisCache20( protected val cacheAPI: CacheAPI )( implicit app: Applicatio
 
   /** Set a value into the cache.  */
   override def set[ T ]( key: String, value: T, expiration: Option[ Int ] = None )( implicit classTag: ClassTag[ T ] ): Future[ Try[ String ] ] =
-    encode( key, value ) match {
+    if ( value == null ) remove( key )
+    else encode( key, value ) match {
       case Success( string ) => cacheAPI.set( key, string, expiration.getOrElse( duration( key ) ) )
       case Failure( ex ) => Future.successful( Failure( ex ) )
     }

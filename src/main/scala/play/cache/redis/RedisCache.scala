@@ -90,6 +90,9 @@ class RedisCache( implicit app: Application ) extends CacheAPI {
       case Success( Some( 1 ) ) => // One entry was removed
         log.debug( s"Remove on key '$key'." )
         Success( "OK" )
+      case Success( Some( 0 ) ) => // Nothing was removed
+        log.debug( s"Remove on key '$key' succeeded but nothing was removed." )
+        Success( "OK" )
       case Failure( ex ) =>
         log.error( s"DEL command failed for key '$key'.", ex )
         Failure( new IllegalStateException( "DEL command failed.", ex ) )
