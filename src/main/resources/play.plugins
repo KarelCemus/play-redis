@@ -1,0 +1,3 @@
+2000:play.cache.redis.RedisCachePlugin
+2010:play.cache.redis.RedisCachePlugin20
+2020:play.cache.redis.RedisCacheAdapterPlugin

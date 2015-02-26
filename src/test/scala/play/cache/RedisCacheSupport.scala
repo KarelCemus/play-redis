@@ -21,19 +21,14 @@ trait RedisCacheSupport {
   protected val invoke = this
 
   /** application context to perform operations in */
-  protected def application = new FakeApplication( additionalPlugins = Seq(
-    "play.api.libs.concurrent.AkkaPlugin",
-    "play.cache.redis.RedisCachePlugin",
-    "play.cache.redis.RedisCachePlugin20",
-    "play.cache.redis.RedisCacheAdapterPlugin"
-  ) )
+  protected def application = FakeApplication( )
 
   def start( ): Unit = PlayRunners.mutex.synchronized {
     // start play application
     if ( Running.counter.incrementAndGet( ) == 1 ) {
       Play.start( application )
       // reload cache in case the play application was stopped
-      play.cache.Cache.reload()
+      play.cache.Cache.reload( )
       // invalidate redis cache for test
       invoke inFuture play.cache.Cache.invalidate( )
     }
