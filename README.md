@@ -43,7 +43,7 @@ of the Play framework.
 
 To your SBT `build.sbt` add the following lines:
 
-```
+```scala
 libraryDependencies ++= Seq(
   // enable work with cache, introduces CacheAPI
   play.PlayImport.cache,
@@ -61,7 +61,7 @@ be anything major. If so, please feel free to report the bug.
 
 **Example:**
 
-```
+```scala
 import play.api.Cache
 
 Cache.set( "key", "value" )
@@ -94,7 +94,7 @@ While the Play framework's version is `play.api.Cache`, the new version is `play
 
 **Example:**
 
-```
+```scala
 // returns Future[ Try[ String ] ] where the value string
 // should be Success( "OK" ) or Failure( ex )
 Cache.set( "key", 1.23 )
