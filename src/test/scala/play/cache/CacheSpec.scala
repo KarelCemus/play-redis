@@ -48,8 +48,6 @@ class CacheSpec extends Specification with AroundExample with BeforeExample {
 
   "Cache" should {
 
-    sequential
-
     "miss on get" in {
       Cache.get[ String ]( "test-key-1" ) must beNone
     }
@@ -57,10 +55,10 @@ class CacheSpec extends Specification with AroundExample with BeforeExample {
     "hit after set" in {
       invoke inFuture Cache.set( "test-key-2", "value" )
       Cache.get[ String ]( "test-key-2" ) must beSome[ Any ]
+      Cache.get[ String ]( "test-key-2" ) must beSome( "value" )
     }
 
     "miss after remove" in {
-
       invoke inFuture Cache.set( "test-key-3", "value" )
       Cache.get[ String ]( "test-key-3" ).isDefined must beTrue
       invoke inFuture Cache.remove( "test-key-3" )
@@ -68,27 +66,22 @@ class CacheSpec extends Specification with AroundExample with BeforeExample {
     }
 
     "miss after timeout" in {
-
       // set
       invoke inFuture Cache.set( "test-key-4", "value", Some( 1 ) )
       Cache.get[ String ]( "test-key-4" ).isDefined must beTrue
-
       // wait until it expires
       Thread.sleep( 2000 )
-
       // miss
       Cache.get[ String ]( "test-key-4" ) must beNone
     }
 
     "miss at first getOrElse " in {
-
       val counter = new AtomicInteger( 0 )
       cachedValue( "test-key-5", counter ) must beSome( "value" )
       counter.get must beEqualTo( 1 )
     }
 
     "hit at second getOrElse" in {
-
       val counter = new AtomicInteger( 0 )
       for ( index <- 1 to 10 )
         cachedValue( "test-key-6", counter ) must beSome( "value" )
@@ -96,7 +89,6 @@ class CacheSpec extends Specification with AroundExample with BeforeExample {
     }
 
     "distinct different keys" in {
-
       val counter = new AtomicInteger( 0 )
       cachedValue( "test-key-7A", counter ) must beSome( "value" )
       cachedValue( "test-key-7B", counter ) must beSome( "value" )
@@ -104,19 +96,10 @@ class CacheSpec extends Specification with AroundExample with BeforeExample {
     }
 
     "perform future and store result" in {
-
       val counter = new AtomicInteger( 0 )
-      val future = {
-
-        // increment miss counter
-        counter.incrementAndGet( )
-        // return the future object
-        Future.apply( "value" )
-      }
-
       // perform test
       for ( index <- 1 to 5 ) {
-        Cache.getOrElse[ String ]( "test-key-8" )( future ).map( _.toOption ) must beSome( "value" )
+        Cache.getOrElse[ String ]( "test-key-8" )( orElse( counter ) ).map( _.toOption ) must beSome( "value" )
 
         // BUGFIX solution to synchronization issue. When this wasn't here,
         // the cache was synchronized a bit later and then it computed the
@@ -124,44 +107,35 @@ class CacheSpec extends Specification with AroundExample with BeforeExample {
         // a chance to cache to synchronize it
         Thread.sleep( 100 )
       }
-
       // verify
       counter.get must beEqualTo( 1 )
     }
 
     "propagate fail in future" in {
-
-      val future = {
-        Future.failed {
-          new IllegalStateException( "Exception in test." )
-        }
-      }
+      val future = Future.failed( new IllegalStateException( "Exception in test." ) )
       invoke inFuture Cache.getOrElse[ String ]( "test-key-9" )( future ) must throwA( new IllegalStateException( "Exception in test." ) )
     }
 
     "support list" in {
-
       // store value
       invoke inFuture Cache.set( "list", List( "A", "B", "C" ) ) must beEqualTo( Success( "OK" ) )
-
       // recall
       val list = invoke inFuture Cache.get[ List[ String ] ]( "list" )
-
       list must beSome[ List[ String ] ]
       list must beSome( List( "A", "B", "C" ) )
     }
   }
 
   protected def cachedValue( key: String, counter: AtomicInteger ): Future[ Option[ String ] ] =
-    Cache.getOrElse[ String ]( key ) {
-      // access cached value
-      //      ( ) => {
-      // increment miss counter
-      counter.incrementAndGet( )
-      // return the value to cache
-      Future.successful( "value" )
-      //      }
-    }.map( _.toOption )
+    Cache.getOrElse[ String ]( key )( orElse( counter ) ).map( _.toOption )
+
+  protected def orElse( counter: AtomicInteger ): Future[ String ] = {
+    // access cached value
+    // increment miss counter
+    counter.incrementAndGet( )
+    // return the value to cache
+    Future.successful( "value" )
+  }
 
   // clear cache
   protected def before = {
