@@ -1,5 +1,6 @@
 package play.cache
 
+import java.util.Date
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.concurrent.duration.Duration
@@ -8,6 +9,7 @@ import scala.util.Success
 
 import play.api.test._
 
+import org.joda.time.DateTime
 import org.specs2.execute.{AsResult, Result}
 import org.specs2.matcher._
 import org.specs2.mutable.Specification
@@ -124,6 +126,74 @@ class CacheSpec extends Specification with AroundExample with BeforeExample {
       list must beSome[ List[ String ] ]
       list must beSome( List( "A", "B", "C" ) )
     }
+
+    "support a byte" in {
+      invoke inFuture Cache.set( "type.byte", 0xAB.toByte )
+      Cache.get[ Byte ]( "type.byte" ) must beSome[ Byte ]
+      Cache.get[ Byte ]( "type.byte" ) must beSome( 0xAB.toByte )
+    }
+
+    "support a char" in {
+      invoke inFuture Cache.set( "type.char.1", 'a' )
+      Cache.get[ Char ]( "type.char.1" ) must beSome[ Char ]
+      Cache.get[ Char ]( "type.char.1" ) must beSome( 'a' )
+      invoke inFuture Cache.set( "type.char.2", 'b' )
+      Cache.get[ Char ]( "type.char.2" ) must beSome( 'b' )
+      invoke inFuture Cache.set( "type.char.3", 'č' )
+      Cache.get[ Char ]( "type.char.3" ) must beSome( 'č' )
+    }
+
+    "support a short" in {
+      invoke inFuture Cache.set( "type.short", 12.toShort )
+      Cache.get[ Short ]( "type.short" ) must beSome[ Short ]
+      Cache.get[ Short ]( "type.short" ) must beSome( 12.toShort )
+    }
+
+    "support an int" in {
+      invoke inFuture Cache.set( "type.byte", 0xAB.toByte )
+      Cache.get[ Byte ]( "type.byte" ) must beSome( 0xAB.toByte )
+    }
+
+    "support a long" in {
+      invoke inFuture Cache.set( "type.long", 144L )
+      Cache.get[ Long ]( "type.long" ) must beSome[ Long ]
+      Cache.get[ Long ]( "type.long" ) must beSome( 144L )
+    }
+
+    "support a float" in {
+      invoke inFuture Cache.set( "type.float", 1.23f )
+      Cache.get[ Float ]( "type.float" ) must beSome[ Float ]
+      Cache.get[ Float ]( "type.float" ) must beSome( 1.23f )
+    }
+
+    "support a double" in {
+      invoke inFuture Cache.set( "type.double", 3.14 )
+      Cache.get[ Double ]( "type.double" ) must beSome[ Double ]
+      Cache.get[ Double ]( "type.double" ) must beSome( 3.14 )
+    }
+
+    "support a date" in {
+      invoke inFuture Cache.set( "type.date", new Date( 123 ) )
+      Cache.get[ Date ]( "type.date" ) must beSome[ Date ]
+      Cache.get[ Date ]( "type.date" ) must beSome( new Date( 123 ) )
+    }
+
+    "support a datetime" in {
+      invoke inFuture Cache.set( "type.datetime", new DateTime( 123456 ) )
+      Cache.get[ DateTime ]( "type.datetime" ) must beSome[ DateTime ]
+      Cache.get[ DateTime ]( "type.datetime" ) must beSome( new DateTime( 123456 ) )
+    }
+
+    "support a custom classes" in {
+      invoke inFuture Cache.set( "type.object", SimpleObject( "B", 3 ) )
+      Cache.get[ SimpleObject ]( "type.object" ) must beSome[ SimpleObject ]
+      Cache.get[ SimpleObject ]( "type.object" ) must beSome( SimpleObject( "B", 3 ) )
+    }
+
+    "support a null" in {
+      invoke inFuture Cache.set( "type.null", null )
+      Cache.get[ SimpleObject ]( "type.null" ) must beNone
+    }
   }
 
   protected def cachedValue( key: String, counter: AtomicInteger ): Future[ Option[ String ] ] =
@@ -145,3 +215,5 @@ class CacheSpec extends Specification with AroundExample with BeforeExample {
     invoke inFuture Cache.invalidate( )
   }
 }
+
+case class SimpleObject( key: String, value: Int )
