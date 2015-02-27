@@ -1,3 +1,7 @@
+import sbt._
+import sbt.Keys._
+import sbtrelease.ReleasePlugin._
+
 name := "play-redis"
 
 organization := "com.github.karelcemus"
@@ -30,7 +34,21 @@ homepage := Some( url( "https://github.com/karelcemus/play-redis" ) )
 
 licenses := Seq( "Apache 2" -> url( "http://www.apache.org/licenses/LICENSE-2.0" ) )
 
+publishMavenStyle := true
+
 pomIncludeRepository := { _ => false}
+
+pomExtra := (
+    <scm>
+      <url>git@github.com:KarelCemus/play-redis.git</url>
+      <connection>scm:git@github.com:KarelCemus/play-redis.git</connection>
+    </scm>
+    <developers>
+      <developer>
+        <name>Karel Cemus</name>
+      </developer>
+    </developers>
+)
 
 // Release settings
 releaseSettings
@@ -41,6 +59,6 @@ ReleaseKeys.tagName := ( version in ThisBuild ).value
 
 // Publish settings
 publishTo := {
-  if ( isSnapshot.value ) None
+  if (isSnapshot.value) Some(Opts.resolver.sonatypeSnapshots)
   else Some( Opts.resolver.sonatypeStaging )
 }
