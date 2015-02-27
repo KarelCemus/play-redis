@@ -4,6 +4,8 @@ import sbtrelease.ReleasePlugin._
 
 name := "play-redis"
 
+description := "Redis cache plugin for the Play framework 2"
+
 organization := "com.github.karelcemus"
 
 scalaVersion := "2.11.4"
