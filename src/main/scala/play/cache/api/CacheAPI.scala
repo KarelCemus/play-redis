@@ -4,7 +4,7 @@ import scala.concurrent.Future
 import scala.util.Try
 
 /**
- * <p>Non-blocking cache API, inspired by basic Play [[play.api.cache.CacheAPI]].</p>
+ * <p>Non-blocking cache API, inspired by basic Play play.api.cache.CacheAPI.</p>
  */
 trait CacheAPI {
 
