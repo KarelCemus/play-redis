@@ -90,7 +90,7 @@ class CacheSpec extends Specification with RedisCacheSupport {
       // recall
       val list = invoke inFuture AsyncCache.get[ List[ String ] ]( "list" )
       list must beSome[ List[ String ] ]
-      list must beSome( List( "A", "B", "C" ) )
+      list must beSome[ List[ String ] ]( List( "A", "B", "C" ) )
     }
 
     "support a byte" in {
