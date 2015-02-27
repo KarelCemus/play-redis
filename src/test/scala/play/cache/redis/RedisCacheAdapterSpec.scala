@@ -4,8 +4,7 @@ import java.util.Date
 
 import play.api.Play.current
 import play.api.cache.Cache
-import play.api.test.FakeApplication
-import play.cache.RedisCacheSupport
+import play.cache.{RedisCacheSupport, SimpleObject}
 
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
@@ -67,6 +66,11 @@ class RedisCacheAdapterSpec extends Specification with RedisCacheSupport {
     "support Boolean" in {
       Cache.set( "test-boolean-key", true )
       Cache.get( "test-boolean-key" ) must beSome( true )
+    }
+
+    "support custom objects" in {
+      Cache.set( "test-object-key", SimpleObject( "A", 5 ) )
+      Cache.get( "test-object-key" ) must beSome( SimpleObject( "A", 5 ) )
     }
   }
 }

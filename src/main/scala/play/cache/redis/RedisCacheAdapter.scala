@@ -36,6 +36,8 @@ class RedisCacheAdapter( redis: play.cache.api.CacheAPI20 ) extends CacheAPI {
     case value: Date => store( key, value, expiration )
     case value: DateTime => store( key, value, expiration )
 
+    case value: AnyRef => store( key, value, expiration )( ClassTag( value.getClass ) )
+
     case _ =>
       throw new UnsupportedOperationException(
         s"""
