@@ -1,6 +1,7 @@
 package play.cache.redis
 
 import play.api._
+import play.cache.AsyncCache
 import play.cache.api.{CachePlugin, CachePlugin20}
 
 /** <p>Non-blocking advanced cache plugin implementation. Implementation provides simple access to Redis cache.</p> */
@@ -15,5 +16,12 @@ class RedisCachePlugin20( implicit app: Application ) extends CachePlugin20 {
     }
     // create advanced wrapper
     new RedisCache20( internal )
+  }
+
+  override def onStart( ): Unit = {
+    // on plugin start reload the cache to look up the newest plugin version
+    // this is a minor hack because on application recompilation the plugins
+    // are restarted but singletons such as AsyncCache are not somehow reinitialized
+    AsyncCache.reload()
   }
 }
