@@ -12,7 +12,7 @@ import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
 
 /**
- * @author Karel Cemus
+ * CacheAPI implementation for backward compatibility with play.api.cache.CacheAPI
  */
 class RedisCacheAdapter( redis: play.cache.api.CacheAPI20 ) extends CacheAPI {
 
