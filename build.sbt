@@ -1,6 +1,7 @@
 import sbt._
 import sbt.Keys._
 import sbtrelease.ReleasePlugin._
+import com.typesafe.sbt.pgp.PgpKeys
 
 name := "play-redis"
 
@@ -40,7 +41,7 @@ publishMavenStyle := true
 
 pomIncludeRepository := { _ => false}
 
-pomExtra := (
+pomExtra :=
     <scm>
       <url>git@github.com:KarelCemus/play-redis.git</url>
       <connection>scm:git@github.com:KarelCemus/play-redis.git</connection>
@@ -50,7 +51,6 @@ pomExtra := (
         <name>Karel Cemus</name>
       </developer>
     </developers>
-)
 
 // Release settings
 releaseSettings
@@ -58,6 +58,8 @@ releaseSettings
 ReleaseKeys.crossBuild := true
 
 ReleaseKeys.tagName := ( version in ThisBuild ).value
+
+ReleaseKeys.publishArtifactsAction := PgpKeys.publishSigned.value
 
 // Publish settings
 publishTo := {
