@@ -28,9 +28,9 @@ trait RedisCacheSupport {
     if ( Running.counter.incrementAndGet( ) == 1 ) {
       Play.start( application )
       // reload cache in case the play application was stopped
-      play.cache.Cache.reload( )
+      play.cache.AsyncCache.reload( )
       // invalidate redis cache for test
-      invoke inFuture play.cache.Cache.invalidate( )
+      invoke inFuture play.cache.AsyncCache.invalidate( )
     }
   }
 

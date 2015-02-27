@@ -12,7 +12,7 @@ import play.cache.api._
  */
 class Cache20 extends CacheAPI20 {
 
-  protected var internal: CacheAPI20 = reload( )
+  protected var internal: CacheAPI20 = null
 
   /** looks up ExtendedCachePlugin and reassigns it into internal variable */
   def reload( ): CacheAPI20 = {
@@ -43,4 +43,4 @@ class Cache20 extends CacheAPI20 {
   override def invalidate( ): Future[ Try[ String ] ] = internal.invalidate( )
 }
 
-object Cache extends Cache20
+object AsyncCache extends Cache20

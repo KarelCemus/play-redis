@@ -89,13 +89,13 @@ class type and instead of `Option[ Any ]` it returns `Option[ T ]`. Supported da
 objects serializable through the java serialization and collections. (Note: it uses Akka serialization).
 
 To preserve the ease of use, there is new version of the `Cache` singleton. There is tiny difference in the package name.
-While the Play framework's version is `play.api.Cache`, the new version is `play.cache.Cache`. This singleton implements
+While the Play framework's version is `play.api.Cache`, the new version is `play.cache.AsyncCache`. This singleton implements
 `CacheAPI20` and delegates requests to the `RedisCachePlugin20`.
 
 **Example:**
 
 ```scala
-import play.cache.Cache
+import play.cache.{AsyncCache=>Cache} // alias for convenience
 
 // returns Future[ Try[ String ] ] where the value string
 // should be Success( "OK" ) or Failure( ex )
@@ -141,7 +141,7 @@ There is already default configuration but it can be overwritten in your `conf/a
 Furthermore, there are more advanced ways how to set value expiration.
 
 1. Pass it as Int into `play.api.Cache#set`
-1. Pass it as Some( Int ) into `play.cache.Cache#set` or `play.cache.Cache#setIfNotExists` or `play.cache.Cache#getOrElse`
+1. Pass it as Some( Int ) into `play.cache.AsyncCache#set` or `play.cache.AsyncCache#setIfNotExists` or `play.cache.AsyncCache#getOrElse`
 1. Do not set it directly (set 0 or None respectively) and leave it up to the plugin to compute it. The computation is
 as follows:
   1. The configuration `play.redis.expiration` is acquired as the root configuration
