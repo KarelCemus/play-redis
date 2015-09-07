@@ -41,6 +41,9 @@ class Cache20 extends CacheAPI20 {
 
   /** invalidate cache */
   override def invalidate( ): Future[ Try[ String ] ] = internal.invalidate( )
+
+  /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration */
+  override def expire( key: String, expiration: Int ): Unit = internal.expire( key, expiration )
 }
 
 object AsyncCache extends Cache20

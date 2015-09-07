@@ -42,4 +42,7 @@ trait CacheAPI {
     * @return operation success
     */
   def invalidate( ): Future[ Try[ String ] ]
+
+  /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration */
+  def expire( key: String, expiration: Int )
 }
