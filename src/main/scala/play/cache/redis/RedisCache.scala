@@ -84,20 +84,20 @@ class RedisCache( implicit app: Application ) extends CacheAPI {
         Failure( new IllegalStateException( "SETEX command failed." ) )
     }
 
-  /** Remove a value from the cache */
-  def remove( key: String ): Future[ Try[ String ] ] =
-    redis ? Request( "DEL", key ) map {
-      case Success( Some( 1 ) ) => // One entry was removed
-        log.debug( s"Remove on key '$key'." )
-        Success( "OK" )
+  /** Remove all values from the cache */
+  def remove( keys: String* ): Future[ Try[ String ] ] =
+    redis ? Request( "DEL", keys: _* ) map {
       case Success( Some( 0 ) ) => // Nothing was removed
-        log.debug( s"Remove on key '$key' succeeded but nothing was removed." )
+        log.debug( s"Remove on key '$keys' succeeded but nothing was removed." )
+        Success( "OK" )
+      case Success( Some( number ) ) => // Some entries were removed
+        log.debug( s"Remove on key '$keys' removed $number values." )
         Success( "OK" )
       case Failure( ex ) =>
-        log.error( s"DEL command failed for key '$key'.", ex )
+        log.error( s"DEL command failed for key '$keys'.", ex )
         Failure( new IllegalStateException( "DEL command failed.", ex ) )
       case _ =>
-        log.error( s"Unrecognized answer from DEL command for key '$key'." )
+        log.error( s"Unrecognized answer from DEL command for key '$keys'." )
         Failure( new IllegalStateException( "DEL command failed." ) )
     }
 
@@ -131,6 +131,23 @@ class RedisCache( implicit app: Application ) extends CacheAPI {
     // stop running brando actor
     if ( redis != null ) Akka.system.stop( redis.actor.actorRef )
     log.info( "Stopped Redis cache actor." )
+  }
+
+  def expire( key: String, expiration: Int ) = {
+    redis ? Request( "EXPIRE", key, expiration.toString ) map {
+      case Success( Some( 1 ) ) => // expiration was set
+        log.debug( s"Expiration set on key '$key'." )
+        Success( "OK" )
+      case Success( Some( 0 ) ) => // Nothing was removed
+        log.debug( s"Expiration set on key '$key' failed. Key does not exist." )
+        Success( "OK" )
+      case Failure( ex ) =>
+        log.error( s"EXPIRE command failed for key '$key'.", ex )
+        Failure( new IllegalStateException( "EXPIRE command failed.", ex ) )
+      case _ =>
+        log.error( s"Unrecognized answer from EXPIRE command for key '$key'." )
+        Failure( new IllegalStateException( "EXPIRE command failed." ) )
+    }
   }
 
   private implicit class RedisRef( brando: ActorRef ) {

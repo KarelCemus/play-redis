@@ -31,15 +31,18 @@ trait CacheAPI {
     */
   def set( key: String, value: String, expiration: Int ): Future[ Try[ String ] ]
 
-  /** Remove a value from the cache
-    * @param key cache storage key
+  /** Remove all values from the cache
+    * @param keys cache storage keys
     * @return operation success
     */
-  def remove( key: String ): Future[ Try[ String ] ]
+  def remove( keys: String* ): Future[ Try[ String ] ]
 
   /** Remove all keys in cache
     *
     * @return operation success
     */
   def invalidate( ): Future[ Try[ String ] ]
+
+  /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration */
+  def expire( key: String, expiration: Int )
 }

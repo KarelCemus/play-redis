@@ -22,9 +22,12 @@ trait CacheAPI20 {
   /** Retrieve a value from the cache, or set it from a default function. */
   def setIfNotExists[ T ]( key: String, expiration: Option[ Int ] = None )( orElse: => Future[ T ] )( implicit classTag: ClassTag[ T ] ): Future[ Try[ String ] ]
 
-  /** remove key from cache */
-  def remove( key: String ): Future[ Try[ String ] ]
+  /** remove keys from cache */
+  def remove( key: String* ): Future[ Try[ String ] ]
 
   /** invalidate cache */
   def invalidate( ): Future[ Try[ String ] ]
+
+  /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration */
+  def expire( key: String, expiration: Int )
 }

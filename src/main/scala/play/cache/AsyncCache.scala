@@ -37,10 +37,13 @@ class Cache20 extends CacheAPI20 {
   override def setIfNotExists[ T ]( key: String, expiration: Option[ Int ] = None )( orElse: => Future[ T ] )( implicit classTag: ClassTag[ T ] ): Future[ Try[ String ] ] = internal.setIfNotExists( key, expiration )( orElse )( classTag )
 
   /** remove key from cache */
-  override def remove( key: String ): Future[ Try[ String ] ] = internal.remove( key )
+  override def remove( keys: String* ): Future[ Try[ String ] ] = internal.remove( keys: _* )
 
   /** invalidate cache */
   override def invalidate( ): Future[ Try[ String ] ] = internal.invalidate( )
+
+  /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration */
+  override def expire( key: String, expiration: Int ): Unit = internal.expire( key, expiration )
 }
 
 object AsyncCache extends Cache20

@@ -115,10 +115,14 @@ class RedisCache20( protected val cacheAPI: CacheAPI )( implicit app: Applicatio
     }
 
   /** remove key from cache */
-  override def remove( key: String ): Future[ Try[ String ] ] = cacheAPI.remove( key )
+  override def remove( keys: String* ): Future[ Try[ String ] ] = cacheAPI.remove( keys: _* )
 
   /** invalidate cache */
   override def invalidate( ): Future[ Try[ String ] ] = cacheAPI.invalidate( )
+
+
+  /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration */
+  override def expire( key: String, expiration: Int ): Unit = cacheAPI.expire( key, expiration )
 
   protected def duration( key: String ): Int = {
     // drop prefix from 'prefix:key' and look up the key in the configuration
