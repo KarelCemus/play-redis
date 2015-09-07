@@ -37,7 +37,7 @@ class Cache20 extends CacheAPI20 {
   override def setIfNotExists[ T ]( key: String, expiration: Option[ Int ] = None )( orElse: => Future[ T ] )( implicit classTag: ClassTag[ T ] ): Future[ Try[ String ] ] = internal.setIfNotExists( key, expiration )( orElse )( classTag )
 
   /** remove key from cache */
-  override def remove( key: String ): Future[ Try[ String ] ] = internal.remove( key )
+  override def remove( keys: String* ): Future[ Try[ String ] ] = internal.remove( keys: _* )
 
   /** invalidate cache */
   override def invalidate( ): Future[ Try[ String ] ] = internal.invalidate( )

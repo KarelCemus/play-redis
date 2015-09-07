@@ -31,11 +31,11 @@ trait CacheAPI {
     */
   def set( key: String, value: String, expiration: Int ): Future[ Try[ String ] ]
 
-  /** Remove a value from the cache
-    * @param key cache storage key
+  /** Remove all values from the cache
+    * @param keys cache storage keys
     * @return operation success
     */
-  def remove( key: String ): Future[ Try[ String ] ]
+  def remove( keys: String* ): Future[ Try[ String ] ]
 
   /** Remove all keys in cache
     *

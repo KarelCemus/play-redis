@@ -160,6 +160,19 @@ class CacheSpec extends Specification with RedisCacheSupport {
       invoke inFuture AsyncCache.set( "type.null", null )
       AsyncCache.get[ SimpleObject ]( "type.null" ) must beNone
     }
+
+    "remove multiple keys at once" in {
+      invoke inFuture AsyncCache.set( "async-test-remove-multiple-1", "value" )
+      AsyncCache.get[ String ]( "async-test-remove-multiple-1" ).isDefined must beTrue
+      invoke inFuture AsyncCache.set( "async-test-remove-multiple-2", "value" )
+      AsyncCache.get[ String ]( "async-test-remove-multiple-2" ).isDefined must beTrue
+      invoke inFuture AsyncCache.set( "async-test-remove-multiple-3", "value" )
+      AsyncCache.get[ String ]( "async-test-remove-multiple-3" ).isDefined must beTrue
+      invoke inFuture AsyncCache.remove( "async-test-remove-multiple-1", "async-test-remove-multiple-2", "async-test-remove-multiple-3" )
+      AsyncCache.get[ String ]( "async-test-remove-multiple-1" ) must beNone
+      AsyncCache.get[ String ]( "async-test-remove-multiple-2" ) must beNone
+      AsyncCache.get[ String ]( "async-test-remove-multiple-3" ) must beNone
+    }
   }
 
   protected def cachedValue( key: String, counter: AtomicInteger ): Future[ Option[ String ] ] =

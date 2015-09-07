@@ -115,7 +115,7 @@ class RedisCache20( protected val cacheAPI: CacheAPI )( implicit app: Applicatio
     }
 
   /** remove key from cache */
-  override def remove( key: String ): Future[ Try[ String ] ] = cacheAPI.remove( key )
+  override def remove( keys: String* ): Future[ Try[ String ] ] = cacheAPI.remove( keys: _* )
 
   /** invalidate cache */
   override def invalidate( ): Future[ Try[ String ] ] = cacheAPI.invalidate( )
