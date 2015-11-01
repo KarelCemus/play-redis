@@ -48,7 +48,7 @@ libraryDependencies ++= Seq(
   // enable work with cache, introduces CacheAPI
   play.PlayImport.cache,
   // redis-server cache
-  "com.github.karelcemus" %% "play-redis" % "0.1"
+  "com.github.karelcemus" %% "play-redis" % "0.2"
 )
 ```
 
