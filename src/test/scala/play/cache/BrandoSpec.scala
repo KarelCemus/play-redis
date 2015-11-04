@@ -1,6 +1,6 @@
 package play.cache
 
-import brando.{Redis => _, _}
+import brando._
 import org.specs2.mutable.Specification
 
 /**

@@ -57,21 +57,30 @@ trait RedisMatcher extends Implicits {
   }
 }
 
+trait RedisSettings {
+
+  /** timeout of cache requests */
+  protected implicit val timeout = Timeout( 1.second )
+
+  def host = "localhost"
+
+  def port = 6379
+
+  def database = 1
+}
+
 /**
  * Provides testing redis instance
  *
  * @author Karel Cemus
  */
-trait RedisInstance extends RedisAsker {
+trait RedisInstance extends RedisAsker with RedisSettings {
 
   private var _redis: RichRedis = null
 
-  /** timeout of cache requests */
-  protected implicit val timeout = Timeout( 1.second )
-
   /** instance of brando */
   protected def redis( implicit application: Application ) = synchronized {
-    if ( _redis == null ) _redis = Akka.system.actorOf( brando.Redis( "localhost", 6379, database = 1 ) )
+    if ( _redis == null ) _redis = Akka.system.actorOf( brando.Brando( host = host, port = port, database = Some( database ) ) )
     _redis
   }
 }

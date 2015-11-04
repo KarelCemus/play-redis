@@ -11,6 +11,7 @@ import org.specs2.specification.BeforeAll
  */
 trait EmptyRedis extends BeforeAll { self: Redis =>
 
+  /** before all specifications reset redis database */
   override def beforeAll( ): Unit = EmptyRedis.empty
 }
 
@@ -21,10 +22,10 @@ object EmptyRedis extends RedisInstance {
 
   /** empty redis database at the beginning of the test suite */
   def empty( implicit application: Application ): Unit = synchronized {
-    if ( !executed ) { // execute only once
-      println("----------------------------")
-      executed = true
+    // execute only once
+    if ( !executed ) {
       redis execute "FLUSHDB"
+      executed = true
     }
   }
 }

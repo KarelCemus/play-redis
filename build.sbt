@@ -18,7 +18,7 @@ libraryDependencies ++= Seq(
   // play framework cache API
   "com.typesafe.play" %% "play-cache" % playVersion % "provided" exclude("net.sf.ehcache", "ehcache-core"),
   // redis connector
-  "com.digital-achiever" %% "brando" % "3.0.2",
+  "com.digital-achiever" %% "brando" % "2.1.2",
   // test framework
   "org.specs2" %% "specs2-core" % "3.6.5" % "test",
   // test module for play framework
