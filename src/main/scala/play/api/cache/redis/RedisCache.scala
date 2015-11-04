@@ -138,14 +138,24 @@ class RedisCache @Inject( )( implicit val application: Application ) extends Cac
     *
     * @return promise
     */
-  override def invalidate( ): Future[ Unit ] = ???
+  override def invalidate( ): Future[ Unit ] = redis ? Request( "FLUSHDB" ) map {
+    case Success( Some( Ok ) ) => log.info( "Invalidated." ) // cache was invalidated
+    case Success( None ) => log.warn( "Invalidation failed." ) // execution failed
+    case Failure( ex ) => log.error( s"Invalidation failed with an exception.", ex )
+    case _ => log.error( s"Unrecognized answer from invalidation command." )
+  }
 
   /** Determines whether value exists in cache.
     *
     * @param key cache storage key
     * @return record existence, true if exists, otherwise false
     */
-  override def exists( key: String ): Future[ Boolean ] = ???
+  override def exists( key: String ): Future[ Boolean ] = redis ? Request( "EXISTS", key ) map {
+    case Success( Some( 1L ) ) => log.trace( s"Key '$key' exists." ); true
+    case Success( Some( 0L ) ) => log.trace( s"Key '$key' doesn't exist." ); false
+    case Failure( ex ) => log.error( s"EXISTS command failed for key '$key'.", ex ); false
+    case _ => log.error( s"Unrecognized answer from EXISTS command for key '$key'." ); false
+  }
 
   def start( ) = redis ? Request( "PING" ) map { _ =>
     log.info( s"Redis cache started. Actor is connected to $host:$port?database=$database" )
@@ -157,43 +167,6 @@ class RedisCache @Inject( )( implicit val application: Application ) extends Cac
     log.info( "Redis cache stopped." )
   }
 
-  //
-  //  /** Determines whether exists the value with given key */
-  //  def exists( key: String ): Future[ Boolean ] =
-  //    redis ? Request( "EXISTS", key ) map {
-  //      case Success( Some( 1L ) ) =>
-  //        log.trace( s"Key '$key' exists." )
-  //        true
-  //      case Success( Some( 0L ) ) =>
-  //        log.trace( s"Key '$key' doesn't exist." )
-  //        false
-  //      case Failure( ex ) =>
-  //        log.error( s"EXISTS command failed for key '$key'.", ex )
-  //        false
-  //      case _ =>
-  //        log.error( s"Unrecognized answer from EXISTS command for key '$key'." )
-  //        false
-  //    }
-  //
-  //
-  //  /** Remove all keys in cache */
-  //  def invalidate( ): Future[ Try[ String ] ] = {
-  //    redis ? Request( "FLUSHDB" ) map {
-  //      case Success( Some( Ok ) ) => // cache was invalidated
-  //        log.info( "Invalidated." )
-  //        Success( "OK" )
-  //      case Success( None ) => // execution failed
-  //        log.warn( "Invalidation failed." )
-  //        Failure( new IllegalStateException( "Invalidation failed." ) )
-  //      case Failure( ex ) =>
-  //        log.error( s"Invalidation failed with an exception.", ex )
-  //        Failure( new IllegalStateException( "Invalidation failed.", ex ) )
-  //      case _ =>
-  //        log.error( s"Unrecognized answer from invalidation command." )
-  //        Failure( new IllegalStateException( "Invalidated failed." ) )
-  //    }
-  //  }
-  //
   //
   //  def expire( key: String, expiration: Duration ) = {
   //    redis ? Request( "EXPIRE", key, expiration.toSeconds.toString ) map {
