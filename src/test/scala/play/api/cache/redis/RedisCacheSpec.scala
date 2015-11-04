@@ -74,20 +74,20 @@ class RedisCacheSpec extends Specification with Redis {
 
     "miss at first getOrElse " in {
       val counter = new AtomicInteger( 0 )
-      Cache.getOrElseCounting( "async-test-5" )( counter ) mustEqual "value"
+      Cache.getOrElseCounting( "async-test-5" )( counter ).sync mustEqual "value"
       counter.get must beEqualTo( 1 )
     }
 
     "hit at second getOrElse" in {
       val counter = new AtomicInteger( 0 )
-      for ( index <- 1 to 10 ) Cache.getOrElseCounting( "async-test-6" )( counter ) mustEqual "value"
+      for ( index <- 1 to 10 ) Cache.getOrElseCounting( "async-test-6" )( counter ).sync mustEqual "value"
       counter.get must beEqualTo( 1 )
     }
 
     "distinct different keys" in {
       val counter = new AtomicInteger( 0 )
-      Cache.getOrElseCounting( "async-test-7A" )( counter ) mustEqual "value"
-      Cache.getOrElseCounting( "async-test-7B" )( counter ) mustEqual "value"
+      Cache.getOrElseCounting( "async-test-7A" )( counter ).sync mustEqual "value"
+      Cache.getOrElseCounting( "async-test-7B" )( counter ).sync mustEqual "value"
       counter.get must beEqualTo( 2 )
     }
 
@@ -95,7 +95,7 @@ class RedisCacheSpec extends Specification with Redis {
       val counter = new AtomicInteger( 0 )
       // perform test
       for ( index <- 1 to 5 ) {
-        Cache.getOrFutureCounting( "async-test-8" )( counter ) mustEqual "value"
+        Cache.getOrFutureCounting( "async-test-8" )( counter ).sync mustEqual "value"
 
         //        TODO
         //        // BUGFIX solution to synchronization issue. When this wasn't here,
@@ -111,7 +111,7 @@ class RedisCacheSpec extends Specification with Redis {
     "propagate fail in future" in {
       Cache.getOrFuture[ String ]( "async-test-9" ){
         Future.failed( new IllegalStateException( "Exception in test." ) )
-      } must throwA( new IllegalStateException( "Exception in test." ) )
+      }.sync must throwA( new IllegalStateException( "Exception in test." ) )
     }
 
     "support list" in {

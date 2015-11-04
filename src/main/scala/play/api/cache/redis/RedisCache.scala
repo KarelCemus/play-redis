@@ -57,7 +57,7 @@ class RedisCache @Inject( )( implicit val application: Application ) extends Cac
     else (expiration, encode( key, value )) match {
       case (Duration.Inf, Success( encoded: String )) => setEternally( key, encoded )
       case (temporal: Duration, Success( encoded: String )) => setTemporally( key, encoded, temporal )
-      case (_, Failure( ex )) => Future( log.error( s"SET command failed. Encoding of the value for the key '$key' failed.", ex ) )
+      case (_, Failure( ex )) => log.error( s"SET command failed. Encoding of the value for the key '$key' failed.", ex ).toFuture
     }
 
   /** temporally stores already encoded value into the storage */
@@ -99,7 +99,8 @@ class RedisCache @Inject( )( implicit val application: Application ) extends Cac
     * @param orElse The default function to invoke if the value was not found in cache.
     * @return stored or default record, Some if exists, otherwise None
     */
-  override def getOrElse[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => T ): Future[ T ] = ???
+  override def getOrElse[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => T ): Future[ T ] =
+    getOrFuture( key, expiration )( orElse.toFuture )
 
   /** Retrieve a value from the cache. If is missing, set default value with
     * given expiration and return the value.
@@ -109,7 +110,12 @@ class RedisCache @Inject( )( implicit val application: Application ) extends Cac
     * @param orElse The default function to invoke if the value was not found in cache.
     * @return stored or default record, Some if exists, otherwise None
     */
-  override def getOrFuture[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => Future[ T ] ): Future[ T ] = ???
+  override def getOrFuture[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => Future[ T ] ): Future[ T ] = get[ T ]( key ) flatMap {
+    // cache hit, return the unwrapped value
+    case Some( value ) => value.toFuture
+    // cache miss, compute the value, store it into cache and return the value
+    case None => orElse flatMap ( value => set( key, value, expiration ).map( _ => value ) )
+  }
 
   /** Remove a value under the given key from the cache
     * @param key cache storage key

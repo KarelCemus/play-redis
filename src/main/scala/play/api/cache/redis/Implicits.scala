@@ -31,4 +31,9 @@ trait Implicits {
       case ex => Failure( ex ) // execution failed, recover
     }
   }
+
+  /** enriches any ref by toFuture converting a value to Future.successful */
+  protected implicit class RichFuture[ T ]( any: T ) {
+    def toFuture( implicit context: ExecutionContext ) = Future( any )
+  }
 }
