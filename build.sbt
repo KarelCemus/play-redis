@@ -1,6 +1,5 @@
 import sbt._
 import sbt.Keys._
-import sbtrelease.ReleasePlugin._
 import com.typesafe.sbt.pgp.PgpKeys
 
 name := "play-redis"
@@ -9,19 +8,21 @@ description := "Redis cache plugin for the Play framework 2"
 
 organization := "com.github.karelcemus"
 
-scalaVersion := "2.11.4"
+scalaVersion := "2.11.7"
 
-crossScalaVersions := Seq( scalaVersion.value, "2.10.4" )
+crossScalaVersions := Seq( scalaVersion.value )
+
+val playVersion = "2.4.3"
 
 libraryDependencies ++= Seq(
   // play framework cache API
-  "com.typesafe.play" %% "play-cache" % "2.3.8" % "provided",
+  "com.typesafe.play" %% "play-cache" % playVersion % "provided" exclude("net.sf.ehcache", "ehcache-core"),
   // redis connector
-  "com.digital-achiever" %% "brando" % "2.0.2",
+  "com.digital-achiever" %% "brando" % "3.0.2",
   // test framework
-  "org.specs2" %% "specs2-core" % "2.4.15" % "test",
+  "org.specs2" %% "specs2-core" % "3.6.5" % "test",
   // test module for play framework
-  "com.typesafe.play" %% "play-test" % "2.3.8" % "test"
+  "com.typesafe.play" %% "play-test" % playVersion % "test"
 )
 
 resolvers ++= Seq(
@@ -29,7 +30,7 @@ resolvers ++= Seq(
   "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
 )
 
-javacOptions ++= Seq( "-source", "1.6", "-target", "1.6", "-Xlint:unchecked", "-encoding", "UTF-8" )
+javacOptions ++= Seq( "-source", "1.8", "-target", "1.68", "-Xlint:unchecked", "-encoding", "UTF-8" )
 
 scalacOptions ++= Seq( "-deprecation", "-feature", "-unchecked" )
 
@@ -52,14 +53,10 @@ pomExtra :=
       </developer>
     </developers>
 
-// Release settings
-releaseSettings
-
-ReleaseKeys.crossBuild := true
-
-ReleaseKeys.tagName := ( version in ThisBuild ).value
-
-ReleaseKeys.publishArtifactsAction := PgpKeys.publishSigned.value
+// Release plugin settings
+releaseCrossBuild := true
+releaseTagName := ( version in ThisBuild ).value
+releasePublishArtifactsAction := PgpKeys.publishSigned.value
 
 // Publish settings
 publishTo := {
