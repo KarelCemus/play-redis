@@ -1,4 +1,4 @@
-package play.cache.redis
+package play.api.cache.redis
 
 import javax.inject._
 
@@ -10,7 +10,7 @@ import scala.util._
 
 import play.api._
 import play.api.libs.concurrent.Akka
-import play.cache.api.{CacheAsyncApi}
+import play.api.cache.CacheAsyncApi
 
 import akka.actor.ActorRef
 import akka.pattern.AskableActorRef
@@ -21,7 +21,7 @@ import brando._
  * <p>Implementation of plain API using redis-server cache and Brando connector implementation.</p>
  */
 @Singleton
-class RedisCache @Inject() ( implicit val application: Application ) extends CacheAsyncApi with RedisConfig {
+class RedisCache @Inject() ( implicit val application: Application ) extends CacheAsyncApi with Config {
 
   /** communication module to Redis cache */
   private var redis: RedisRef = null

@@ -1,4 +1,4 @@
-package play.cache.redis
+package play.api.cache.redis
 
 import scala.concurrent.ExecutionContext
 
@@ -10,7 +10,7 @@ import play.api.libs.concurrent.Akka
  *
  * @author Karel Cemus
  */
-trait RedisConfig extends Implicits {
+trait Config extends Implicits {
 
   /** Play application instance to be used */
   protected implicit def application: Application

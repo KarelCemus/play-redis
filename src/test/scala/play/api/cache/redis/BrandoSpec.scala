@@ -1,4 +1,4 @@
-package play.cache
+package play.api.cache.redis
 
 import brando._
 import org.specs2.mutable.Specification

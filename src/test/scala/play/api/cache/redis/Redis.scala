@@ -1,4 +1,4 @@
-package play.cache
+package play.api.cache.redis
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -13,6 +13,7 @@ import akka.pattern.AskableActorRef
 import akka.util.Timeout
 import brando.Request
 import org.specs2.matcher._
+import org.specs2.specification.BeforeAll
 
 /**
  * Provides implicits and configuration for redis tests invocation
@@ -26,7 +27,7 @@ trait Redis extends EmptyRedis with RedisAsker with RedisMatcher {
   protected def binding: Seq[ GuiceableModule ] = Seq.empty
 }
 
-trait Implicits {
+trait Synchronization {
 
   /** waits for future responses and returns them synchronously */
   protected implicit class Synchronizer[ T ]( future: Future[ T ] ) {
@@ -35,7 +36,7 @@ trait Implicits {
 
 }
 
-trait RedisAsker extends Implicits {
+trait RedisAsker extends Synchronization {
 
   implicit class RichRedis( redis: ActorRef )( implicit timeout: Timeout ) {
     def ?( request: Request ) =
@@ -47,7 +48,7 @@ trait RedisAsker extends Implicits {
 
 }
 
-trait RedisMatcher extends Implicits {
+trait RedisMatcher extends Synchronization {
 
   implicit def matcher[ T ]( matcher: Matcher[ T ] ): Matcher[ Future[ T ] ] = new Matcher[ Future[ T ] ] {
     override def apply[ S <: Future[ T ] ]( value: Expectable[ S ] ): MatchResult[ S ] = {
@@ -82,5 +83,31 @@ trait RedisInstance extends RedisAsker with RedisSettings {
   protected def redis( implicit application: Application ) = synchronized {
     if ( _redis == null ) _redis = Akka.system.actorOf( brando.Brando( host = host, port = port, database = Some( database ) ) )
     _redis
+  }
+}
+
+/**
+ * Set up Redis server, empty its testing database to avoid any inference with previous tests
+ *
+ * @author Karel Cemus
+ */
+trait EmptyRedis extends BeforeAll { self: Redis =>
+
+  /** before all specifications reset redis database */
+  override def beforeAll( ): Unit = EmptyRedis.empty
+}
+
+object EmptyRedis extends RedisInstance {
+
+  /** already executed */
+  private var executed = false
+
+  /** empty redis database at the beginning of the test suite */
+  def empty( implicit application: Application ): Unit = synchronized {
+    // execute only once
+    if ( !executed ) {
+      redis execute "FLUSHDB"
+      executed = true
+    }
   }
 }

@@ -1,4 +1,4 @@
-package play.cache
+package play.api.cache.redis
 
 import java.util.Date
 import java.util.concurrent.atomic.AtomicInteger
@@ -7,9 +7,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
+import play.api.cache.CacheAsyncApi
 import play.api.inject._
-import play.cache.api._
-import play.cache.redis._
 
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
