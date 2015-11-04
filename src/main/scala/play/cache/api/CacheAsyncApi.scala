@@ -26,7 +26,17 @@ trait CacheAsyncApi {
     * @param orElse The default function to invoke if the value was not found in cache.
     * @return stored or default record, Some if exists, otherwise None
     */
-  def getOrElse[ T: ClassTag ]( key: String, expiration: Duration = Duration.Inf )( orElse: => T ): Future[ Option[ T ] ]
+  def getOrElse[ T: ClassTag ]( key: String, expiration: Duration = Duration.Inf )( orElse: => T ): Future[ T ]
+
+  /** Retrieve a value from the cache. If is missing, set default value with
+    * given expiration and return the value.
+    *
+    * @param key cache storage key
+    * @param expiration expiration period in seconds.
+    * @param orElse The default function to invoke if the value was not found in cache.
+    * @return stored or default record, Some if exists, otherwise None
+    */
+  def getOrFuture[ T: ClassTag ]( key: String, expiration: Duration = Duration.Inf )( orElse: => Future[ T ] ): Future[ T ]
 
   /** Determines whether value exists in cache.
     *
@@ -42,7 +52,7 @@ trait CacheAsyncApi {
     * @param expiration record duration in seconds
     * @return promise
     */
-  def set( key: String, value: String, expiration: Duration = Duration.Inf ): Future[ Unit ]
+  def set[ T ]( key: String, value: T, expiration: Duration = Duration.Inf ): Future[ Unit ]
 
   /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration
     * @param key cache storage key

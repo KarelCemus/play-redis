@@ -1,66 +1,35 @@
 package play.cache
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
-//import scala.language.implicitConversions
+import scala.language.implicitConversions
+
+import play.api.inject.guice.{GuiceApplicationBuilder, GuiceableModule}
 
 import play.api.Application
-import play.api.cache.{CacheApi => Api}
-import play.api.test.{FakeApplication, PlayRunners}
 
 import org.specs2.matcher._
-import org.specs2.mutable.Specification
-import org.specs2.specification.Step
-import org.specs2.specification.core.Fragments
 
 /**
- * Takes care of redis connection and play application
+ * Provides implicits and configuration for redis tests invocation
  */
-trait RedisCacheSupport { self: Specification =>
-
-//  protected val invoke = this
+trait RedisCacheSupport {
 
   /** application context to perform operations in */
-  protected implicit def application: Application = FakeApplication()
+  protected implicit def application: Application = new GuiceApplicationBuilder( ).bindings( binding: _* ).build( )
 
-  def start( ): Unit = PlayRunners.mutex.synchronized {
-//    // start play application
-//    if ( Running.counter.incrementAndGet( ) == 1 ) {
-//      println("-------- starting ------")
-//      Play.start( application )
-//      // reload cache in case the play application was stopped
-//      play.cache.AsyncCache.reload( )
-//      // invalidate redis cache for test
-//      application.injector.instanceOf[ CacheAPI20 ].invalidate()
-//      invoke inFuture play.cache.AsyncCache.invalidate( )
-//    }
-  }
+  /** binding to be used inside this test */
+  protected def binding: Seq[ GuiceableModule ] = Seq.empty
 
-  def stop( ): Unit = PlayRunners.mutex.synchronized {
-//    // stop play application
-//    if ( Running.counter.decrementAndGet( ) == 0 ) Play.stop( application )
+  implicit def matcher[ T ]( matcher: Matcher[ T ] ): Matcher[ Future[ T ] ] = new Matcher[ Future[ T ] ] {
+    override def apply[ S <: Future[ T ] ]( value: Expectable[ S ] ): MatchResult[ S ] = {
+      val matched = value.map( ( _: Future[ T ] ).sync ).applyMatcher( matcher )
+      result( matched, value )
+    }
   }
-//
-//  override def map( fs: => Fragments ): Fragments = Step( start( ) ) ^ fs ^ Step( stop( ) )
-//
-//  implicit def inFuture[ T ]( value: Future[ T ] ): T = Await.result( value, Duration( "5s" ) )
-//
-//  implicit def matcher[ T ]( matcher: Matcher[ T ] ): Matcher[ Future[ T ] ] = new Matcher[ Future[ T ] ] {
-//    override def apply[ S <: Future[ T ] ]( value: Expectable[ S ] ): MatchResult[ S ] = {
-//      val expectable: Expectable[ Future[ T ] ] = value
-//      val matched = expectable.map( inFuture[ T ] _ ).applyMatcher( matcher )
-//      result( matched, value )
-//    }
-//  }
 
   /** waits for future responses and returns them synchronously */
   implicit class Synchronizer[ T ]( future: Future[ T ] ) {
     def sync = Await.result( future, Duration( "5s" ) )
   }
-}
-
-object Running {
-  val counter = new AtomicInteger( 0 )
 }

@@ -40,7 +40,7 @@ class RedisCache @Inject() ( implicit val application: Application ) extends Cac
     * @param expiration record duration in seconds
     * @return promise
     */
-  override def set( key: String, value: String, expiration: Duration ): Future[ Unit ] = ???
+  override def set[ T ]( key: String, value: T, expiration: Duration ): Future[ Unit ] = ???
 
   /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration
     * @param key cache storage key
@@ -57,7 +57,17 @@ class RedisCache @Inject() ( implicit val application: Application ) extends Cac
     * @param orElse The default function to invoke if the value was not found in cache.
     * @return stored or default record, Some if exists, otherwise None
     */
-  override def getOrElse[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => T ): Future[ Option[ T ] ] = ???
+  override def getOrElse[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => T ): Future[ T ] = ???
+
+  /** Retrieve a value from the cache. If is missing, set default value with
+    * given expiration and return the value.
+    *
+    * @param key cache storage key
+    * @param expiration expiration period in seconds.
+    * @param orElse The default function to invoke if the value was not found in cache.
+    * @return stored or default record, Some if exists, otherwise None
+    */
+  override def getOrFuture[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => Future[ T ] ): Future[ T ] = ???
 
   /** Remove a value under the given key from the cache
     * @param key cache storage key
