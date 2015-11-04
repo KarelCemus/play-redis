@@ -35,10 +35,11 @@ class RedisCacheSpec extends Specification with Redis {
     }
 
     "expire refreshes expiration" in {
-      Cache.set( "async-test-10", "value", 1.second ).sync
-      Cache.expire( "async-test-10", 5.second ).sync
+      Cache.set( "async-test-10", "value", 2.second ).sync
+      Cache.get[ String ]( "async-test-10" ) must beSome( "value" )
+      Cache.expire( "async-test-10", 1.minute ).sync
       // wait until the first duration expires
-      Thread.sleep( 2000 )
+      Thread.sleep( 3000 )
       Cache.get[ String ]( "async-test-10" ) must beSome( "value" )
     }
 
