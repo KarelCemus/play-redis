@@ -83,7 +83,13 @@ class RedisCache @Inject( )( implicit val application: Application ) extends Cac
     * @param expiration new expiration in seconds
     * @return promise
     */
-  override def expire( key: String, expiration: Duration ): Future[ Unit ] = ???
+  override def expire( key: String, expiration: Duration ): Future[ Unit ] =
+    redis ? Request( "EXPIRE", key, expiration.toSeconds.toString ) map {
+      case Success( Some( 1 ) ) => log.debug( s"Expiration set on key '$key'." ) // expiration was set
+      case Success( Some( 0 ) ) => log.debug( s"Expiration set on key '$key' failed. Key does not exist." ) // Nothing was removed
+      case Failure( ex ) => log.error( s"EXPIRE command failed for key '$key'.", ex )
+      case _ => log.error( s"Unrecognized answer from EXPIRE command for key '$key'." )
+    }
 
   /** Retrieve a value from the cache. If is missing, set default value with
     * given expiration and return the value.
@@ -166,23 +172,4 @@ class RedisCache @Inject( )( implicit val application: Application ) extends Cac
     Akka.system.stop( redis.actor.actorRef )
     log.info( "Redis cache stopped." )
   }
-
-  //
-  //  def expire( key: String, expiration: Duration ) = {
-  //    redis ? Request( "EXPIRE", key, expiration.toSeconds.toString ) map {
-  //      case Success( Some( 1 ) ) => // expiration was set
-  //        log.debug( s"Expiration set on key '$key'." )
-  //        Success( "OK" )
-  //      case Success( Some( 0 ) ) => // Nothing was removed
-  //        log.debug( s"Expiration set on key '$key' failed. Key does not exist." )
-  //        Success( "OK" )
-  //      case Failure( ex ) =>
-  //        log.error( s"EXPIRE command failed for key '$key'.", ex )
-  //        Failure( new IllegalStateException( "EXPIRE command failed.", ex ) )
-  //      case _ =>
-  //        log.error( s"Unrecognized answer from EXPIRE command for key '$key'." )
-  //        Failure( new IllegalStateException( "EXPIRE command failed." ) )
-  //    }
-  //  }
-  //
 }
