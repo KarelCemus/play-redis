@@ -109,7 +109,8 @@ class RedisCache @Inject( )( implicit val application: Application ) extends Cac
     * @param key cache storage key
     * @return promise
     */
-  override def remove( key: String ): Future[ Unit ] = ???
+  override def remove( key: String ): Future[ Unit ] =
+    removeInBatch( key )
 
   /** Remove all values from the cache
     * @param key1 cache storage key
@@ -117,7 +118,21 @@ class RedisCache @Inject( )( implicit val application: Application ) extends Cac
     * @param keys cache storage keys
     * @return promise
     */
-  override def remove( key1: String, key2: String, keys: String* ): Future[ Unit ] = ???
+  override def remove( key1: String, key2: String, keys: String* ): Future[ Unit ] =
+    removeInBatch( key1 +: key2 +: keys: _* )
+
+
+  /** Removes all keys in arguments. The other remove methods are for syntax sugar */
+  private def removeInBatch( keys: String* ): Future[ Unit ] = redis ? Request( "DEL", keys: _* ) map {
+    case Success( Some( 0 ) ) => // Nothing was removed
+      log.debug( s"Remove on keys ${ keys.mkString( "'", ",", "'" ) } succeeded but nothing was removed." )
+    case Success( Some( number ) ) => // Some entries were removed
+      log.debug( s"Remove on keys ${ keys.mkString( "'", ",", "'" ) } removed $number values." )
+    case Failure( ex ) =>
+      log.error( s"DEL command failed for keys ${ keys.mkString( "'", ",", "'" ) }.", ex )
+    case _ =>
+      log.error( s"Unrecognized answer from DEL command for keys ${ keys.mkString( "'", ",", "'" ) }." )
+  }
 
   /** Remove all keys in cache
     *
@@ -160,23 +175,6 @@ class RedisCache @Inject( )( implicit val application: Application ) extends Cac
   //        false
   //    }
   //
-  //
-  //  /** Remove all values from the cache */
-  //  def remove( keys: String* ): Future[ Try[ String ] ] =
-  //    redis ? Request( "DEL", keys: _* ) map {
-  //      case Success( Some( 0 ) ) => // Nothing was removed
-  //        log.debug( s"Remove on key '$keys' succeeded but nothing was removed." )
-  //        Success( "OK" )
-  //      case Success( Some( number ) ) => // Some entries were removed
-  //        log.debug( s"Remove on key '$keys' removed $number values." )
-  //        Success( "OK" )
-  //      case Failure( ex ) =>
-  //        log.error( s"DEL command failed for key '$keys'.", ex )
-  //        Failure( new IllegalStateException( "DEL command failed.", ex ) )
-  //      case _ =>
-  //        log.error( s"Unrecognized answer from DEL command for key '$keys'." )
-  //        Failure( new IllegalStateException( "DEL command failed." ) )
-  //    }
   //
   //  /** Remove all keys in cache */
   //  def invalidate( ): Future[ Try[ String ] ] = {
