@@ -23,9 +23,9 @@ import com.typesafe.config.ConfigFactory
 @Singleton
 class RedisCache20 @Inject() ( protected val cacheAPI: CacheAPI )( implicit app: Application ) extends CacheAPI20 {
 
-  protected val log = Logger( "play.redis" )
+  protected val log = Logger( "play.cache.redis" )
 
-  protected def config = ConfigFactory.load( ).getConfig( "play.redis" )
+  protected def config = ConfigFactory.load( ).getConfig( "play.cache.redis" )
 
   protected val expiration = config.getConfig( "expiration" )
 
@@ -141,7 +141,7 @@ class RedisCache20 @Inject() ( protected val cacheAPI: CacheAPI )( implicit app:
   /** computes expiration for given key, possibly uses default value */
   @scala.annotation.tailrec
   private def lookUp( key: String ): Duration = key match {
-    // look up configuration "play.redis.expiration.key" or "play.redis.expiration.partOfTheKey"
+    // look up configuration "play.cache.redis.expiration.key" or "play.cache.redis.expiration.partOfTheKey"
     case hit if expiration.hasPath( hit ) => expiration.getDuration( hit )
     // key is not in configuration, drop its appendix and try it again
     case miss if key.lastIndexOf( '.' ) > -1 => lookUp( miss.substring( 0, miss.lastIndexOf( '.' ) ) )

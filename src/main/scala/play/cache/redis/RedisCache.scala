@@ -25,15 +25,17 @@ class RedisCache @Inject() ( implicit app: Application ) extends CacheAPI {
 
   println("================= created =============")
 
-  protected val log = Logger( "play.redis" )
+  implicit def asFiniteDuration(d: java.time.Duration) = scala.concurrent.duration.Duration.fromNanos(d.toNanos)
 
-  protected def config = com.typesafe.config.ConfigFactory.load( ).getConfig( "play.redis" )
+  protected val log = Logger( "play.cache.redis" )
+
+  protected def config = com.typesafe.config.ConfigFactory.load( ).getConfig( "play.cache.redis" )
 
   /** default invocation context of all cache commands */
   protected implicit val context: ExecutionContext = Akka.system.dispatchers.lookup( config.getString( "dispatcher" ) )
 
   /** timeout of cache requests */
-  private implicit val timeout = akka.util.Timeout( config.getInt( "timeout" ), TimeUnit.MILLISECONDS )
+  private implicit val timeout = akka.util.Timeout( config.getDuration( "timeout" ) )
 
   /** communication module to Redis cache */
   private var redis: RedisRef = null

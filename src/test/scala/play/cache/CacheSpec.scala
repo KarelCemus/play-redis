@@ -92,7 +92,7 @@ class CacheSpec extends Specification with RedisCacheSupport {
         // the cache was synchronized a bit later and then it computed the
         // value twice, instead of just one. Adding this wait time it gives
         // a chance to cache to synchronize it
-        Thread.sleep( 100 )
+        Thread.sleep( 300 )
       }
       // verify
       counter.get must beEqualTo( 1 )

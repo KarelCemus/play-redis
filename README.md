@@ -131,12 +131,12 @@ There is already default configuration but it can be overwritten in your `conf/a
 
 | Key                           | Type   | Default                       | Description                         |
 |-------------------------------|-------:|------------------------------:|-------------------------------------|
-| play.redis.host               | String | localhost                     | redis-server address                |
-| play.redis.port               | Int    | 6379                          | redis-server port                   |
-| play.redis.database           | Int    | 3                             | redis-server database, 1-15         |
-| play.redis.timeout            | Int    | 1000                          | connection timeout in milliseconds  |
-| play.redis.dispatcher         | String | akka.actor.default-dispatcher | Akka actor                          |
-| play.redis.expiration.default | Int    | 3600                          | default value expiration in seconds |
+| play.cache.redis.host               | String | localhost                     | redis-server address                |
+| play.cache.redis.port               | Int    | 6379                          | redis-server port                   |
+| play.cache.redis.database           | Int    | 3                             | redis-server database, 1-15         |
+| play.cache.redis.timeout            | Int    | 1000                          | connection timeout in milliseconds  |
+| play.cache.redis.dispatcher         | String | akka.actor.default-dispatcher | Akka actor                          |
+| play.cache.redis.expiration.default | Int    | 3600                          | default value expiration in seconds |
 
 Furthermore, there are more advanced ways how to set value expiration.
 
@@ -144,14 +144,14 @@ Furthermore, there are more advanced ways how to set value expiration.
 1. Pass it as Some( Int ) into `play.cache.AsyncCache#set` or `play.cache.AsyncCache#setIfNotExists` or `play.cache.AsyncCache#getOrElse`
 1. Do not set it directly (set 0 or None respectively) and leave it up to the plugin to compute it. The computation is
 as follows:
-  1. The configuration `play.redis.expiration` is acquired as the root configuration
+  1. The configuration `play.cache.redis.expiration` is acquired as the root configuration
   2. The key is looked up in this configuration.
   3. If the key was not found, the tail since the last `.` is dropped. For example, if the key would be `my.first.key`,
   after the first attempt the `key` would be dropped and the `my.first` would remain.
   4. With the new shorten key the steps 2 and 3 are repeated while either the key is found or there are no more parts to drop.
   5. If the expiration was neither passed nor found, the default value is used.
 
-For example, to default expiration for all keys starting with the prefix `my.first`, you have to set the key `play.redis.expiration.my.first`.
+For example, to default expiration for all keys starting with the prefix `my.first`, you have to set the key `play.cache.redis.expiration.my.first`.
 Then the key `my.first.key` will expire in `my.first` in seconds.
 
 <div align="center">

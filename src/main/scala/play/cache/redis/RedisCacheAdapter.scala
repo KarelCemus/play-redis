@@ -18,7 +18,9 @@ import org.joda.time.DateTime
 @Singleton
 class RedisCacheAdapter @Inject() ( redis: play.cache.api.CacheAPI20 ) extends CacheApi {
 
-  val timeout = ConfigFactory.load( ).getInt( "play.redis.timeout" ).milliseconds
+  implicit def asFiniteDuration(d: java.time.Duration) = scala.concurrent.duration.Duration.fromNanos(d.toNanos)
+
+  val timeout: Duration = ConfigFactory.load( ).getDuration( "play.cache.redis.timeout" )
 
   override def set( key: String, any: Any, expiration: Duration = Duration.Inf ): Unit = any match {
 
