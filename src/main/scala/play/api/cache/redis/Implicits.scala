@@ -1,7 +1,7 @@
 package play.api.cache.redis
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
 import scala.util._
 
@@ -24,7 +24,7 @@ trait Implicits {
   /** rich akka actor providing additional functionality and syntax sugar */
   protected implicit class RedisRef( brando: ActorRef ) {
     /** actor handler */
-    private val actor = new AskableActorRef( brando )
+    private[ redis ] val actor = new AskableActorRef( brando )
 
     /** syntax sugar for querying the storage */
     def ?( request: Request )( implicit timeout: Timeout, context: ExecutionContext ): Future[ Any ] = actor ask request map Success.apply recover {

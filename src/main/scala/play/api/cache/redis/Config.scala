@@ -2,8 +2,8 @@ package play.api.cache.redis
 
 import scala.concurrent.ExecutionContext
 
-import play.api.{Application, Logger}
 import play.api.libs.concurrent.Akka
+import play.api.{Application, Logger}
 
 /**
  * Redis cache configuration providing settings of the cache instance to be used
@@ -23,6 +23,15 @@ trait Config extends Implicits {
 
   /** timeout of cache requests */
   protected implicit val timeout = akka.util.Timeout( config.getDuration( "timeout" ) )
+
+  /** host with redis server */
+  protected def host = config.getString( "host" )
+
+  /** port redis listens on */
+  protected def port = config.getInt( "port" )
+
+  /** redis database to work with */
+  protected def database = config.getInt( "database" )
 
   /** logger instance */
   protected val log = Logger( "play.api.cache.redis" )

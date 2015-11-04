@@ -21,17 +21,30 @@ import brando._
  * <p>Implementation of plain API using redis-server cache and Brando connector implementation.</p>
  */
 @Singleton
-class RedisCache @Inject() ( implicit val application: Application ) extends CacheAsyncApi with Config {
+class RedisCache @Inject() ( implicit val application: Application ) extends CacheAsyncApi with Config with AkkaSerializer {
 
   /** communication module to Redis cache */
-  private var redis: RedisRef = null
+  protected val redis: RedisRef = Akka.system actorOf Brando( host, port, database = Some( database ) )
   
   /** Retrieve a value from the cache.
     *
     * @param key cache storage key
     * @return stored record, Some if exists, otherwise None
     */
-  override def get[ T: ClassTag ]( key: String ): Future[ Option[ T ] ] = ???
+  override def get[ T: ClassTag ]( key: String ) = redis ? Request( "GET", key ) map {
+    case Success( Some( response: ByteString ) ) =>
+      log.trace( s"Hit on key '$key'." )
+      decode[ T ]( key, response.utf8String ).toOption
+    case Success( None ) =>
+      log.debug( s"Miss on key '$key'." )
+      None
+    case Failure( ex ) =>
+      log.error( s"GET command failed for key '$key'.", ex )
+      None
+    case _ =>
+      log.error( s"Unrecognized answer from GET command for key '$key'." )
+      None
+  }
 
   /** Set a value into the cache. Expiration time in seconds (0 second means eternity).
     *
@@ -40,7 +53,45 @@ class RedisCache @Inject() ( implicit val application: Application ) extends Cac
     * @param expiration record duration in seconds
     * @return promise
     */
-  override def set[ T ]( key: String, value: T, expiration: Duration ): Future[ Unit ] = ???
+  override def set[ T ]( key: String, value: T, expiration: Duration ): Future[ Unit ] =  ( expiration, encode(key, value) ) match {
+    case ( Duration.Inf, Success( encoded: String ) ) => setEternally( key, encoded )
+    case ( temporal: Duration, Success( encoded: String ) ) => setTemporally( key, encoded, temporal )
+    case ( _, Failure( ex ) ) => Future( log.error( s"SET command failed. Encoding of the value for the key '$key' failed.", ex ) )
+  }
+
+  /** temporally stores already encoded value into the storage */
+  private def setTemporally( key: String, value: String, expiration: Duration ): Future[ Unit ] =  {
+    redis ? Request( "SETEX", key, expiration.toSeconds.toString, value ) map {
+      case Success( Some( Ok ) ) =>
+        log.debug( s"Set on key '$key' on $expiration seconds." )
+        Success( "OK" )
+      case Success( None ) =>
+        log.warn( s"Set on key '$key' failed." )
+        Failure( new IllegalStateException( "SETEX command failed." ) )
+      case Failure( ex ) =>
+        log.error( s"SETEX command failed for key '$key'.", ex )
+        Failure( new IllegalStateException( "SETEX command failed.", ex ) )
+      case _ =>
+        log.error( s"Unrecognized answer from SETEX command for key '$key'." )
+        Failure( new IllegalStateException( "SETEX command failed." ) )
+    }
+  }
+
+  /** eternally stores already encoded value into the storage */
+  private def setEternally( key: String, value: String ): Future[ Unit ] = redis ? Request( "SET", key, value ) map {
+    case Success( Some( Ok ) ) =>
+      log.debug( s"Set on key '$key' for infinite seconds." )
+      Success( "OK" )
+    case Success( None ) =>
+      log.warn( s"Set on key '$key' failed." )
+      Failure( new IllegalStateException( "SET command failed." ) )
+    case Failure( ex ) =>
+      log.error( s"SET command failed for key '$key'.", ex )
+      Failure( new IllegalStateException( "SET command failed.", ex ) )
+    case _ =>
+      log.error( s"Unrecognized answer from SET command for key '$key'." )
+      Failure( new IllegalStateException( "SET command failed." ) )
+  }
 
   /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration
     * @param key cache storage key
@@ -96,27 +147,16 @@ class RedisCache @Inject() ( implicit val application: Application ) extends Cac
     */
   override def exists( key: String ): Future[ Boolean ] = ???
 
+  def start() = redis ? Request( "PING" ) map { _ =>
+    log.info( s"Redis cache started. Actor is connected to $host:$port?database=$database" )
+  }
 
+  /** stops running brando actor */
+  def stop( ) = {
+    Akka.system.stop( redis.actor.actorRef )
+    log.info( "Redis cache stopped." )
+  }
 
-
-
-
-  //  /** Retrieve a value from the cache. */
-  //  def get( key: String ): Future[ Option[ String ] ] =
-  //    redis ? Request( "GET", key ) map {
-  //      case Success( Some( response: ByteString ) ) =>
-  //        log.trace( s"Hit on key '$key'." )
-  //        Some( response.utf8String )
-  //      case Success( None ) =>
-  //        log.debug( s"Miss on key '$key'." )
-  //        None
-  //      case Failure( ex ) =>
-  //        log.error( s"GET command failed for key '$key'.", ex )
-  //        None
-  //      case _ =>
-  //        log.error( s"Unrecognized answer from GET command for key '$key'." )
-  //        None
-  //    }
   //
   //  /** Determines whether exists the value with given key */
   //  def exists( key: String ): Future[ Boolean ] =
@@ -135,26 +175,6 @@ class RedisCache @Inject() ( implicit val application: Application ) extends Cac
   //        false
   //    }
   //
-  //  /** Set a value into the cache. */
-  //  def set( key: String, value: String, expiration: Duration ): Future[ Try[ String ] ] = {
-  ////    println( "====== " + redis.actor. )
-  //    redis ? Request( "PING" )
-  //    val request = if ( expiration.isFinite() ) Request( "SETEX", key, expiration.toSeconds.toString, value ) else Request( "SET", key, value )
-  //    redis ? request map {
-  //      case Success( Some( Ok ) ) =>
-  //        log.debug( s"Set on key '$key' on $expiration seconds." )
-  //        Success( "OK" )
-  //      case Success( None ) =>
-  //        log.warn( s"Set on key '$key' failed." )
-  //        Failure( new IllegalStateException( "SETEX command failed." ) )
-  //      case Failure( ex ) =>
-  //        log.error( s"SETEX command failed for key '$key'.", ex )
-  //        Failure( new IllegalStateException( "SETEX command failed.", ex ) )
-  //      case _ =>
-  //        log.error( s"Unrecognized answer from SETEX command for key '$key'." )
-  //        Failure( new IllegalStateException( "SETEX command failed." ) )
-  //    }
-  //  }
   //
   //  /** Remove all values from the cache */
   //  def remove( keys: String* ): Future[ Try[ String ] ] =
@@ -191,24 +211,6 @@ class RedisCache @Inject() ( implicit val application: Application ) extends Cac
   //    }
   //  }
   //
-  //  def start( ) = {
-  //    println("------------------ redis started ------------------------")
-  //    val host = config.getString( "host" )
-  //    val port = config.getInt( "port" )
-  //    val database = config.getInt( "database" )
-  //    // create new brando actor
-  //    val r = Redis( host, port, database = database )
-  //    redis = Akka.system.actorOf( r )
-  //    redis ? Request( "PING" )
-  //    log.info( s"Started Redis cache actor. Actor is connected to $host:$port?database=$database" )
-  //  }
-  //
-  //  def stop( ) = {
-  //    println("-------------- stop ------------")
-  //    // stop running brando actor
-  //    if ( redis != null ) Akka.system.stop( redis.actor.actorRef )
-  //    log.info( "Stopped Redis cache actor." )
-  //  }
   //
   //  def expire( key: String, expiration: Duration ) = {
   //    redis ? Request( "EXPIRE", key, expiration.toSeconds.toString ) map {

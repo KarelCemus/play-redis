@@ -168,19 +168,16 @@ class RedisCacheSpec extends Specification with Redis {
 
     "support a date" in {
       Cache.set( "type.date", new Date( 123 ) ).sync
-      Cache.get[ Date ]( "type.date" ) must beSome[ Date ]
       Cache.get[ Date ]( "type.date" ) must beSome( new Date( 123 ) )
     }
 
     "support a datetime" in {
       Cache.set( "type.datetime", new DateTime( 123456 ) ).sync
-      Cache.get[ DateTime ]( "type.datetime" ) must beSome[ DateTime ]
       Cache.get[ DateTime ]( "type.datetime" ) must beSome( new DateTime( 123456 ) )
     }
 
     "support a custom classes" in {
       Cache.set( "type.object", SimpleObject( "B", 3 ) ).sync
-      Cache.get[ SimpleObject ]( "type.object" ) must beSome[ SimpleObject ]
       Cache.get[ SimpleObject ]( "type.object" ) must beSome( SimpleObject( "B", 3 ) )
     }
 
@@ -229,6 +226,6 @@ class RedisCacheSpec extends Specification with Redis {
       }
     }
   }
-
-  case class SimpleObject( key: String, value: Int )
 }
+
+case class SimpleObject( key: String, value: Int )
