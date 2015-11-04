@@ -1,8 +1,10 @@
 package play.cache.redis
 
 import java.util.concurrent.TimeUnit
+import javax.inject._
 
 import scala.concurrent._
+import scala.concurrent.duration.Duration
 import scala.language.implicitConversions
 import scala.util._
 
@@ -18,7 +20,10 @@ import brando._
 /**
  * <p>Implementation of plain API using redis-server cache and Brando connector implementation.</p>
  */
-class RedisCache( implicit app: Application ) extends CacheAPI {
+@Singleton
+class RedisCache @Inject() ( implicit app: Application ) extends CacheAPI {
+
+  println("================= created =============")
 
   protected val log = Logger( "play.redis" )
 
@@ -68,8 +73,11 @@ class RedisCache( implicit app: Application ) extends CacheAPI {
     }
 
   /** Set a value into the cache. */
-  def set( key: String, value: String, expiration: Int ): Future[ Try[ String ] ] =
-    redis ? Request( "SETEX", key, expiration.toString, value ) map {
+  def set( key: String, value: String, expiration: Duration ): Future[ Try[ String ] ] = {
+//    println( "====== " + redis.actor. )
+    redis ? Request( "PING" )
+    val request = if ( expiration.isFinite() ) Request( "SETEX", key, expiration.toSeconds.toString, value ) else Request( "SET", key, value )
+    redis ? request map {
       case Success( Some( Ok ) ) =>
         log.debug( s"Set on key '$key' on $expiration seconds." )
         Success( "OK" )
@@ -83,6 +91,7 @@ class RedisCache( implicit app: Application ) extends CacheAPI {
         log.error( s"Unrecognized answer from SETEX command for key '$key'." )
         Failure( new IllegalStateException( "SETEX command failed." ) )
     }
+  }
 
   /** Remove all values from the cache */
   def remove( keys: String* ): Future[ Try[ String ] ] =
@@ -102,7 +111,7 @@ class RedisCache( implicit app: Application ) extends CacheAPI {
     }
 
   /** Remove all keys in cache */
-  def invalidate( ): Future[ Try[ String ] ] =
+  def invalidate( ): Future[ Try[ String ] ] = {
     redis ? Request( "FLUSHDB" ) map {
       case Success( Some( Ok ) ) => // cache was invalidated
         log.info( "Invalidated." )
@@ -117,24 +126,29 @@ class RedisCache( implicit app: Application ) extends CacheAPI {
         log.error( s"Unrecognized answer from invalidation command." )
         Failure( new IllegalStateException( "Invalidated failed." ) )
     }
+  }
 
   def start( ) = {
+    println("------------------ redis started ------------------------")
     val host = config.getString( "host" )
     val port = config.getInt( "port" )
     val database = config.getInt( "database" )
     // create new brando actor
-    redis = Akka.system.actorOf( Brando( host, port, Some( database ) ) )
+    val r = Redis( host, port, database = database )
+    redis = Akka.system.actorOf( r )
+    redis ? Request( "PING" )
     log.info( s"Started Redis cache actor. Actor is connected to $host:$port?database=$database" )
   }
 
   def stop( ) = {
+    println("-------------- stop ------------")
     // stop running brando actor
     if ( redis != null ) Akka.system.stop( redis.actor.actorRef )
     log.info( "Stopped Redis cache actor." )
   }
 
-  def expire( key: String, expiration: Int ) = {
-    redis ? Request( "EXPIRE", key, expiration.toString ) map {
+  def expire( key: String, expiration: Duration ) = {
+    redis ? Request( "EXPIRE", key, expiration.toSeconds.toString ) map {
       case Success( Some( 1 ) ) => // expiration was set
         log.debug( s"Expiration set on key '$key'." )
         Success( "OK" )
@@ -160,4 +174,5 @@ class RedisCache( implicit app: Application ) extends CacheAPI {
       }
   }
 
+  start()
 }

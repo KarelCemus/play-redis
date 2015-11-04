@@ -1,6 +1,12 @@
 package play.cache.redis
 
+import javax.inject._
+
+import scala.concurrent.duration.Duration
+import scala.concurrent.duration.Duration._
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util._
 
@@ -14,7 +20,8 @@ import com.typesafe.config.ConfigFactory
 /**
  * <p>Implementation of ExtendedCacheAPI using Akka serializers and Redis connector.</p>
  */
-class RedisCache20( protected val cacheAPI: CacheAPI )( implicit app: Application ) extends CacheAPI20 {
+@Singleton
+class RedisCache20 @Inject() ( protected val cacheAPI: CacheAPI )( implicit app: Application ) extends CacheAPI20 {
 
   protected val log = Logger( "play.redis" )
 
@@ -22,8 +29,10 @@ class RedisCache20( protected val cacheAPI: CacheAPI )( implicit app: Applicatio
 
   protected val expiration = config.getConfig( "expiration" )
 
+  implicit def asFiniteDuration(d: java.time.Duration) = scala.concurrent.duration.Duration.fromNanos(d.toNanos)
+
   /** by default, values expires in .. */
-  protected val DefaultExpiration: Int = expiration.getInt( "default" )
+  protected val DefaultExpiration: Duration = expiration.getDuration( "default" )
 
   /** default invocation context of all cache commands */
   protected implicit var context: ExecutionContext = Akka.system.dispatchers.lookup( config.getString( "dispatcher" ) )
@@ -89,7 +98,7 @@ class RedisCache20( protected val cacheAPI: CacheAPI )( implicit app: Applicatio
     cacheAPI.get( key ).map( _.flatMap( decode[ T ]( key, _ ).toOption ) )
 
   /** Retrieve a value from the cache, or set it from a default function. */
-  override def getOrElse[ T ]( key: String, expiration: Option[ Int ] = None )( orElse: => Future[ T ] )( implicit classTag: ClassTag[ T ] ): Future[ T ] =
+  override def getOrElse[ T ]( key: String, expiration: Option[ Duration ] = None )( orElse: => Future[ T ] )( implicit classTag: ClassTag[ T ] ): Future[ T ] =
     get( key ) flatMap {
       // cache hit, return the unwrapped value
       case Some( value ) => Future.successful( value )
@@ -98,7 +107,7 @@ class RedisCache20( protected val cacheAPI: CacheAPI )( implicit app: Applicatio
     }
 
   /** Set a value into the cache.  */
-  override def set[ T ]( key: String, value: T, expiration: Option[ Int ] = None )( implicit classTag: ClassTag[ T ] ): Future[ Try[ String ] ] =
+  override def set[ T ]( key: String, value: T, expiration: Option[ Duration ] = None )( implicit classTag: ClassTag[ T ] ): Future[ Try[ String ] ] =
     if ( value == null ) remove( key )
     else encode( key, value ) match {
       case Success( string ) => cacheAPI.set( key, string, expiration.getOrElse( duration( key ) ) )
@@ -106,7 +115,7 @@ class RedisCache20( protected val cacheAPI: CacheAPI )( implicit app: Applicatio
     }
 
   /** Retrieve a value from the cache, or set it from a default function. */
-  override def setIfNotExists[ T ]( key: String, expiration: Option[ Int ] = None )( orElse: => Future[ T ] )( implicit classTag: ClassTag[ T ] ): Future[ Try[ String ] ] =
+  override def setIfNotExists[ T ]( key: String, expiration: Option[ Duration ] = None )( orElse: => Future[ T ] )( implicit classTag: ClassTag[ T ] ): Future[ Try[ String ] ] =
     cacheAPI.exists( key ) flatMap {
       // hit, value exists, do nothing
       case true => Future.successful( Success( key ) )
@@ -122,18 +131,18 @@ class RedisCache20( protected val cacheAPI: CacheAPI )( implicit app: Applicatio
 
 
   /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration */
-  override def expire( key: String, expiration: Int ): Unit = cacheAPI.expire( key, expiration )
+  override def expire( key: String, expiration: Duration ): Unit = cacheAPI.expire( key, expiration )
 
-  protected def duration( key: String ): Int = {
+  protected def duration( key: String ): Duration = {
     // drop prefix from 'prefix:key' and look up the key in the configuration
     lookUp( key.drop( key.lastIndexOf( ':' ) + 1 ) )
   }
 
   /** computes expiration for given key, possibly uses default value */
   @scala.annotation.tailrec
-  private def lookUp( key: String ): Int = key match {
+  private def lookUp( key: String ): Duration = key match {
     // look up configuration "play.redis.expiration.key" or "play.redis.expiration.partOfTheKey"
-    case hit if expiration.hasPath( hit ) => expiration.getInt( hit )
+    case hit if expiration.hasPath( hit ) => expiration.getDuration( hit )
     // key is not in configuration, drop its appendix and try it again
     case miss if key.lastIndexOf( '.' ) > -1 => lookUp( miss.substring( 0, miss.lastIndexOf( '.' ) ) )
     // no specific configuration for this key, use default expiration

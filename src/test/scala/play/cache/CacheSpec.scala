@@ -4,7 +4,15 @@ import java.util.Date
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.util.Success
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import play.api.inject._
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.cache.api.{CachePlugin20, CachePlugin, CacheAPI20, CacheAPI}
+import play.cache.redis._
+import play.api.cache.{CacheApi=>C}
 
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
@@ -13,6 +21,17 @@ import org.specs2.mutable.Specification
  * <p>Test of cache to be sure that keys are differentiated, expires etc.</p>
  */
 class CacheSpec extends Specification with RedisCacheSupport {
+
+  override protected def application = new GuiceApplicationBuilder()
+//    .bindings( bind[ RedisCache ].toSelf )
+    .bindings( bind[ CacheAPI ].to[ RedisCache ] )
+    .bindings( bind[ CacheAPI20 ].to[ RedisCache20 ] )
+    .bindings( bind[ CachePlugin ].to[ RedisCachePlugin ] )
+    .bindings( bind[ CachePlugin20 ].to[ RedisCachePlugin20 ] )
+    .bindings( bind[ C ].to[ RedisCacheAdapter ] )
+    .build( )
+
+  val AsyncCache = application.injector.instanceOf[ CacheAPI20 ]
 
   "Cache" should {
 
@@ -35,7 +54,7 @@ class CacheSpec extends Specification with RedisCacheSupport {
 
     "miss after timeout" in {
       // set
-      invoke inFuture AsyncCache.set( "async-test-4", "value", Some( 1 ) )
+      invoke inFuture AsyncCache.set( "async-test-4", "value", Some( 1.second ) )
       AsyncCache.get[ String ]( "async-test-4" ).isDefined must beTrue
       // wait until it expires
       Thread.sleep( 2000 )

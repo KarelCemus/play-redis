@@ -1,6 +1,7 @@
 package play.cache.api
 
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 import scala.util.Try
 
 /**
@@ -29,7 +30,7 @@ trait CacheAPI {
     * @param expiration record duration in seconds
     * @return operation success
     */
-  def set( key: String, value: String, expiration: Int ): Future[ Try[ String ] ]
+  def set( key: String, value: String, expiration: Duration ): Future[ Try[ String ] ]
 
   /** Remove all values from the cache
     * @param keys cache storage keys
@@ -44,5 +45,5 @@ trait CacheAPI {
   def invalidate( ): Future[ Try[ String ] ]
 
   /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration */
-  def expire( key: String, expiration: Int )
+  def expire( key: String, expiration: Duration )
 }
