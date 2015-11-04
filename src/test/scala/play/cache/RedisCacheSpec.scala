@@ -17,7 +17,7 @@ import org.specs2.mutable.Specification
 /**
  * <p>Test of cache to be sure that keys are differentiated, expires etc.</p>
  */
-class RedisCacheSpec extends Specification with RedisCacheSupport {
+class RedisCacheSpec extends Specification with Redis {
 
   override protected def binding = Seq( bind[ CacheAsyncApi ].to[ RedisCache ] )
 
@@ -230,6 +230,6 @@ class RedisCacheSpec extends Specification with RedisCacheSupport {
       }
     }
   }
-}
 
-case class SimpleObject( key: String, value: Int )
+  case class SimpleObject( key: String, value: Int )
+}

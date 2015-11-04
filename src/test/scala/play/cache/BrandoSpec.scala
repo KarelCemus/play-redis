@@ -1,29 +1,16 @@
 package play.cache
 
-import java.util.concurrent.TimeUnit
-
-import play.api.libs.concurrent.Akka
-
-import akka.actor.ActorRef
-import akka.pattern.AskableActorRef
-import akka.util.Timeout
-import brando._
+import brando.{Redis => _, _}
 import org.specs2.mutable.Specification
 
 /**
  * <p>Test of brando to be sure that it works etc.</p>
  */
-class BrandoSpec extends Specification with RedisCacheSupport {
+class BrandoSpec extends Specification with Redis with RedisInstance {
 
   sequential
 
   "Brando" should {
-
-    /** instance of brando */
-    val redis = Akka.system.actorOf( Redis( "localhost", 6379, database = 1 ) )
-
-    /** timeout of cache requests */
-    implicit val timeout = Timeout( 1000, TimeUnit.MILLISECONDS )
 
     "ping" in {
       redis ? Request( "PING" ) expects Value must beEqualTo( Pong )
@@ -89,7 +76,4 @@ class BrandoSpec extends Specification with RedisCacheSupport {
     def expects( expectation: OptionExpectation ) = value
   }
 
-  implicit class BrandoRequest( brando: ActorRef )( implicit timeout: Timeout ) {
-    def ?( request: Request ) = new AskableActorRef( brando ).ask( request ).sync.asInstanceOf[ Option[ Any ] ]
-  }
 }
