@@ -3,12 +3,10 @@ package play.cache
 import java.util.concurrent.TimeUnit
 
 import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
 
-import play.api.{Application, Play}
 import play.api.libs.concurrent.Akka
-import play.api.test.FakeApplication
 
 import akka.actor.ActorRef
 import akka.pattern.AskableActorRef
@@ -26,7 +24,7 @@ class BrandoSpec extends Specification with RedisCacheSupport {
   "Brando" should {
 
     /** instance of brando */
-    val redis = Akka.system( application ).actorOf( Redis( "localhost", 6379, database = 1 ) )
+    val redis = Akka.system.actorOf( Redis( "localhost", 6379, database = 1 ) )
 
     /** timeout of cache requests */
     implicit val timeout = Timeout( 1000, TimeUnit.MILLISECONDS )
