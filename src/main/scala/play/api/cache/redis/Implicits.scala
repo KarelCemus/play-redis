@@ -2,7 +2,7 @@ package play.api.cache.redis
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.language.implicitConversions
+import scala.language.{higherKinds, implicitConversions}
 import scala.util._
 
 import akka.actor.ActorRef
@@ -46,7 +46,6 @@ trait Implicits {
   }
 
   /** Transforms the promise into desired builder results */
-  implicit class InternalBuilder[ T ]( value: Future[ T ] ) {
-    def buildWith [ Result[ _ ] ]( builder: Builders.ResultBuilder[ Result ] ) = builder.toResult( value )
-  }
+  protected implicit def build[ T, Result[ _ ] ]( value: Future[ T ] )( implicit builder: Builders.ResultBuilder[ Result ] ) =
+    builder.toResult( value )
 }

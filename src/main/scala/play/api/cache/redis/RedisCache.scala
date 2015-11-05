@@ -15,7 +15,7 @@ import brando._
 /**
  * <p>Implementation of plain API using redis-server cache and Brando connector implementation.</p>
  */
-class RedisCache[ Result[ _ ] ]( builder: Builders.ResultBuilder[ Result ] )( implicit val application: Application ) extends InternalCacheApi[ Result ] with Config with AkkaSerializer {
+class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Result ], val application: Application ) extends InternalCacheApi[ Result ] with Config with AkkaSerializer {
 
   /** logger instance */
   protected val log = Logger( "play.api.cache.redis" )
@@ -44,7 +44,7 @@ class RedisCache[ Result[ _ ] ]( builder: Builders.ResultBuilder[ Result ] )( im
     * @return stored record, Some if exists, otherwise None
     */
   override def get[ T: ClassTag ]( key: String ) =
-    internalGet[ T ]( key ) buildWith builder
+    internalGet[ T ]( key )
 
   /** Set a value into the cache. Expiration time in seconds (0 second means eternity).
     * If the value is null the key is removed from the storage.
@@ -55,7 +55,7 @@ class RedisCache[ Result[ _ ] ]( builder: Builders.ResultBuilder[ Result ] )( im
     * @return promise
     */
   override def set[ T ]( key: String, value: T, expiration: Duration ) =
-    internalSet( key, value, expiration ) buildWith builder
+    internalSet( key, value, expiration )
 
   /** Set a value into the cache. Expiration time in seconds (0 second means eternity).
     * If the value is null the key is removed from the storage.
@@ -102,7 +102,7 @@ class RedisCache[ Result[ _ ] ]( builder: Builders.ResultBuilder[ Result ] )( im
       case Success( Some( 0 ) ) => log.debug( s"Expiration set on key '$key' failed. Key does not exist." ) // Nothing was removed
       case Failure( ex ) => log.error( s"EXPIRE command failed for key '$key'.", ex )
       case _ => log.error( s"Unrecognized answer from EXPIRE command for key '$key'." )
-    } buildWith builder
+    }
 
   /** Retrieve a value from the cache. If is missing, set default value with
     * given expiration and return the value.
@@ -113,7 +113,7 @@ class RedisCache[ Result[ _ ] ]( builder: Builders.ResultBuilder[ Result ] )( im
     * @return stored or default record, Some if exists, otherwise None
     */
   override def getOrElse[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => T ) =
-    getOrFuture( key, expiration )( orElse.toFuture ) buildWith builder
+    getOrFuture( key, expiration )( orElse.toFuture )
 
   /** Retrieve a value from the cache. If is missing, set default value with
     * given expiration and return the value.
@@ -135,7 +135,7 @@ class RedisCache[ Result[ _ ] ]( builder: Builders.ResultBuilder[ Result ] )( im
     * @return promise
     */
   override def remove( key: String ) =
-    removeInBatch( key ) buildWith builder
+    removeInBatch( key )
 
   /** Remove all values from the cache
     * @param key1 cache storage key
@@ -144,7 +144,7 @@ class RedisCache[ Result[ _ ] ]( builder: Builders.ResultBuilder[ Result ] )( im
     * @return promise
     */
   override def remove( key1: String, key2: String, keys: String* ) =
-    removeInBatch( key1 +: key2 +: keys: _* ) buildWith builder
+    removeInBatch( key1 +: key2 +: keys: _* )
 
 
   /** Removes all keys in arguments. The other remove methods are for syntax sugar */
@@ -168,7 +168,7 @@ class RedisCache[ Result[ _ ] ]( builder: Builders.ResultBuilder[ Result ] )( im
     case Success( None ) => log.warn( "Invalidation failed." ) // execution failed
     case Failure( ex ) => log.error( s"Invalidation failed with an exception.", ex )
     case _ => log.error( s"Unrecognized answer from invalidation command." )
-  } buildWith builder
+  }
 
   /** Determines whether value exists in cache.
     *
@@ -180,7 +180,7 @@ class RedisCache[ Result[ _ ] ]( builder: Builders.ResultBuilder[ Result ] )( im
     case Success( Some( 0L ) ) => log.trace( s"Key '$key' doesn't exist." ); false
     case Failure( ex ) => log.error( s"EXISTS command failed for key '$key'.", ex ); false
     case _ => log.error( s"Unrecognized answer from EXISTS command for key '$key'." ); false
-  } buildWith builder
+  }
 
   def start( ) = redis ? Request( "PING" ) map { _ =>
     log.info( s"Redis cache started. Actor is connected to $host:$port?database=$database" )

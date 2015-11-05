@@ -17,7 +17,7 @@ class SyncCacheSpec extends Specification with Redis {
 
   private type Cache = InternalCacheApi[ Builders.Identity ]
 
-  private val Cache = new RedisCache( Builders.SynchronousBuilder )( application )
+  private val Cache = new RedisCache()( Builders.SynchronousBuilder, application )
 
   "Cache" should {
 

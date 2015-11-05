@@ -1,6 +1,5 @@
 package play.api.cache.redis
 
-import scala.concurrent.Future
 import scala.language.higherKinds
 
 /**
@@ -11,9 +10,7 @@ import scala.language.higherKinds
 object Builders {
 
   type Identity[ A ] = A
-  type Sync[ A ] = Identity[ A ]
-  type Async[ A ] = Future[ A ]
-  type Builder = ResultBuilder[ _ ]
+  type Future[ A ] = scala.concurrent.Future[ A ]
 
   trait ResultBuilder[ Result[ _ ] ] {
     /** converts future result produces by Redis to the result of desired type */
@@ -21,12 +18,13 @@ object Builders {
   }
 
   /** returns the future itself without any transformation */
-  object AsynchronousBuilder extends ResultBuilder[ Async ] {
-    override def toResult[ T ]( future: Future[ T ] ): Async[ T ] = future
+  object AsynchronousBuilder extends ResultBuilder[ Future ] {
+    override def toResult[ T ]( future: Future[ T ] ): Future[ T ] = future
   }
 
   /** converts the future into the value */
-  object SynchronousBuilder extends ResultBuilder[ Sync ] with Config {
-    override def toResult[ T ]( future: Future[ T ] ): Sync[ T ] = future.sync
+  object SynchronousBuilder extends ResultBuilder[ Identity ] with Config {
+    override def toResult[ T ]( future: Future[ T ] ): Identity[ T ] = future.sync
   }
+
 }
