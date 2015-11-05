@@ -6,8 +6,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
-
-import play.api.cache.CacheAsyncApi
 import play.api.inject._
 
 import org.joda.time.DateTime
@@ -228,5 +226,3 @@ class RedisCacheSpec extends Specification with Redis {
     }
   }
 }
-
-case class SimpleObject( key: String, value: Int )

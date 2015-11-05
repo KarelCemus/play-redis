@@ -111,3 +111,6 @@ object EmptyRedis extends RedisInstance {
     }
   }
 }
+
+/** Plain test object to be cached */
+case class SimpleObject( key: String, value: Int )

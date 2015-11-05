@@ -9,7 +9,6 @@ import scala.reflect.ClassTag
 import scala.util._
 
 import play.api._
-import play.api.cache.CacheAsyncApi
 import play.api.libs.concurrent.Akka
 
 import akka.util.ByteString

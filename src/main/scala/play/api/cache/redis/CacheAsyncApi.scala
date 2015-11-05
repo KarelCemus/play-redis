@@ -1,4 +1,4 @@
-package play.api.cache
+package play.api.cache.redis
 
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
