@@ -7,6 +7,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
+import play.api.inject.ApplicationLifecycle
+
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
 
@@ -17,7 +19,7 @@ class SyncCacheSpec extends Specification with Redis {
 
   private type Cache = InternalCacheApi[ Builders.Identity ]
 
-  private val Cache = new RedisCache()( Builders.SynchronousBuilder, application )
+  private val Cache = new RedisCache( )( Builders.SynchronousBuilder, application, application.injector.instanceOf[ ApplicationLifecycle ] )
 
   "Cache" should {
 

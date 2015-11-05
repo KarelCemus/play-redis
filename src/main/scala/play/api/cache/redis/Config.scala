@@ -1,5 +1,7 @@
 package play.api.cache.redis
 
+import scala.collection.JavaConverters._
+
 /**
  * Redis cache configuration providing settings of the cache instance to be used
  *
@@ -27,4 +29,7 @@ trait Config extends Implicits {
 
   /** redis database to work with */
   protected def database = config.getInt( "database" )
+
+  /** implementations to enable */
+  protected def implementations = config.getStringList( "enabled" ).asScala.toList
 }

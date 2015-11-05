@@ -1,13 +1,31 @@
 package play.api.cache.redis
 
-import javax.inject.Inject
+import javax.inject._
 
-import play.api.Application
+import play.api._
+import play.api.inject.{Binding, ApplicationLifecycle, Module}
 
 /** Synchronous and blocking implementation of the connection to the redis database */
 trait CacheApi extends InternalCacheApi[ Builders.Identity ]
-class SyncRedis @Inject() ( implicit application: Application ) extends RedisCache()( Builders.SynchronousBuilder, application ) with CacheApi
+
+@Singleton
+class SyncRedis @Inject( )( implicit application: Application, lifecycle: ApplicationLifecycle ) extends RedisCache( )( Builders.SynchronousBuilder, application, lifecycle ) with CacheApi
 
 /** Asynchronous non-blocking implementation of the connection to the redis database */
 trait CacheAsyncApi extends InternalCacheApi[ Builders.Future ]
-class AsyncRedis @Inject() ( implicit application: Application ) extends RedisCache()( Builders.AsynchronousBuilder, application ) with CacheAsyncApi
+
+@Singleton
+class AsyncRedis @Inject( )( implicit application: Application, lifecycle: ApplicationLifecycle ) extends RedisCache( )( Builders.AsynchronousBuilder, application, lifecycle ) with CacheAsyncApi
+
+@Singleton
+class RedisCacheModule extends Module with Config {
+
+  def bindings( environment: Environment, configuration: Configuration ) = {
+    // enable sync module when required
+    val sync: Option[ Binding[ _ ] ] = if ( implementations.contains( "sync" ) ) Some( bind[ CacheApi ].to[ SyncRedis ] ) else None
+    // enable async module when required
+    val async: Option[ Binding[ _ ] ] = if ( implementations.contains( "async" ) ) Some( bind[ CacheAsyncApi ].to[ AsyncRedis ] ) else None
+    // return bindings
+    Seq( sync, async ).flatten
+  }
+}

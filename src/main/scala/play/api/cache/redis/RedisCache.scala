@@ -7,6 +7,7 @@ import scala.reflect.ClassTag
 import scala.util._
 
 import play.api._
+import play.api.inject.ApplicationLifecycle
 import play.api.libs.concurrent.Akka
 
 import akka.util.ByteString
@@ -15,7 +16,7 @@ import brando._
 /**
  * <p>Implementation of plain API using redis-server cache and Brando connector implementation.</p>
  */
-class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Result ], val application: Application ) extends InternalCacheApi[ Result ] with Config with AkkaSerializer {
+class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Result ], val application: Application, lifecycle: ApplicationLifecycle ) extends InternalCacheApi[ Result ] with Config with AkkaSerializer {
 
   /** logger instance */
   protected val log = Logger( "play.api.cache.redis" )
@@ -187,8 +188,14 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
   }
 
   /** stops running brando actor */
-  def stop( ) = {
+  def stop( ) = Future {
     Akka.system.stop( redis.actor.actorRef )
     log.info( "Redis cache stopped." )
   }
+
+  // start up the connector
+  start()
+
+  // bind shutdown
+  lifecycle.addStopHook( stop _ )
 }
