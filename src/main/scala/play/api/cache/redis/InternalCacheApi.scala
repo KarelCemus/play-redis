@@ -2,6 +2,7 @@ package play.api.cache.redis
 
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
+import scala.language.higherKinds
 import scala.reflect.ClassTag
 
 /**
