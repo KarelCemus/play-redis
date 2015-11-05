@@ -55,7 +55,7 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
     * @param expiration record duration in seconds
     * @return promise
     */
-  override def set[ T ]( key: String, value: T, expiration: Duration ) =
+  override def set( key: String, value: Any, expiration: Duration ) =
     internalSet( key, value, expiration )
 
   /** Set a value into the cache. Expiration time in seconds (0 second means eternity).
@@ -66,7 +66,7 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
     * @param expiration record duration in seconds
     * @return promise
     */
-  private def internalSet[ T ]( key: String, value: T, expiration: Duration ) =
+  private def internalSet( key: String, value: Any, expiration: Duration ) =
     if ( value == null ) removeInBatch( key )
     else (expiration, encode( key, value )) match {
       case (Duration.Inf, Success( encoded: String )) => setEternally( key, encoded )

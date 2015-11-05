@@ -54,7 +54,7 @@ trait InternalCacheApi[ Result[ _ ] ] {
     * @param expiration record duration in seconds
     * @return promise
     */
-  def set[ T ]( key: String, value: T, expiration: Duration = Duration.Inf ): Result[ Unit ]
+  def set( key: String, value: Any, expiration: Duration = Duration.Inf ): Result[ Unit ]
 
   /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration
     * @param key cache storage key

@@ -26,7 +26,7 @@ trait AkkaSerializer {
   private val serializer: Serialization = SerializationExtension( Akka.system )
 
   /** encode given object into string */
-  private def encode[ T ]( value: T ): Try[ String ] = value match {
+  private def encode( value: Any ): Try[ String ] = value match {
     // null is special case
     case null => throw new UnsupportedOperationException( "Null is not supported by the redis cache connector." )
     // AnyVal is not supported by default, have to be implemented manually; also basic types are processed as primitives
@@ -40,7 +40,7 @@ trait AkkaSerializer {
   }
 
   /** encode given value and handle error if occurred */
-  protected def encode[ T ]( key: String, value: T ): Try[ String ] = encode( value ) recoverWith {
+  protected def encode( key: String, value: Any ): Try[ String ] = encode( value ) recoverWith {
     case ex => log.error( s"Serialization for key '$key' failed. Cause: '$ex'." ); Failure( ex )
   }
 
