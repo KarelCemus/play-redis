@@ -33,7 +33,6 @@ trait Synchronization {
   protected implicit class Synchronizer[ T ]( future: Future[ T ] ) {
     def sync = Await.result( future, 1.second )
   }
-
 }
 
 trait RedisAsker extends Synchronization {

@@ -93,16 +93,7 @@ class RedisCacheSpec extends Specification with Redis {
     "perform future and store result" in {
       val counter = new AtomicInteger( 0 )
       // perform test
-      for ( index <- 1 to 5 ) {
-        Cache.getOrFutureCounting( "async-test-8" )( counter ).sync mustEqual "value"
-
-        //        TODO
-        //        // BUGFIX solution to synchronization issue. When this wasn't here,
-        //        // the cache was synchronized a bit later and then it computed the
-        //        // value twice, instead of just one. Adding this wait time it gives
-        //        // a chance to cache to synchronize it
-        //        Thread.sleep( 300 )
-      }
+      for ( index <- 1 to 5 ) Cache.getOrFutureCounting( "async-test-8" )( counter ).sync mustEqual "value"
       // verify
       counter.get must beEqualTo( 1 )
     }
