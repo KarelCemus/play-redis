@@ -1,6 +1,10 @@
-# Redis Cache module for Play framework
+<h1 align="center">Redis Cache module for Play framework</h1>
 
-**Note: This version supports Play framework 2.4.x. For previous versions see older releases.**
+<p align="center"><strong>Note: This version supports Play framework 2.4.x. For previous versions see older releases.</strong></p>
+
+<p align="center">
+  <a href='http://jenkins.karelcemus.cz/view/Play%20frameworks/job/play-redis/'><img src='http://jenkins.karelcemus.cz/buildStatus/icon?job=play-redis'></a>
+</p>
 
 By default, [Play framework 2](http://playframework.com/) is delivered with EHCache module implementing
 [CacheApi](https://www.playframework.com/documentation/2.4.x/api/scala/index.html#play.api.cache.CacheApi).
@@ -11,7 +15,7 @@ All these things very slow down development.
 
 The goal of this module is to enable the **redis-server** key/value cache storage to be smoothly used within the
 Play framework 2. Furthermore, besides the backward compatibility with the [CacheApi](https://www.playframework.com/documentation/2.4.x/api/scala/index.html#play.api.cache.CacheApi),
-it introduces more evolved API called [play.api.cache.redis.CacheApi](https://github.com/KarelCemus/play-redis/blob/master/src/main/scala/play/api/cache/redis/CacheApi.scala).
+it introduces more evolved API called [play.api.cache.redis.CacheApi](https://github.com/KarelCemus/play-redis/blob/master/src/main/scala/play/api/cache/redis/InternalCacheApi.scala).
 As the cache implementation uses Akka actor system, it is **completely non-blocking and asynchronous**. Furthermore,
 besides the basic methods such as `get`, `set` and `remove` it provides more convenient methods such as `expire`,
 `exists` and `invalidate`.
@@ -21,9 +25,9 @@ This library delivers a single module with two implementations of the API:
  1. play.api.cache.redis.CacheApi
  2. play.api.cache.redis.CacheAsyncApi
 
-First, the CacheApi is extended play.api.cache.CacheApi and it implements the connection in the *blocking* manner.
-This implementation is active by default. Second, the CacheAsyncApi enables *non-blocking* connection providing
-results through `scala.concurrent.Future`. This implementation must be enabled *manually*.
+First, the CacheApi is extended play.api.cache.CacheApi and it implements the connection in the **blocking** manner.
+This implementation is active by default. Second, the CacheAsyncApi enables **non-blocking** connection providing
+results through `scala.concurrent.Future`. This implementation must be enabled **manually**.
 
 
 ## How to add the module into the project
@@ -40,8 +44,8 @@ libraryDependencies ++= Seq(
 )
 ```
 
-Now your cache is enabled. The Redis module is *enabled by default*, it also *enables synchronous* implementation
-and *disables* default Play EHCache. All these can be changed through the configuration file.
+Now your cache is enabled. The Redis module is **enabled by default**, it also **enables synchronous** implementation
+and **disables** default Play EHCache. All these can be changed through the configuration file.
 
 
 ## How to use this module
@@ -50,52 +54,56 @@ When you have the library added to your project, you can safely inject the `play
 for the synchronous cache. If you want the asynchronous implementation, then inject `play.api.cache.redis.CacheAsyncApi`.
 There might be some limitations with data types but it should not be anything major. (Note: it uses Akka serialization.
 Supported data types are primitives, objects serializable through the java serialization and collections.)
-If you encounter any issue, *please feel free to report it*.
+If you encounter any issue, **please feel free to report it**.
 
 **Example:**
 
 ```scala
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
 import play.api.cache.redis.CacheApi
 
 class MyController @Inject() ( cache: CacheApi ) {
 
   cache.set( "key", "value" )
-  cache.get[ String ]( "key" ) // returns Option[ T ] where T stands for String in this example
+  // returns Option[ T ] where T stands for String in this example
+  cache.get[ String ]( "key" )
   cache.remove( "key" )
     
   cache.set( "object", MyCaseClass() )
-  cache.get[ MyCaseClass ]( "object" ) // returns Option[ T ] where T stands for MyCaseClass
-  
+  // returns Option[ T ] where T stands for MyCaseClass
+  cache.get[ MyCaseClass ]( "object" )
   
   // returns Future[ Try[ String ] ] where the value string
   // should be Success( "OK" ) or Failure( ex )
-  Cache.set( "key", 1.23 )
+  cache.set( "key", 1.23 )
     
   // returns Option[ Double ]
-  Cache.get[ Double ]( "key" )
+  cache.get[ Double ]( "key" )
   // returns Option[ MyCaseClass ]
-  Cache.get[ MyCaseClass ]( "object" )
+  cache.get[ MyCaseClass ]( "object" )
     
   // returns T where T is Double. If the value is not in the cache
   // the computed result is saved
-  Cache.getOrElse( "key", 1.24 )
+  cache.getOrElse( "key" )( 1.24 )
   
   // same as getOrElse but works for Futures. It returns Future[ T ]
-  Cache.getOrFuture( "key", Future( 1.24 ) )
+  cache.getOrFuture( "key" )( Future( 1.24 ) )
     
   // returns Unit and removes a key/keys from the storage
-  Cache.remove( "key" )
-  Cache.remove( "key1", "key2" )
-  Cache.remove( "key1", "key2", "key3" )
+  cache.remove( "key" )
+  cache.remove( "key1", "key2" )
+  cache.remove( "key1", "key2", "key3" )
     
   // invalidates all keys in the redis server! Beware using it
-  Cache.invalidate()
+  cache.invalidate()
   
   // refreshes expiration of the key if present
-  Cache.expire( "key", 1.second )
+  cache.expire( "key", 1.second )
   
   // returns true if the key is in the storage, false otherwise
-  Cache.exists( "key" )
+  cache.exists( "key" )
 }
 ```
 
@@ -111,15 +119,15 @@ class MyController @Inject() ( cache: CacheApi ) {
 
 There is already default configuration but it can be overwritten in your `conf/application.conf` file.
 
-| Key                                 | Type     | Default                       | Description                         |
-|-------------------------------------|---------:|------------------------------:|-------------------------------------|
-| play.cache.redis.host               | String   | localhost                     | redis-server address                |
-| play.cache.redis.port               | Int      | 6379                          | redis-server port                   |
-| play.cache.redis.database           | Int      | 3                             | redis-server database, 1-15         |
-| play.cache.redis.timeout            | Int      | 1s                            | connection timeout (duration)       |
-| play.cache.redis.wait               | Int      | 1s                            | synchronization timeout (duration)  |
-| play.cache.redis.dispatcher         | String   | akka.actor.default-dispatcher | Akka actor                          |
-| play.cache.redis.enabled            | String[] | [ "sync" ]                    | Enabled implementations of the api. Possible values are "sync" and "async" |
+| Key                                 | Type     | Default                         | Description                         |
+|-------------------------------------|---------:|--------------------------------:|-------------------------------------|
+| play.cache.redis.host               | String   | `localhost`                     | redis-server address                |
+| play.cache.redis.port               | Int      | `6379`                          | redis-server port                   |
+| play.cache.redis.database           | Int      | `1`                             | redis-server database, 1-15         |
+| play.cache.redis.timeout            | Duration | `1s`                            | connection timeout                  |
+| play.cache.redis.wait               | Duration | `1s`                            | synchronization timeout             |
+| play.cache.redis.dispatcher         | String   | `akka.actor.default-dispatcher` | Akka actor                          |
+| play.cache.redis.enabled            | String[] | `[ "sync" ]`                    | Enabled implementations of the api. Possible values are `sync` and `async` |
 
 
 
@@ -134,4 +142,4 @@ You do not have to take care of it but it is good to be aware of it, because it 
 play.modules.disabled += "play.api.cache.EhCacheModule"
 ```
 
-The library enables only synchronous implementation. The asynchronous version must be enabled manullay in the configuration file.
+The library enables only synchronous implementation. The asynchronous version must be enabled manually in the configuration file.

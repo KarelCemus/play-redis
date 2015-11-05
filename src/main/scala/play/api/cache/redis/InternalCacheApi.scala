@@ -10,6 +10,8 @@ import scala.reflect.ClassTag
  * operations and in addition it declares couple more useful operations handful
  * with cache storage. Furthermore, due to its parametrization it allows to decide
  * whether it produces blocking results or non-blocking promises.</p>
+ *
+ * @author Karel Cemus
  */
 trait InternalCacheApi[ Result[ _ ] ] {
 
