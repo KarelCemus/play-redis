@@ -1,7 +1,7 @@
 package play.api.cache.redis
 
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.language.implicitConversions
 import scala.util._
 
@@ -35,5 +35,18 @@ trait Implicits {
   /** enriches any ref by toFuture converting a value to Future.successful */
   protected implicit class RichFuture[ T ]( any: T ) {
     def toFuture( implicit context: ExecutionContext ) = Future( any )
+  }
+
+  /** duration to wait before redis answers */
+  protected def synchronizationTimeout: Duration
+
+  /** waits for future responses and returns them synchronously */
+  protected implicit class Synchronizer[ T ]( future: Future[ T ] ) {
+    def sync = Await.result( future, synchronizationTimeout )
+  }
+
+  /** Transforms the promise into desired builder results */
+  implicit class InternalBuilder[ T ]( value: Future[ T ] ) {
+    def buildWith [ Result[ _ ] ]( builder: Builders.ResultBuilder[ Result ] ) = builder.toResult( value )
   }
 }

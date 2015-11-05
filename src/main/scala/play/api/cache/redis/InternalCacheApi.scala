@@ -5,18 +5,19 @@ import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 
 /**
- * <p>Non-blocking cache API, inspired by basic Play play.api.cache.CacheApi. It implements all its
- * operations in non-blocking manner and in addition it declares couple more useful operations handful
- * with cache storage.</p>
+ * <p>Cache API inspired by basic Play play.api.cache.CacheApi. It implements all its
+ * operations and in addition it declares couple more useful operations handful
+ * with cache storage. Furthermore, due to its parametrization it allows to decide
+ * whether it produces blocking results or non-blocking promises.</p>
  */
-trait CacheAsyncApi {
+trait InternalCacheApi[ Result[ _ ] ] {
 
   /** Retrieve a value from the cache.
     *
     * @param key cache storage key
     * @return stored record, Some if exists, otherwise None
     */
-  def get[ T: ClassTag ]( key: String ): Future[ Option[ T ] ]
+  def get[ T: ClassTag ]( key: String ): Result[ Option[ T ] ]
 
   /** Retrieve a value from the cache. If is missing, set default value with
     * given expiration and return the value.
@@ -26,7 +27,7 @@ trait CacheAsyncApi {
     * @param orElse The default function to invoke if the value was not found in cache.
     * @return stored or default record, Some if exists, otherwise None
     */
-  def getOrElse[ T: ClassTag ]( key: String, expiration: Duration = Duration.Inf )( orElse: => T ): Future[ T ]
+  def getOrElse[ T: ClassTag ]( key: String, expiration: Duration = Duration.Inf )( orElse: => T ): Result[ T ]
 
   /** Retrieve a value from the cache. If is missing, set default value with
     * given expiration and return the value.
@@ -43,7 +44,7 @@ trait CacheAsyncApi {
     * @param key cache storage key
     * @return record existence, true if exists, otherwise false
     */
-  def exists( key: String ): Future[ Boolean ]
+  def exists( key: String ): Result[ Boolean ]
 
   /** Set a value into the cache. Expiration time in seconds (0 second means eternity).
     *
@@ -52,20 +53,20 @@ trait CacheAsyncApi {
     * @param expiration record duration in seconds
     * @return promise
     */
-  def set[ T ]( key: String, value: T, expiration: Duration = Duration.Inf ): Future[ Unit ]
+  def set[ T ]( key: String, value: T, expiration: Duration = Duration.Inf ): Result[ Unit ]
 
   /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration
     * @param key cache storage key
     * @param expiration new expiration in seconds
     * @return promise
     */
-  def expire( key: String, expiration: Duration ): Future[ Unit ]
+  def expire( key: String, expiration: Duration ): Result[ Unit ]
 
   /** Remove a value under the given key from the cache
     * @param key cache storage key
     * @return promise
     */
-  def remove( key: String ): Future[ Unit ]
+  def remove( key: String ): Result[ Unit ]
 
   /** Remove all values from the cache
     * @param key1 cache storage key
@@ -73,11 +74,11 @@ trait CacheAsyncApi {
     * @param keys cache storage keys
     * @return promise
     */
-  def remove( key1: String, key2: String, keys: String* ): Future[ Unit ]
+  def remove( key1: String, key2: String, keys: String* ): Result[ Unit ]
 
   /** Remove all keys in cache
     *
     * @return promise
     */
-  def invalidate( ): Future[ Unit ]
+  def invalidate( ): Result[ Unit ]
 }

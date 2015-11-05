@@ -1,10 +1,8 @@
 package play.api.cache.redis
 
-import javax.inject._
-
 import scala.concurrent._
 import scala.concurrent.duration.Duration
-import scala.language.implicitConversions
+import scala.language.{higherKinds, implicitConversions}
 import scala.reflect.ClassTag
 import scala.util._
 
@@ -17,8 +15,13 @@ import brando._
 /**
  * <p>Implementation of plain API using redis-server cache and Brando connector implementation.</p>
  */
-@Singleton
-class RedisCache @Inject( )( implicit val application: Application ) extends CacheAsyncApi with Config with AkkaSerializer {
+class RedisCache[ Result[ _ ] ]( builder: Builders.ResultBuilder[ Result ] )( implicit val application: Application ) extends InternalCacheApi[ Result ] with Config with AkkaSerializer {
+
+  /** logger instance */
+  protected val log = Logger( "play.api.cache.redis" )
+
+  /** default invocation context of all cache commands */
+  protected implicit val context: ExecutionContext = Akka.system.dispatchers.lookup( invocationContext )
 
   /** communication module to Redis cache */
   protected val redis: RedisRef = Akka.system actorOf Brando( host, port, database = Some( database ) )
@@ -28,20 +31,20 @@ class RedisCache @Inject( )( implicit val application: Application ) extends Cac
     * @param key cache storage key
     * @return stored record, Some if exists, otherwise None
     */
-  override def get[ T: ClassTag ]( key: String ) = redis ? Request( "GET", key ) map {
-    case Success( Some( response: ByteString ) ) =>
-      log.trace( s"Hit on key '$key'." )
-      decode[ T ]( key, response.utf8String ).toOption
-    case Success( None ) =>
-      log.debug( s"Miss on key '$key'." )
-      None
-    case Failure( ex ) =>
-      log.error( s"GET command failed for key '$key'.", ex )
-      None
-    case _ =>
-      log.error( s"Unrecognized answer from GET command for key '$key'." )
-      None
+  private def internalGet[ T: ClassTag ]( key: String ) = redis ? Request( "GET", key ) map {
+    case Success( Some( response: ByteString ) ) => log.trace( s"Hit on key '$key'." ); decode[ T ]( key, response.utf8String ).toOption
+    case Success( None ) => log.debug( s"Miss on key '$key'." ); None
+    case Failure( ex ) => log.error( s"GET command failed for key '$key'.", ex ); None
+    case _ => log.error( s"Unrecognized answer from GET command for key '$key'." ); None
   }
+
+  /** Retrieve a value from the cache.
+    *
+    * @param key cache storage key
+    * @return stored record, Some if exists, otherwise None
+    */
+  override def get[ T: ClassTag ]( key: String ) =
+    internalGet[ T ]( key ) buildWith builder
 
   /** Set a value into the cache. Expiration time in seconds (0 second means eternity).
     * If the value is null the key is removed from the storage.
@@ -51,8 +54,19 @@ class RedisCache @Inject( )( implicit val application: Application ) extends Cac
     * @param expiration record duration in seconds
     * @return promise
     */
-  override def set[ T ]( key: String, value: T, expiration: Duration ): Future[ Unit ] =
-    if ( value == null ) remove( key )
+  override def set[ T ]( key: String, value: T, expiration: Duration ) =
+    internalSet( key, value, expiration ) buildWith builder
+
+  /** Set a value into the cache. Expiration time in seconds (0 second means eternity).
+    * If the value is null the key is removed from the storage.
+    *
+    * @param key cache storage key
+    * @param value value to store
+    * @param expiration record duration in seconds
+    * @return promise
+    */
+  private def internalSet[ T ]( key: String, value: T, expiration: Duration ) =
+    if ( value == null ) removeInBatch( key )
     else (expiration, encode( key, value )) match {
       case (Duration.Inf, Success( encoded: String )) => setEternally( key, encoded )
       case (temporal: Duration, Success( encoded: String )) => setTemporally( key, encoded, temporal )
@@ -82,13 +96,13 @@ class RedisCache @Inject( )( implicit val application: Application ) extends Cac
     * @param expiration new expiration in seconds
     * @return promise
     */
-  override def expire( key: String, expiration: Duration ): Future[ Unit ] =
+  override def expire( key: String, expiration: Duration ) =
     redis ? Request( "EXPIRE", key, expiration.toSeconds.toString ) map {
       case Success( Some( 1 ) ) => log.debug( s"Expiration set on key '$key'." ) // expiration was set
       case Success( Some( 0 ) ) => log.debug( s"Expiration set on key '$key' failed. Key does not exist." ) // Nothing was removed
       case Failure( ex ) => log.error( s"EXPIRE command failed for key '$key'.", ex )
       case _ => log.error( s"Unrecognized answer from EXPIRE command for key '$key'." )
-    }
+    } buildWith builder
 
   /** Retrieve a value from the cache. If is missing, set default value with
     * given expiration and return the value.
@@ -98,8 +112,8 @@ class RedisCache @Inject( )( implicit val application: Application ) extends Cac
     * @param orElse The default function to invoke if the value was not found in cache.
     * @return stored or default record, Some if exists, otherwise None
     */
-  override def getOrElse[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => T ): Future[ T ] =
-    getOrFuture( key, expiration )( orElse.toFuture )
+  override def getOrElse[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => T ) =
+    getOrFuture( key, expiration )( orElse.toFuture ) buildWith builder
 
   /** Retrieve a value from the cache. If is missing, set default value with
     * given expiration and return the value.
@@ -109,19 +123,19 @@ class RedisCache @Inject( )( implicit val application: Application ) extends Cac
     * @param orElse The default function to invoke if the value was not found in cache.
     * @return stored or default record, Some if exists, otherwise None
     */
-  override def getOrFuture[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => Future[ T ] ): Future[ T ] = get[ T ]( key ) flatMap {
+  override def getOrFuture[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => Future[ T ] ): Future[ T ] = internalGet[ T ]( key ) flatMap {
     // cache hit, return the unwrapped value
     case Some( value ) => value.toFuture
     // cache miss, compute the value, store it into cache and return the value
-    case None => orElse flatMap ( value => set( key, value, expiration ).map( _ => value ) )
+    case None => orElse flatMap ( value => internalSet( key, value, expiration ).map( _ => value ) )
   }
 
   /** Remove a value under the given key from the cache
     * @param key cache storage key
     * @return promise
     */
-  override def remove( key: String ): Future[ Unit ] =
-    removeInBatch( key )
+  override def remove( key: String ) =
+    removeInBatch( key ) buildWith builder
 
   /** Remove all values from the cache
     * @param key1 cache storage key
@@ -129,8 +143,8 @@ class RedisCache @Inject( )( implicit val application: Application ) extends Cac
     * @param keys cache storage keys
     * @return promise
     */
-  override def remove( key1: String, key2: String, keys: String* ): Future[ Unit ] =
-    removeInBatch( key1 +: key2 +: keys: _* )
+  override def remove( key1: String, key2: String, keys: String* ) =
+    removeInBatch( key1 +: key2 +: keys: _* ) buildWith builder
 
 
   /** Removes all keys in arguments. The other remove methods are for syntax sugar */
@@ -149,24 +163,24 @@ class RedisCache @Inject( )( implicit val application: Application ) extends Cac
     *
     * @return promise
     */
-  override def invalidate( ): Future[ Unit ] = redis ? Request( "FLUSHDB" ) map {
+  override def invalidate( ) = redis ? Request( "FLUSHDB" ) map {
     case Success( Some( Ok ) ) => log.info( "Invalidated." ) // cache was invalidated
     case Success( None ) => log.warn( "Invalidation failed." ) // execution failed
     case Failure( ex ) => log.error( s"Invalidation failed with an exception.", ex )
     case _ => log.error( s"Unrecognized answer from invalidation command." )
-  }
+  } buildWith builder
 
   /** Determines whether value exists in cache.
     *
     * @param key cache storage key
     * @return record existence, true if exists, otherwise false
     */
-  override def exists( key: String ): Future[ Boolean ] = redis ? Request( "EXISTS", key ) map {
+  override def exists( key: String ) = redis ? Request( "EXISTS", key ) map {
     case Success( Some( 1L ) ) => log.trace( s"Key '$key' exists." ); true
     case Success( Some( 0L ) ) => log.trace( s"Key '$key' doesn't exist." ); false
     case Failure( ex ) => log.error( s"EXISTS command failed for key '$key'.", ex ); false
     case _ => log.error( s"Unrecognized answer from EXISTS command for key '$key'." ); false
-  }
+  } buildWith builder
 
   def start( ) = redis ? Request( "PING" ) map { _ =>
     log.info( s"Redis cache started. Actor is connected to $host:$port?database=$database" )
