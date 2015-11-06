@@ -21,11 +21,13 @@ class AsyncRedis @Inject( )( implicit application: Application, lifecycle: Appli
 class RedisCacheModule extends Module with Config {
 
   def bindings( environment: Environment, configuration: Configuration ) = {
+    // default binding for Play's CacheApi to SyncCache to replace default EHCache
+    val default = Some( bind[ play.api.cache.CacheApi ].to[ SyncRedis ] )
     // enable sync module when required
     val sync: Option[ Binding[ _ ] ] = if ( implementations.contains( "sync" ) ) Some( bind[ CacheApi ].to[ SyncRedis ] ) else None
     // enable async module when required
     val async: Option[ Binding[ _ ] ] = if ( implementations.contains( "async" ) ) Some( bind[ CacheAsyncApi ].to[ AsyncRedis ] ) else None
     // return bindings
-    Seq( sync, async ).flatten
+    Seq( sync, async, default ).flatten
   }
 }
