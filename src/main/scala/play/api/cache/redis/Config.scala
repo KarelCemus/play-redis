@@ -1,7 +1,5 @@
 package play.api.cache.redis
 
-import scala.collection.JavaConverters._
-
 /**
  * Redis cache configuration providing settings of the cache instance to be used
  *
@@ -9,27 +7,21 @@ import scala.collection.JavaConverters._
  */
 trait Config extends Implicits {
 
-  /** cache configuration root */
-  protected def config = com.typesafe.config.ConfigFactory.load( ).getConfig( "play.cache.redis" )
+  /** configuration of the connection */
+  protected def configuration: Configuration
 
   /** default invocation context of all cache commands */
-  protected val invocationContext = config.getString( "dispatcher" )
+  protected val invocationContext = configuration.invocationContext
 
   /** timeout of cache requests */
-  protected implicit val timeout = akka.util.Timeout( config.getDuration( "timeout" ) )
-
-  /** duration to wait before redis answers */
-  protected def synchronizationTimeout = config.getDuration( "wait" )
+  protected implicit val timeout = akka.util.Timeout( configuration.timeout )
 
   /** host with redis server */
-  protected def host = config.getString( "host" )
+  protected def host = configuration.host
 
   /** port redis listens on */
-  protected def port = config.getInt( "port" )
+  protected def port = configuration.port
 
   /** redis database to work with */
-  protected def database = config.getInt( "database" )
-
-  /** implementations to enable */
-  protected def implementations = config.getStringList( "enabled" ).asScala.toList
+  protected def database = configuration.database
 }

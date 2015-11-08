@@ -9,25 +9,27 @@ import play.api.inject._
 trait CacheApi extends InternalCacheApi[ Builders.Identity ]
 
 @Singleton
-class SyncRedis @Inject( )( implicit application: Application, lifecycle: ApplicationLifecycle ) extends RedisCache( )( Builders.SynchronousBuilder, application, lifecycle ) with CacheApi with play.api.cache.CacheApi
+class SyncRedis @Inject( )( implicit application: Application, lifecycle: ApplicationLifecycle, configuration: Configuration ) extends RedisCache( )( Builders.SynchronousBuilder, application, lifecycle, configuration ) with CacheApi with play.api.cache.CacheApi
 
 /** Asynchronous non-blocking implementation of the connection to the redis database */
 trait CacheAsyncApi extends InternalCacheApi[ Builders.Future ]
 
 @Singleton
-class AsyncRedis @Inject( )( implicit application: Application, lifecycle: ApplicationLifecycle ) extends RedisCache( )( Builders.AsynchronousBuilder, application, lifecycle ) with CacheAsyncApi
+class AsyncRedis @Inject( )( implicit application: Application, lifecycle: ApplicationLifecycle, configuration: Configuration ) extends RedisCache( )( Builders.AsynchronousBuilder, application, lifecycle, configuration ) with CacheAsyncApi
 
 @Singleton
-class RedisCacheModule extends Module with Config {
+class RedisCacheModule extends Module {
 
-  def bindings( environment: Environment, configuration: Configuration ) = {
+  def bindings( environment: Environment, configuration: play.api.Configuration ) = {
     // default binding for Play's CacheApi to SyncCache to replace default EHCache
-    val default = Some( bind[ play.api.cache.CacheApi ].to[ SyncRedis ] )
+    val default = bind[ play.api.cache.CacheApi ].to[ SyncRedis ]
     // enable sync module when required
-    val sync: Option[ Binding[ _ ] ] = if ( implementations.contains( "sync" ) ) Some( bind[ CacheApi ].to[ SyncRedis ] ) else None
+    val sync = bind[ CacheApi ].to[ SyncRedis ]
     // enable async module when required
-    val async: Option[ Binding[ _ ] ] = if ( implementations.contains( "async" ) ) Some( bind[ CacheAsyncApi ].to[ AsyncRedis ] ) else None
+    val async = bind[ CacheAsyncApi ].to[ AsyncRedis ]
+    // configuration provider
+    val config = bind[ Configuration ].to[ LocalConfiguration ]
     // return bindings
-    Seq( sync, async, default ).flatten
+    Seq( sync, async, default, config )
   }
 }
