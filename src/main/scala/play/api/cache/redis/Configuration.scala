@@ -1,6 +1,6 @@
 package play.api.cache.redis
 
-import javax.inject.Singleton
+import javax.inject.{Provider, Singleton}
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -65,5 +65,38 @@ class LocalConfiguration extends Configuration {
 }
 
 @Singleton
-class HerokuConfiguration
+class HerokuConfiguration(
 
+  /** host with redis server */
+  override val host: String,
+
+  /** port redis listens on */
+  override val port: Int
+
+) extends LocalConfiguration
+
+/**
+ * Reads environment variables for REDIS_URL and returns HerokuConfiguration instance.
+ * This configuration instance is designed to work in Heroku PaaS environment.
+ */
+class HerokuConfigurationProvider extends Provider[ HerokuConfiguration ] {
+
+  /** expected format of the environment variable */
+  private val REDIS_URL = "redis://([^:]+):([^@]+)@([^:]+):([0-9]+)".r
+
+  /** read environment url or throw an exception */
+  override def get( ): HerokuConfiguration = url match {
+    case Some( REDIS_URL( user, password, host, port ) ) =>
+      // read the environment variable and fill missing information from the local configuration file
+      new HerokuConfiguration( host, port.toInt )
+    case Some( _ ) =>
+      // value is defined but not in the expected format
+      throw new IllegalArgumentException( "Unexpected value in the environment variable 'REDIS_URL'. Expected format is 'redis://user:password@host:port'." )
+    case None =>
+      // variable is missing
+      throw new IllegalArgumentException( "Expected environment variable 'REDIS_URL' at Heroku PaaS is missing. Expected value is 'redis://user:password@host:port'." )
+  }
+
+  /** returns the connection url to redis server */
+  protected def url = sys.env.get( "REDIS_URL" )
+}
