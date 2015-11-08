@@ -127,9 +127,18 @@ There is already default configuration but it can be overwritten in your `conf/a
 | play.cache.redis.timeout            | Duration | `1s`                            | connection timeout                  |
 | play.cache.redis.dispatcher         | String   | `akka.actor.default-dispatcher` | Akka actor                          |
 | play.cache.redis.enabled            | String[] | `[ "sync" ]`                    | Enabled implementations of the api. Possible values are `sync` and `async` |
+| play.cache.redis.configuration      | String   | `local`                         | Defines which configuration source enable. Accepted values are `local` | `heroku` | `none` |
 
 
+### Connection settings on different platforms
 
+In various environments there are various sources of the connection string defining how to connect to Redis instance. 
+For example, at localhost we are interested in direct definition of host and port in the `application.conf` file. 
+However, this approach does not fit all environments. For example, Heroku supplies `REDIS_URL` environment variable
+defining the connection string. To resolve this diversity, the library expects an implementation of the `Configuration`
+trait available through DI. By default, it enables `local` configuration source, i.e., it reads the settings from the
+configuration file. Another supplied configuration reader is `heroku`, which reads the `REDIS_URL` variable. To disable
+built-in providers you are free to set `none` and supply your own implementation of the `Configuration` trait.
 
 ## Worth knowing to avoid surprises
 
