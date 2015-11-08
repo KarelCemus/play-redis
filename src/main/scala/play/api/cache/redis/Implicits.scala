@@ -1,6 +1,6 @@
 package play.api.cache.redis
 
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.language.{higherKinds, implicitConversions}
 import scala.util._
@@ -16,10 +16,6 @@ import brando.Request
   * @author Karel Cemus
   */
 trait Implicits {
-
-  /** converts java.time.Duration into scala.concurrent.duration.Duration */
-  protected implicit def asScalaDuration( duration: java.time.Duration ): FiniteDuration =
-    scala.concurrent.duration.Duration.fromNanos( duration.toNanos )
 
   /** rich akka actor providing additional functionality and syntax sugar */
   protected implicit class RedisRef( brando: ActorRef ) {
@@ -37,15 +33,12 @@ trait Implicits {
     def toFuture( implicit context: ExecutionContext ) = Future( any )
   }
 
-  /** duration to wait before redis answers */
-  protected def synchronizationTimeout: Duration
-
   /** waits for future responses and returns them synchronously */
   protected implicit class Synchronizer[ T ]( future: Future[ T ] ) {
-    def sync = Await.result( future, synchronizationTimeout )
+    def sync( implicit timeout: Duration ) = Await.result( future, timeout )
   }
 
   /** Transforms the promise into desired builder results */
-  protected implicit def build[ T, Result[ _ ] ]( value: Future[ T ] )( implicit builder: Builders.ResultBuilder[ Result ] ) =
+  protected implicit def build[ T, Result[ _ ] ]( value: Future[ T ] )( implicit builder: Builders.ResultBuilder[ Result ], configuration: Configuration ) =
     builder.toResult( value )
 }

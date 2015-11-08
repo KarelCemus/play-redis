@@ -19,7 +19,7 @@ class RedisCacheSpec extends Specification with Redis {
 
   private type Cache = InternalCacheApi[ Future ]
 
-  private val Cache = new RedisCache( )( Builders.AsynchronousBuilder, application, application.injector.instanceOf[ ApplicationLifecycle ] )
+  private val Cache = new RedisCache( )( Builders.AsynchronousBuilder, application, application.injector.instanceOf[ ApplicationLifecycle ], new LocalConfiguration() )
 
   "Cache" should {
 
