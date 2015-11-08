@@ -79,7 +79,7 @@ class HerokuConfiguration(
  * Reads environment variables for REDIS_URL and returns HerokuConfiguration instance.
  * This configuration instance is designed to work in Heroku PaaS environment.
  */
-class HerokuConfigurationProvider extends Provider[ HerokuConfiguration ] {
+trait HerokuConfigurationProvider extends Provider[ HerokuConfiguration ] {
 
   /** expected format of the environment variable */
   private val REDIS_URL = "redis://([^:]+):([^@]+)@([^:]+):([0-9]+)".r
@@ -100,3 +100,5 @@ class HerokuConfigurationProvider extends Provider[ HerokuConfiguration ] {
   /** returns the connection url to redis server */
   protected def url = sys.env.get( "REDIS_URL" )
 }
+
+object HerokuConfigurationProvider extends HerokuConfigurationProvider
