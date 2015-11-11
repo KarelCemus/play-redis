@@ -50,7 +50,7 @@ and **disables** default Play EHCache. All these can be changed through the conf
 
 ## How to use this module
 
-When you have the library added to your project, you can safely inject the `play.api.cache.redis.CacheApi` trait 
+When you have the library added to your project, you can safely inject the `play.api.cache.redis.CacheApi` trait
 for the synchronous cache. If you want the asynchronous implementation, then inject `play.api.cache.redis.CacheAsyncApi`.
 There might be some limitations with data types but it should not be anything major. (Note: it uses Akka serialization.
 Supported data types are primitives, objects serializable through the java serialization and collections.)
@@ -70,40 +70,49 @@ class MyController @Inject() ( cache: CacheApi ) {
   // returns Option[ T ] where T stands for String in this example
   cache.get[ String ]( "key" )
   cache.remove( "key" )
-    
+
   cache.set( "object", MyCaseClass() )
   // returns Option[ T ] where T stands for MyCaseClass
   cache.get[ MyCaseClass ]( "object" )
-  
+
   // returns Future[ Try[ String ] ] where the value string
   // should be Success( "OK" ) or Failure( ex )
   cache.set( "key", 1.23 )
-    
+
   // returns Option[ Double ]
   cache.get[ Double ]( "key" )
   // returns Option[ MyCaseClass ]
   cache.get[ MyCaseClass ]( "object" )
-    
+
   // returns T where T is Double. If the value is not in the cache
   // the computed result is saved
   cache.getOrElse( "key" )( 1.24 )
-  
+
   // same as getOrElse but works for Futures. It returns Future[ T ]
   cache.getOrFuture( "key" )( Future( 1.24 ) )
-    
+
   // returns Unit and removes a key/keys from the storage
   cache.remove( "key" )
   cache.remove( "key1", "key2" )
   cache.remove( "key1", "key2", "key3" )
-    
+
   // invalidates all keys in the redis server! Beware using it
   cache.invalidate()
-  
+
   // refreshes expiration of the key if present
   cache.expire( "key", 1.second )
-  
+
   // returns true if the key is in the storage, false otherwise
   cache.exists( "key" )
+
+  // when we import `play.api.cache.redis._` it enables us
+  // using both `java.util.Date` and `org.joda.time.DateTime` as expiration
+  // dates instead of duration. These implicits are useful when
+  // we know the data regularly changes, e.g., at midnight, at 3 AM, etc.
+  // We do not have compute the duration ourselves, the library
+  // can do it for us
+  import play.api.cache.redis._
+  cache.set( "key", "value", DateTime.parse( "2015-12-01T00:00" ).asExpiration )
 }
 ```
 
@@ -133,8 +142,8 @@ There is already default configuration but it can be overwritten in your `conf/a
 
 ### Connection settings on different platforms
 
-In various environments there are various sources of the connection string defining how to connect to Redis instance. 
-For example, at localhost we are interested in direct definition of host and port in the `application.conf` file. 
+In various environments there are various sources of the connection string defining how to connect to Redis instance.
+For example, at localhost we are interested in direct definition of host and port in the `application.conf` file.
 However, this approach does not fit all environments. For example, Heroku supplies `REDIS_URL` environment variable
 defining the connection string. To resolve this diversity, the library expects an implementation of the `Configuration`
 trait available through DI. By default, it enables `local` configuration source, i.e., it reads the settings from the
