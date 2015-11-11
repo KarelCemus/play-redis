@@ -25,7 +25,7 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
   protected implicit val context: ExecutionContext = Akka.system.dispatchers.lookup( invocationContext )
 
   /** communication module to Redis cache */
-  protected val redis: RedisRef = Akka.system actorOf Brando( host, port, database = Some( database ) )
+  protected val redis: RedisRef = Akka.system actorOf Brando( host, port, database = Some( database ), auth = password )
 
   /** Retrieve a value from the cache.
     *

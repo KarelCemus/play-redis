@@ -30,6 +30,9 @@ trait Configuration {
 
   /** Redis database identifier to work with */
   def database: Int
+
+  /** When enabled security, this returns password for the AUTH command */
+  def password: Option[ String ]
 }
 
 /**
@@ -62,6 +65,9 @@ class LocalConfiguration extends Configuration {
 
   /** Redis database identifier to work with */
   def database = config.getInt( "database" )
+
+  /** When enabled security, this returns password for the AUTH command */
+  override def password: Option[ String ] = if ( config.getIsNull( "password" ) ) None else Some( config.getString( "password" ) )
 }
 
 @Singleton
@@ -71,7 +77,10 @@ class HerokuConfiguration(
   override val host: String,
 
   /** port redis listens on */
-  override val port: Int
+  override val port: Int,
+
+  /** authentication password */
+  override val password: Option[ String ]
 
 ) extends LocalConfiguration
 
@@ -88,7 +97,7 @@ trait HerokuConfigurationProvider extends Provider[ HerokuConfiguration ] {
   override def get( ): HerokuConfiguration = url match {
     case Some( REDIS_URL( user, password, host, port ) ) =>
       // read the environment variable and fill missing information from the local configuration file
-      new HerokuConfiguration( host, port.toInt )
+      new HerokuConfiguration( host, port.toInt, Some( password ) )
     case Some( _ ) =>
       // value is defined but not in the expected format
       throw new IllegalArgumentException( "Unexpected value in the environment variable 'REDIS_URL'. Expected format is 'redis://user:password@host:port'." )

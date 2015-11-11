@@ -128,6 +128,7 @@ There is already default configuration but it can be overwritten in your `conf/a
 | play.cache.redis.dispatcher         | String   | `akka.actor.default-dispatcher` | Akka actor                          |
 | play.cache.redis.enabled            | String[] | `[ "sync" ]`                    | Enabled implementations of the api. Possible values are `sync` and `async` |
 | play.cache.redis.configuration      | String   | `local`                         | Defines which configuration source enable. Accepted values are `local`, `heroku`, `none` |
+| play.cache.redis.password           | String   | `null`                          | When authentication is required, this is the password. Value is optional. |
 
 
 ### Connection settings on different platforms

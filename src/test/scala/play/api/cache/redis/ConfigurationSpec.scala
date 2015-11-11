@@ -32,13 +32,17 @@ class ConfigurationSpec extends Specification {
     "read timeout" in {
       configuration.timeout must beEqualTo( 1.second )
     }
+
+    "read password" in {
+      configuration.password must beNone
+    }
   }
 
   "Heroku configuration" should {
 
     val configuration = new HerokuConfigurationProvider( ) {
       /** returns the connection url to redis server */
-      override protected def url: Option[ String ] = Some( "redis://admin:my-password@redis.server:1234" )
+      override protected def url: Option[ String ] = Some( "redis://h:my-password@redis.server:1234" )
     }.get( )
 
     "read host" in {
@@ -59,6 +63,10 @@ class ConfigurationSpec extends Specification {
 
     "read timeout" in {
       configuration.timeout must beEqualTo( 1.second )
+    }
+
+    "read password" in {
+      configuration.password must beSome( "my-password" )
     }
   }
 }
