@@ -16,6 +16,8 @@ import brando._
 /** <p>Implementation of plain API using redis-server cache and Brando connector implementation.</p> */
 class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Result ], val application: Application, lifecycle: ApplicationLifecycle, protected val configuration: Configuration ) extends InternalCacheApi[ Result ] with Implicits with Config with AkkaSerializer {
 
+  import builder._
+
   /** logger instance */
   protected val log = Logger( "play.api.cache.redis" )
 
@@ -25,39 +27,19 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
   /** communication module to Redis cache */
   protected val redis: RedisRef = Akka.system actorOf Brando( host, port, database = Some( database ), auth = password )
 
-  /** Retrieve a value from the cache.
-    *
-    * @param key cache storage key
-    * @return stored record, Some if exists, otherwise None
-    */
-  private def internalGet[ T: ClassTag ]( key: String ) = redis ? Request( "GET", key ) map {
+  override def get[ T: ClassTag ]( key: String ) = redis ? Request( "GET", key ) map {
     case Success( Some( response: ByteString ) ) => log.trace( s"Hit on key '$key'." ); decode[ T ]( key, response.utf8String ).toOption
     case Success( None ) => log.debug( s"Miss on key '$key'." ); None
     case Failure( ex ) => log.error( s"GET command failed for key '$key'.", ex ); None
     case _ => log.error( s"Unrecognized answer from GET command for key '$key'." ); None
   }
 
-  override def get[ T: ClassTag ]( key: String ) =
-    internalGet[ T ]( key )
-
-  override def set( key: String, value: Any, expiration: Duration ) =
-    internalSet( key, value, expiration )
-
-  /** Set a value into the cache. Expiration time in seconds (0 second means eternity).
-    * If the value is null the key is removed from the storage.
-    *
-    * @param key cache storage key
-    * @param value value to store
-    * @param expiration record duration in seconds
-    * @return promise
-    */
-  private def internalSet( key: String, value: Any, expiration: Duration ) =
-    if ( value == null ) removeInBatch( key )
-    else (expiration, encode( key, value )) match {
-      case (Duration.Inf, Success( encoded: String )) => setEternally( key, encoded )
-      case (temporal: Duration, Success( encoded: String )) => setTemporally( key, encoded, temporal )
-      case (_, Failure( ex )) => log.error( s"SET command failed. Encoding of the value for the key '$key' failed.", ex ).toFuture
-    }
+  override def set( key: String, value: Any, expiration: Duration ) = if ( value == null ) removeInBatch( key )
+  else (expiration, encode( key, value )) match {
+    case (Duration.Inf, Success( encoded: String )) => setEternally( key, encoded )
+    case (temporal: Duration, Success( encoded: String )) => setTemporally( key, encoded, temporal )
+    case (_, Failure( ex )) => log.error( s"SET command failed. Encoding of the value for the key '$key' failed.", ex ).toFuture
+  }
 
   /** temporally stores already encoded value into the storage */
   private def setTemporally( key: String, value: String, expiration: Duration ): Future[ Unit ] =
@@ -85,11 +67,7 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
       case _ => log.error( s"Unrecognized answer from EXPIRE command for key '$key'." )
     }
 
-  override def matching( pattern: String ): Result[ Set[ String ] ] =
-    internalMatching( pattern: String )
-
-  /** executes KEYS and returns a future containing all keys matching the pattern */
-  private def internalMatching( pattern: String ) = redis ? Request( "KEYS", pattern ) map {
+  override def matching( pattern: String ): Result[ Set[ String ] ] = redis ? Request( "KEYS", pattern ) map {
     case Success( Some( response: List[ _ ] ) ) =>
       val keys = response.asInstanceOf[ List[ Option[ ByteString ] ] ].flatten.map( _.utf8String ).toSet
       log.debug( s"KEYS on '$pattern' responded '${ keys.mkString( ", " ) }'." )
@@ -101,11 +79,11 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
   override def getOrElse[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => T ) =
     getOrFuture( key, expiration )( orElse.toFuture )
 
-  override def getOrFuture[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => Future[ T ] ): Future[ T ] = internalGet[ T ]( key ) flatMap {
+  override def getOrFuture[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => Future[ T ] ): Future[ T ] = get[ T ]( key ) andFuture {
     // cache hit, return the unwrapped value
-    case Some( value ) => value.toFuture
+    case Some( value: T ) => value.toFuture
     // cache miss, compute the value, store it into cache and return the value
-    case None => orElse flatMap ( value => internalSet( key, value, expiration ).map( _ => value ) )
+    case None => orElse flatMap ( value => set( key, value, expiration ) andFuture ( _ => Future( value ) ) )
   }
 
   override def remove( key: String ) =
@@ -130,7 +108,7 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
     else Future( Unit ) // otherwise return immediately
 
   override def removeAll( pattern: String ): Result[ Unit ] =
-    internalMatching( pattern ).flatMap( keys => removeInBatch( keys.toSeq: _* ) )
+    matching( pattern ) andThen ( keys => removeInBatch( keys.toSeq: _* ) )
 
   override def invalidate( ) = redis ? Request( "FLUSHDB" ) map {
     case Success( Some( Ok ) ) => log.info( "Invalidated." ) // cache was invalidated
