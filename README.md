@@ -104,7 +104,11 @@ class MyController @Inject() ( cache: CacheApi ) {
 
   // returns true if the key is in the storage, false otherwise
   cache.exists( "key" )
-
+  
+  // returns all keys matching given pattern. Beware, complexity is O(n).
+  // It executes KEYS command
+  cache.matching( "page/1/*" )
+  
   // when we import `play.api.cache.redis._` it enables us
   // using both `java.util.Date` and `org.joda.time.DateTime` as expiration
   // dates instead of duration. These implicits are useful when

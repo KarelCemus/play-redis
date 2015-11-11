@@ -49,6 +49,15 @@ trait InternalCacheApi[ Result[ _ ] ] {
     */
   def exists( key: String ): Result[ Boolean ]
 
+  /** Retrieves all keys matching the given pattern. This method invokes KEYS command
+    *
+    * '''Warning:''' complexity is O(n) where n are all keys in the database
+    *
+    * @param pattern valid KEYS pattern with wildcards
+    * @return list of matching keys
+    */
+  def matching( pattern: String ): Result[ Set[ String ] ]
+
   /** Set a value into the cache. Expiration time in seconds (0 second means eternity).
     *
     * @param key cache storage key

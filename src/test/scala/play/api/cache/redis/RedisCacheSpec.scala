@@ -19,7 +19,7 @@ class RedisCacheSpec extends Specification with Redis {
 
   private type Cache = InternalCacheApi[ Future ]
 
-  private val Cache = new RedisCache( )( Builders.AsynchronousBuilder, application, application.injector.instanceOf[ ApplicationLifecycle ], new LocalConfiguration() )
+  private val Cache = new RedisCache( )( Builders.AsynchronousBuilder, application, application.injector.instanceOf[ ApplicationLifecycle ], new LocalConfiguration( ) )
 
   "Cache" should {
 
@@ -82,6 +82,16 @@ class RedisCacheSpec extends Specification with Redis {
       val counter = new AtomicInteger( 0 )
       for ( index <- 1 to 10 ) Cache.getOrElseCounting( "async-test-6" )( counter ).sync mustEqual "value"
       counter.get must beEqualTo( 1 )
+    }
+
+    "find all matching keys" in {
+      Cache.set( "async-test-13-key-A", "value", 3.second ).sync
+      Cache.set( "async-test-13-note-A", "value", 3.second ).sync
+      Cache.set( "async-test-13-key-B", "value", 3.second ).sync
+      Cache.matching( "async-test-13*" ).sync mustEqual Set( "async-test-13-key-A", "async-test-13-note-A", "async-test-13-key-B" )
+      Cache.matching( "async-test-13*A" ).sync mustEqual Set( "async-test-13-key-A", "async-test-13-note-A" )
+      Cache.matching( "async-test-13-key-*" ).sync mustEqual Set( "async-test-13-key-A", "async-test-13-key-B" )
+      Cache.matching( "async-test-13A*" ).sync mustEqual Set.empty
     }
 
     "distinct different keys" in {

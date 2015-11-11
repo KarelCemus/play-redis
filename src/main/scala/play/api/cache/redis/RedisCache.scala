@@ -85,6 +85,16 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
       case _ => log.error( s"Unrecognized answer from EXPIRE command for key '$key'." )
     }
 
+  override def matching( pattern: String ): Result[ Set[ String ] ] =
+    redis ? Request( "KEYS", pattern ) map {
+      case Success( Some( response: List[ _ ] ) ) =>
+        val keys = response.asInstanceOf[ List[ Option[ ByteString ] ] ].flatten.map( _.utf8String ).toSet
+        log.debug( s"KEYS on '$pattern' responded '${ keys.mkString( ", " ) }'." )
+        keys
+      case Failure( ex ) => log.error( s"KEYS command failed for pattern '$pattern'.", ex ); Set.empty[ String ]
+      case _ => log.error( s"Unrecognized answer from KEYS command for pattern '$pattern'." ); Set.empty[ String ]
+    }
+
   override def getOrElse[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => T ) =
     getOrFuture( key, expiration )( orElse.toFuture )
 
@@ -100,7 +110,6 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
 
   override def remove( key1: String, key2: String, keys: String* ) =
     removeInBatch( key1 +: key2 +: keys: _* )
-
 
   /** Removes all keys in arguments. The other remove methods are for syntax sugar */
   private def removeInBatch( keys: String* ): Future[ Unit ] = redis ? Request( "DEL", keys: _* ) map {
