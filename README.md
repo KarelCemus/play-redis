@@ -1,6 +1,6 @@
 <h1 align="center">Redis Cache module for Play framework</h1>
 
-<p align="center"><strong>Note: This version supports Play framework 2.4.x. For previous versions see older releases.</strong></p>
+<p align="center"><strong>Note: This version supports Play framework 2.4.x with JDK 8.<br/>For previous versions see older releases.</strong></p>
 
 <p align="center">
   <a href='http://jenkins.karelcemus.cz/view/Play%20frameworks/job/play-redis/'><img src='http://jenkins.karelcemus.cz/buildStatus/icon?job=play-redis'></a>
@@ -104,6 +104,14 @@ class MyController @Inject() ( cache: CacheApi ) {
 
   // returns true if the key is in the storage, false otherwise
   cache.exists( "key" )
+  
+  // returns all keys matching given pattern. Beware, complexity is O(n).
+  // It executes KEYS command
+  cache.matching( "page/1/*" )
+  
+  // removes all keys matching given pattern. Beware, complexity is O(n).
+  // It executes KEYS and DEL commands in a transaction
+  cache.removeAll( "page/1/*" )
 
   // when we import `play.api.cache.redis._` it enables us
   // using both `java.util.Date` and `org.joda.time.DateTime` as expiration

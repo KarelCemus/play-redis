@@ -19,7 +19,7 @@ class RedisCacheSpec extends Specification with Redis {
 
   private type Cache = InternalCacheApi[ Future ]
 
-  private val Cache = new RedisCache( )( Builders.AsynchronousBuilder, application, application.injector.instanceOf[ ApplicationLifecycle ], new LocalConfiguration() )
+  private val Cache = new RedisCache( )( Builders.AsynchronousBuilder, application, application.injector.instanceOf[ ApplicationLifecycle ], new LocalConfiguration( ) )
 
   "Cache" should {
 
@@ -82,6 +82,40 @@ class RedisCacheSpec extends Specification with Redis {
       val counter = new AtomicInteger( 0 )
       for ( index <- 1 to 10 ) Cache.getOrElseCounting( "async-test-6" )( counter ).sync mustEqual "value"
       counter.get must beEqualTo( 1 )
+    }
+
+    "find all matching keys" in {
+      Cache.set( "async-test-13-key-A", "value", 3.second ).sync
+      Cache.set( "async-test-13-note-A", "value", 3.second ).sync
+      Cache.set( "async-test-13-key-B", "value", 3.second ).sync
+      Cache.matching( "async-test-13*" ).sync mustEqual Set( "async-test-13-key-A", "async-test-13-note-A", "async-test-13-key-B" )
+      Cache.matching( "async-test-13*A" ).sync mustEqual Set( "async-test-13-key-A", "async-test-13-note-A" )
+      Cache.matching( "async-test-13-key-*" ).sync mustEqual Set( "async-test-13-key-A", "async-test-13-key-B" )
+      Cache.matching( "async-test-13A*" ).sync mustEqual Set.empty
+    }
+
+    "remove all matching keys, wildcard at the end" in {
+      Cache.set( "async-test-14-key-A", "value", 3.second ).sync
+      Cache.set( "async-test-14-note-A", "value", 3.second ).sync
+      Cache.set( "async-test-14-key-B", "value", 3.second ).sync
+      Cache.matching( "async-test-14*" ).sync mustEqual Set( "async-test-14-key-A", "async-test-14-note-A", "async-test-14-key-B" )
+      Cache.removeAll( "async-test-14*" ).sync
+      Cache.matching( "async-test-14*" ).sync mustEqual Set.empty
+    }
+
+    "remove all matching keys, wildcard in the middle" in {
+      Cache.set( "async-test-15-key-A", "value", 3.second ).sync
+      Cache.set( "async-test-15-note-A", "value", 3.second ).sync
+      Cache.set( "async-test-15-key-B", "value", 3.second ).sync
+      Cache.matching( "async-test-15*A" ).sync mustEqual Set( "async-test-15-key-A", "async-test-15-note-A" )
+      Cache.removeAll( "async-test-15*A").sync
+      Cache.matching( "async-test-15*A").sync mustEqual Set.empty
+    }
+
+    "remove all matching keys, no match" in {
+      Cache.matching( "async-test-16*" ).sync mustEqual Set.empty
+      Cache.removeAll( "async-test-16*").sync
+      Cache.matching( "async-test-16*" ).sync mustEqual Set.empty
     }
 
     "distinct different keys" in {
