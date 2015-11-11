@@ -13,9 +13,7 @@ import play.api.libs.concurrent.Akka
 import akka.util.ByteString
 import brando._
 
-/**
- * <p>Implementation of plain API using redis-server cache and Brando connector implementation.</p>
- */
+/** <p>Implementation of plain API using redis-server cache and Brando connector implementation.</p> */
 class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Result ], val application: Application, lifecycle: ApplicationLifecycle, protected val configuration: Configuration ) extends InternalCacheApi[ Result ] with Implicits with Config with AkkaSerializer {
 
   /** logger instance */
@@ -39,22 +37,9 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
     case _ => log.error( s"Unrecognized answer from GET command for key '$key'." ); None
   }
 
-  /** Retrieve a value from the cache.
-    *
-    * @param key cache storage key
-    * @return stored record, Some if exists, otherwise None
-    */
   override def get[ T: ClassTag ]( key: String ) =
     internalGet[ T ]( key )
 
-  /** Set a value into the cache. Expiration time in seconds (0 second means eternity).
-    * If the value is null the key is removed from the storage.
-    *
-    * @param key cache storage key
-    * @param value value to store
-    * @param expiration record duration in seconds
-    * @return promise
-    */
   override def set( key: String, value: Any, expiration: Duration ) =
     internalSet( key, value, expiration )
 
@@ -92,11 +77,6 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
       case _ => log.error( s"Unrecognized answer from SET command for key '$key'." )
     }
 
-  /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration
-    * @param key cache storage key
-    * @param expiration new expiration in seconds
-    * @return promise
-    */
   override def expire( key: String, expiration: Duration ) =
     redis ? Request( "EXPIRE", key, expiration.toSeconds.toString ) map {
       case Success( Some( 1 ) ) => log.debug( s"Expiration set on key '$key'." ) // expiration was set
@@ -105,25 +85,9 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
       case _ => log.error( s"Unrecognized answer from EXPIRE command for key '$key'." )
     }
 
-  /** Retrieve a value from the cache. If is missing, set default value with
-    * given expiration and return the value.
-    *
-    * @param key cache storage key
-    * @param expiration expiration period in seconds.
-    * @param orElse The default function to invoke if the value was not found in cache.
-    * @return stored or default record, Some if exists, otherwise None
-    */
   override def getOrElse[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => T ) =
     getOrFuture( key, expiration )( orElse.toFuture )
 
-  /** Retrieve a value from the cache. If is missing, set default value with
-    * given expiration and return the value.
-    *
-    * @param key cache storage key
-    * @param expiration expiration period in seconds.
-    * @param orElse The default function to invoke if the value was not found in cache.
-    * @return stored or default record, Some if exists, otherwise None
-    */
   override def getOrFuture[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => Future[ T ] ): Future[ T ] = internalGet[ T ]( key ) flatMap {
     // cache hit, return the unwrapped value
     case Some( value ) => value.toFuture
@@ -131,19 +95,9 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
     case None => orElse flatMap ( value => internalSet( key, value, expiration ).map( _ => value ) )
   }
 
-  /** Remove a value under the given key from the cache
-    * @param key cache storage key
-    * @return promise
-    */
   override def remove( key: String ) =
     removeInBatch( key )
 
-  /** Remove all values from the cache
-    * @param key1 cache storage key
-    * @param key2 cache storage key
-    * @param keys cache storage keys
-    * @return promise
-    */
   override def remove( key1: String, key2: String, keys: String* ) =
     removeInBatch( key1 +: key2 +: keys: _* )
 
@@ -160,10 +114,6 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
       log.error( s"Unrecognized answer from DEL command for keys ${ keys.mkString( "'", ",", "'" ) }." )
   }
 
-  /** Remove all keys in cache
-    *
-    * @return promise
-    */
   override def invalidate( ) = redis ? Request( "FLUSHDB" ) map {
     case Success( Some( Ok ) ) => log.info( "Invalidated." ) // cache was invalidated
     case Success( None ) => log.warn( "Invalidation failed." ) // execution failed
@@ -171,11 +121,6 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
     case _ => log.error( s"Unrecognized answer from invalidation command." )
   }
 
-  /** Determines whether value exists in cache.
-    *
-    * @param key cache storage key
-    * @return record existence, true if exists, otherwise false
-    */
   override def exists( key: String ) = redis ? Request( "EXISTS", key ) map {
     case Success( Some( 1L ) ) => log.trace( s"Key '$key' exists." ); true
     case Success( Some( 0L ) ) => log.trace( s"Key '$key' doesn't exist." ); false
