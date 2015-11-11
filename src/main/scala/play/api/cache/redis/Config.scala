@@ -1,10 +1,10 @@
 package play.api.cache.redis
 
 /**
- * Redis cache configuration providing settings of the cache instance to be used
- *
- * @author Karel Cemus
- */
+  * Redis cache configuration providing settings of the cache instance to be used
+  *
+  * @author Karel Cemus
+  */
 trait Config extends Implicits {
 
   /** configuration of the connection */
@@ -24,4 +24,7 @@ trait Config extends Implicits {
 
   /** redis database to work with */
   protected def database = configuration.database
+
+  /** password for authentication with redis */
+  protected def password = configuration.password
 }
