@@ -109,6 +109,10 @@ class MyController @Inject() ( cache: CacheApi ) {
   // It executes KEYS command
   cache.matching( "page/1/*" )
   
+  // removes all keys matching given pattern. Beware, complexity is O(n).
+  // It executes KEYS and DEL commands in a transaction
+  cache.removeAll( "page/1/*" )
+
   // when we import `play.api.cache.redis._` it enables us
   // using both `java.util.Date` and `org.joda.time.DateTime` as expiration
   // dates instead of duration. These implicits are useful when

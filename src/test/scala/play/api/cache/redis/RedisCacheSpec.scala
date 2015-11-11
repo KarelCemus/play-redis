@@ -94,6 +94,30 @@ class RedisCacheSpec extends Specification with Redis {
       Cache.matching( "async-test-13A*" ).sync mustEqual Set.empty
     }
 
+    "remove all matching keys, wildcard at the end" in {
+      Cache.set( "async-test-14-key-A", "value", 3.second ).sync
+      Cache.set( "async-test-14-note-A", "value", 3.second ).sync
+      Cache.set( "async-test-14-key-B", "value", 3.second ).sync
+      Cache.matching( "async-test-14*" ).sync mustEqual Set( "async-test-14-key-A", "async-test-14-note-A", "async-test-14-key-B" )
+      Cache.removeAll( "async-test-14*" ).sync
+      Cache.matching( "async-test-14*" ).sync mustEqual Set.empty
+    }
+
+    "remove all matching keys, wildcard in the middle" in {
+      Cache.set( "async-test-15-key-A", "value", 3.second ).sync
+      Cache.set( "async-test-15-note-A", "value", 3.second ).sync
+      Cache.set( "async-test-15-key-B", "value", 3.second ).sync
+      Cache.matching( "async-test-15*A" ).sync mustEqual Set( "async-test-15-key-A", "async-test-15-note-A" )
+      Cache.removeAll( "async-test-15*A").sync
+      Cache.matching( "async-test-15*A").sync mustEqual Set.empty
+    }
+
+    "remove all matching keys, no match" in {
+      Cache.matching( "async-test-16*" ).sync mustEqual Set.empty
+      Cache.removeAll( "async-test-16*").sync
+      Cache.matching( "async-test-16*" ).sync mustEqual Set.empty
+    }
+
     "distinct different keys" in {
       val counter = new AtomicInteger( 0 )
       Cache.getOrElseCounting( "async-test-7A" )( counter ).sync mustEqual "value"

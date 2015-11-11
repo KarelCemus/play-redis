@@ -86,14 +86,17 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
     }
 
   override def matching( pattern: String ): Result[ Set[ String ] ] =
-    redis ? Request( "KEYS", pattern ) map {
-      case Success( Some( response: List[ _ ] ) ) =>
-        val keys = response.asInstanceOf[ List[ Option[ ByteString ] ] ].flatten.map( _.utf8String ).toSet
-        log.debug( s"KEYS on '$pattern' responded '${ keys.mkString( ", " ) }'." )
-        keys
-      case Failure( ex ) => log.error( s"KEYS command failed for pattern '$pattern'.", ex ); Set.empty[ String ]
-      case _ => log.error( s"Unrecognized answer from KEYS command for pattern '$pattern'." ); Set.empty[ String ]
-    }
+    internalMatching( pattern: String )
+
+  /** executes KEYS and returns a future containing all keys matching the pattern */
+  private def internalMatching( pattern: String ) = redis ? Request( "KEYS", pattern ) map {
+    case Success( Some( response: List[ _ ] ) ) =>
+      val keys = response.asInstanceOf[ List[ Option[ ByteString ] ] ].flatten.map( _.utf8String ).toSet
+      log.debug( s"KEYS on '$pattern' responded '${ keys.mkString( ", " ) }'." )
+      keys
+    case Failure( ex ) => log.error( s"KEYS command failed for pattern '$pattern'.", ex ); Set.empty[ String ]
+    case _ => log.error( s"Unrecognized answer from KEYS command for pattern '$pattern'." ); Set.empty[ String ]
+  }
 
   override def getOrElse[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => T ) =
     getOrFuture( key, expiration )( orElse.toFuture )
@@ -112,16 +115,22 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
     removeInBatch( key1 +: key2 +: keys: _* )
 
   /** Removes all keys in arguments. The other remove methods are for syntax sugar */
-  private def removeInBatch( keys: String* ): Future[ Unit ] = redis ? Request( "DEL", keys: _* ) map {
-    case Success( Some( 0 ) ) => // Nothing was removed
-      log.debug( s"Remove on keys ${ keys.mkString( "'", ",", "'" ) } succeeded but nothing was removed." )
-    case Success( Some( number ) ) => // Some entries were removed
-      log.debug( s"Remove on keys ${ keys.mkString( "'", ",", "'" ) } removed $number values." )
-    case Failure( ex ) =>
-      log.error( s"DEL command failed for keys ${ keys.mkString( "'", ",", "'" ) }.", ex )
-    case _ =>
-      log.error( s"Unrecognized answer from DEL command for keys ${ keys.mkString( "'", ",", "'" ) }." )
-  }
+  private def removeInBatch( keys: String* ): Future[ Unit ] =
+    if ( keys.nonEmpty ) // if any key to remove do it
+      redis ? Request( "DEL", keys: _* ) map {
+        case Success( Some( 0 ) ) => // Nothing was removed
+          log.debug( s"Remove on keys ${ keys.mkString( "'", ",", "'" ) } succeeded but nothing was removed." )
+        case Success( Some( number ) ) => // Some entries were removed
+          log.debug( s"Remove on keys ${ keys.mkString( "'", ",", "'" ) } removed $number values." )
+        case Failure( ex ) =>
+          log.error( s"DEL command failed for keys ${ keys.mkString( "'", ",", "'" ) }.", ex )
+        case _ =>
+          log.error( s"Unrecognized answer from DEL command for keys ${ keys.mkString( "'", ",", "'" ) }." )
+      }
+    else Future( Unit ) // otherwise return immediately
+
+  override def removeAll( pattern: String ): Result[ Unit ] =
+    internalMatching( pattern ).flatMap( keys => removeInBatch( keys.toSeq: _* ) )
 
   override def invalidate( ) = redis ? Request( "FLUSHDB" ) map {
     case Success( Some( Ok ) ) => log.info( "Invalidated." ) // cache was invalidated

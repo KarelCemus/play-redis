@@ -6,13 +6,13 @@ import scala.language.higherKinds
 import scala.reflect.ClassTag
 
 /**
- * <p>Cache API inspired by basic Play play.api.cache.CacheApi. It implements all its
- * operations and in addition it declares couple more useful operations handful
- * with cache storage. Furthermore, due to its parametrization it allows to decide
- * whether it produces blocking results or non-blocking promises.</p>
- *
- * @author Karel Cemus
- */
+  * <p>Cache API inspired by basic Play play.api.cache.CacheApi. It implements all its
+  * operations and in addition it declares couple more useful operations handful
+  * with cache storage. Furthermore, due to its parametrization it allows to decide
+  * whether it produces blocking results or non-blocking promises.</p>
+  *
+  * @author Karel Cemus
+  */
 trait InternalCacheApi[ Result[ _ ] ] {
 
   /** Retrieve a value from the cache.
@@ -87,6 +87,29 @@ trait InternalCacheApi[ Result[ _ ] ] {
     * @return promise
     */
   def remove( key1: String, key2: String, keys: String* ): Result[ Unit ]
+
+  /** <p>Removes all keys matching the given pattern. This command has no direct support
+    * in Redis, it is combination of KEYS and DEL commands.</p>
+    *
+    * <ol>
+    * <li>`KEYS pattern` command finds all keys matching the given pattern</li>
+    * <li>`DEL keys` expires all of them</li>
+    * </ol>
+    *
+    * <p>This is usable in scenarios when multiple keys contains same part of the key, such as
+    * record identification, user identification, etc. For example, we may have keys such
+    * as 'page/&#36;id/header', 'page/&#36;id/body', 'page/&#36;id/footer' and we want to remove them
+    * all when the page is changed. We use the benefit of the '''naming convention''' we use and
+    * execute `removeAllMatching( s"page/&#36;id&#47;*" )`, which invalidates everything related to
+    * the given page. The benefit is we do not need to maintain the list of all keys to invalidate,
+    * we invalidate them all at once.</p>
+    *
+    <p>* '''Warning:''' complexity is O(n) where n are all keys in the database</p>
+    *
+    * @param pattern this must be valid KEYS pattern
+    * @return nothing
+    */
+  def removeAll( pattern: String ): Result[ Unit ]
 
   /** Remove all keys in cache
     *
