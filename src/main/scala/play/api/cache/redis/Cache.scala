@@ -18,37 +18,57 @@ trait CacheAsyncApi extends InternalCacheApi[ Builders.Future ]
 class AsyncRedis @Inject( )( implicit application: Application, lifecycle: ApplicationLifecycle, configuration: Configuration ) extends RedisCache( )( Builders.AsynchronousBuilder, application, lifecycle, configuration ) with CacheAsyncApi
 
 @Singleton
-class RedisCacheModule extends Module {
+class RedisCacheModule extends Module with ModuleConfiguration.DefaultBinding with ModuleConfiguration.SyncOrAsync with ModuleConfiguration.ConfigurationProvider
 
-  val log = Logger( "play.api.cache.redis" )
+/** Provides optional configurations of the redis module */
+object ModuleConfiguration {
 
-  def bindings( environment: Environment, configuration: play.api.Configuration ) = {
-    // default binding for Play's CacheApi to SyncCache to replace default EHCache
-    val default = bind[ play.api.cache.CacheApi ].to[ SyncRedis ]
-    // enable sync module when required
-    val sync = bind[ CacheApi ].to[ SyncRedis ]
-    // enable async module when required
-    val async = bind[ CacheAsyncApi ].to[ AsyncRedis ]
-    // configuration provider
-    val config: Option[ Binding[ Configuration ] ] = configuration.getString( "play.cache.redis.configuration" ) match {
-      // required local implementation
-      case Some( "static" ) => Some( bind[ Configuration ].to[ StaticConfiguration ] )
-      // required environmental implementation
-      case Some( "env" ) if connectionStringVariable( configuration ).nonEmpty => Some( bind[ Configuration ].to( new EnvironmentConfigurationProvider( connectionStringVariable( configuration ).get ) ) )
-      // required environmental implementation but the variable with the connection string is unknown
-      case Some( "env" ) => log.error( "Unknown name of the environmental variable with the connection string. Please define 'play.redis.cache.connection-string-variable' value in the application.conf." ); None
-      // supplied custom implementation
-      case Some( "custom" ) => None // ignore, supplied custom configuration provider
-      // found but unrecognized
-      case Some( other ) => log.error( "Unrecognized configuration provider in key 'play.cache.redis.configuration'. Expected values are 'custom', 'static', and 'env'." ); None
-      // key is missing
-      case _ => log.error( "Configuration provider definition is missing. Please define the key 'play.cache.redis.configuration'. Expected values are 'custom', 'static', and 'env'." ); None
+  trait DefaultBinding extends Module {
+    override def bindings( environment: Environment, configuration: play.api.Configuration ): Seq[ Binding[ _ ] ] = {
+      // default binding for Play's CacheApi to SyncCache to replace default EHCache
+      Seq( bind[ play.api.cache.CacheApi ].to[ SyncRedis ] )
     }
-    // return bindings
-    Seq( sync, async, default ) ++ config
   }
 
-  /** returns name of the variable with the connection string */
-  private def connectionStringVariable( configuration: play.api.Configuration ) =
-    configuration.getString( "play.cache.redis.connection-string-variable" )
+  trait SyncOrAsync extends Module {
+    abstract override def bindings( environment: Environment, configuration: play.api.Configuration ) = {
+      // enable sync module when required
+      val sync = bind[ CacheApi ].to[ SyncRedis ]
+      // enable async module when required
+      val async = bind[ CacheAsyncApi ].to[ AsyncRedis ]
+      // add to other bindings
+      super.bindings( environment, configuration ) :+ sync :+ async
+    }
+  }
+
+  trait ConfigurationProvider extends Module {
+
+    protected val log = Logger( "play.api.cache.redis" )
+
+    abstract override def bindings( environment: Environment, configuration: play.api.Configuration ) =
+      super.bindings( environment, configuration ) ++ provider( configuration )
+
+    /** returns configuration provider based on the application configuration */
+    private def provider( configuration: play.api.Configuration ) = configuration.getString( "play.cache.redis.configuration" ) match {
+      case Some( "static" ) => // required static implementation using application.conf
+        Some( bind[ Configuration ].to[ StaticConfiguration ] )
+      case Some( "env" ) if connectionStringVariable( configuration ).nonEmpty => // required environmental implementation
+        Some( bind[ Configuration ].to( new EnvironmentConfigurationProvider( connectionStringVariable( configuration ).get ) ) )
+      case Some( "env" ) => // required environmental implementation but the variable with the connection string is unknown
+        log.error( "Unknown name of the environmental variable with the connection string. Please define 'play.redis.cache.connection-string-variable' value in the application.conf." )
+        None
+      case Some( "custom" ) => // supplied custom implementation
+        None // ignore, supplied custom configuration provider
+      case Some( other ) => // found but unrecognized
+        log.error( "Unrecognized configuration provider in key 'play.cache.redis.configuration'. Expected values are 'custom', 'static', and 'env'." )
+        None
+      case _ => // key is missing
+        log.error( "Configuration provider definition is missing. Please define the key 'play.cache.redis.configuration'. Expected values are 'custom', 'static', and 'env'." )
+        None
+    }
+
+    /** returns name of the variable with the connection string */
+    private def connectionStringVariable( configuration: play.api.Configuration ) =
+      configuration.getString( "play.cache.redis.connection-string-variable" )
+  }
 }
