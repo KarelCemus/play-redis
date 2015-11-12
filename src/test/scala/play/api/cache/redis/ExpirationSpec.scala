@@ -12,7 +12,7 @@ import org.specs2.mutable.Specification
   */
 class ExpirationSpec extends Specification with Redis {
 
-  private val Cache = new RedisCache( )( Builders.SynchronousBuilder, application, application.injector.instanceOf[ ApplicationLifecycle ], new LocalConfiguration( ) )
+  private val Cache = new RedisCache( )( Builders.SynchronousBuilder, application, application.injector.instanceOf[ ApplicationLifecycle ], new StaticConfiguration( ) )
 
   private def nowInJoda = new DateTime( )
 
