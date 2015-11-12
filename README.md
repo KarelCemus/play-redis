@@ -199,6 +199,6 @@ implementation with customized configuration we have to do the following steps:
 ## Worth knowing to avoid surprises
 
 The library **does not enable** the redis module by default. It is to avoid conflict with Play's default EhCache.
-The Play discourages disabling modules within the library thus it lefts it up to developers to disable EhCache
+The Play discourages disabling modules within the library thus it leaves it up to developers to disable EhCache
 and enable Redis manually. This also allows you to use EhCache in your *dev* environment and redis in *production*.
 Nevertheless, this module **replaces** the EHCache and it is not intended to use both implementations along.
