@@ -44,8 +44,19 @@ libraryDependencies ++= Seq(
 )
 ```
 
-Now your cache is enabled. The Redis module is **enabled by default**, it also **enables synchronous** implementation
-and **disables** default Play EHCache. All these can be changed through the configuration file.
+Now we **must enable our redis** cache module and **disable default Play's EhCache** module. Into `application.conf` and following
+two lines:
+```conf
+
+# disable default Play framework cache plugin
+play.modules.disabled += "play.api.cache.EhCacheModule"
+
+# enable redis cache module
+play.modules.enabled += "play.api.cache.redis.RedisCacheModule"
+
+```
+
+By default this enables **enables synchronous** implementation of the API. For changes see the configuration below.
 
 
 ## How to use this module
@@ -160,12 +171,9 @@ built-in providers you are free to set `none` and supply your own implementation
 
 ## Worth knowing to avoid surprises
 
-The library configuration automatically **disables EHCache module**, it contains the following line in its `conf/reference.conf`.
-You do not have to take care of it but it is good to be aware of it, because it **replaces** the EHCache by redis.
+The library **does not enable** the redis module by default. It is to avoid conflict with Play's default EhCache.
+The Play discourages disabling modules within the library thus it lefts it up to developers to disable EhCache
+and enable Redis manually. This also allows you to use EhCache in your *dev* environment and redis in *production*.
+Nevertheless, this module **replaces** the EHCache and it is not intended to use both implementations along.
 
-```
-# disable default Play framework cache plugin
-play.modules.disabled += "play.api.cache.EhCacheModule"
-```
-
-The library enables only synchronous implementation. The asynchronous version must be enabled manually in the configuration file.
+By default, the library **enables only synchronous** implementation. The asynchronous version must be enabled manually in the configuration file.

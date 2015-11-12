@@ -21,7 +21,15 @@ import org.specs2.specification.BeforeAll
 trait Redis extends EmptyRedis with RedisAsker with RedisMatcher {
 
   /** application context to perform operations in */
-  protected implicit def application: Application = new GuiceApplicationBuilder( ).bindings( binding: _* ).build( )
+  protected implicit def application: Application = new GuiceApplicationBuilder( )
+    // load required bindings
+    .bindings( binding: _* )
+    // #19: disable default EhCache module which is enabled by default
+    .disable( classOf[ play.api.cache.EhCacheModule ] )
+    // #19 enable Redis module
+    .bindings( new RedisCacheModule )
+    // produce a fake application
+    .build( )
 
   /** binding to be used inside this test */
   protected def binding: Seq[ GuiceableModule ] = Seq.empty
