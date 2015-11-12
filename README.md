@@ -20,14 +20,15 @@ As the cache implementation uses Akka actor system, it is **completely non-block
 besides the basic methods such as `get`, `set` and `remove` it provides more convenient methods such as `expire`,
 `exists` and `invalidate`.
 
-This library delivers a single module with two implementations of the API:
+This library delivers a single module with three implementations of the API:
 
  1. play.api.cache.redis.CacheApi
  2. play.api.cache.redis.CacheAsyncApi
+ 3. play.api.cache.CacheApi
 
 First, the CacheApi is extended play.api.cache.CacheApi and it implements the connection in the **blocking** manner.
-This implementation is active by default. Second, the CacheAsyncApi enables **non-blocking** connection providing
-results through `scala.concurrent.Future`. This implementation must be enabled **manually**.
+Second, the CacheAsyncApi enables **non-blocking** connection providing results through `scala.concurrent.Future`.
+Third, the synchronous implementation also implements standard CacheApi bundled within Play framework.
 
 
 ## How to add the module into the project
@@ -54,9 +55,6 @@ play.modules.disabled += "play.api.cache.EhCacheModule"
 # enable redis cache module
 play.modules.enabled += "play.api.cache.redis.RedisCacheModule"
 ```
-
-By default this enables **enables synchronous** implementation of the API. For changes see the configuration below.
-
 
 ## How to use this module
 
@@ -156,7 +154,6 @@ There is already default configuration but it can be overwritten in your `conf/a
 | play.cache.redis.database           | Int      | `1`                             | redis-server database, 1-15         |
 | play.cache.redis.timeout            | Duration | `1s`                            | connection timeout                  |
 | play.cache.redis.dispatcher         | String   | `akka.actor.default-dispatcher` | Akka actor                          |
-| play.cache.redis.enabled            | String[] | `[ "sync" ]`                    | Enabled implementations of the api. Possible values are `sync` and `async` |
 | play.cache.redis.configuration      | String   | `local`                         | Defines which configuration source enable. Accepted values are `local`, `heroku`, `none` |
 | play.cache.redis.password           | String   | `null`                          | When authentication is required, this is the password. Value is optional. |
 
@@ -177,5 +174,3 @@ The library **does not enable** the redis module by default. It is to avoid conf
 The Play discourages disabling modules within the library thus it lefts it up to developers to disable EhCache
 and enable Redis manually. This also allows you to use EhCache in your *dev* environment and redis in *production*.
 Nevertheless, this module **replaces** the EHCache and it is not intended to use both implementations along.
-
-By default, the library **enables only synchronous** implementation. The asynchronous version must be enabled manually in the configuration file.
