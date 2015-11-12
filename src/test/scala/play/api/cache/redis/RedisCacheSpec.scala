@@ -99,7 +99,7 @@ class RedisCacheSpec extends Specification with Redis {
       Cache.set( "async-test-14-note-A", "value", 3.second ).sync
       Cache.set( "async-test-14-key-B", "value", 3.second ).sync
       Cache.matching( "async-test-14*" ).sync mustEqual Set( "async-test-14-key-A", "async-test-14-note-A", "async-test-14-key-B" )
-      Cache.removeAll( "async-test-14*" ).sync
+      Cache.removeMatching( "async-test-14*" ).sync
       Cache.matching( "async-test-14*" ).sync mustEqual Set.empty
     }
 
@@ -108,13 +108,13 @@ class RedisCacheSpec extends Specification with Redis {
       Cache.set( "async-test-15-note-A", "value", 3.second ).sync
       Cache.set( "async-test-15-key-B", "value", 3.second ).sync
       Cache.matching( "async-test-15*A" ).sync mustEqual Set( "async-test-15-key-A", "async-test-15-note-A" )
-      Cache.removeAll( "async-test-15*A").sync
+      Cache.removeMatching( "async-test-15*A").sync
       Cache.matching( "async-test-15*A").sync mustEqual Set.empty
     }
 
     "remove all matching keys, no match" in {
       Cache.matching( "async-test-16*" ).sync mustEqual Set.empty
-      Cache.removeAll( "async-test-16*").sync
+      Cache.removeMatching( "async-test-16*").sync
       Cache.matching( "async-test-16*" ).sync mustEqual Set.empty
     }
 
@@ -222,6 +222,19 @@ class RedisCacheSpec extends Specification with Redis {
       Cache.get[ String ]( "async-test-remove-multiple-1" ) must beNone
       Cache.get[ String ]( "async-test-remove-multiple-2" ) must beNone
       Cache.get[ String ]( "async-test-remove-multiple-3" ) must beNone
+    }
+
+    "remove in batch" in {
+      Cache.set( "async-test-remove-batch-1", "value" ).sync
+      Cache.get[ String ]( "async-test-remove-batch-1" ) must beSome[ Any ]
+      Cache.set( "async-test-remove-batch-2", "value" ).sync
+      Cache.get[ String ]( "async-test-remove-batch-2" ) must beSome[ Any ]
+      Cache.set( "async-test-remove-batch-3", "value" ).sync
+      Cache.get[ String ]( "async-test-remove-batch-3" ) must beSome[ Any ]
+      Cache.removeAll( Seq( "async-test-remove-batch-1", "async-test-remove-batch-2", "async-test-remove-batch-3" ): _* ).sync
+      Cache.get[ String ]( "async-test-remove-batch-1" ) must beNone
+      Cache.get[ String ]( "async-test-remove-batch-2" ) must beNone
+      Cache.get[ String ]( "async-test-remove-batch-3" ) must beNone
     }
   }
 

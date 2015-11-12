@@ -34,7 +34,7 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
     case _ => log.error( s"Unrecognized answer from GET command for key '$key'." ); None
   }
 
-  override def set( key: String, value: Any, expiration: Duration ) = if ( value == null ) removeInBatch( key )
+  override def set( key: String, value: Any, expiration: Duration ) = if ( value == null ) removeAll( key )
   else (expiration, encode( key, value )) match {
     case (Duration.Inf, Success( encoded: String )) => setEternally( key, encoded )
     case (temporal: Duration, Success( encoded: String )) => setTemporally( key, encoded, temporal )
@@ -87,13 +87,12 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
   }
 
   override def remove( key: String ) =
-    removeInBatch( key )
+    removeAll( key )
 
   override def remove( key1: String, key2: String, keys: String* ) =
-    removeInBatch( key1 +: key2 +: keys: _* )
+    removeAll( key1 +: key2 +: keys: _* )
 
-  /** Removes all keys in arguments. The other remove methods are for syntax sugar */
-  private def removeInBatch( keys: String* ): Future[ Unit ] =
+  override def removeAll( keys: String* ): Result[ Unit ] =
     if ( keys.nonEmpty ) // if any key to remove do it
       redis ? Request( "DEL", keys: _* ) map {
         case Success( Some( 0 ) ) => // Nothing was removed
@@ -105,10 +104,10 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
         case _ =>
           log.error( s"Unrecognized answer from DEL command for keys ${ keys.mkString( "'", ",", "'" ) }." )
       }
-    else Future( Unit ) // otherwise return immediately
+    else builder toResult Future( Unit ) // otherwise return immediately
 
-  override def removeAll( pattern: String ): Result[ Unit ] =
-    matching( pattern ) andThen ( keys => removeInBatch( keys.toSeq: _* ) )
+  override def removeMatching( pattern: String ): Result[ Unit ] =
+    matching( pattern ) andThen ( keys => removeAll( keys.toSeq: _* ) )
 
   override def invalidate( ) = redis ? Request( "FLUSHDB" ) map {
     case Success( Some( Ok ) ) => log.info( "Invalidated." ) // cache was invalidated
