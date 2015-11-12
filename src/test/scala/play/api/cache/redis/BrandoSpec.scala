@@ -52,10 +52,6 @@ class BrandoSpec extends Specification with Redis with RedisInstance {
       redis ? Request( "EXISTS", "some-key" ) expects Value must beEqualTo( 0L )
     }
 
-    // "flush current database" in {
-    //   redis ? Request( "FLUSHDB" ) expects Value must beEqualTo( Ok )
-    // }
-
     "determine whether it contains key after invalidation" in {
       redis ? Request( "EXISTS", "model" ) expects Value must beEqualTo( 0L )
     }
