@@ -6,13 +6,13 @@ import scala.language.higherKinds
 import scala.reflect.ClassTag
 
 /**
-  * <p>Cache API inspired by basic Play play.api.cache.CacheApi. It implements all its
-  * operations and in addition it declares couple more useful operations handful
-  * with cache storage. Furthermore, due to its parametrization it allows to decide
-  * whether it produces blocking results or non-blocking promises.</p>
-  *
-  * @author Karel Cemus
-  */
+ * <p>Cache API inspired by basic Play play.api.cache.CacheApi. It implements all its
+ * operations and in addition it declares couple more useful operations handful
+ * with cache storage. Furthermore, due to its parametrization it allows to decide
+ * whether it produces blocking results or non-blocking promises.</p>
+ *
+ * @author Karel Cemus
+ */
 trait InternalCacheApi[ Result[ _ ] ] {
 
   /** Retrieve a value from the cache.
@@ -88,6 +88,12 @@ trait InternalCacheApi[ Result[ _ ] ] {
     */
   def remove( key1: String, key2: String, keys: String* ): Result[ Unit ]
 
+  /** Removes all keys in arguments. The other remove methods are for syntax sugar
+    * @param keys cache storage keys
+    * @return promise
+    */
+  def removeAll( keys: String* ): Result[ Unit ]
+
   /** <p>Removes all keys matching the given pattern. This command has no direct support
     * in Redis, it is combination of KEYS and DEL commands.</p>
     *
@@ -104,12 +110,12 @@ trait InternalCacheApi[ Result[ _ ] ] {
     * the given page. The benefit is we do not need to maintain the list of all keys to invalidate,
     * we invalidate them all at once.</p>
     *
-    <p>* '''Warning:''' complexity is O(n) where n are all keys in the database</p>
+  <p>* '''Warning:''' complexity is O(n) where n are all keys in the database</p>
     *
     * @param pattern this must be valid KEYS pattern
     * @return nothing
     */
-  def removeAll( pattern: String ): Result[ Unit ]
+  def removeMatching( pattern: String ): Result[ Unit ]
 
   /** Remove all keys in cache
     *

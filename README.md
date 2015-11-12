@@ -106,6 +106,9 @@ class MyController @Inject() ( cache: CacheApi ) {
   cache.remove( "key" )
   cache.remove( "key1", "key2" )
   cache.remove( "key1", "key2", "key3" )
+  // remove all expects a sequence of keys, it performs same be behavior
+  // as remove methods, they are just syntax sugar
+  cache.removeAll( "key1", "key2", "key3" )
 
   // invalidates all keys in the redis server! Beware using it
   cache.invalidate()
@@ -122,7 +125,7 @@ class MyController @Inject() ( cache: CacheApi ) {
   
   // removes all keys matching given pattern. Beware, complexity is O(n).
   // It executes KEYS and DEL commands in a transaction
-  cache.removeAll( "page/1/*" )
+  cache.removeMatching( "page/1/*" )
 
   // when we import `play.api.cache.redis._` it enables us
   // using both `java.util.Date` and `org.joda.time.DateTime` as expiration
