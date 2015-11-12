@@ -46,14 +46,13 @@ libraryDependencies ++= Seq(
 
 Now we **must enable our redis** cache module and **disable default Play's EhCache** module. Into `application.conf` and following
 two lines:
-```conf
 
+```
 # disable default Play framework cache plugin
 play.modules.disabled += "play.api.cache.EhCacheModule"
 
 # enable redis cache module
 play.modules.enabled += "play.api.cache.redis.RedisCacheModule"
-
 ```
 
 By default this enables **enables synchronous** implementation of the API. For changes see the configuration below.
