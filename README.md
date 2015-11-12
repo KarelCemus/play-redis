@@ -170,6 +170,32 @@ static configuration file. Another supplied configuration reader is `env`, which
 `REDIS_URL` but the name is configurable. To disable built-in providers you are free to set `custom` and supply your
 own implementation of the `Configuration` trait.
 
+### Running on Heroku
+
+To enable redis cache on Heroku we have to do the following steps:
+
+ 1. add library into application dependencies
+ 2. enable `RedisCacheModule`
+ 3. disable `EhCacheModule`
+ 4. set `play.cache.redis.configuration: env`
+ 5. done, we can run it and use any of 3 provided interfaces
+
+### Custom configuration source
+
+However, there are scenarios when we need to customize the configuration to better fit our needs. Usually,
+we might encounter this when we have a specific development flow or use a specific PaaS. To enable redis cache
+implementation with customized configuration we have to do the following steps:
+
+ 1. add library into application dependencies
+ 2. enable `RedisCacheModule`
+ 3. disable `EhCacheModule`
+ 4. set `play.cache.redis.configuration: custom`
+ 5. Implement `play.api.cache.redis.Configuration` trait
+ 6. Register the implementation into DI provider. This is specific for each provider. If you are using Guice, which is
+ Play's default DI provider, then look [here](https://playframework.com/documentation/2.4.x/ScalaDependencyInjection#Advanced:-Extending-the-GuiceApplicationLoader).
+ It gives you a hint how to register the implementation during application start.
+ 7. done, we can run it and use any of 3 provided interfaces
+
 ## Worth knowing to avoid surprises
 
 The library **does not enable** the redis module by default. It is to avoid conflict with Play's default EhCache.
