@@ -39,10 +39,11 @@ of the Play framework.
 To your SBT `build.sbt` add the following lines:
 
 ```scala
-libraryDependencies ++= Seq(
-  // redis-server cache
-  "com.github.karelcemus" %% "play-redis" % "0.3-SNAPSHOT"
-)
+// redis-server cache
+libraryDependencies += "com.github.karelcemus" %% "play-redis" % "0.3-SNAPSHOT"
+
+// repository with the Brando connector 
+resolvers += "Brando Repository" at "http://chrisdinn.github.io/releases/"
 ```
 
 Now we **must enable our redis** cache module and **disable default Play's EhCache** module. Into `application.conf` and following
