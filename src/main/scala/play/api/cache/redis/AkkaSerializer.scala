@@ -35,7 +35,7 @@ trait AkkaSerializer {
     case anyRef: AnyRef =>
       // serialize the object with the respect to the current class
       Try( serializer.findSerializerFor( anyRef ).toBinary( anyRef ) ).map( toBase64 )
-    // if none of the cases above matches, throw an exception
+    // if no of the cases above matches, throw an exception
     case _ => throw new UnsupportedOperationException( s"Type ${ value.getClass } is not supported by redis cache connector." )
   }
 

@@ -36,11 +36,11 @@ trait Configuration {
 }
 
 /**
- * This configuration source reads the application configuration file and provides settings located in there. This
- * is default configuration provider and it expects all settings under the 'play.cache.redis' node.
+ * This configuration source reads the static configuration in the `application.conf` file and provides settings
+ * located in there. This is default configuration provider. It expects all settings under the 'play.cache.redis' node.
  */
 @Singleton
-class LocalConfiguration extends Configuration {
+class StaticConfiguration extends Configuration {
 
   import scala.language.implicitConversions
 
@@ -70,8 +70,12 @@ class LocalConfiguration extends Configuration {
   override def password: Option[ String ] = if ( config.getIsNull( "password" ) ) None else Some( config.getString( "password" ) )
 }
 
+/**
+ * Environment configuration expects the configuration to be injected through environment variable containing 
+ * the connection string. This configuration is often used by PaaS environments.
+ */
 @Singleton
-class HerokuConfiguration(
+class EnvironmentConfiguration(
 
   /** host with redis server */
   override val host: String,
@@ -82,32 +86,29 @@ class HerokuConfiguration(
   /** authentication password */
   override val password: Option[ String ]
 
-) extends LocalConfiguration
+) extends StaticConfiguration
 
 /**
- * Reads environment variables for REDIS_URL and returns HerokuConfiguration instance.
- * This configuration instance is designed to work in Heroku PaaS environment.
+ * Reads environment variables for the connection string and returns EnvironmentConfiguration instance.
+ * This configuration instance is designed to work in PaaS environments such as Heroku.
+ *
+ * @param variable name of the variable with the connection string in the environment
  */
-trait HerokuConfigurationProvider extends Provider[ HerokuConfiguration ] {
+class EnvironmentConfigurationProvider( variable: String ) extends Provider[ EnvironmentConfiguration ] {
 
   /** expected format of the environment variable */
-  private val REDIS_URL = "redis://([^:]+):([^@]+)@([^:]+):([0-9]+)".r
+  private val REDIS_URL = "redis://((?<user>[^:]+):(?<password>[^@]+)@)?(?<host>[^:]+):(?<port>[0-9]+)".r( "auth", "user", "password", "host", "port" )
 
   /** read environment url or throw an exception */
-  override def get( ): HerokuConfiguration = url match {
-    case Some( REDIS_URL( user, password, host, port ) ) =>
-      // read the environment variable and fill missing information from the local configuration file
-      new HerokuConfiguration( host, port.toInt, Some( password ) )
-    case Some( _ ) =>
-      // value is defined but not in the expected format
-      throw new IllegalArgumentException( "Unexpected value in the environment variable 'REDIS_URL'. Expected format is 'redis://user:password@host:port'." )
-    case None =>
-      // variable is missing
-      throw new IllegalArgumentException( "Expected environment variable 'REDIS_URL' at Heroku PaaS is missing. Expected value is 'redis://user:password@host:port'." )
+  override def get( ): EnvironmentConfiguration = url.map( REDIS_URL.findFirstMatchIn ) match {
+    // read the environment variable and fill missing information from the local configuration file
+    case Some( Some( matcher ) ) => new EnvironmentConfiguration( matcher.group( "host" ), matcher.group( "port" ).toInt, Option( matcher.group( "password" ) ) )
+    // value is defined but not in the expected format
+    case Some( None ) => throw new IllegalArgumentException( s"Unexpected value in the environment variable '$variable'. Expected format is 'redis://[user:password@]host:port'." )
+    // variable is missing
+    case None => throw new IllegalArgumentException( s"Expected environment variable '$variable' is missing. Expected value is 'redis://[user:password@]host:port'." )
   }
 
   /** returns the connection url to redis server */
-  protected def url = sys.env.get( "REDIS_URL" )
+  protected def url = sys.env.get( variable )
 }
-
-object HerokuConfigurationProvider extends HerokuConfigurationProvider

@@ -154,8 +154,9 @@ There is already default configuration but it can be overwritten in your `conf/a
 | play.cache.redis.database           | Int      | `1`                             | redis-server database, 1-15         |
 | play.cache.redis.timeout            | Duration | `1s`                            | connection timeout                  |
 | play.cache.redis.dispatcher         | String   | `akka.actor.default-dispatcher` | Akka actor                          |
-| play.cache.redis.configuration      | String   | `local`                         | Defines which configuration source enable. Accepted values are `local`, `heroku`, `none` |
+| play.cache.redis.configuration      | String   | `static`                        | Defines which configuration source enable. Accepted values are `static`, `env`, `custom` |
 | play.cache.redis.password           | String   | `null`                          | When authentication is required, this is the password. Value is optional. |
+| play.cache.redis.connection-string-variable | String   | `REDIS_URL`             | Name of the environment variable with the connection string. This is used in combination with the `env` configuration. This allows customization of the variable name in PaaS environment. Value is optional. |
 
 
 ### Connection settings on different platforms
@@ -164,9 +165,36 @@ In various environments there are various sources of the connection string defin
 For example, at localhost we are interested in direct definition of host and port in the `application.conf` file.
 However, this approach does not fit all environments. For example, Heroku supplies `REDIS_URL` environment variable
 defining the connection string. To resolve this diversity, the library expects an implementation of the `Configuration`
-trait available through DI. By default, it enables `local` configuration source, i.e., it reads the settings from the
-configuration file. Another supplied configuration reader is `heroku`, which reads the `REDIS_URL` variable. To disable
-built-in providers you are free to set `none` and supply your own implementation of the `Configuration` trait.
+trait available through DI. By default, it enables `static` configuration source, i.e., it reads the settings from the
+static configuration file. Another supplied configuration reader is `env`, which reads the environment variable such as
+`REDIS_URL` but the name is configurable. To disable built-in providers you are free to set `custom` and supply your
+own implementation of the `Configuration` trait.
+
+### Running on Heroku
+
+To enable redis cache on Heroku we have to do the following steps:
+
+ 1. add library into application dependencies
+ 2. enable `RedisCacheModule`
+ 3. disable `EhCacheModule`
+ 4. set `play.cache.redis.configuration: env`
+ 5. done, we can run it and use any of 3 provided interfaces
+
+### Custom configuration source
+
+However, there are scenarios when we need to customize the configuration to better fit our needs. Usually,
+we might encounter this when we have a specific development flow or use a specific PaaS. To enable redis cache
+implementation with customized configuration we have to do the following steps:
+
+ 1. add library into application dependencies
+ 2. enable `RedisCacheModule`
+ 3. disable `EhCacheModule`
+ 4. set `play.cache.redis.configuration: custom`
+ 5. Implement `play.api.cache.redis.Configuration` trait
+ 6. Register the implementation into DI provider. This is specific for each provider. If you are using Guice, which is
+ Play's default DI provider, then look [here](https://playframework.com/documentation/2.4.x/ScalaDependencyInjection#Advanced:-Extending-the-GuiceApplicationLoader).
+ It gives you a hint how to register the implementation during application start.
+ 7. done, we can run it and use any of 3 provided interfaces
 
 ## Worth knowing to avoid surprises
 

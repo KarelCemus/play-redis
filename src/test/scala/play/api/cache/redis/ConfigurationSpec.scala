@@ -11,7 +11,7 @@ class ConfigurationSpec extends Specification {
 
   "Local configuration" should {
 
-    val configuration = new LocalConfiguration( )
+    val configuration = new StaticConfiguration( )
 
     "read host" in {
       configuration.host must beEqualTo( "localhost" )
@@ -40,9 +40,8 @@ class ConfigurationSpec extends Specification {
 
   "Heroku configuration" should {
 
-    val configuration = new HerokuConfigurationProvider( ) {
-      /** returns the connection url to redis server */
-      override protected def url: Option[ String ] = Some( "redis://h:my-password@redis.server:1234" )
+    val configuration = new EnvironmentConfigurationProvider( "undefined" ) {
+      override protected def url = Some( "redis://h:my-password@redis.server:1234" )
     }.get( )
 
     "read host" in {
@@ -67,6 +66,12 @@ class ConfigurationSpec extends Specification {
 
     "read password" in {
       configuration.password must beSome( "my-password" )
+    }
+
+    "without password" in {
+      new EnvironmentConfigurationProvider( "undefined" ) {
+        override protected def url = Some( "redis://redis.server:1234" )
+      }.get( ).password must beNone
     }
   }
 }
