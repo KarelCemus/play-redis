@@ -44,6 +44,9 @@ libraryDependencies += "com.github.karelcemus" %% "play-redis" % "0.3-SNAPSHOT"
 
 // repository with the Brando connector 
 resolvers += "Brando Repository" at "http://chrisdinn.github.io/releases/"
+
+// Sonatype snapshot repository is not enabled by default
+resolvers += Resolver.sonatypeRepo("snapshots")
 ```
 
 Now we **must enable our redis** cache module and **disable default Play's EhCache** module. Into `application.conf` and following
