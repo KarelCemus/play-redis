@@ -44,6 +44,12 @@ class Cache20 extends CacheAPI20 {
 
   /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration */
   override def expire( key: String, expiration: Int ): Unit = internal.expire( key, expiration )
+
+  /** finds all keys matching the pattern. complexity O(n) */
+  override def matching( pattern: String ): Future[ Set[ String ] ] = internal.matching( pattern )
+
+  /** removes all keys matching the pattern. complexity O(n) */
+  override def removeMatching( pattern: String ): Future[ Unit ] = internal.removeMatching( pattern )
 }
 
 object AsyncCache extends Cache20

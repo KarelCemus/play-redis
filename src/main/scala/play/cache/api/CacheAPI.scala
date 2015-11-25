@@ -45,4 +45,10 @@ trait CacheAPI {
 
   /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration */
   def expire( key: String, expiration: Int )
+
+  /** finds all keys matching the pattern. complexity O(n) */
+  def matching( pattern: String ): Future[ Set[ String ] ]
+
+  /** removes all keys matching the pattern. complexity O(n) */
+  def removeMatching( pattern: String ): Future[ Unit ]
 }

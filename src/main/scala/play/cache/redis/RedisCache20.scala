@@ -120,6 +120,11 @@ class RedisCache20( protected val cacheAPI: CacheAPI )( implicit app: Applicatio
   /** invalidate cache */
   override def invalidate( ): Future[ Try[ String ] ] = cacheAPI.invalidate( )
 
+  /** finds all keys matching the pattern. complexity O(n) */
+  override def matching( pattern: String ): Future[ Set[ String ] ] = cacheAPI.matching( pattern )
+
+  /** removes all keys matching the pattern. complexity O(n) */
+  override def removeMatching( pattern: String ): Future[ Unit ] = cacheAPI.removeMatching( pattern )
 
   /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration */
   override def expire( key: String, expiration: Int ): Unit = cacheAPI.expire( key, expiration )

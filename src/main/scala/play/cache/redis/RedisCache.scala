@@ -150,6 +150,18 @@ class RedisCache( implicit app: Application ) extends CacheAPI {
     }
   }
 
+  override def matching( pattern: String ): Future[ Set[ String ] ] = redis ? Request( "KEYS", pattern ) map {
+    case Success( Some( response: List[ _ ] ) ) =>
+      val keys = response.asInstanceOf[ List[ Option[ ByteString ] ] ].flatten.map( _.utf8String ).toSet
+      log.debug( s"KEYS on '$pattern' responded '${ keys.mkString( ", " ) }'." )
+      keys
+    case Failure( ex ) => log.error( s"KEYS command failed for pattern '$pattern'.", ex ); Set.empty[ String ]
+    case _ => log.error( s"Unrecognized answer from KEYS command for pattern '$pattern'." ); Set.empty[ String ]
+  }
+
+  override def removeMatching( pattern: String ): Future[ Unit ] =
+    matching( pattern ) flatMap ( keys => if ( keys.isEmpty ) Future { } else remove( keys.toSeq: _* ).map { case _ => } )
+
   private implicit class RedisRef( brando: ActorRef ) {
 
     private[ RedisCache ] val actor = new AskableActorRef( brando )
