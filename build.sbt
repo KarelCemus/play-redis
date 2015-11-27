@@ -1,6 +1,6 @@
-import sbt._
-import sbt.Keys._
 import com.typesafe.sbt.pgp.PgpKeys
+import sbt.Keys._
+import sbt._
 
 name := "play-redis"
 
@@ -17,8 +17,8 @@ val playVersion = "2.4.3"
 libraryDependencies ++= Seq(
   // play framework cache API
   "com.typesafe.play" %% "play-cache" % playVersion % "provided" exclude("net.sf.ehcache", "ehcache-core"),
-  // redis connector
-  "com.digital-achiever" %% "brando" % "2.1.2",
+  // redis connector - NOTE: not published yet
+  // "com.digital-achiever" %% "brando" % "3.0.3-SNAPSHOT",
   // test framework
   "org.specs2" %% "specs2-core" % "3.6.5" % "test",
   // test module for play framework
@@ -63,3 +63,9 @@ publishTo := {
   if (isSnapshot.value) Some(Opts.resolver.sonatypeSnapshots)
   else Some( Opts.resolver.sonatypeStaging )
 }
+
+// brando source repository, latest snapshot version
+lazy val brando = RootProject( uri( "git://github.com/chrisdinn/brando.git" ) )
+
+// as we need brando in its latest snapshot compile it from sources
+lazy val root = ( project in file( "." ) ).dependsOn( brando )
