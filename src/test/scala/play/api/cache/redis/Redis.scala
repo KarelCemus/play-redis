@@ -88,7 +88,7 @@ trait RedisInstance extends RedisAsker with RedisSettings {
 
   /** instance of brando */
   protected def redis( implicit application: Application ) = synchronized {
-    if ( _redis == null ) _redis = Akka.system.actorOf( brando.Redis( host = host, port = port, database = database ) )
+    if ( _redis == null ) _redis = Akka.system.actorOf( brando.Brando( host = host, port = port, database = Some( database ) ) )
     _redis
   }
 }
