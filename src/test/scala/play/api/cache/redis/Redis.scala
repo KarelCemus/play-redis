@@ -11,7 +11,7 @@ import play.api.libs.concurrent.Akka
 import akka.actor.ActorRef
 import akka.pattern.AskableActorRef
 import akka.util.Timeout
-import brando.{StashingRedis, Request}
+import brando.Request
 import org.specs2.matcher._
 import org.specs2.specification.BeforeAll
 
@@ -88,9 +88,7 @@ trait RedisInstance extends RedisAsker with RedisSettings {
 
   /** instance of brando */
   protected def redis( implicit application: Application ) = synchronized {
-    if ( _redis == null ) _redis = Akka.system actorOf StashingRedis {
-      Akka.system.actorOf( brando.Redis( host = host, port = port, database = database ) )
-    }
+    if ( _redis == null ) _redis = Akka.system.actorOf( brando.Redis( host = host, port = port, database = database ) )
     _redis
   }
 }
