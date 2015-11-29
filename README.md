@@ -1,3 +1,5 @@
+# TEST of the PR and Jenkins setup
+
 <h1 align="center">Redis Cache module for Play framework</h1>
 
 <p align="center"><strong>Note: This version supports Play framework 2.4.x with JDK 8.<br/>For previous versions see older releases.</strong></p>
