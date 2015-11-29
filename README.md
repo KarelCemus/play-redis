@@ -1,4 +1,4 @@
-# TEST of the PR and Jenkins setup
+# TEST of the PR and Jenkins setup 2
 
 <h1 align="center">Redis Cache module for Play framework</h1>
 
