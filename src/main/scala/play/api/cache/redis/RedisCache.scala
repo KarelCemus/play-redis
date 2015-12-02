@@ -25,7 +25,9 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
   protected implicit val context: ExecutionContext = Akka.system.dispatchers.lookup( invocationContext )
 
   /** communication module to Redis cache */
-  protected val redis: RedisRef = Akka.system actorOf Brando( host, port, database = Some( database ), auth = password )
+  protected val redis: RedisRef = Akka.system actorOf StashingRedis {
+    Akka.system actorOf Redis( host, port, database = database, auth = password )
+  }
 
   override def get[ T: ClassTag ]( key: String ) = redis ? Request( "GET", key ) map {
     case Success( Some( response: ByteString ) ) => log.trace( s"Hit on key '$key'." ); decode[ T ]( key, response.utf8String ).toOption
