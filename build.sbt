@@ -12,15 +12,19 @@ scalaVersion := "2.11.7"
 
 crossScalaVersions := Seq( scalaVersion.value )
 
-val playVersion = "2.4.3"
+val playVersion = "2.4.4"
+
+val brandoVersion = "3.0.3"
+
+val specs2Version = "3.6.6"
 
 libraryDependencies ++= Seq(
   // play framework cache API
   "com.typesafe.play" %% "play-cache" % playVersion % "provided" exclude("net.sf.ehcache", "ehcache-core"),
   // redis connector - NOTE: not published yet
-  "com.digital-achiever" %% "brando" % "3.0.3-SNAPSHOT",
+  "com.digital-achiever" %% "brando" % brandoVersion,
   // test framework
-  "org.specs2" %% "specs2-core" % "3.6.5" % "test",
+  "org.specs2" %% "specs2-core" % specs2Version % "test",
   // test module for play framework
   "com.typesafe.play" %% "play-test" % playVersion % "test"
 )
@@ -30,7 +34,7 @@ resolvers ++= Seq(
   "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
 )
 
-javacOptions ++= Seq( "-source", "1.8", "-target", "1.68", "-Xlint:unchecked", "-encoding", "UTF-8" )
+javacOptions ++= Seq( "-source", "1.8", "-target", "1.8", "-Xlint:unchecked", "-encoding", "UTF-8" )
 
 scalacOptions ++= Seq( "-deprecation", "-feature", "-unchecked" )
 
