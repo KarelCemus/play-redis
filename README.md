@@ -3,7 +3,7 @@
 <p align="center"><strong>Note: This version supports Play framework 2.4.x with JDK 8.<br/>For previous versions see older releases.</strong></p>
 
 <p align="center">
-  <a href='http://jenkins.karelcemus.cz/view/Play%20frameworks/job/play-redis/'><img src='http://jenkins.karelcemus.cz/buildStatus/icon?job=play-redis'></a>
+  <a href='https://travis-ci.org/KarelCemus/play-redis'><img src='https://travis-ci.org/KarelCemus/play-redis.svg?branch=master'></a>
 </p>
 
 By default, [Play framework 2](http://playframework.com/) is delivered with EHCache module implementing
