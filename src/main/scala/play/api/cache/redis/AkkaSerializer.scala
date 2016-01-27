@@ -53,13 +53,21 @@ trait AkkaSerializer {
     case "" => Success( null )
     case string if classTag == ClassTag( classOf[ String ] ) => Try( string )
     case boolean if classTag == ClassTag.Boolean => Try( boolean.toBoolean )
+    case boolean if classTag == JavaClassTag.Boolean => Try( boolean.toBoolean )
     case byte if classTag == ClassTag.Byte => Try( byte.toByte )
+    case byte if classTag == JavaClassTag.Byte => Try( byte.toByte )
     case char if classTag == ClassTag.Char => Try( char.charAt( 0 ) )
+    case char if classTag == JavaClassTag.Char => Try( char.charAt( 0 ) )
     case short if classTag == ClassTag.Short => Try( short.toShort )
+    case short if classTag == JavaClassTag.Short => Try( short.toShort )
     case int if classTag == ClassTag.Int => Try( int.toInt )
+    case int if classTag == JavaClassTag.Int => Try( int.toInt )
     case long if classTag == ClassTag.Long => Try( long.toLong )
+    case long if classTag == JavaClassTag.Long => Try( long.toLong )
     case float if classTag == ClassTag.Float => Try( float.toFloat )
+    case float if classTag == JavaClassTag.Float => Try( float.toFloat )
     case double if classTag == ClassTag.Double => Try( double.toDouble )
+    case double if classTag == JavaClassTag.Double => Try( double.toDouble )
     // AnyRef is supported by Akka serializers
     case anyRef => serializer.deserialize( toBinary( anyRef ), classTag.runtimeClass )
   } ).asInstanceOf[ Try[ T ] ]
@@ -88,4 +96,16 @@ private[ redis ] object Primitives {
     classOf[ Double ], classOf[ java.lang.Double ],
     classOf[ String ]
   )
+}
+
+private[ redis ] object JavaClassTag {
+
+  val Byte = ClassTag( classOf[ java.lang.Byte ] )
+  val Short = ClassTag( classOf[ java.lang.Short ] )
+  val Char = ClassTag( classOf[ java.lang.Character ] )
+  val Int = ClassTag( classOf[ java.lang.Integer ] )
+  val Long = ClassTag( classOf[ java.lang.Long ] )
+  val Float = ClassTag( classOf[ java.lang.Float ] )
+  val Double = ClassTag( classOf[ java.lang.Double ] )
+  val Boolean = ClassTag( classOf[ java.lang.Boolean ] )
 }

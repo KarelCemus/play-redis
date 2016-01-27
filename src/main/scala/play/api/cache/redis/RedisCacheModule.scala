@@ -23,8 +23,10 @@ object ModuleConfiguration {
       val sync = bind[ CacheApi ].to[ SyncRedis ]
       // enable async module when required
       val async = bind[ CacheAsyncApi ].to[ AsyncRedis ]
+      // java api
+      val java = bind[ play.cache.CacheApi ].to[ JavaRedis ]
       // add to other bindings
-      super.bindings( environment, configuration ) :+ sync :+ async
+      super.bindings( environment, configuration ) :+ sync :+ async :+ java
     }
   }
 

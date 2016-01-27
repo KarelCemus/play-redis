@@ -20,11 +20,12 @@ As the cache implementation uses Akka actor system, it is **completely non-block
 besides the basic methods such as `get`, `set` and `remove` it provides more convenient methods such as `expire`,
 `exists` and `invalidate`.
 
-This library delivers a single module with three implementations of the API:
+This library delivers a single module with following implementations of the API:
 
  1. play.api.cache.redis.CacheApi
  2. play.api.cache.redis.CacheAsyncApi
  3. play.api.cache.CacheApi
+ 3. play.cache.CacheApi
 
 First, the CacheApi is extended play.api.cache.CacheApi and it implements the connection in the **blocking** manner.
 Second, the CacheAsyncApi enables **non-blocking** connection providing results through `scala.concurrent.Future`.
@@ -40,7 +41,7 @@ To your SBT `build.sbt` add the following lines:
 
 ```scala
 // redis-server cache
-libraryDependencies += "com.github.karelcemus" %% "play-redis" % "0.3-SNAPSHOT"
+libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.0.0-SNAPSHOT"
 
 // repository with the Brando connector 
 resolvers += "Brando Repository" at "http://chrisdinn.github.io/releases/"
