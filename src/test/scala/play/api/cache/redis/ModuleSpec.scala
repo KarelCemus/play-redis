@@ -9,7 +9,7 @@ import org.specs2.mutable.Specification
  */
 class ModuleSpec extends Specification with Redis {
 
-  private val Cache = application.injector.instanceOf[ CacheApi ]
+  private val Cache = injector.instanceOf[ CacheApi ]
 
   "Cache" should {
 

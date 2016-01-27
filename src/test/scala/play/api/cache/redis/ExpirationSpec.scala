@@ -2,8 +2,6 @@ package play.api.cache.redis
 
 import java.util.Date
 
-import play.api.inject.ApplicationLifecycle
-
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
 
@@ -12,7 +10,7 @@ import org.specs2.mutable.Specification
   */
 class ExpirationSpec extends Specification with Redis {
 
-  private val Cache = new RedisCache( )( Builders.SynchronousBuilder, application, application.injector.instanceOf[ ApplicationLifecycle ], new StaticConfiguration( ) )
+  private val Cache = injector.instanceOf[ CacheApi ]
 
   private def nowInJoda = new DateTime( )
 

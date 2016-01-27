@@ -11,7 +11,7 @@ class PlaySpec extends Specification with Redis {
 
   private type Cache = play.api.cache.CacheApi
 
-  private val Cache = application.injector.instanceOf[ Cache ]
+  private val Cache = injector.instanceOf[ Cache ]
 
   "Cache" should {
 

@@ -14,7 +14,7 @@ class JavaCacheSpec extends Specification with Redis {
 
   private type Cache = play.cache.CacheApi
 
-  private val Cache = application.injector.instanceOf[ play.cache.CacheApi ]
+  private val Cache = injector.instanceOf[ play.cache.CacheApi ]
 
   "Cache" should {
 
