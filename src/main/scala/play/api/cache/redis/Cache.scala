@@ -27,6 +27,8 @@ trait JavaCacheApi extends play.cache.CacheApi {
 
   protected def internal: CacheApi
 
+  protected def classLoader: ClassLoader
+
   override def set( key: String, value: scala.Any, duration: Int ): Unit =
     set( key, value, duration.seconds )
 
@@ -51,7 +53,7 @@ trait JavaCacheApi extends play.cache.CacheApi {
     play.libs.Scala.orNull {
       // load classTag
       internal.get[ String ]( s"classTag::$key" ).map[ ClassTag[ T ] ] {
-        name => if ( name == null ) ClassTag.Null.asInstanceOf[ ClassTag[ T ] ] else ClassTag( Class.forName( name ) )
+        name => if ( name == null ) ClassTag.Null.asInstanceOf[ ClassTag[ T ] ] else ClassTag( classLoader.loadClass( name ) )
       }.flatMap {
         implicit tag => internal.get[ T ]( key )
       }.orElse {
@@ -68,4 +70,6 @@ trait JavaCacheApi extends play.cache.CacheApi {
 }
 
 @Singleton
-class JavaRedis @Inject()( protected val internal: CacheApi ) extends JavaCacheApi
+class JavaRedis @Inject()( protected val internal: CacheApi, environment: Environment ) extends JavaCacheApi {
+  override protected def classLoader: ClassLoader = environment.classLoader
+}
