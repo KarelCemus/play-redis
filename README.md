@@ -41,13 +41,10 @@ To your SBT `build.sbt` add the following lines:
 
 ```scala
 // redis-server cache
-libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.0.0-SNAPSHOT"
+libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.0.0"
 
 // repository with the Brando connector 
 resolvers += "Brando Repository" at "http://chrisdinn.github.io/releases/"
-
-// Sonatype snapshot repository is not enabled by default
-resolvers += Resolver.sonatypeRepo("snapshots")
 ```
 
 Now we **must enable our redis** cache module and **disable default Play's EhCache** module. Into `application.conf` and following
