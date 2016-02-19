@@ -22,10 +22,10 @@ besides the basic methods such as `get`, `set` and `remove` it provides more con
 
 This library delivers a single module with following implementations of the API:
 
- 1. play.api.cache.redis.CacheApi
- 2. play.api.cache.redis.CacheAsyncApi
- 3. play.api.cache.CacheApi
- 3. play.cache.CacheApi
+ 1. play.api.cache.redis.CacheApi (blocking Scala implementation)
+ 2. play.api.cache.redis.CacheAsyncApi (non-blocking Scala implementation)
+ 3. play.api.cache.CacheApi (Play's blocking API for Scala)
+ 4. play.cache.CacheApi (Play's blocking API for Java)
 
 First, the CacheApi is extended play.api.cache.CacheApi and it implements the connection in the **blocking** manner.
 Second, the CacheAsyncApi enables **non-blocking** connection providing results through `scala.concurrent.Future`.
@@ -43,7 +43,7 @@ To your SBT `build.sbt` add the following lines:
 // redis-server cache
 libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.0.0"
 
-// repository with the Brando connector 
+// repository with the Brando connector
 resolvers += "Brando Repository" at "http://chrisdinn.github.io/releases/"
 ```
 
@@ -85,8 +85,7 @@ class MyController @Inject() ( cache: CacheApi ) {
   // returns Option[ T ] where T stands for MyCaseClass
   cache.get[ MyCaseClass ]( "object" )
 
-  // returns Future[ Try[ String ] ] where the value string
-  // should be Success( "OK" ) or Failure( ex )
+  // returns Unit
   cache.set( "key", 1.23 )
 
   // returns Option[ Double ]
@@ -109,7 +108,7 @@ class MyController @Inject() ( cache: CacheApi ) {
   // as remove methods, they are just syntax sugar
   cache.removeAll( "key1", "key2", "key3" )
 
-  // invalidates all keys in the redis server! Beware using it
+  // removes all keys in the redis database! Beware using it
   cache.invalidate()
 
   // refreshes expiration of the key if present
@@ -117,16 +116,17 @@ class MyController @Inject() ( cache: CacheApi ) {
 
   // returns true if the key is in the storage, false otherwise
   cache.exists( "key" )
-  
-  // returns all keys matching given pattern. Beware, complexity is O(n).
-  // It executes KEYS command
+
+  // returns all keys matching given pattern. Beware, complexity is O(n),
+  // where n is the size of the database. It executes KEYS command.
   cache.matching( "page/1/*" )
-  
-  // removes all keys matching given pattern. Beware, complexity is O(n).
-  // It executes KEYS and DEL commands in a transaction
+
+  // removes all keys matching given pattern. Beware, complexity is O(n),
+  // where n is the size of the database. It internally uses method matching.
+  // It executes KEYS and DEL commands in a transaction.
   cache.removeMatching( "page/1/*" )
 
-  // when we import `play.api.cache.redis._` it enables us
+  // importing `play.api.cache.redis._` enables us
   // using both `java.util.Date` and `org.joda.time.DateTime` as expiration
   // dates instead of duration. These implicits are useful when
   // we know the data regularly changes, e.g., at midnight, at 3 AM, etc.
@@ -136,6 +136,14 @@ class MyController @Inject() ( cache: CacheApi ) {
   cache.set( "key", "value", DateTime.parse( "2015-12-01T00:00" ).asExpiration )
 }
 ```
+
+## Checking operation result
+
+Independently on the used API, all operations throw an exception when fail. Consequently,
+successful invocations do not throw an exception. The only difference is in checking for errors.
+Synchronous APIs really throw an exception, while asynchronous API returns a `Future`
+wrapping both the success and the exception, i.e., use `onFailure` or `onComplete` to
+check for errors.
 
 
 <div align="center">
