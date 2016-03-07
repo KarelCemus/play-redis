@@ -1,20 +1,20 @@
 <h1 align="center">Redis Cache module for Play framework</h1>
 
-<p align="center"><strong>Note: This version supports Play framework 2.4.x with JDK 8.<br/>For previous versions see older releases.</strong></p>
+<p align="center"><strong>Note: This version supports Play framework 2.5.x with JDK 8.<br/>For previous versions see older releases.</strong></p>
 
 <p align="center">
   <a href='https://travis-ci.org/KarelCemus/play-redis'><img src='https://travis-ci.org/KarelCemus/play-redis.svg?branch=master'></a>
 </p>
 
 By default, [Play framework 2](http://playframework.com/) is delivered with EHCache module implementing
-[CacheApi](https://www.playframework.com/documentation/2.4.x/api/scala/index.html#play.api.cache.CacheApi).
+[CacheApi](https://www.playframework.com/documentation/2.5.x/api/scala/index.html#play.api.cache.CacheApi).
 Unfortunately, this module suffers from a very inconvenient issue: as the ClassLoaders are evolved on
 application recompilation **during a development**, the class versions does not match thus the **cache is wiped on
 every compilation**. That might result in *repeated logging in*, *loosing a session* or *computing an extensive value*.
 All these things very slow down development.
 
 The goal of this module is to enable the **redis-server** key/value cache storage to be smoothly used within the
-Play framework 2. Furthermore, besides the backward compatibility with the [CacheApi](https://www.playframework.com/documentation/2.4.x/api/scala/index.html#play.api.cache.CacheApi),
+Play framework 2. Furthermore, besides the backward compatibility with the [CacheApi](https://www.playframework.com/documentation/2.5.x/api/scala/index.html#play.api.cache.CacheApi),
 it introduces more evolved API called [play.api.cache.redis.CacheApi](https://github.com/KarelCemus/play-redis/blob/master/src/main/scala/play/api/cache/redis/InternalCacheApi.scala).
 As the cache implementation uses Akka actor system, it is **completely non-blocking and asynchronous**. Furthermore,
 besides the basic methods such as `get`, `set` and `remove` it provides more convenient methods such as `expire`,
@@ -41,7 +41,7 @@ To your SBT `build.sbt` add the following lines:
 
 ```scala
 // redis-server cache
-libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.0.0"
+libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.1.0"
 
 // repository with the Brando connector
 resolvers += "Brando Repository" at "http://chrisdinn.github.io/releases/"
@@ -202,13 +202,24 @@ implementation with customized configuration we have to do the following steps:
  4. set `play.cache.redis.configuration: custom`
  5. Implement `play.api.cache.redis.Configuration` trait
  6. Register the implementation into DI provider. This is specific for each provider. If you are using Guice, which is
- Play's default DI provider, then look [here](https://playframework.com/documentation/2.4.x/ScalaDependencyInjection#Advanced:-Extending-the-GuiceApplicationLoader).
+ Play's default DI provider, then look [here](https://playframework.com/documentation/2.5.x/ScalaDependencyInjection#Advanced:-Extending-the-GuiceApplicationLoader).
  It gives you a hint how to register the implementation during application start.
  7. done, we can run it and use any of 3 provided interfaces
 
-## Worth knowing to avoid surprises
+## Caveat
 
 The library **does not enable** the redis module by default. It is to avoid conflict with Play's default EhCache.
 The Play discourages disabling modules within the library thus it leaves it up to developers to disable EhCache
 and enable Redis manually. This also allows you to use EhCache in your *dev* environment and redis in *production*.
 Nevertheless, this module **replaces** the EHCache and it is not intended to use both implementations along.
+
+
+## Changelog
+
+### 1.1.0
+
+Update to Play 2.5, no significant changes
+
+### 1.0.0
+
+Redesigned the library from scratch to support Play 2.4.x API and use DI.

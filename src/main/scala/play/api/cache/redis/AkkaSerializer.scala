@@ -4,16 +4,16 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util._
 
-import play.api.libs.concurrent.Akka
 import play.api.{Application, Logger}
 
+import akka.actor.ActorSystem
 import akka.serialization._
 
 /**
- * Provides a encode and decode methods to serialize objects into strings.
- *
- * @author Karel Cemus
- */
+  * Provides a encode and decode methods to serialize objects into strings.
+  *
+  * @author Karel Cemus
+  */
 trait AkkaSerializer {
 
   /** logger handler */
@@ -22,8 +22,10 @@ trait AkkaSerializer {
   /** current application */
   protected implicit def application: Application
 
+  protected def system: ActorSystem
+
   /** in production mode serializer is just one, in development mode it is reloaded */
-  private val serializer: Serialization = SerializationExtension( Akka.system )
+  private val serializer: Serialization = SerializationExtension( system )
 
   /** encode given object into string */
   private def encode( value: Any ): Try[ String ] = value match {
