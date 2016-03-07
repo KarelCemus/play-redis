@@ -6,9 +6,8 @@ import scala.language.implicitConversions
 
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.concurrent.Akka
 
-import akka.actor.ActorRef
+import akka.actor.{ActorSystem, ActorRef}
 import akka.pattern.AskableActorRef
 import akka.util.Timeout
 import brando.{StashingRedis, Request}
@@ -23,6 +22,8 @@ trait Redis extends EmptyRedis with RedisAsker with RedisMatcher {
   def injector = Redis.injector
 
   implicit val application = injector.instanceOf[ Application ]
+
+  implicit val system = injector.instanceOf[ ActorSystem ]
 }
 
 trait Synchronization {
@@ -77,9 +78,9 @@ trait RedisInstance extends RedisAsker with RedisSettings {
   private var _redis: RichRedis = null
 
   /** instance of brando */
-  protected def redis( implicit application: Application ) = synchronized {
-    if ( _redis == null ) _redis = Akka.system actorOf StashingRedis {
-      Akka.system.actorOf( brando.Redis( host = host, port = port, database = database ) )
+  protected def redis( implicit application: Application, system: ActorSystem ) = synchronized {
+    if ( _redis == null ) _redis = system actorOf StashingRedis {
+      system.actorOf( brando.Redis( host = host, port = port, database = database ) )
     }
     _redis
   }
@@ -102,7 +103,7 @@ object EmptyRedis extends RedisInstance {
   private var executed = false
 
   /** empty redis database at the beginning of the test suite */
-  def empty( implicit application: Application ): Unit = synchronized {
+  def empty( implicit application: Application, system: ActorSystem ): Unit = synchronized {
     // execute only once
     if ( !executed ) {
       redis execute "FLUSHDB"

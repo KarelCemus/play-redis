@@ -8,13 +8,21 @@ import scala.util._
 
 import play.api._
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.concurrent.Akka
 
+import akka.actor.ActorSystem
 import akka.util.ByteString
 import brando._
 
 /** <p>Implementation of plain API using redis-server cache and Brando connector implementation.</p> */
-class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Result ], val application: Application, lifecycle: ApplicationLifecycle, protected val configuration: Configuration ) extends InternalCacheApi[ Result ] with Implicits with Config with AkkaSerializer {
+class RedisCache[ Result[ _ ] ](
+
+  implicit builder: Builders.ResultBuilder[ Result ],
+  protected val application: Application,
+  lifecycle: ApplicationLifecycle,
+  protected val configuration: Configuration,
+  protected val system: ActorSystem
+
+) extends InternalCacheApi[ Result ] with Implicits with Config with AkkaSerializer {
 
   import builder._
 
@@ -22,11 +30,11 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
   protected val log = Logger( "play.api.cache.redis" )
 
   /** default invocation context of all cache commands */
-  protected implicit val context: ExecutionContext = Akka.system.dispatchers.lookup( invocationContext )
+  protected implicit val context: ExecutionContext = system.dispatchers.lookup( invocationContext )
 
   /** communication module to Redis cache */
-  protected val redis: RedisRef = Akka.system actorOf StashingRedis {
-    Akka.system actorOf Redis( host, port, database = database, auth = password )
+  protected val redis: RedisRef = system actorOf StashingRedis {
+    system actorOf Redis( host, port, database = database, auth = password )
   }
 
   override def get[ T: ClassTag ]( key: String ) = redis ? Request( "GET", key ) map {
@@ -131,7 +139,7 @@ class RedisCache[ Result[ _ ] ]( implicit builder: Builders.ResultBuilder[ Resul
 
   /** stops running brando actor */
   def stop( ) = Future {
-    Akka.system.stop( redis.actor.actorRef )
+    system.stop( redis.actor.actorRef )
     log.info( "Redis cache stopped." )
   }
 
