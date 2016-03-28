@@ -4,7 +4,7 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util._
 
-import play.api.{Application, Logger}
+import play.api.Logger
 
 import akka.actor.ActorSystem
 import akka.serialization._
@@ -18,9 +18,6 @@ trait AkkaSerializer {
 
   /** logger handler */
   protected def log: Logger
-
-  /** current application */
-  protected implicit def application: Application
 
   protected def system: ActorSystem
 

@@ -17,7 +17,6 @@ import brando._
 class RedisCache[ Result[ _ ] ](
 
   implicit builder: Builders.ResultBuilder[ Result ],
-  protected val application: Application,
   lifecycle: ApplicationLifecycle,
   protected val configuration: Configuration,
   protected val system: ActorSystem
