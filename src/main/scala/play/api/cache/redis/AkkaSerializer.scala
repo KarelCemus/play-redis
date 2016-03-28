@@ -4,7 +4,7 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util._
 
-import play.api.{Application, Logger}
+import play.api.Logger
 
 import akka.actor.ActorSystem
 import akka.serialization._
@@ -19,12 +19,9 @@ trait AkkaSerializer {
   /** logger handler */
   protected def log: Logger
 
-  /** current application */
-  protected implicit def application: Application
-
   protected def system: ActorSystem
 
-  /** in production mode serializer is just one, in development mode it is reloaded */
+  /** serializer dispatcher used to serialize the objects into bytes */
   private val serializer: Serialization = SerializationExtension( system )
 
   /** encode given object into string */
