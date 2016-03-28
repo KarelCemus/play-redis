@@ -24,7 +24,7 @@ trait AkkaSerializer {
 
   protected def system: ActorSystem
 
-  /** in production mode serializer is just one, in development mode it is reloaded */
+  /** serializer dispatcher used to serialize the objects into bytes */
   private val serializer: Serialization = SerializationExtension( system )
 
   /** encode given object into string */
