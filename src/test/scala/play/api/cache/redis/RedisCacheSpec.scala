@@ -167,8 +167,8 @@ class RedisCacheSpec extends Specification with Redis {
     }
 
     "support an int" in {
-      Cache.set( "type.int", 0xAB.toByte ).sync
-      Cache.get[ Byte ]( "type.int" ) must beSome( 0xAB.toByte )
+      Cache.set( "type.int", 15 ).sync
+      Cache.get[ Int ]( "type.int" ) must beSome( 15 )
     }
 
     "support a long" in {
