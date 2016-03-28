@@ -41,7 +41,7 @@ To your SBT `build.sbt` add the following lines:
 
 ```scala
 // redis-server cache
-libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.2.0"
+libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.1.0"
 
 // repository with the Brando connector
 resolvers += "Brando Repository" at "http://chrisdinn.github.io/releases/"
