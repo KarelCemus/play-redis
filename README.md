@@ -41,7 +41,7 @@ To your SBT `build.sbt` add the following lines:
 
 ```scala
 // redis-server cache
-libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.1.0"
+libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.2.0"
 
 // repository with the Brando connector
 resolvers += "Brando Repository" at "http://chrisdinn.github.io/releases/"
@@ -215,6 +215,14 @@ Nevertheless, this module **replaces** the EHCache and it is not intended to use
 
 
 ## Changelog
+
+### 1.2.0
+
+Since Akka 2.4.1, default JavaSerializer is [considered inefficient for production use](https://github.com/akka/akka/pull/18552). 
+Since this release, play-redis uses [kryo serializer](https://github.com/romix/akka-kryo-serialization) claiming
+better performance and reduced output stream. *To keep it simple*, it uses `akka.actor.kryo.idstrategy`
+set to `default`, which is *considered the slowest alternative*. However, it *does not require any further configuration*. To optimize
+serialization, please see documentation for `idstrategy` option in kryo library.
 
 ### 1.1.0
 
