@@ -18,10 +18,11 @@ class RedisCache[ Result[ _ ] ](
 
   implicit builder: Builders.ResultBuilder[ Result ],
   lifecycle: ApplicationLifecycle,
+  serializer: AkkaSerializer,
   protected val configuration: Configuration,
   protected val system: ActorSystem
 
-) extends InternalCacheApi[ Result ] with Implicits with Config with AkkaSerializer {
+) extends InternalCacheApi[ Result ] with Implicits with Config {
 
   import builder._
 
@@ -37,14 +38,14 @@ class RedisCache[ Result[ _ ] ](
   }
 
   override def get[ T: ClassTag ]( key: String ) = redis ? Request( "GET", key ) map {
-    case Success( Some( response: ByteString ) ) => log.trace( s"Hit on key '$key'." ); decode[ T ]( key, response.utf8String ).toOption
+    case Success( Some( response: ByteString ) ) => log.trace( s"Hit on key '$key'." ); serializer.decode[ T ]( response.utf8String ).toOption
     case Success( None ) => log.debug( s"Miss on key '$key'." ); None
     case Failure( ex ) => log.error( s"GET command failed for key '$key'.", ex ); None
     case _ => log.error( s"Unrecognized answer from GET command for key '$key'." ); None
   }
 
   override def set( key: String, value: Any, expiration: Duration ) = if ( value == null ) removeAll( key )
-  else (expiration, encode( key, value )) match {
+  else (expiration, serializer.encode( value )) match {
     case (Duration.Inf, Success( encoded: String )) => setEternally( key, encoded )
     case (temporal: Duration, Success( encoded: String )) => setTemporally( key, encoded, temporal )
     case (_, Failure( ex )) => log.error( s"SET command failed. Encoding of the value for the key '$key' failed.", ex ).toFuture

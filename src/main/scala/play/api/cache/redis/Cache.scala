@@ -11,15 +11,15 @@ import akka.actor.ActorSystem
 trait CacheApi extends InternalCacheApi[ Builders.Identity ]
 
 @Singleton
-class SyncRedis @Inject( )( implicit lifecycle: ApplicationLifecycle, configuration: Configuration, system: ActorSystem )
-  extends RedisCache( )( Builders.SynchronousBuilder, lifecycle, configuration, system ) with CacheApi with play.api.cache.CacheApi
+class SyncRedis @Inject( )( implicit lifecycle: ApplicationLifecycle, configuration: Configuration, system: ActorSystem, serializer: AkkaSerializer )
+  extends RedisCache( )( Builders.SynchronousBuilder, lifecycle, serializer, configuration, system ) with CacheApi with play.api.cache.CacheApi
 
 /** Asynchronous non-blocking implementation of the connection to the redis database */
 trait CacheAsyncApi extends InternalCacheApi[ Builders.Future ]
 
 @Singleton
-class AsyncRedis @Inject( )( implicit lifecycle: ApplicationLifecycle, configuration: Configuration, system: ActorSystem )
-  extends RedisCache( )( Builders.AsynchronousBuilder, lifecycle, configuration, system ) with CacheAsyncApi
+class AsyncRedis @Inject( )( implicit lifecycle: ApplicationLifecycle, configuration: Configuration, system: ActorSystem, serializer: AkkaSerializer )
+  extends RedisCache( )( Builders.AsynchronousBuilder, lifecycle, serializer, configuration, system ) with CacheAsyncApi
 
 /** Java version of play.api.CacheApi */
 trait JavaCacheApi extends play.cache.CacheApi {

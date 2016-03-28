@@ -36,7 +36,11 @@ object ModuleConfiguration {
     private val log = Logger( "play.api.cache.redis" )
 
     abstract override def bindings( environment: Environment, configuration: play.api.Configuration ) =
-      super.bindings( environment, configuration ) ++ provider( configuration )
+      super.bindings( environment, configuration ) ++ provider( configuration ) :+ serializer
+
+    /** binds akka serializer to its implementation. In future releases, this might be an optional */
+    private def serializer =
+      bind[ AkkaSerializer ].to[ AkkaSerializerImpl ]
 
     /** returns configuration provider based on the application configuration */
     private def provider( configuration: play.api.Configuration ) = configuration.getString( "play.cache.redis.configuration" ) match {
