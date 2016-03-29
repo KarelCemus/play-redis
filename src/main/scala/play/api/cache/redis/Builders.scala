@@ -4,10 +4,10 @@ import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
 /**
- * Transforms future result produced by redis implementation to the result of the desired type
- *
- * @author Karel Cemus
- */
+  * Transforms future result produced by redis implementation to the result of the desired type
+  *
+  * @author Karel Cemus
+  */
 object Builders {
 
   type Identity[ A ] = A
@@ -15,8 +15,8 @@ object Builders {
 
   trait ResultBuilder[ Result[ _ ] ] {
     self =>
-    /** converts future result produces by Redis to the result of desired type */
-    def toResult[ T ]( value: Future[ T ] )( implicit configuration: Configuration ): Result[ T ]
+    /** converts future result produced by Redis to the result of desired type */
+    def toResult[ T ]( value: Future[ T ] )( implicit context: ExecutionContext, timeout: akka.util.Timeout ): Result[ T ]
 
     /** chains calls and passes the output of the first as the input of the subsequent */
     def andThen[ A, B ]( source: => Result[ A ] )( andThen: A => Result[ B ] )( implicit context: ExecutionContext ): Result[ B ]
@@ -38,7 +38,7 @@ object Builders {
 
   /** returns the future itself without any transformation */
   object AsynchronousBuilder extends ResultBuilder[ Future ] {
-    override def toResult[ T ]( future: Future[ T ] )( implicit configuration: Configuration ): Future[ T ] = future
+    override def toResult[ T ]( future: Future[ T ] )( implicit context: ExecutionContext, timeout: akka.util.Timeout ): Future[ T ] = future
 
     override def andThen[ A, B ]( source: => Future[ A ] )( andThen: ( A ) => Future[ B ] )( implicit context: ExecutionContext ) = source.flatMap( andThen )
 
@@ -47,7 +47,7 @@ object Builders {
 
   /** converts the future into the value */
   object SynchronousBuilder extends ResultBuilder[ Identity ] with Implicits {
-    override def toResult[ T ]( future: Future[ T ] )( implicit configuration: Configuration ): Identity[ T ] = future.sync( configuration.timeout )
+    override def toResult[ T ]( future: Future[ T ] )( implicit context: ExecutionContext, timeout: akka.util.Timeout ): Identity[ T ] = future.sync( timeout.duration )
 
     override def andThen[ A, B ]( source: => Identity[ A ] )( andThen: ( A ) => Identity[ B ] )( implicit context: ExecutionContext ) = andThen( source )
 

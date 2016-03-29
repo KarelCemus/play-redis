@@ -8,11 +8,28 @@ import play.api.{Environment, Logger}
 /** Provides optional configurations of the redis module */
 object ModuleConfiguration {
 
+  /** Provides core bindings mapping APIs to their implementations and provides.
+    *
+    * Note: These might be possibly extracted from the core into optional setup in future releases.
+    */
+  trait CoreBinding extends Module {
+    override def bindings( environment: Environment, configuration: play.api.Configuration ): Seq[ Binding[ _ ] ] = Seq(
+      // binds akka serializer to its implementation
+      bind[ AkkaSerializer ].to[ AkkaSerializerImpl ],
+      // redis actor encapsulating brando
+      bind[ RedisActor ].toProvider[ RedisActorProvider ],
+      // redis connector implementing the protocol
+      bind[ RedisConnector ].to[ RedisConnectorImpl ],
+      // extracts the configuration
+      bind[ ConnectionSettings ].toProvider[ ConnectionSettingsProvider ]
+    )
+  }
+
   /** provides default implementation replacing default Play CacheApi implementation */
   trait DefaultBinding extends Module {
-    override def bindings( environment: Environment, configuration: play.api.Configuration ): Seq[ Binding[ _ ] ] = {
+    abstract override def bindings( environment: Environment, configuration: play.api.Configuration ): Seq[ Binding[ _ ] ] = {
       // default binding for Play's CacheApi to SyncCache to replace default EHCache
-      Seq( bind[ play.api.cache.CacheApi ].to[ SyncRedis ] )
+      super.bindings( environment, configuration ) ++ Seq( bind[ play.api.cache.CacheApi ].to[ SyncRedis ] )
     }
   }
 
@@ -36,11 +53,7 @@ object ModuleConfiguration {
     private val log = Logger( "play.api.cache.redis" )
 
     abstract override def bindings( environment: Environment, configuration: play.api.Configuration ) =
-      super.bindings( environment, configuration ) ++ provider( configuration ) :+ serializer
-
-    /** binds akka serializer to its implementation. In future releases, this might be an optional */
-    private def serializer =
-      bind[ AkkaSerializer ].to[ AkkaSerializerImpl ]
+      super.bindings( environment, configuration ) ++ provider( configuration )
 
     /** returns configuration provider based on the application configuration */
     private def provider( configuration: play.api.Configuration ) = configuration.getString( "play.cache.redis.configuration" ) match {
@@ -76,4 +89,4 @@ import play.api.cache.redis.ModuleConfiguration._
   * @author Karel Cemus
   */
 @Singleton
-class RedisCacheModule extends Module with DefaultBinding with SyncOrAsync with ConfigurationProvider
+class RedisCacheModule extends Module with CoreBinding with DefaultBinding with SyncOrAsync with ConfigurationProvider
