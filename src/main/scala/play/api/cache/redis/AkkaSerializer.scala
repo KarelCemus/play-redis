@@ -1,86 +1,168 @@
 package play.api.cache.redis
 
+import javax.inject.{Inject, Singleton}
+
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util._
-
-import play.api.Logger
 
 import akka.actor.ActorSystem
 import akka.serialization._
 
 /**
-  * Provides a encode and decode methods to serialize objects into strings.
+  * Provides a encode and decode methods to serialize objects into strings
+  * and vise versa.
   *
   * @author Karel Cemus
   */
 trait AkkaSerializer {
 
-  /** logger handler */
-  protected def log: Logger
+  /** Method accepts a value to be serialized into the string.
+    * Based on the implementation, it returns a string representing the value or
+    * provides an exception, if the computation fails.
+    *
+    * @param value value to be serialized
+    * @return serialized string or exception
+    */
+  def encode( value: Any ): Try[ String ]
 
-  protected def system: ActorSystem
+  /** Method accepts a valid serialized string and based on the accepted class it deserializes it.
+    * If the expected class does not match expectations, deserialization fails with an exception.
+    * Also, if the string is not valid representation, it also fails.
+    *
+    * @param value valid serialized entity
+    * @tparam T expected class
+    * @return deserialized object or exception
+    */
+  def decode[ T: ClassTag ]( value: String ): Try[ T ]
+}
 
-  /** serializer dispatcher used to serialize the objects into bytes */
-  private val serializer: Serialization = SerializationExtension( system )
+/**
+  * Akka encoder provides implementation of serialization using Akka serializer.
+  * The implementation considers all primitives, nulls, and refs. This enables
+  * us to use Akka settings to modify serializer mapping and use different serializers
+  * for different objects.
+  *
+  */
+private[ redis ] trait AkkaEncoder {
 
-  /** encode given object into string */
-  private def encode( value: Any ): Try[ String ] = value match {
+  protected def serializer: Serialization
+
+  /** Unsafe method encoding the given value into a string */
+  protected def unsafeEncode( value: Any ): String = value match {
     // null is special case
-    case null => throw new UnsupportedOperationException( "Null is not supported by the redis cache connector." )
+    case null => unsupported( "Null is not supported by the redis cache connector." )
     // AnyVal is not supported by default, have to be implemented manually; also basic types are processed as primitives
-    case v if v.getClass.isPrimitive || Primitives.primitives.contains( v.getClass ) => Success( v.toString )
+    case primitive if isPrimitive( primitive ) => primitive.toString
     // AnyRef is supported by Akka serializers, but it does not consider classTag, thus it is done manually
-    case anyRef: AnyRef =>
-      // serialize the object with the respect to the current class
-      Try( serializer.findSerializerFor( anyRef ).toBinary( anyRef ) ).map( toBase64 )
+    case anyRef: AnyRef => anyRefToString( anyRef )
     // if no of the cases above matches, throw an exception
-    case _ => throw new UnsupportedOperationException( s"Type ${ value.getClass } is not supported by redis cache connector." )
+    case _ => unsupported( s"Type ${ value.getClass } is not supported by redis cache connector." )
   }
 
-  /** encode given value and handle error if occurred */
-  protected def encode( key: String, value: Any ): Try[ String ] = encode( value ) recoverWith {
-    case ex => log.error( s"Serialization for key '$key' failed. Cause: '$ex'." ); Failure( ex )
-  }
+  /** determines whether the given value is a primitive */
+  protected def isPrimitive( candidate: Any ): Boolean =
+    candidate.getClass.isPrimitive || Primitives.primitives.contains( candidate.getClass )
 
-  /** produces BASE64 encoded string from an array of bytes */
-  private def toBase64( bytes: Array[ Byte ] ): String = new sun.misc.BASE64Encoder( ).encode( bytes )
+  /** unsafe method converting AnyRef into bytes */
+  protected def anyRefToBinary( anyRef: AnyRef ): Array[ Byte ] =
+    serializer.findSerializerFor( anyRef ).toBinary( anyRef )
 
-  /** decode given value from string to object */
-  private def decode[ T ]( value: String )( implicit classTag: ClassTag[ T ] ): Try[ T ] = ( value match {
+  /** Produces BASE64 encoded string from an array of bytes */
+  protected def binaryToString( bytes: Array[ Byte ] ): String =
+    new sun.misc.BASE64Encoder( ).encode( bytes )
+
+  /** unsafe method converting AnyRef into BASE64 string */
+  protected def anyRefToString( value: AnyRef ): String =
+    ( anyRefToBinary _ andThen binaryToString ) ( value )
+}
+
+/**
+  * Akka decoder provides implementation of deserialization using Akka serializer.
+  * The implementation considers all primitives, nulls, and refs. This enables
+  * us to use Akka settings to modify serializer mapping and use different serializers
+  * for different objects.
+  *
+  */
+private[ redis ] trait AkkaDecoder {
+
+  protected def serializer: Serialization
+
+  /** unsafe method decoding a string into an object. It directly throws exceptions */
+  protected def unsafeDecode[ T ]( value: String )( implicit classTag: ClassTag[ T ] ): T =
+    untypedDecode[ T ]( value ).asInstanceOf[ T ]
+
+  /** unsafe method decoding a string into an object. It directly throws exceptions. It does not perform type cast */
+  protected def untypedDecode[ T ]( value: String )( implicit classTag: ClassTag[ T ] ): Any = value match {
     // AnyVal is not supported by default, have to be implemented manually
-    case "" => Success( null )
-    case string if classTag == ClassTag( classOf[ String ] ) => Try( string )
-    case boolean if classTag == ClassTag.Boolean => Try( boolean.toBoolean )
-    case boolean if classTag == JavaClassTag.Boolean => Try( boolean.toBoolean )
-    case byte if classTag == ClassTag.Byte => Try( byte.toByte )
-    case byte if classTag == JavaClassTag.Byte => Try( byte.toByte )
-    case char if classTag == ClassTag.Char => Try( char.charAt( 0 ) )
-    case char if classTag == JavaClassTag.Char => Try( char.charAt( 0 ) )
-    case short if classTag == ClassTag.Short => Try( short.toShort )
-    case short if classTag == JavaClassTag.Short => Try( short.toShort )
-    case int if classTag == ClassTag.Int => Try( int.toInt )
-    case int if classTag == JavaClassTag.Int => Try( int.toInt )
-    case long if classTag == ClassTag.Long => Try( long.toLong )
-    case long if classTag == JavaClassTag.Long => Try( long.toLong )
-    case float if classTag == ClassTag.Float => Try( float.toFloat )
-    case float if classTag == JavaClassTag.Float => Try( float.toFloat )
-    case double if classTag == ClassTag.Double => Try( double.toDouble )
-    case double if classTag == JavaClassTag.Double => Try( double.toDouble )
-    // AnyRef is supported by Akka serializers
-    case anyRef => serializer.deserialize( toBinary( anyRef ), classTag.runtimeClass )
-  } ).asInstanceOf[ Try[ T ] ]
-
-  /** decode given value and handle error if occurred */
-  protected def decode[ T ]( key: String, value: String )( implicit classTag: ClassTag[ T ] ): Try[ T ] = decode( value ) recoverWith {
-    case ex => log.error( s"Deserialization for key '$key' failed. Cause: '$ex'." ); Failure( ex )
+    case "" => null
+    case string if classTag == ClassTag( classOf[ String ] ) => string
+    case boolean if classTag == ClassTag.Boolean => boolean.toBoolean
+    case boolean if classTag == JavaClassTag.Boolean => boolean.toBoolean
+    case byte if classTag == ClassTag.Byte => byte.toByte
+    case byte if classTag == JavaClassTag.Byte => byte.toByte
+    case char if classTag == ClassTag.Char => char.charAt( 0 )
+    case char if classTag == JavaClassTag.Char => char.charAt( 0 )
+    case short if classTag == ClassTag.Short => short.toShort
+    case short if classTag == JavaClassTag.Short => short.toShort
+    case int if classTag == ClassTag.Int => int.toInt
+    case int if classTag == JavaClassTag.Int => int.toInt
+    case long if classTag == ClassTag.Long => long.toLong
+    case long if classTag == JavaClassTag.Long => long.toLong
+    case float if classTag == ClassTag.Float => float.toFloat
+    case float if classTag == JavaClassTag.Float => float.toFloat
+    case double if classTag == ClassTag.Double => double.toDouble
+    case double if classTag == JavaClassTag.Double => double.toDouble
+    case anyRef => stringToAnyRef[ T ]( anyRef )
   }
 
   /** consumes BASE64 string and returns array of bytes */
-  private def toBinary( base64: String ): Array[ Byte ] = new sun.misc.BASE64Decoder( ).decodeBuffer( base64 )
+  protected def stringToBinary( base64: String ): Array[ Byte ] =
+    new sun.misc.BASE64Decoder( ).decodeBuffer( base64 )
+
+  /** deserializes the binary stream into the object */
+  protected def binaryToAnyRef[ T ]( binary: Array[ Byte ] )( implicit classTag: ClassTag[ T ] ): AnyRef =
+    serializer.deserialize( binary, classTag.runtimeClass.asInstanceOf[ Class[ _ <: AnyRef ] ] ).get
+
+  /** converts BASE64 string directly into the object */
+  protected def stringToAnyRef[ T: ClassTag ]( base64: String ): AnyRef =
+    ( stringToBinary _ andThen binaryToAnyRef[ T ] ) ( base64 )
 }
 
+@Singleton
+private[ redis ] class AkkaSerializerImpl @Inject( )( system: ActorSystem ) extends AkkaSerializer with AkkaEncoder with AkkaDecoder {
 
+  /**
+    * serializer dispatcher used to serialize the objects into bytes;
+    * the instance is retrieved from Akka based on its configuration
+    */
+  protected val serializer: Serialization = SerializationExtension( system )
+
+  /** Method accepts a value to be serialized into the string.
+    * Based on the implementation, it returns a string representing the value or
+    * provides an exception, if the computation fails.
+    *
+    * @param value value to be serialized
+    * @return serialized string or exception
+    */
+  override def encode( value: Any ): Try[ String ] =
+    Try( unsafeEncode( value ) )
+
+  /** Method accepts a valid serialized string and based on the accepted class it deserializes it.
+    * If the expected class does not match expectations, deserialization fails with an exception.
+    * Also, if the string is not valid representation, it also fails.
+    *
+    * @param value valid serialized entity
+    * @tparam T expected class
+    * @return deserialized object or exception
+    */
+  override def decode[ T: ClassTag ]( value: String ): Try[ T ] =
+    Try( unsafeDecode[ T ]( value ) )
+}
+
+/**
+  * Registry of known Scala and Java primitives
+  */
 private[ redis ] object Primitives {
 
   /** primitive types with simplified encoding */
@@ -97,6 +179,9 @@ private[ redis ] object Primitives {
   )
 }
 
+/**
+  * Registry of class tags for Java primitives
+  */
 private[ redis ] object JavaClassTag {
 
   val Byte = ClassTag( classOf[ java.lang.Byte ] )
