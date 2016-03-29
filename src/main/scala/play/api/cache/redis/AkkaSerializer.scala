@@ -1,6 +1,6 @@
 package play.api.cache.redis
 
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -129,6 +129,7 @@ private[ redis ] trait AkkaDecoder {
     ( stringToBinary _ andThen binaryToAnyRef[ T ] ) ( base64 )
 }
 
+@Singleton
 private[ redis ] class AkkaSerializerImpl @Inject( )( system: ActorSystem ) extends AkkaSerializer with AkkaEncoder with AkkaDecoder {
 
   /**
