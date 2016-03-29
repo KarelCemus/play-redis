@@ -4,7 +4,7 @@ import java.util.Date
 
 import scala.reflect.ClassTag
 
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, DateTimeZone}
 import org.specs2.mutable.Specification
 
 /**
@@ -63,29 +63,9 @@ class SerializerSpecs extends Specification {
     }
 
     "datetime" in {
-      new DateTime( 123456 ).encoded mustEqual """
+      new DateTime( 123456L, DateTimeZone.forID( "UTC" ) ).encoded mustEqual """
           |AQBvcmcuam9kYS50aW1lLkRhdGVUaW3lAQEBb3JnLmpvZGEudGltZS5jaHJvbm8uSVNPQ2hyb25v
-          |bG9n+QEBAm9yZy5qb2RhLnRpbWUuY2hyb25vLlpvbmVkQ2hyb25vbG9n+QEBAQEBA29yZy5qb2Rh
-          |LnRpbWUuY2hyb25vLkdyZWdvcmlhbkNocm9ub2xvZ/kBAAgAAAEEb3JnLmpvZGEudGltZS50ei5D
-          |YWNoZWREYXRlVGltZVpvbuUBAUV1cm9wZS9QcmFndeUBBW9yZy5qb2RhLnRpbWUudHouRGF0ZVRp
-          |bWVab25lQnVpbGRlciRQcmVjYWxjdWxhdGVkWm9u5QEIAT4BTE3UAVBN1AFDRdQBQ0VT1A0ODQ4N
-          |Dg0ODQ4NDg0ODQ4NDg0ODQ4NDg0ODQ4NDg0ODQ4NDg0ODQ4NDg0ODQ4NDg0ODQ4NDg0ODQE+gO2m
-          |A4DtpgOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcD
-          |gLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOA
-          |urcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6
-          |twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3
-          |A4C6twOAurcDgLq3AwEBAUNF1AEAAQ6AurcDAHUUAAiAurcDAQFDRVPUAQABDoC6twMAdQaAurcD
-          |AT7/////////////nM+JttwB/5yRvd6PAf/DpYzLYv+ZhsroYf/18NrpYP+V1smGYP+1mrL/Xv/V
-          |/6CcXv+V47HTNv+llojzMf/V37eUMf+l0OKaMP+Fpc6lL//19I26Lv+lnbe3Lf+lmZ6nLP+1g7m6
-          |K//Fm/rXKv+FqOTZKf+FxdHtKP/F0bvvJ//F7qiDJ/+FkqaKJv+FmICZJYCq1PP9EIDK/4fzEYD6
-          |jt3sEoCK1rDdE4CqgcXSFIDKrNnHFYDq1+28FoCKg4KyF4CqrpanGIDK2aqcGYDqhL+RGoCalJSL
-          |G4C6v6iAHIDa6rz1HID6ldHqHYCaweXfHoC67PnUH4Dal47KIID6wqK/IYCa7ra0IoC6mcupI4Da
-          |xN+eJID67/OTJYCq/8iNJoDKqt2CJ4Dq1fH3J4CKgYbtKICqrJriKYDK167XKoDqgsPMK4CKrtfB
-          |LICq2eu2LYDKhICsLoDqr5ShL4Cav+maMID6+oCiMQE+gO2mA4DtpgOAurcDgPTuBoC6twOA9O4G
-          |gLq3A4D07gaAurcDgPTuBoC6twOA9O4GgLq3A4D07gaAurcDgPTuBoC6twOA9O4GgLq3A4D07gaA
-          |urcDgPTuBoC6twOA9O4GgLq3A4D07gaAurcDgPTuBoC6twOA9O4GgLq3A4D07gaAurcDgPTuBoC6
-          |twOA9O4GgLq3A4D07gaAurcDgPTuBoC6twOA9O4GgLq3A4D07gaAurcDgPTuBoC6twOA9O4GgLq3
-          |A4D07gaAurcDgPTuBoC6twOA9O4GgLq3A4D07gaAurcDgPTuBoC6twOA9O4GgLq3AwCAiQ8=
+          |bG9n+QEBAm9yZy5qb2RhLnRpbWUuY2hyb25vLkdyZWdvcmlhbkNocm9ub2xvZ/kBAAgAAICJDw==
         """.stripMargin.trim
     }
 
@@ -146,28 +126,8 @@ class SerializerSpecs extends Specification {
     "datetime" in {
       """
         |AQBvcmcuam9kYS50aW1lLkRhdGVUaW3lAQEBb3JnLmpvZGEudGltZS5jaHJvbm8uSVNPQ2hyb25v
-        |bG9n+QEBAm9yZy5qb2RhLnRpbWUuY2hyb25vLlpvbmVkQ2hyb25vbG9n+QEBAQEBA29yZy5qb2Rh
-        |LnRpbWUuY2hyb25vLkdyZWdvcmlhbkNocm9ub2xvZ/kBAAgAAAEEb3JnLmpvZGEudGltZS50ei5D
-        |YWNoZWREYXRlVGltZVpvbuUBAUV1cm9wZS9QcmFndeUBBW9yZy5qb2RhLnRpbWUudHouRGF0ZVRp
-        |bWVab25lQnVpbGRlciRQcmVjYWxjdWxhdGVkWm9u5QEIAT4BTE3UAVBN1AFDRdQBQ0VT1A0ODQ4N
-        |Dg0ODQ4NDg0ODQ4NDg0ODQ4NDg0ODQ4NDg0ODQ4NDg0ODQ4NDg0ODQ4NDg0ODQ4NDg0ODQE+gO2m
-        |A4DtpgOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcD
-        |gLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOA
-        |urcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6
-        |twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3A4C6twOAurcDgLq3
-        |A4C6twOAurcDgLq3AwEBAUNF1AEAAQ6AurcDAHUUAAiAurcDAQFDRVPUAQABDoC6twMAdQaAurcD
-        |AT7/////////////nM+JttwB/5yRvd6PAf/DpYzLYv+ZhsroYf/18NrpYP+V1smGYP+1mrL/Xv/V
-        |/6CcXv+V47HTNv+llojzMf/V37eUMf+l0OKaMP+Fpc6lL//19I26Lv+lnbe3Lf+lmZ6nLP+1g7m6
-        |K//Fm/rXKv+FqOTZKf+FxdHtKP/F0bvvJ//F7qiDJ/+FkqaKJv+FmICZJYCq1PP9EIDK/4fzEYD6
-        |jt3sEoCK1rDdE4CqgcXSFIDKrNnHFYDq1+28FoCKg4KyF4CqrpanGIDK2aqcGYDqhL+RGoCalJSL
-        |G4C6v6iAHIDa6rz1HID6ldHqHYCaweXfHoC67PnUH4Dal47KIID6wqK/IYCa7ra0IoC6mcupI4Da
-        |xN+eJID67/OTJYCq/8iNJoDKqt2CJ4Dq1fH3J4CKgYbtKICqrJriKYDK167XKoDqgsPMK4CKrtfB
-        |LICq2eu2LYDKhICsLoDqr5ShL4Cav+maMID6+oCiMQE+gO2mA4DtpgOAurcDgPTuBoC6twOA9O4G
-        |gLq3A4D07gaAurcDgPTuBoC6twOA9O4GgLq3A4D07gaAurcDgPTuBoC6twOA9O4GgLq3A4D07gaA
-        |urcDgPTuBoC6twOA9O4GgLq3A4D07gaAurcDgPTuBoC6twOA9O4GgLq3A4D07gaAurcDgPTuBoC6
-        |twOA9O4GgLq3A4D07gaAurcDgPTuBoC6twOA9O4GgLq3A4D07gaAurcDgPTuBoC6twOA9O4GgLq3
-        |A4D07gaAurcDgPTuBoC6twOA9O4GgLq3A4D07gaAurcDgPTuBoC6twOA9O4GgLq3AwCAiQ8=
-      """.stripMargin.trim.decoded[ DateTime ] mustEqual new DateTime( 123456 )
+        |bG9n+QEBAm9yZy5qb2RhLnRpbWUuY2hyb25vLkdyZWdvcmlhbkNocm9ub2xvZ/kBAAgAAICJDw==
+      """.stripMargin.trim.decoded[ DateTime ] mustEqual new DateTime( 123456L, DateTimeZone.forID( "UTC" ) )
     }
 
     "custom classes" in {
