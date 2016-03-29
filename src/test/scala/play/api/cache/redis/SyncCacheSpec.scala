@@ -111,68 +111,68 @@ class SyncCacheSpec extends Specification with Redis {
     }
 
     "support a byte" in {
-      Cache.set( "type.byte", 0xAB.toByte )
-      Cache.get[ Byte ]( "type.byte" ) must beSome[ Byte ]
-      Cache.get[ Byte ]( "type.byte" ) must beSome( 0xAB.toByte )
+      Cache.set( "sync.type.byte", 0xAB.toByte )
+      Cache.get[ Byte ]( "sync.type.byte" ) must beSome[ Byte ]
+      Cache.get[ Byte ]( "sync.type.byte" ) must beSome( 0xAB.toByte )
     }
 
     "support a char" in {
-      Cache.set( "type.char.1", 'a' )
-      Cache.get[ Char ]( "type.char.1" ) must beSome[ Char ]
-      Cache.get[ Char ]( "type.char.1" ) must beSome( 'a' )
-      Cache.set( "type.char.2", 'b' )
-      Cache.get[ Char ]( "type.char.2" ) must beSome( 'b' )
-      Cache.set( "type.char.3", 'č' )
-      Cache.get[ Char ]( "type.char.3" ) must beSome( 'č' )
+      Cache.set( "sync.type.char.1", 'a' )
+      Cache.get[ Char ]( "sync.type.char.1" ) must beSome[ Char ]
+      Cache.get[ Char ]( "sync.type.char.1" ) must beSome( 'a' )
+      Cache.set( "sync.type.char.2", 'b' )
+      Cache.get[ Char ]( "sync.type.char.2" ) must beSome( 'b' )
+      Cache.set( "sync.type.char.3", 'č' )
+      Cache.get[ Char ]( "sync.type.char.3" ) must beSome( 'č' )
     }
 
     "support a short" in {
-      Cache.set( "type.short", 12.toShort )
-      Cache.get[ Short ]( "type.short" ) must beSome[ Short ]
-      Cache.get[ Short ]( "type.short" ) must beSome( 12.toShort )
+      Cache.set( "sync.type.short", 12.toShort )
+      Cache.get[ Short ]( "sync.type.short" ) must beSome[ Short ]
+      Cache.get[ Short ]( "sync.type.short" ) must beSome( 12.toShort )
     }
 
     "support an int" in {
-      Cache.set( "type.int", 0xAB.toByte )
-      Cache.get[ Byte ]( "type.int" ) must beSome( 0xAB.toByte )
+      Cache.set( "sync.type.int", 15 )
+      Cache.get[ Int ]( "sync.type.int" ) must beSome( 15 )
     }
 
     "support a long" in {
-      Cache.set( "type.long", 144L )
-      Cache.get[ Long ]( "type.long" ) must beSome[ Long ]
-      Cache.get[ Long ]( "type.long" ) must beSome( 144L )
+      Cache.set( "sync.type.long", 144L )
+      Cache.get[ Long ]( "sync.type.long" ) must beSome[ Long ]
+      Cache.get[ Long ]( "sync.type.long" ) must beSome( 144L )
     }
 
     "support a float" in {
-      Cache.set( "type.float", 1.23f )
-      Cache.get[ Float ]( "type.float" ) must beSome[ Float ]
-      Cache.get[ Float ]( "type.float" ) must beSome( 1.23f )
+      Cache.set( "sync.type.float", 1.23f )
+      Cache.get[ Float ]( "sync.type.float" ) must beSome[ Float ]
+      Cache.get[ Float ]( "sync.type.float" ) must beSome( 1.23f )
     }
 
     "support a double" in {
-      Cache.set( "type.double", 3.14 )
-      Cache.get[ Double ]( "type.double" ) must beSome[ Double ]
-      Cache.get[ Double ]( "type.double" ) must beSome( 3.14 )
+      Cache.set( "sync.type.double", 3.14 )
+      Cache.get[ Double ]( "sync.type.double" ) must beSome[ Double ]
+      Cache.get[ Double ]( "sync.type.double" ) must beSome( 3.14 )
     }
 
     "support a date" in {
-      Cache.set( "type.date", new Date( 123 ) )
-      Cache.get[ Date ]( "type.date" ) must beSome( new Date( 123 ) )
+      Cache.set( "sync.type.date", new Date( 123 ) )
+      Cache.get[ Date ]( "sync.type.date" ) must beSome( new Date( 123 ) )
     }
 
     "support a datetime" in {
-      Cache.set( "type.datetime", new DateTime( 123456 ) )
-      Cache.get[ DateTime ]( "type.datetime" ) must beSome( new DateTime( 123456 ) )
+      Cache.set( "sync.type.datetime", new DateTime( 123456 ) )
+      Cache.get[ DateTime ]( "sync.type.datetime" ) must beSome( new DateTime( 123456 ) )
     }
 
     "support a custom classes" in {
-      Cache.set( "type.object", SimpleObject( "B", 3 ) )
-      Cache.get[ SimpleObject ]( "type.object" ) must beSome( SimpleObject( "B", 3 ) )
+      Cache.set( "sync.type.object", SimpleObject( "B", 3 ) )
+      Cache.get[ SimpleObject ]( "sync.type.object" ) must beSome( SimpleObject( "B", 3 ) )
     }
 
     "support a null" in {
-      Cache.set( "type.null", null )
-      Cache.get[ SimpleObject ]( "type.null" ) must beNone
+      Cache.set( "sync.type.null", null )
+      Cache.get[ SimpleObject ]( "sync.type.null" ) must beNone
     }
 
     "remove multiple keys at once" in {
