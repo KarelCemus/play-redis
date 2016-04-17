@@ -216,7 +216,7 @@ Nevertheless, this module **replaces** the EHCache and it is not intended to use
 
 ## Changelog
 
-### 1.2.0
+### [:link: 1.2.0](https://github.com/KarelCemus/play-redis/tree/1.2.0)
 
 Play-redis provides native serialization support to basic data types such as String, Int, etc.
 However, for other objects including collections, it used to use default `JavaSerializer` serializer.
@@ -232,10 +232,10 @@ units. For example, there has been extracted `RedisConnector` implementing the [
 and `RedisCache` implementing cache API over that. Before, it was tangled together. As consequence, the library has
 now layered architecture (facades -> cache implementation -> protocol implementation) with several public facades. 
 
-### 1.1.0
+### [:link: 1.1.0](https://github.com/KarelCemus/play-redis/tree/1.1.0)
 
 Update to Play 2.5, no significant changes
 
-### 1.0.0
+### [:link: 1.0.0](https://github.com/KarelCemus/play-redis/tree/1.0.0)
 
 Redesigned the library from scratch to support Play 2.4.x API and use DI.
