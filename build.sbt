@@ -12,11 +12,11 @@ scalaVersion := "2.11.8"
 
 crossScalaVersions := Seq( scalaVersion.value )
 
-val playVersion = "2.5.0"
+val playVersion = "2.5.2"
 
 val brandoVersion = "3.0.3"
 
-val specs2Version = "3.7.1"
+val specs2Version = "3.7.3"
 
 libraryDependencies ++= Seq(
   // play framework cache API
@@ -28,7 +28,7 @@ libraryDependencies ++= Seq(
   // test module for play framework
   "com.typesafe.play" %% "play-test" % playVersion % "test",
   // logger for tests
-  "org.slf4j" % "slf4j-simple" % "1.7.16" % "test"
+  "org.slf4j" % "slf4j-simple" % "1.7.21" % "test"
 )
 
 resolvers ++= Seq(
