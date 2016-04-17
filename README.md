@@ -213,6 +213,17 @@ The Play discourages disabling modules within the library thus it leaves it up t
 and enable Redis manually. This also allows you to use EhCache in your *dev* environment and redis in *production*.
 Nevertheless, this module **replaces** the EHCache and it is not intended to use both implementations along.
 
+## Compatibility matrix
+
+<center>
+
+| play framework  | play-redis     |
+|-----------------|---------------:|
+| 2.3.x           | 0.2.1          |
+| 2.4.x           | 1.0.0          |
+| 2.5.x           | 1.2.0          |
+
+</center>
 
 ## Changelog
 
@@ -220,7 +231,7 @@ Nevertheless, this module **replaces** the EHCache and it is not intended to use
 
 Play-redis provides native serialization support to basic data types such as String, Int, etc.
 However, for other objects including collections, it used to use default `JavaSerializer` serializer.
-Since Akka 2.4.1, default `JavaSerializer` is [officially considered inefficient for production use](https://github.com/akka/akka/pull/18552). 
+Since Akka 2.4.1, default `JavaSerializer` is [officially considered inefficient for production use](https://github.com/akka/akka/pull/18552).
 Nevertheless, to keep things simple, play-redis **still uses this inefficient serializer NOT to enforce** any serialization
 library to end users. Although, it recommends [kryo serializer](https://github.com/romix/akka-kryo-serialization) claiming
 great performance and small output stream. Any serialization library can be smoothly connected through Akka
@@ -230,7 +241,7 @@ This release is focused on library refactoring. While **public API remained unch
 changes to their implementations. Those are consequences of refactoring some functionality into self-standing
 units. For example, there has been extracted `RedisConnector` implementing the [Redis protocol](http://redis.io/commands)
 and `RedisCache` implementing cache API over that. Before, it was tangled together. As consequence, the library has
-now layered architecture (facades -> cache implementation -> protocol implementation) with several public facades. 
+now layered architecture (facades -> cache implementation -> protocol implementation) with several public facades.
 
 ### [:link: 1.1.0](https://github.com/KarelCemus/play-redis/tree/1.1.0)
 
