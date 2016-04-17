@@ -8,28 +8,28 @@
 
 By default, [Play framework 2](http://playframework.com/) is delivered with EHCache module implementing
 [CacheApi](https://www.playframework.com/documentation/2.5.x/api/scala/index.html#play.api.cache.CacheApi).
-Unfortunately, this module suffers from a very inconvenient issue: as the ClassLoaders are evolved on
-application recompilation **during a development**, the class versions does not match thus the **cache is wiped on
-every compilation**. That might result in *repeated logging in*, *loosing a session* or *computing an extensive value*.
-All these things very slow down development.
+This module enables use of the **redis-server**, i.e., key/value cache, within the
+Play framework 2. Besides the backward compatibility with the [CacheApi](https://www.playframework.com/documentation/2.5.x/api/scala/index.html#play.api.cache.CacheApi),
+it introduces more evolved API providing various handful operations. Besides the basic methods such as
+`get`, `set` and `remove`, it provides more convenient methods such as `expire`, `exists`, `invalidate` and much more. 
+As the cache implementation uses Akka actor system, it is **completely non-blocking and asynchronous**.
+Furthermore, we deliver the library with several configuration providers to let you easily use 
+play-redis on Heroku as well as on your premise.
 
-The goal of this module is to enable the **redis-server** key/value cache storage to be smoothly used within the
-Play framework 2. Furthermore, besides the backward compatibility with the [CacheApi](https://www.playframework.com/documentation/2.5.x/api/scala/index.html#play.api.cache.CacheApi),
-it introduces more evolved API called [play.api.cache.redis.CacheApi](https://github.com/KarelCemus/play-redis/blob/master/src/main/scala/play/api/cache/redis/InternalCacheApi.scala).
-As the cache implementation uses Akka actor system, it is **completely non-blocking and asynchronous**. Furthermore,
-besides the basic methods such as `get`, `set` and `remove` it provides more convenient methods such as `expire`,
-`exists` and `invalidate`.
+## Provided APIs
 
-This library delivers a single module with following implementations of the API:
+This library delivers a single module with following implementations of the API. While the core
+of the framework is fully non-blocking, most of provided facades are *blocking wrappers*.
 
- 1. play.api.cache.redis.CacheApi (blocking Scala implementation)
- 2. play.api.cache.redis.CacheAsyncApi (non-blocking Scala implementation)
- 3. play.api.cache.CacheApi (Play's blocking API for Scala)
- 4. play.cache.CacheApi (Play's blocking API for Java)
+ 1. `play.api.cache.redis.CacheApi` (*blocking* Scala implementation)
+ 2. `play.api.cache.redis.CacheAsyncApi` (non-blocking Scala implementation)
+ 3. `play.api.cache.CacheApi` (Play's *blocking* API for Scala)
+ 4. `play.cache.CacheApi` (Play's *blocking* API for Java)
 
-First, the CacheApi is extended play.api.cache.CacheApi and it implements the connection in the **blocking** manner.
-Second, the CacheAsyncApi enables **non-blocking** connection providing results through `scala.concurrent.Future`.
-Third, the synchronous implementation also implements standard CacheApi bundled within Play framework.
+First, the `CacheApi` is extended `play.api.cache.CacheApi` and it implements the connection in the **blocking** manner.
+Second, the `CacheAsyncApi` enables **non-blocking** connection providing results through `scala.concurrent.Future`.
+Third, the synchronous implementation also implements standard `CacheApi` bundled within Play framework. Finally,
+the `play.cache.CacheApi` is implementation of standard `CacheApi` for Java.
 
 
 ## How to add the module into the project
@@ -139,19 +139,11 @@ class MyController @Inject() ( cache: CacheApi ) {
 
 ## Checking operation result
 
-Independently on the used API, all operations throw an exception when fail. Consequently,
+Regardless of current API, all operations throw an exception when fail. Consequently,
 successful invocations do not throw an exception. The only difference is in checking for errors.
-Synchronous APIs really throw an exception, while asynchronous API returns a `Future`
+While synchronous APIs really throw an exception, asynchronous API returns a `Future`
 wrapping both the success and the exception, i.e., use `onFailure` or `onComplete` to
 check for errors.
-
-
-<div align="center">
-  <strong>
-   Please keep in mind that this implementation is blocking!
-  </strong>
-</div>
-
 
 ## Configuration
 
@@ -219,9 +211,10 @@ Nevertheless, this module **replaces** the EHCache and it is not intended to use
 
 | play framework  | play-redis     |
 |-----------------|---------------:|
-| 2.3.x           | 0.2.1          |
-| 2.4.x           | 1.0.0          |
 | 2.5.x           | 1.2.0          |
+| 2.4.x           | 1.0.0          |
+| 2.3.x           | 0.2.1          |
+
 
 </center>
 
