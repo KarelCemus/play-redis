@@ -218,11 +218,19 @@ Nevertheless, this module **replaces** the EHCache and it is not intended to use
 
 ### 1.2.0
 
-Since Akka 2.4.1, default JavaSerializer is [considered inefficient for production use](https://github.com/akka/akka/pull/18552). 
-Since this release, play-redis uses [kryo serializer](https://github.com/romix/akka-kryo-serialization) claiming
-better performance and reduced output stream. *To keep it simple*, it uses `akka.actor.kryo.idstrategy`
-set to `default`, which is *considered the slowest alternative*. However, it *does not require any further configuration*. To optimize
-serialization, please see documentation for `idstrategy` option in kryo library.
+Play-redis provides native serialization support to basic data types such as String, Int, etc.
+However, for other objects including collections, it used to use default `JavaSerializer` serializer.
+Since Akka 2.4.1, default `JavaSerializer` is [officially considered inefficient for production use](https://github.com/akka/akka/pull/18552). 
+Nevertheless, to keep things simple, play-redis **still uses this inefficient serializer NOT to enforce** any serialization
+library to end users. Although, it recommends [kryo serializer](https://github.com/romix/akka-kryo-serialization) claiming
+great performance and small output stream. Any serialization library can be smoothly connected through Akka
+configuration, see the [official Akka documentation](http://doc.akka.io/docs/akka/current/scala/serialization.html).
+
+This release is focused on library refactoring. While **public API remained unchanged**, there are several significant
+changes to their implementations. Those are consequences of refactoring some functionality into self-standing
+units. For example, there has been extracted `RedisConnector` implementing the [Redis protocol](http://redis.io/commands)
+and `RedisCache` implementing cache API over that. Before, it was tangled together. As consequence, the library has
+now layered architecture (facades -> cache implementation -> protocol implementation) with several public facades. 
 
 ### 1.1.0
 

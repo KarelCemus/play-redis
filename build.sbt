@@ -23,8 +23,6 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-cache" % playVersion % "provided" exclude("net.sf.ehcache", "ehcache-core"),
   // redis connector - NOTE: not published yet
   "com.digital-achiever" %% "brando" % brandoVersion,
-  // Akka Serializer, efficient than default Java implementation
-  "com.github.romix.akka" %% "akka-kryo-serialization" % "0.4.0",
   // test framework
   "org.specs2" %% "specs2-core" % specs2Version % "test",
   // test module for play framework
