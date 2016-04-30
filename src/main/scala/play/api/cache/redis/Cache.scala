@@ -3,6 +3,7 @@ package play.api.cache.redis
 import javax.inject._
 
 import play.api._
+import play.api.cache.redis.connector.RedisConnector
 
 /** Synchronous and blocking implementation of the connection to the redis database */
 trait CacheApi extends InternalCacheApi[ Builders.Identity ]

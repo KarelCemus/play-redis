@@ -4,6 +4,8 @@ import javax.inject.{Inject, Provider, Singleton}
 
 import scala.concurrent.ExecutionContext
 
+import play.api.cache.redis.connector.RedisConnectorImpl
+
 import akka.actor.ActorSystem
 
 /**

@@ -4,6 +4,8 @@ import javax.inject.{Provider, Singleton}
 
 import scala.concurrent.duration.FiniteDuration
 
+import play.api.cache.redis.connector.RedisConnectorImpl
+
 /**
  * Configuration provider returns a connection settings to Redis server. The application can run in various
  * different environments and in many of them there might be very different connection settings. For example,

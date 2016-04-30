@@ -1,4 +1,4 @@
-package play.api.cache.redis
+package play.api.cache.redis.connector
 
 import javax.inject.{Inject, Singleton}
 
@@ -8,10 +8,13 @@ import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
 
 import play.api.Logger
+import play.api.cache.redis._
+import play.api.cache.redis.exception._
 import play.api.inject.ApplicationLifecycle
 
 import akka.util.ByteString
 import brando.{Ok, Pong, Request}
+
 
 /**
   * The connector directly connects with the REDIS instance, implements protocol commands

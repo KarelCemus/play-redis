@@ -2,6 +2,7 @@ package play.api.cache.redis
 
 import javax.inject.Singleton
 
+import play.api.cache.redis.connector.{AkkaSerializer, AkkaSerializerImpl, RedisConnector, RedisConnectorImpl}
 import play.api.inject.{Binding, Module}
 import play.api.{Environment, Logger}
 

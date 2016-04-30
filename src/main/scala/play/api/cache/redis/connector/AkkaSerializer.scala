@@ -1,4 +1,4 @@
-package play.api.cache.redis
+package play.api.cache.redis.connector
 
 import javax.inject.{Inject, Singleton}
 
@@ -8,6 +8,8 @@ import scala.util._
 
 import akka.actor.ActorSystem
 import akka.serialization._
+
+import play.api.cache.redis.exception._
 
 /**
   * Provides a encode and decode methods to serialize objects into strings
@@ -44,12 +46,10 @@ trait AkkaSerializer {
   * for different objects.
   *
   */
-private[ redis ] trait AkkaEncoder {
-
-  protected def serializer: Serialization
+private[ connector ] class AkkaEncoder( serializer: Serialization ) {
 
   /** Unsafe method encoding the given value into a string */
-  protected def unsafeEncode( value: Any ): String = value match {
+  def encode( value: Any ): String = value match {
     // null is special case
     case null => unsupported( "Null is not supported by the redis cache connector." )
     // AnyVal is not supported by default, have to be implemented manually; also basic types are processed as primitives
@@ -84,12 +84,10 @@ private[ redis ] trait AkkaEncoder {
   * for different objects.
   *
   */
-private[ redis ] trait AkkaDecoder {
-
-  protected def serializer: Serialization
+private[ connector ] class AkkaDecoder( serializer: Serialization ) {
 
   /** unsafe method decoding a string into an object. It directly throws exceptions */
-  protected def unsafeDecode[ T ]( value: String )( implicit classTag: ClassTag[ T ] ): T =
+  def decode[ T ]( value: String )( implicit classTag: ClassTag[ T ] ): T =
     untypedDecode[ T ]( value ).asInstanceOf[ T ]
 
   /** unsafe method decoding a string into an object. It directly throws exceptions. It does not perform type cast */
@@ -130,13 +128,19 @@ private[ redis ] trait AkkaDecoder {
 }
 
 @Singleton
-private[ redis ] class AkkaSerializerImpl @Inject( )( system: ActorSystem ) extends AkkaSerializer with AkkaEncoder with AkkaDecoder {
+private[ redis ] class AkkaSerializerImpl @Inject( )( system: ActorSystem ) extends AkkaSerializer {
 
   /**
     * serializer dispatcher used to serialize the objects into bytes;
     * the instance is retrieved from Akka based on its configuration
     */
   protected val serializer: Serialization = SerializationExtension( system )
+
+  /** value serializer based on Akka serialization */
+  private val encoder = new AkkaEncoder( serializer )
+
+  /** value decoder based on Akka serialization */
+  private val decoder = new AkkaDecoder( serializer )
 
   /** Method accepts a value to be serialized into the string.
     * Based on the implementation, it returns a string representing the value or
@@ -146,7 +150,7 @@ private[ redis ] class AkkaSerializerImpl @Inject( )( system: ActorSystem ) exte
     * @return serialized string or exception
     */
   override def encode( value: Any ): Try[ String ] =
-    Try( unsafeEncode( value ) )
+    Try( encoder.encode( value ) ) // todo directly throw RedisException
 
   /** Method accepts a valid serialized string and based on the accepted class it deserializes it.
     * If the expected class does not match expectations, deserialization fails with an exception.
@@ -157,7 +161,7 @@ private[ redis ] class AkkaSerializerImpl @Inject( )( system: ActorSystem ) exte
     * @return deserialized object or exception
     */
   override def decode[ T: ClassTag ]( value: String ): Try[ T ] =
-    Try( unsafeDecode[ T ]( value ) )
+    Try( decoder.decode[ T ]( value ) ) // todo directly throw RedisException
 }
 
 /**

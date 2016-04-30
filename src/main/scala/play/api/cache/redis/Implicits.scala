@@ -15,4 +15,7 @@ trait Implicits {
     def toFuture( implicit context: ExecutionContext ) = Future( any )
   }
 
+  /** Transforms the promise into desired builder results */
+  protected implicit def build[ T, Result[ _ ] ]( value: Future[ T ] )( implicit builder: Builders.ResultBuilder[ Result ], context: ExecutionContext, timeout: akka.util.Timeout ) =
+    builder.toResult( value )
 }

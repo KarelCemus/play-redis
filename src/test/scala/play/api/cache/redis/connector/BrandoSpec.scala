@@ -1,4 +1,6 @@
-package play.api.cache.redis
+package play.api.cache.redis.connector
+
+import play.api.cache.redis.{Redis, RedisInstance}
 
 import brando._
 import org.specs2.mutable.Specification

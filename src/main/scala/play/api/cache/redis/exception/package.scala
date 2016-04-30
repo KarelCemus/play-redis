@@ -5,7 +5,7 @@ package play.api.cache.redis
   *
   * @author Karel Cemus
   */
-trait Exceptions {
+package object exception {
 
   /** helper throwing UnsupportedOperationException */
   @throws[ UnsupportedOperationException ]
@@ -25,28 +25,5 @@ trait Exceptions {
   def failed( key: String, command: String, cause: Throwable ): Nothing =
     throw new ExecutionFailedException( key, command, cause )
 
+
 }
-
-/**
-  * Generic exception produced by the library indicating internal failure
-  *
-  * @author Karel Cemus
-  */
-abstract sealed class RedisException( message: String, cause: Throwable ) extends RuntimeException( message, cause ) {
-
-  def this( message: String ) = this( message, null )
-}
-
-/**
-  * Value serialization or deserialization failed.
-  *
-  * @param message
-  */
-class SerializationException( value: Any, message: String ) extends RedisException( message )
-
-
-class TimeoutException( key: String ) extends RedisException( "" )
-
-class ExecutionFailedException( key: String, command: String, cause: Throwable ) extends RedisException( command, cause )
-
-class UnexpectedResponseException( key: String, command: String ) extends RedisException( command )

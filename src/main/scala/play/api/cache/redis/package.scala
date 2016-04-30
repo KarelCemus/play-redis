@@ -3,4 +3,4 @@ package play.api.cache
 /**
   * @author Karel Cemus
   */
-package object redis extends AnyRef with Expiration with Exceptions
+package object redis extends AnyRef with Expiration
