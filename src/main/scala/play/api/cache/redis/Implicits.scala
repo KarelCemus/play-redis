@@ -1,7 +1,6 @@
 package play.api.cache.redis
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.language.{higherKinds, implicitConversions}
 
 /** Implicit helpers used within the redis cache implementation. These
@@ -16,12 +15,4 @@ trait Implicits {
     def toFuture( implicit context: ExecutionContext ) = Future( any )
   }
 
-  /** waits for future responses and returns them synchronously */
-  protected implicit class Synchronizer[ T ]( future: Future[ T ] ) {
-    def sync( implicit timeout: Duration ) = Await.result( future, timeout )
-  }
-
-  /** Transforms the promise into desired builder results */
-  protected implicit def build[ T, Result[ _ ] ]( value: Future[ T ] )( implicit builder: Builders.ResultBuilder[ Result ], context: ExecutionContext, timeout: akka.util.Timeout ) =
-    builder.toResult( value )
 }

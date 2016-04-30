@@ -20,12 +20,15 @@ object Builders {
 
   /** returns the future itself without any transformation */
   object AsynchronousBuilder extends ResultBuilder[ Future ] {
-    override def toResult[ T ]( future: Future[ T ] )( implicit context: ExecutionContext, timeout: akka.util.Timeout ): Future[ T ] = future
+    override def toResult[ T ]( future: Future[ T ] )( implicit context: ExecutionContext, timeout: akka.util.Timeout ): Future[ T ] =
+      future
   }
 
   /** converts the future into the value */
-  object SynchronousBuilder extends ResultBuilder[ Identity ] with Implicits {
-    override def toResult[ T ]( future: Future[ T ] )( implicit context: ExecutionContext, timeout: akka.util.Timeout ): Identity[ T ] = future.sync( timeout.duration )
+  object SynchronousBuilder extends ResultBuilder[ Identity ] {
+    import scala.concurrent.Await
+    override def toResult[ T ]( future: Future[ T ] )( implicit context: ExecutionContext, timeout: akka.util.Timeout ): Identity[ T ] =
+      Await.result( future, timeout.duration )
   }
 
 }
