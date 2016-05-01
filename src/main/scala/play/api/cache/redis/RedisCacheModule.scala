@@ -3,6 +3,7 @@ package play.api.cache.redis
 import javax.inject.Singleton
 
 import play.api.cache.redis.connector.RedisConnectorModule
+import play.api.cache.redis.impl.{AsyncRedis, JavaRedis, SyncRedis}
 import play.api.inject.{Binding, Module}
 import play.api.{Environment, Logger}
 

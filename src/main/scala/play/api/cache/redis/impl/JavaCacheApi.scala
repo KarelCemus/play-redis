@@ -1,23 +1,6 @@
-package play.api.cache.redis
+package play.api.cache.redis.impl
 
-import javax.inject._
-
-import play.api._
-import play.api.cache.redis.connector.RedisConnector
-
-/** Synchronous and blocking implementation of the connection to the redis database */
-trait CacheApi extends InternalCacheApi[ Builders.Identity ]
-
-@Singleton
-class SyncRedis @Inject( )( redis: RedisConnector, settings: ConnectionSettings )
-  extends RedisCache( redis, settings )( Builders.SynchronousBuilder ) with CacheApi with play.api.cache.CacheApi
-
-/** Asynchronous non-blocking implementation of the connection to the redis database */
-trait CacheAsyncApi extends InternalCacheApi[ Builders.Future ]
-
-@Singleton
-class AsyncRedis @Inject( )( redis: RedisConnector, settings: ConnectionSettings )
-  extends RedisCache( redis, settings )( Builders.AsynchronousBuilder ) with CacheAsyncApi
+import play.api.cache.redis.CacheApi
 
 /** Java version of play.api.CacheApi */
 trait JavaCacheApi extends play.cache.CacheApi {
@@ -69,9 +52,4 @@ trait JavaCacheApi extends play.cache.CacheApi {
 
   override def remove( key: String ): Unit =
     internal.remove( key )
-}
-
-@Singleton
-class JavaRedis @Inject( )( protected val internal: CacheApi, environment: Environment ) extends JavaCacheApi {
-  override protected def classLoader: ClassLoader = environment.classLoader
 }

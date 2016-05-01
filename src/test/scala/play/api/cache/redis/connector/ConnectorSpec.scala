@@ -4,7 +4,7 @@ import java.util.Date
 
 import scala.concurrent.duration._
 
-import play.api.cache.redis.{Redis, SimpleObject}
+import play.api.cache.redis.{Redis, RedisConnector, SimpleObject}
 
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification

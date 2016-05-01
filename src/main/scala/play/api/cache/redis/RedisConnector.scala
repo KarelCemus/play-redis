@@ -1,4 +1,4 @@
-package play.api.cache.redis.connector
+package play.api.cache.redis
 
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -37,8 +37,8 @@ trait RedisConnector {
 
   /** Set a value into the cache. Expiration time in seconds (0 second means eternity).
     *
-    * @param key cache storage key
-    * @param value value to store
+    * @param key        cache storage key
+    * @param value      value to store
     * @param expiration record duration in seconds
     * @return promise
     */
@@ -46,7 +46,7 @@ trait RedisConnector {
 
   /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration
     *
-    * @param key cache storage key
+    * @param key        cache storage key
     * @param expiration new expiration in seconds
     * @return promise
     */
@@ -82,5 +82,5 @@ trait RedisConnector {
     * @return promise
     */
   def stop( ): Future[ Unit ]
-  
+
 }

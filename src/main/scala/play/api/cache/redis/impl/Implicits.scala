@@ -1,4 +1,4 @@
-package play.api.cache.redis
+package play.api.cache.redis.impl
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.{higherKinds, implicitConversions}

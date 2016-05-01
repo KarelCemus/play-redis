@@ -29,7 +29,7 @@ trait Redis extends EmptyRedis with RedisAsker with RedisMatcher {
 trait Synchronization {
 
   /** waits for future responses and returns them synchronously */
-  protected implicit class Synchronizer[ T ]( future: Future[ T ] ) {
+  protected implicit class Synchronizer[ T ]( future: AsynchronousResult[ T ] ) {
     def sync = Await.result( future, 1.second )
   }
 }
@@ -48,9 +48,9 @@ trait RedisAsker extends Synchronization {
 
 trait RedisMatcher extends Synchronization {
 
-  implicit def matcher[ T ]( matcher: Matcher[ T ] ): Matcher[ Future[ T ] ] = new Matcher[ Future[ T ] ] {
-    override def apply[ S <: Future[ T ] ]( value: Expectable[ S ] ): MatchResult[ S ] = {
-      val matched = value.map( ( _: Future[ T ] ).sync ).applyMatcher( matcher )
+  implicit def matcher[ T ]( matcher: Matcher[ T ] ): Matcher[ AsynchronousResult[ T ] ] = new Matcher[ AsynchronousResult[ T ] ] {
+    override def apply[ S <: AsynchronousResult[ T ] ]( value: Expectable[ S ] ): MatchResult[ S ] = {
+      val matched = value.map( ( _: AsynchronousResult[ T ] ).sync ).applyMatcher( matcher )
       result( matched, value )
     }
   }

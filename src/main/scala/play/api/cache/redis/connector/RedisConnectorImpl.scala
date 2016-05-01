@@ -8,7 +8,7 @@ import scala.reflect.ClassTag
 import scala.util.Success
 
 import play.api.Logger
-import play.api.cache.redis.ConnectionSettings
+import play.api.cache.redis.{ConnectionSettings, RedisConnector}
 import play.api.cache.redis.exception._
 import play.api.inject.ApplicationLifecycle
 
