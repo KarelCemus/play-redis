@@ -1,6 +1,8 @@
-package play.api.cache.redis
+package play.api.cache.redis.util
 
 import java.util.Date
+
+import play.api.cache.redis.{CacheApi, Redis}
 
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
@@ -8,7 +10,7 @@ import org.specs2.mutable.Specification
 /**
   * <p>This specification tests expiration conversion</p>
   */
-class ExpirationSpec extends Specification with Redis {
+class ExpirationSpec extends Specification with Redis with Expiration {
 
   private val Cache = injector.instanceOf[ CacheApi ]
 

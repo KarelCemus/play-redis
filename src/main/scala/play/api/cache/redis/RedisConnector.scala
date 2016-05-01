@@ -10,7 +10,7 @@ import scala.reflect.ClassTag
   * @see http://redis.io/commands
   * @author Karel Cemus
   */
-trait RedisConnector {
+private[ redis ] trait RedisConnector {
 
   /** Retrieve a value from the cache.
     *

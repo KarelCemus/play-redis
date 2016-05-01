@@ -3,14 +3,14 @@ package play.api.cache.redis.impl
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
-import play.api.cache.redis._
-
 /**
   * Transforms future result produced by redis implementation to the result of the desired type
   *
   * @author Karel Cemus
   */
 object Builders {
+
+  import play.api.cache.redis._
 
   trait ResultBuilder[ Result[ X ] ] {
     /** converts future result produced by Redis to the result of desired type */
@@ -25,9 +25,9 @@ object Builders {
 
   /** converts the future into the value */
   object SynchronousBuilder extends ResultBuilder[ SynchronousResult ] {
-    import scala.concurrent.Await
+
     override def toResult[ T ]( future: AsynchronousResult[ T ] )( implicit context: ExecutionContext, timeout: akka.util.Timeout ): SynchronousResult[ T ] =
-      Await.result( future, timeout.duration )
+      scala.concurrent.Await.result( future, timeout.duration )
   }
 
 }
