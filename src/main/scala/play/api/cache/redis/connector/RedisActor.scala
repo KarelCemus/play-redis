@@ -1,9 +1,11 @@
-package play.api.cache.redis
+package play.api.cache.redis.connector
 
 import javax.inject._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
+
+import play.api.cache.redis.ConnectionSettings
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.pattern.AskableActorRef
@@ -18,7 +20,7 @@ import brando.{Redis, Request, StashingRedis}
   * @author Karel Cemus
   */
 @Singleton
-class RedisActorProvider @Inject( )( settings: ConnectionSettings, system: ActorSystem ) extends Provider[ RedisActor ] {
+private[ connector ] class RedisActorProvider @Inject( )( settings: ConnectionSettings, system: ActorSystem ) extends Provider[ RedisActor ] {
   override def get( ): RedisActor = {
     import settings._
     // internal brando connector
@@ -35,7 +37,7 @@ class RedisActorProvider @Inject( )( settings: ConnectionSettings, system: Actor
   *
   * @author Karel Cemus
   */
-private[ redis ] class RedisActor( brando: ActorRef )( implicit system: ActorSystem ) {
+private[ connector ] class RedisActor( brando: ActorRef )( implicit system: ActorSystem ) {
 
   /** actor handler */
   private val actor = new AskableActorRef( brando )
@@ -44,6 +46,12 @@ private[ redis ] class RedisActor( brando: ActorRef )( implicit system: ActorSys
   def ?( request: Request )( implicit timeout: Timeout, context: ExecutionContext ): Future[ Any ] = actor ask request map Success.apply recover {
     case ex => Failure( ex ) // execution failed, recover
   }
+
+  def ??[ T ]( command: String, key: String, params: String* )( implicit timeout: Timeout, context: ExecutionContext ): ExpectedFuture[ T ] =
+    new ExpectedFuture[ T ]( this ? Request( command, key +: params: _* ), s"$command ${ key +: params.headOption.toList mkString " " }" )
+
+  def !!( command: String, params: String* )( implicit timeout: Timeout, context: ExecutionContext ): ExpectedFuture[ Unit ] =
+    new ExpectedFuture[ Unit ]( this ? Request( command, params: _* ), s"${ command +: params.headOption.toList mkString " " }" )
 
   /** stops the actor */
   def stop( ) = {

@@ -1,25 +1,25 @@
 package play.api.cache.redis.connector
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
 
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success}
+import scala.util.Success
 
 import play.api.Logger
-import play.api.cache.redis._
+import play.api.cache.redis.ConnectionSettings
 import play.api.cache.redis.exception._
 import play.api.inject.ApplicationLifecycle
 
 import akka.util.ByteString
-import brando.{Ok, Pong, Request}
+import brando.{Ok, Pong}
 
 
 /**
   * The connector directly connects with the REDIS instance, implements protocol commands
   * and is supposed to by used internally by another wrappers. The connector does not
-  * directly implement [[CacheApi]] but provides fundamental functionality.
+  * directly implement [[play.api.cache.redis.CacheApi]] but provides fundamental functionality.
   *
   * @param redis      communication module to Redis cache
   * @param serializer encodes/decodes objects into/from a string
@@ -28,8 +28,7 @@ import brando.{Ok, Pong, Request}
   *
   * @author Karel Cemus
   */
-@Singleton
-class RedisConnectorImpl @Inject( )( redis: RedisActor, serializer: AkkaSerializer, lifecycle: ApplicationLifecycle, settings: ConnectionSettings ) extends RedisConnector {
+private [ connector ] class RedisConnectorImpl @Inject( )( redis: RedisActor, serializer: AkkaSerializer, lifecycle: ApplicationLifecycle, settings: ConnectionSettings ) extends RedisConnector {
 
   // implicit execution context and ask timeout
   import settings.{invocationContext, timeout}
@@ -125,37 +124,6 @@ class RedisConnectorImpl @Inject( )( redis: RedisActor, serializer: AkkaSerializ
   def stop( ): Future[ Unit ] = Future {
     redis.stop( )
     log.info( "Redis cache stopped." )
-  }
-
-
-  /** enriches the actor to return expected future. The extended future implements advanced response handling */
-  private implicit class RichRedisActor( redis: RedisActor ) {
-
-    def ??[ T ]( command: String, key: String, params: String* ): ExpectedFuture[ T ] =
-      new ExpectedFuture[ T ]( redis ? Request( command, key +: params: _* ), s"$command ${ key +: params.headOption.toList mkString " " }" )
-
-    def !!( command: String, params: String* ): ExpectedFuture[ Unit ] =
-      new ExpectedFuture[ Unit ]( redis ? Request( command, params: _* ), s"${ command +: params.headOption.toList mkString " " }" )
-  }
-
-  /** The extended future implements advanced response handling. It unifies maintenance of unexpected responses */
-  private class ExpectedFuture[ T ]( future: Future[ Any ], cmd: => String ) {
-
-    /** received an unexpected response */
-    private def onUnexpected: PartialFunction[ Any, T ] = {
-      case Success( _ ) => unexpected( "???", cmd ) // TODO provide the key
-      case Failure( ex ) => failed( "???", cmd, ex ) // TODO provide the key
-      case _ => unexpected( "???", cmd ) // TODO provide the key
-    }
-
-    /** execution failed with an exception */
-    private def onException: PartialFunction[ Throwable, T ] = {
-      case ex => failed( "???", cmd, ex ) // TODO provide the key
-    }
-
-    /** handles both expected and unexpected responses and recovers from them */
-    def expects( expected: PartialFunction[ Any, T ] ): Future[ T ] =
-      future map ( expected orElse onUnexpected ) recover onException
   }
 
   // start up the connector

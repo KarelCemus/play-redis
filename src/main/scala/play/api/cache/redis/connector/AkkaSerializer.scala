@@ -128,7 +128,7 @@ private[ connector ] class AkkaDecoder( serializer: Serialization ) {
 }
 
 @Singleton
-private[ redis ] class AkkaSerializerImpl @Inject( )( system: ActorSystem ) extends AkkaSerializer {
+private[ connector ] class AkkaSerializerImpl @Inject( )( system: ActorSystem ) extends AkkaSerializer {
 
   /**
     * serializer dispatcher used to serialize the objects into bytes;
@@ -167,7 +167,7 @@ private[ redis ] class AkkaSerializerImpl @Inject( )( system: ActorSystem ) exte
 /**
   * Registry of known Scala and Java primitives
   */
-private[ redis ] object Primitives {
+private[ connector ] object Primitives {
 
   /** primitive types with simplified encoding */
   val primitives = Seq(
@@ -186,7 +186,7 @@ private[ redis ] object Primitives {
 /**
   * Registry of class tags for Java primitives
   */
-private[ redis ] object JavaClassTag {
+private[ connector ] object JavaClassTag {
 
   val Byte = ClassTag( classOf[ java.lang.Byte ] )
   val Short = ClassTag( classOf[ java.lang.Short ] )

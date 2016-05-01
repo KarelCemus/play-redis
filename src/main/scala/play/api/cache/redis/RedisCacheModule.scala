@@ -2,7 +2,7 @@ package play.api.cache.redis
 
 import javax.inject.Singleton
 
-import play.api.cache.redis.connector.{AkkaSerializer, AkkaSerializerImpl, RedisConnector, RedisConnectorImpl}
+import play.api.cache.redis.connector.RedisConnectorModule
 import play.api.inject.{Binding, Module}
 import play.api.{Environment, Logger}
 
@@ -15,12 +15,6 @@ object ModuleConfiguration {
     */
   trait CoreBinding extends Module {
     override def bindings( environment: Environment, configuration: play.api.Configuration ): Seq[ Binding[ _ ] ] = Seq(
-      // binds akka serializer to its implementation
-      bind[ AkkaSerializer ].to[ AkkaSerializerImpl ],
-      // redis actor encapsulating brando
-      bind[ RedisActor ].toProvider[ RedisActorProvider ],
-      // redis connector implementing the protocol
-      bind[ RedisConnector ].to[ RedisConnectorImpl ],
       // extracts the configuration
       bind[ ConnectionSettings ].toProvider[ ConnectionSettingsProvider ]
     )
@@ -90,4 +84,8 @@ import play.api.cache.redis.ModuleConfiguration._
   * @author Karel Cemus
   */
 @Singleton
-class RedisCacheModule extends Module with CoreBinding with DefaultBinding with SyncOrAsync with ConfigurationProvider
+class RedisCacheModule extends Module with CoreBinding with DefaultBinding with SyncOrAsync with ConfigurationProvider {
+
+  override def bindings( environment: Environment, configuration: play.api.Configuration ) =
+    super.bindings( environment, configuration ) ++ RedisConnectorModule.bindings( environment, configuration )
+}
