@@ -86,32 +86,27 @@ private[ connector ] class AkkaEncoder( serializer: Serialization ) {
   */
 private[ connector ] class AkkaDecoder( serializer: Serialization ) {
 
+  import scala.reflect.{ClassTag => Scala}
+  import play.api.cache.redis.connector.{JavaClassTag => Java}
+
   /** unsafe method decoding a string into an object. It directly throws exceptions */
   def decode[ T ]( value: String )( implicit classTag: ClassTag[ T ] ): T =
     untypedDecode[ T ]( value ).asInstanceOf[ T ]
 
   /** unsafe method decoding a string into an object. It directly throws exceptions. It does not perform type cast */
-  protected def untypedDecode[ T ]( value: String )( implicit classTag: ClassTag[ T ] ): Any = value match {
+  protected def untypedDecode[ T ]( value: String )( implicit tag: ClassTag[ T ] ): Any = value match {
     // AnyVal is not supported by default, have to be implemented manually
-    case "" => null
-    case string if classTag == ClassTag( classOf[ String ] ) => string
-    case boolean if classTag == ClassTag.Boolean => boolean.toBoolean
-    case boolean if classTag == JavaClassTag.Boolean => boolean.toBoolean
-    case byte if classTag == ClassTag.Byte => byte.toByte
-    case byte if classTag == JavaClassTag.Byte => byte.toByte
-    case char if classTag == ClassTag.Char => char.charAt( 0 )
-    case char if classTag == JavaClassTag.Char => char.charAt( 0 )
-    case short if classTag == ClassTag.Short => short.toShort
-    case short if classTag == JavaClassTag.Short => short.toShort
-    case int if classTag == ClassTag.Int => int.toInt
-    case int if classTag == JavaClassTag.Int => int.toInt
-    case long if classTag == ClassTag.Long => long.toLong
-    case long if classTag == JavaClassTag.Long => long.toLong
-    case float if classTag == ClassTag.Float => float.toFloat
-    case float if classTag == JavaClassTag.Float => float.toFloat
-    case double if classTag == ClassTag.Double => double.toDouble
-    case double if classTag == JavaClassTag.Double => double.toDouble
-    case anyRef => stringToAnyRef[ T ]( anyRef )
+    case ""                                                        => null
+    case string   if tag == Java.String                            => string
+    case boolean  if tag == Java.Boolean || tag == Scala.Boolean   => boolean.toBoolean
+    case byte     if tag == Java.Byte    || tag == Scala.Byte      => byte.toByte
+    case char     if tag == Java.Char    || tag == Scala.Char      => char.charAt( 0 )
+    case short    if tag == Java.Short   || tag == Scala.Short     => short.toShort
+    case int      if tag == Java.Int     || tag == Scala.Int       => int.toInt
+    case long     if tag == Java.Long    || tag == Scala.Long      => long.toLong
+    case float    if tag == Java.Float   || tag == Scala.Float     => float.toFloat
+    case double   if tag == Java.Double  || tag == Scala.Double    => double.toDouble
+    case anyRef                                                    => stringToAnyRef[ T ]( anyRef )
   }
 
   /** consumes BASE64 string and returns array of bytes */
@@ -172,13 +167,13 @@ private[ connector ] object Primitives {
   /** primitive types with simplified encoding */
   val primitives = Seq(
     classOf[ Boolean ], classOf[ java.lang.Boolean ],
-    classOf[ Byte ], classOf[ java.lang.Byte ],
-    classOf[ Char ], classOf[ java.lang.Character ],
-    classOf[ Short ], classOf[ java.lang.Short ],
-    classOf[ Int ], classOf[ java.lang.Integer ],
-    classOf[ Long ], classOf[ java.lang.Long ],
-    classOf[ Float ], classOf[ java.lang.Float ],
-    classOf[ Double ], classOf[ java.lang.Double ],
+    classOf[ Byte ],    classOf[ java.lang.Byte ],
+    classOf[ Char ],    classOf[ java.lang.Character ],
+    classOf[ Short ],   classOf[ java.lang.Short ],
+    classOf[ Int ],     classOf[ java.lang.Integer ],
+    classOf[ Long ],    classOf[ java.lang.Long ],
+    classOf[ Float ],   classOf[ java.lang.Float ],
+    classOf[ Double ],  classOf[ java.lang.Double ],
     classOf[ String ]
   )
 }
@@ -188,12 +183,13 @@ private[ connector ] object Primitives {
   */
 private[ connector ] object JavaClassTag {
 
-  val Byte = ClassTag( classOf[ java.lang.Byte ] )
-  val Short = ClassTag( classOf[ java.lang.Short ] )
-  val Char = ClassTag( classOf[ java.lang.Character ] )
-  val Int = ClassTag( classOf[ java.lang.Integer ] )
-  val Long = ClassTag( classOf[ java.lang.Long ] )
-  val Float = ClassTag( classOf[ java.lang.Float ] )
-  val Double = ClassTag( classOf[ java.lang.Double ] )
+  val Byte    = ClassTag( classOf[ java.lang.Byte ] )
+  val Short   = ClassTag( classOf[ java.lang.Short ] )
+  val Char    = ClassTag( classOf[ java.lang.Character ] )
+  val Int     = ClassTag( classOf[ java.lang.Integer ] )
+  val Long    = ClassTag( classOf[ java.lang.Long ] )
+  val Float   = ClassTag( classOf[ java.lang.Float ] )
+  val Double  = ClassTag( classOf[ java.lang.Double ] )
   val Boolean = ClassTag( classOf[ java.lang.Boolean ] )
+  val String  = ClassTag( classOf[ String ] )
 }
