@@ -10,16 +10,16 @@ import play.api.cache.redis.exception._
   *
   * @author Karel Cemus
   */
-private[ connector ] class ExpectedFuture[ T ]( future: Future[ Any ], cmd: => String ) {
+private[ connector ] class ExpectedFuture[ T ]( future: Future[ Any ], key: Option[ String ], cmd: => String ) {
 
   /** received an unexpected response */
   private def onUnexpected: PartialFunction[ Any, T ] = {
-    case _ => unexpected( "???", cmd ) // TODO provide the key
+    case _ => unexpected( key, cmd )
   }
 
   /** execution failed with an exception */
   private def onException: PartialFunction[ Throwable, T ] = {
-    case ex => failed( "???", cmd, ex ) // TODO provide the key
+    case ex => failed( key, cmd, ex )
   }
 
   /** handles both expected and unexpected responses and failure recovery */

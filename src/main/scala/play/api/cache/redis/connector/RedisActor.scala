@@ -53,11 +53,11 @@ private[ connector ] class RedisActor( brando: ActorRef, host: String, port: Int
 
   /** execute the given request, we expect some data in return */
   def ?[ T ]( command: String, key: String, params: String* )( implicit timeout: Timeout, context: ExecutionContext ): ExpectedFuture[ T ] =
-    new ExpectedFuture[ T ]( actor ask Request( command, key +: params: _* ), s"$command ${ key +: params.headOption.toList mkString " " }" )
+    new ExpectedFuture[ T ]( actor ask Request( command, key +: params: _* ), Some( key ), s"$command ${ key +: params.headOption.toList mkString " " }" )
 
   /** executes the request but does NOT expect data in return */
   def !( command: String, params: String* )( implicit timeout: Timeout, context: ExecutionContext ): ExpectedFuture[ Unit ] =
-    new ExpectedFuture[ Unit ]( actor ask Request( command, params: _* ), s"${ command +: params.headOption.toList mkString " " }" )
+    new ExpectedFuture[ Unit ]( actor ask Request( command, params: _* ), None, s"${ command +: params.headOption.toList mkString " " }" )
 
   /** starts the actor */
   def start( ) = {
