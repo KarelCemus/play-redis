@@ -21,14 +21,14 @@ class TimeoutException( key: String ) extends RedisException( "" )
   *
   * @author Karel Cemus
   */
-class ExecutionFailedException( key: String, command: String, cause: Throwable ) extends RedisException( command, cause )
+class ExecutionFailedException( key: Option[ String ], command: String, cause: Throwable ) extends RedisException( command, cause )
 
 /**
   * Request succeeded but returned unexpected value
   *
   * @author Karel Cemus
   */
-class UnexpectedResponseException( key: String, command: String ) extends RedisException( command )
+class UnexpectedResponseException( key: Option[ String ], command: String ) extends RedisException( command )
 
 /**
   * Value serialization or deserialization failed.
