@@ -36,7 +36,7 @@ private [ connector ] class RedisConnectorImpl @Inject( )( redis: RedisActor, se
   /** logger instance */
   protected val log = Logger( "play.api.cache.redis" )
 
-  def get[ T: ClassTag ]( key: String ): Future[ Option[ T ] ] = redis ?? ( "GET", key ) expects {
+  def get[ T: ClassTag ]( key: String ): Future[ Option[ T ] ] = redis ? ( "GET", key ) expects {
     case Success( Some( response: ByteString ) ) =>
       log.trace( s"Hit on key '$key'." )
       Some( decode[ T ]( key, response.utf8String ) )
@@ -65,44 +65,44 @@ private [ connector ] class RedisConnectorImpl @Inject( )( redis: RedisActor, se
 
   /** temporally stores already encoded value into the storage */
   private def setTemporally( key: String, value: String, expiration: Duration ): Future[ Unit ] =
-    redis ?? ( "SETEX", key, expiration.toSeconds.toString, value ) expects {
+    redis ? ( "SETEX", key, expiration.toSeconds.toString, value ) expects {
       case Success( Some( Ok ) ) => log.debug( s"Set on key '$key' on $expiration seconds." )
       case Success( None ) => log.warn( s"Set on key '$key' failed." )
     }
 
   /** eternally stores already encoded value into the storage */
   private def setEternally( key: String, value: String ): Future[ Unit ] =
-    redis ?? ( "SET", key, value ) expects {
+    redis ? ( "SET", key, value ) expects {
       case Success( Some( Ok ) ) => log.debug( s"Set on key '$key' for infinite seconds." )
       case Success( None ) => log.warn( s"Set on key '$key' failed." )
     }
 
   def expire( key: String, expiration: Duration ): Future[ Unit ] =
-    redis ?? ( "EXPIRE", key, expiration.toSeconds.toString ) expects {
+    redis ? ( "EXPIRE", key, expiration.toSeconds.toString ) expects {
       case Success( Some( 1 ) ) => log.debug( s"Expiration set on key '$key'." ) // expiration was set
       case Success( Some( 0 ) ) => log.debug( s"Expiration set on key '$key' failed. Key does not exist." ) // Nothing was removed
     }
 
-  def matching( pattern: String ): Future[ Set[ String ] ] = redis ?? ( "KEYS", pattern ) expects {
+  def matching( pattern: String ): Future[ Set[ String ] ] = redis ? ( "KEYS", pattern ) expects {
     case Success( Some( response: List[ _ ] ) ) =>
       val keys = response.asInstanceOf[ List[ Option[ ByteString ] ] ].flatten.map( _.utf8String ).toSet
       log.debug( s"KEYS on '$pattern' responded '${ keys.mkString( ", " ) }'." )
       keys
   }
 
-  def invalidate( ): Future[ Unit ] = redis !! "FLUSHDB" expects {
+  def invalidate( ): Future[ Unit ] = redis ! "FLUSHDB" expects {
     case Success( Some( Ok ) ) => log.info( "Invalidated." ) // cache was invalidated
     case Success( None ) => log.warn( "Invalidation failed." ) // execution failed
   }
 
-  def exists( key: String ): Future[ Boolean ] = redis ?? ( "EXISTS", key ) expects {
+  def exists( key: String ): Future[ Boolean ] = redis ? ( "EXISTS", key ) expects {
     case Success( Some( 1L ) ) => log.debug( s"Key '$key' exists." ); true
     case Success( Some( 0L ) ) => log.debug( s"Key '$key' doesn't exist." ); false
   }
 
   def remove( keys: String* ): Future[ Unit ] =
     if ( keys.nonEmpty ) // if any key to remove do it
-      redis !! ( "DEL", keys: _* ) expects {
+      redis ! ( "DEL", keys: _* ) expects {
         case Success( Some( 0 ) ) => // Nothing was removed
           log.debug( s"Remove on keys ${ keys.mkString( "'", ",", "'" ) } succeeded but nothing was removed." )
         case Success( Some( number ) ) => // Some entries were removed
@@ -110,7 +110,7 @@ private [ connector ] class RedisConnectorImpl @Inject( )( redis: RedisActor, se
       }
     else Future( Unit ) // otherwise return immediately
 
-  def ping( ): Future[ Unit ] = redis !! "PING" expects {
+  def ping( ): Future[ Unit ] = redis ! "PING" expects {
     case Success( Pong ) => Unit
   }
 

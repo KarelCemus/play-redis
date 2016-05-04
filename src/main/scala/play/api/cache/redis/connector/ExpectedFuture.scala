@@ -25,7 +25,7 @@ private[ connector ] class ExpectedFuture[ T ]( future: Future[ Any ], cmd: => S
     case ex => failed( "???", cmd, ex ) // TODO provide the key
   }
 
-  /** handles both expected and unexpected responses and recovers from them */
+  /** handles both expected and unexpected responses and failure recovery */
   def expects( expected: PartialFunction[ Any, T ] )( implicit context: ExecutionContext ): Future[ T ] =
     future map ( expected orElse onUnexpected ) recover onException
 }

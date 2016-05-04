@@ -24,11 +24,11 @@ private[ connector ] class RedisActorProvider @Inject( )( settings: ConnectionSe
   override def get( ): RedisActor = {
     import settings._
     // internal brando connector
-    val internal = system actorOf StashingRedis {
-      system actorOf Redis( host, port, database = database, auth = password )
-    }
-    // rich connector modifying API
-    new RedisActor( internal )( system )
+    val internal = system actorOf Redis( host, port, database = database, auth = password )
+    // stashing brando connector, queuing messages when disconnected
+    val stashing = system actorOf StashingRedis( internal )
+    // actor wrapper with rich API
+    new RedisActor( stashing )( system )
   }
 }
 
@@ -43,15 +43,17 @@ private[ connector ] class RedisActor( brando: ActorRef )( implicit system: Acto
   private val actor = new AskableActorRef( brando )
 
   /** syntax sugar for querying the storage */
-  def ?( request: Request )( implicit timeout: Timeout, context: ExecutionContext ): Future[ Any ] = actor ask request map Success.apply recover {
+  private def execute( request: Request )( implicit timeout: Timeout, context: ExecutionContext ): Future[ Any ] = actor ask request map Success.apply recover {
     case ex => Failure( ex ) // execution failed, recover
   }
 
-  def ??[ T ]( command: String, key: String, params: String* )( implicit timeout: Timeout, context: ExecutionContext ): ExpectedFuture[ T ] =
-    new ExpectedFuture[ T ]( this ? Request( command, key +: params: _* ), s"$command ${ key +: params.headOption.toList mkString " " }" )
+  /** execute the given request, we expect some data in return */
+  def ?[ T ]( command: String, key: String, params: String* )( implicit timeout: Timeout, context: ExecutionContext ): ExpectedFuture[ T ] =
+    new ExpectedFuture[ T ]( this execute Request( command, key +: params: _* ), s"$command ${ key +: params.headOption.toList mkString " " }" )
 
-  def !!( command: String, params: String* )( implicit timeout: Timeout, context: ExecutionContext ): ExpectedFuture[ Unit ] =
-    new ExpectedFuture[ Unit ]( this ? Request( command, params: _* ), s"${ command +: params.headOption.toList mkString " " }" )
+  /** executes the request but does NOT expect data in return */
+  def !( command: String, params: String* )( implicit timeout: Timeout, context: ExecutionContext ): ExpectedFuture[ Unit ] =
+    new ExpectedFuture[ Unit ]( this execute Request( command, params: _* ), s"${ command +: params.headOption.toList mkString " " }" )
 
   /** stops the actor */
   def stop( ) = {

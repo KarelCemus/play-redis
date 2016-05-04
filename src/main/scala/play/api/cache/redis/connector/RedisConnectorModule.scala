@@ -5,7 +5,7 @@ import play.api.{Configuration, Environment}
 import play.api.inject.{Binding, Module}
 
 /**
-  * Configures low-level classes communicating with the redis.
+  * Configures low-level classes communicating with the redis server.
   *
   * @author Karel Cemus
   */

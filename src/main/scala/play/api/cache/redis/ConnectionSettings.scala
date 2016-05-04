@@ -13,6 +13,7 @@ import akka.actor.ActorSystem
   *
   * @author Karel Cemus
   */
+@deprecated( "Removed due to simplification. Use Configuration instead.", "1.3.0" ) // todo remove this class
 case class ConnectionSettings
 (
   /** host with redis server */

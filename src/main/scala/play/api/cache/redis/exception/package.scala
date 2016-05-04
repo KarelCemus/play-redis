@@ -7,6 +7,8 @@ package play.api.cache.redis
   */
 package object exception {
 
+  // todo clean up during recovery policy implementation
+
   /** helper throwing UnsupportedOperationException */
   @throws[ UnsupportedOperationException ]
   def unsupported( message: String ): Nothing =
@@ -24,6 +26,4 @@ package object exception {
 
   def failed( key: String, command: String, cause: Throwable ): Nothing =
     throw new ExecutionFailedException( key, command, cause )
-
-
 }
