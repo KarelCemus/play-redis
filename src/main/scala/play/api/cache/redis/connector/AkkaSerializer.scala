@@ -145,7 +145,7 @@ private[ connector ] class AkkaSerializerImpl @Inject( )( system: ActorSystem ) 
     * @return serialized string or exception
     */
   override def encode( value: Any ): Try[ String ] =
-    Try( encoder.encode( value ) ) // todo directly throw RedisException
+    Try( encoder.encode( value ) )
 
   /** Method accepts a valid serialized string and based on the accepted class it deserializes it.
     * If the expected class does not match expectations, deserialization fails with an exception.
@@ -156,7 +156,7 @@ private[ connector ] class AkkaSerializerImpl @Inject( )( system: ActorSystem ) 
     * @return deserialized object or exception
     */
   override def decode[ T: ClassTag ]( value: String ): Try[ T ] =
-    Try( decoder.decode[ T ]( value ) ) // todo directly throw RedisException
+    Try( decoder.decode[ T ]( value ) )
 }
 
 /**
