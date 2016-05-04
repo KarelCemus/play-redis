@@ -5,7 +5,7 @@ package play.api.cache
   */
 package object redis extends AnyRef with util.Expiration {
 
-  type SynchronousResult[ A ] = A
+  type SynchronousResult[ A ]  = A
   type AsynchronousResult[ A ] = scala.concurrent.Future[ A ]
 
 }

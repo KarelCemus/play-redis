@@ -5,7 +5,7 @@ import scala.concurrent.duration.Duration
 import scala.language.{higherKinds, implicitConversions}
 import scala.reflect.ClassTag
 
-import play.api.cache.redis.{ConnectionSettings, InternalCacheApi, RedisConnector}
+import play.api.cache.redis._
 
 /** <p>Implementation of plain API using redis-server cache and Brando connector implementation.</p> */
 class RedisCache[ Result[ _ ] ]( redis: RedisConnector, settings: ConnectionSettings )( implicit builder: Builders.ResultBuilder[ Result ] ) extends InternalCacheApi[ Result ] with Implicits {

@@ -8,7 +8,7 @@ import scala.language.{higherKinds, implicitConversions}
   *
   * @author Karel Cemus
   */
-trait Implicits {
+private[ impl ] trait Implicits {
 
   /** enriches any ref by toFuture converting a value to Future.successful */
   protected implicit class RichFuture[ T ]( any: T ) {
