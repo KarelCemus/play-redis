@@ -8,9 +8,8 @@ import scala.reflect.ClassTag
 import scala.util.Success
 
 import play.api.Logger
-import play.api.cache.redis.{ConnectionSettings, RedisConnector}
 import play.api.cache.redis.exception._
-import play.api.inject.ApplicationLifecycle
+import play.api.cache.redis.{ConnectionSettings, RedisConnector}
 
 import akka.util.ByteString
 import brando.{Ok, Pong}
@@ -23,12 +22,11 @@ import brando.{Ok, Pong}
   *
   * @param redis      communication module to Redis cache
   * @param serializer encodes/decodes objects into/from a string
-  * @param lifecycle  application lifecycle enables stop hook
   * @param settings   connection settings
   *
   * @author Karel Cemus
   */
-private [ connector ] class RedisConnectorImpl @Inject( )( redis: RedisActor, serializer: AkkaSerializer, lifecycle: ApplicationLifecycle, settings: ConnectionSettings ) extends RedisConnector {
+private [ connector ] class RedisConnectorImpl @Inject( )( redis: RedisActor, serializer: AkkaSerializer, settings: ConnectionSettings ) extends RedisConnector {
 
   // implicit execution context and ask timeout
   import settings.{invocationContext, timeout}
@@ -113,22 +111,4 @@ private [ connector ] class RedisConnectorImpl @Inject( )( redis: RedisActor, se
   def ping( ): Future[ Unit ] = redis ! "PING" expects {
     case Success( Pong ) => Unit
   }
-
-  /** start up the connector and test it with ping */
-  def start( ): Future[ Unit ] = ping( ) map {
-    import settings._
-    _ => log.info( s"Redis cache started. Actor is connected to $host:$port?database=$database" )
-  }
-
-  /** stops running brando actor */
-  def stop( ): Future[ Unit ] = Future {
-    redis.stop( )
-    log.info( "Redis cache stopped." )
-  }
-
-  // start up the connector
-  start( )
-
-  // bind shutdown
-  lifecycle.addStopHook( stop _ )
 }
