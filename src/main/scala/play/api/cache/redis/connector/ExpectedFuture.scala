@@ -1,7 +1,6 @@
 package play.api.cache.redis.connector
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 import play.api.cache.redis.exception._
 
@@ -15,8 +14,6 @@ private[ connector ] class ExpectedFuture[ T ]( future: Future[ Any ], cmd: => S
 
   /** received an unexpected response */
   private def onUnexpected: PartialFunction[ Any, T ] = {
-    case Success( _ ) => unexpected( "???", cmd ) // TODO provide the key
-    case Failure( ex ) => failed( "???", cmd, ex ) // TODO provide the key
     case _ => unexpected( "???", cmd ) // TODO provide the key
   }
 

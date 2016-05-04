@@ -3,7 +3,6 @@ package play.api.cache.redis.connector
 import javax.inject._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 import play.api.Logger
 import play.api.cache.redis.ConnectionSettings
@@ -52,18 +51,13 @@ private[ connector ] class RedisActor( brando: ActorRef, host: String, port: Int
 
   protected def log = Logger( "play.api.cache.redis" )
 
-  /** syntax sugar for querying the storage */
-  private def execute( request: Request )( implicit timeout: Timeout, context: ExecutionContext ): Future[ Any ] = actor ask request map Success.apply recover {
-    case ex => Failure( ex ) // execution failed, recover
-  }
-
   /** execute the given request, we expect some data in return */
   def ?[ T ]( command: String, key: String, params: String* )( implicit timeout: Timeout, context: ExecutionContext ): ExpectedFuture[ T ] =
-    new ExpectedFuture[ T ]( this execute Request( command, key +: params: _* ), s"$command ${ key +: params.headOption.toList mkString " " }" )
+    new ExpectedFuture[ T ]( actor ask Request( command, key +: params: _* ), s"$command ${ key +: params.headOption.toList mkString " " }" )
 
   /** executes the request but does NOT expect data in return */
   def !( command: String, params: String* )( implicit timeout: Timeout, context: ExecutionContext ): ExpectedFuture[ Unit ] =
-    new ExpectedFuture[ Unit ]( this execute Request( command, params: _* ), s"${ command +: params.headOption.toList mkString " " }" )
+    new ExpectedFuture[ Unit ]( actor ask Request( command, params: _* ), s"${ command +: params.headOption.toList mkString " " }" )
 
   /** starts the actor */
   def start( ) = {
