@@ -70,17 +70,4 @@ private[ redis ] trait RedisConnector {
     * @return promise
     */
   def ping( ): Future[ Unit ]
-
-  /** Starts the connector, tests the connection
-    *
-    * @return promise
-    */
-  def start( ): Future[ Unit ]
-
-  /** Stops the connector
-    *
-    * @return promise
-    */
-  def stop( ): Future[ Unit ]
-
 }
