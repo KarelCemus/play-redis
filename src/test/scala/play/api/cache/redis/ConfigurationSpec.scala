@@ -2,6 +2,8 @@ package play.api.cache.redis
 
 import scala.concurrent.duration._
 
+import play.api.cache.redis.configuration.{EnvironmentConfigurationProvider, StaticConfiguration}
+
 import org.specs2.mutable.Specification
 
 /**

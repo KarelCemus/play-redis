@@ -1,4 +1,4 @@
-package play.api.cache.redis
+package play.api.cache.redis.util
 
 import java.util.Date
 
@@ -17,7 +17,7 @@ import org.joda.time.DateTime
   *
   * @author Karel Cemus
   */
-trait Expiration {
+private[ redis ] trait Expiration {
 
   /**
     * converts given timestamp indication expiration date into duration from now
