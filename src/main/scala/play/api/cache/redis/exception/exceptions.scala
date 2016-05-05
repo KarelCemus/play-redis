@@ -14,32 +14,25 @@ sealed abstract class RedisException( message: String, cause: Throwable ) extend
   *
   * @author Karel Cemus
   */
-class TimeoutException( key: String ) extends RedisException( "" )
+case class TimeoutException( key: Option[ String ], command: String ) extends RedisException( "" )
 
 /**
   * Command execution failed with exception
   *
   * @author Karel Cemus
   */
-class ExecutionFailedException( key: Option[ String ], command: String, cause: Throwable ) extends RedisException( command, cause )
+case class ExecutionFailedException( key: Option[ String ], command: String, cause: Throwable ) extends RedisException( command, cause )
 
 /**
   * Request succeeded but returned unexpected value
   *
   * @author Karel Cemus
   */
-class UnexpectedResponseException( key: Option[ String ], command: String ) extends RedisException( command )
+case class UnexpectedResponseException( key: Option[ String ], command: String ) extends RedisException( command )
 
 /**
   * Value serialization or deserialization failed.
   *
   * @author Karel Cemus
   */
-class SerializationException( value: Any, message: String ) extends RedisException( message )
-
-/**
-  * Indicates invalid module configuration
-  *
-  * @author Karel Cemus
-  */
-class ConfigurationException( message: String ) extends RedisException( message )
+case class SerializationException( key: String, message: String, cause: Throwable ) extends RedisException( message )
