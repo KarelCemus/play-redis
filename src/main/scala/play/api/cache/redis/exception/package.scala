@@ -21,9 +21,9 @@ package object exception {
 
   //  def timedOut( key: String ) = throw new TimeoutException( key )
 
-  def unexpected( key: String, command: String ): Nothing =
+  def unexpected( key: Option[ String ], command: String ): Nothing =
     throw new UnexpectedResponseException( key, command )
 
-  def failed( key: String, command: String, cause: Throwable ): Nothing =
+  def failed( key: Option[ String ], command: String, cause: Throwable ): Nothing =
     throw new ExecutionFailedException( key, command, cause )
 }
