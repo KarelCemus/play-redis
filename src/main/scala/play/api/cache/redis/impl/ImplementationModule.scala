@@ -19,6 +19,8 @@ object ImplementationModule extends Module {
     // enable async module when required
     bind[ CacheAsyncApi ].to[ AsyncRedis ],
     // java api
-    bind[ play.cache.CacheApi ].to[ JavaRedis ]
+    bind[ play.cache.CacheApi ].to[ JavaRedis ],
+    // recovery policy
+    bind[ RecoveryPolicy ].to[ LogAndFailPolicy ]
   )
 }

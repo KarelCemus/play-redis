@@ -8,49 +8,49 @@ import scala.reflect.ClassTag
 import play.api.cache.redis._
 
 /** <p>Implementation of plain API using redis-server cache and Brando connector implementation.</p> */
-private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implicit builder: Builders.ResultBuilder[ Result ] ) extends InternalCacheApi[ Result ] with Implicits {
+private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implicit builder: Builders.ResultBuilder[ Result ], policy: RecoveryPolicy ) extends AbstractCacheApi[ Result ] with Implicits {
 
   // implicit ask timeout and execution context
   import redis.{context, timeout}
 
   override def get[ T: ClassTag ]( key: String ) =
-    redis.get[ T ]( key )
+    redis.get[ T ]( key ).recoverWithDefault( None )
 
   override def set( key: String, value: Any, expiration: Duration ) =
-    redis.set( key, value, expiration )
+    redis.set( key, value, expiration ).recoverWithUnit
 
   override def expire( key: String, expiration: Duration ) =
-    redis.expire( key, expiration )
+    redis.expire( key, expiration ).recoverWithUnit
 
   override def matching( pattern: String ) =
-    redis.matching( pattern )
+    redis.matching( pattern ).recoverWithDefault( Set.empty[ String ] )
 
   override def getOrElse[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => T ) =
-    getOrFuture( key, expiration )( orElse.toFuture )
+    getOrFuture( key, expiration )( orElse.toFuture ).recoverWithDefault( orElse )
 
   override def getOrFuture[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => Future[ T ] ): Future[ T ] =
-    redis.get[ T ]( key ) flatMap {
+    redis.get[ T ]( key ).flatMap {
       // cache hit, return the unwrapped value
       case Some( value: T ) => value.toFuture
       // cache miss, compute the value, store it into cache and return the value
       case None => orElse flatMap ( value => redis.set( key, value, expiration ) map ( _ => value ) )
-    }
+    }.recoverWithFuture( orElse )
 
   override def remove( key: String ) =
-    redis.remove( key )
+    redis.remove( key ).recoverWithUnit
 
   override def remove( key1: String, key2: String, keys: String* ) =
-    redis.remove( key1 +: key2 +: keys: _* )
+    redis.remove( key1 +: key2 +: keys: _* ).recoverWithUnit
 
   override def removeAll( keys: String* ): Result[ Unit ] =
-    redis.remove( keys: _* )
+    redis.remove( keys: _* ).recoverWithUnit
 
   override def removeMatching( pattern: String ): Result[ Unit ] =
-    redis.matching( pattern ) flatMap ( keys => redis.remove( keys.toSeq: _* ) )
+    redis.matching( pattern ).flatMap( keys => redis.remove( keys.toSeq: _* ) ).recoverWithUnit
 
   override def invalidate( ) =
-    redis.invalidate( )
+    redis.invalidate( ).recoverWithUnit
 
   override def exists( key: String ) =
-    redis.exists( key )
+    redis.exists( key ).recoverWithDefault( false )
 }
