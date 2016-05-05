@@ -5,7 +5,7 @@ import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.Logger
-import play.api.cache.redis.ConnectionSettings
+import play.api.cache.redis.Configuration
 import play.api.inject.ApplicationLifecycle
 
 import akka.actor.{ActorRef, ActorSystem}
@@ -21,9 +21,10 @@ import brando.{Redis, Request, StashingRedis}
   * @author Karel Cemus
   */
 @Singleton
-private[ connector ] class RedisActorProvider @Inject( )( settings: ConnectionSettings, system: ActorSystem, lifecycle: ApplicationLifecycle ) extends Provider[ RedisActor ] {
+private[ connector ] class RedisActorProvider @Inject( )( configuration: Configuration, system: ActorSystem, lifecycle: ApplicationLifecycle ) extends Provider[ RedisActor ] {
+
   override def get( ): RedisActor = {
-    import settings._
+    import configuration._
     // internal brando connector
     val internal = system actorOf Redis( host, port, database = database, auth = password )
     // stashing brando connector, queuing messages when disconnected
