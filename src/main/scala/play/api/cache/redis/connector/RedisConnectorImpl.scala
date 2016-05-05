@@ -8,8 +8,9 @@ import scala.reflect.ClassTag
 
 import play.api.Logger
 import play.api.cache.redis.exception._
-import play.api.cache.redis.{ConnectionSettings, RedisConnector}
+import play.api.cache.redis.{Configuration, RedisConnector}
 
+import akka.actor.ActorSystem
 import akka.util.ByteString
 import brando.{Ok, Pong}
 
@@ -19,16 +20,18 @@ import brando.{Ok, Pong}
   * and is supposed to by used internally by another wrappers. The connector does not
   * directly implement [[play.api.cache.redis.CacheApi]] but provides fundamental functionality.
   *
-  * @param redis      communication module to Redis cache
-  * @param serializer encodes/decodes objects into/from a string
-  * @param settings   connection settings
-  *
+  * @param redis         communication module to Redis cache
+  * @param serializer    encodes/decodes objects into/from a string
+  * @param configuration connection settings
   * @author Karel Cemus
   */
-private [ connector ] class RedisConnectorImpl @Inject( )( redis: RedisActor, serializer: AkkaSerializer, settings: ConnectionSettings ) extends RedisConnector {
+private [ connector ] class RedisConnectorImpl @Inject( )( redis: RedisActor, serializer: AkkaSerializer, configuration: Configuration )( implicit system: ActorSystem ) extends RedisConnector {
 
-  // implicit execution context and ask timeout
-  import settings.{invocationContext, timeout}
+  // implicit ask timeout
+  implicit val timeout = akka.util.Timeout( configuration.timeout )
+
+  /** implicit execution context */
+  implicit val context = system.dispatchers.lookup( configuration.invocationContext )
 
   /** logger instance */
   protected val log = Logger( "play.api.cache.redis" )

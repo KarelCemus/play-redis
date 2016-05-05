@@ -8,10 +8,10 @@ import scala.reflect.ClassTag
 import play.api.cache.redis._
 
 /** <p>Implementation of plain API using redis-server cache and Brando connector implementation.</p> */
-private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector, settings: ConnectionSettings )( implicit builder: Builders.ResultBuilder[ Result ] ) extends InternalCacheApi[ Result ] with Implicits {
+private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implicit builder: Builders.ResultBuilder[ Result ] ) extends InternalCacheApi[ Result ] with Implicits {
 
-  // implicit execution context and ask timeout
-  import settings.{invocationContext, timeout}
+  // implicit ask timeout and execution context
+  import redis.{context, timeout}
 
   override def get[ T: ClassTag ]( key: String ) =
     redis.get[ T ]( key )

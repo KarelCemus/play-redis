@@ -1,8 +1,10 @@
 package play.api.cache.redis
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
+
+import akka.util.Timeout
 
 /**
   * Internal non-blocking Redis API implementing REDIS protocol
@@ -11,6 +13,12 @@ import scala.reflect.ClassTag
   * @author Karel Cemus
   */
 private[ redis ] trait RedisConnector {
+
+  /** implicit execution context */
+  implicit def context: ExecutionContext
+
+  /** implicit ask timeout */
+  implicit def timeout: Timeout
 
   /** Retrieve a value from the cache.
     *

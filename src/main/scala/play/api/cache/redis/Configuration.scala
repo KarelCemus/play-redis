@@ -31,11 +31,4 @@ trait Configuration {
 
   /** When enabled security, this returns password for the AUTH command */
   def password: Option[ String ]
-
-  /** encapsulates connection settings into a single object used by [[play.api.cache.redis.connector.RedisConnectorImpl]]. */
-  def connectionSettings( system: akka.actor.ActorSystem ) = ConnectionSettings(
-    host, port, database, password
-  )(
-    system.dispatchers.lookup( invocationContext ), akka.util.Timeout( timeout )
-  )
 }
