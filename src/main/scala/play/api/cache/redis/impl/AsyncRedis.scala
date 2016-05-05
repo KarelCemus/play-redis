@@ -10,5 +10,5 @@ import play.api.cache.redis._
   * @author Karel Cemus
   */
 @Singleton
-private[ impl ] class AsyncRedis @Inject( )( redis: RedisConnector )
-  extends RedisCache( redis )( Builders.AsynchronousBuilder ) with CacheAsyncApi
+private[ impl ] class AsyncRedis @Inject( )( redis: RedisConnector, policy: RecoveryPolicy )
+  extends RedisCache( redis )( Builders.AsynchronousBuilder, policy ) with CacheAsyncApi

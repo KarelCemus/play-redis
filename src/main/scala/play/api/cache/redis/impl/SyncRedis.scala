@@ -10,5 +10,5 @@ import play.api.cache.redis._
   * @author Karel Cemus
   */
 @Singleton
-private[ impl ] class SyncRedis @Inject( )( redis: RedisConnector )
-  extends RedisCache( redis )( Builders.SynchronousBuilder ) with CacheApi with play.api.cache.CacheApi
+private[ impl ] class SyncRedis @Inject( )( redis: RedisConnector, policy: RecoveryPolicy )
+  extends RedisCache( redis )( Builders.SynchronousBuilder, policy ) with CacheApi with play.api.cache.CacheApi
