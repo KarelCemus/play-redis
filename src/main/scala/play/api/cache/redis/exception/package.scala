@@ -26,4 +26,7 @@ package object exception {
 
   def failed( key: Option[ String ], command: String, cause: Throwable ): Nothing =
     throw new ExecutionFailedException( key, command, cause )
+
+  def invalidConfiguration( message: String ): Nothing =
+    throw new ConfigurationException( message )
 }

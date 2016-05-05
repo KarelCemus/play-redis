@@ -41,7 +41,7 @@ To your SBT `build.sbt` add the following lines:
 
 ```scala
 // redis-server cache
-libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.2.0"
+libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.3.0"
 
 // repository with the Brando connector
 resolvers += "Brando Repository" at "http://chrisdinn.github.io/releases/"
@@ -165,11 +165,12 @@ There is already default configuration but it can be overwritten in your `conf/a
 
 In various environments there are various sources of the connection string defining how to connect to Redis instance.
 For example, at localhost we are interested in direct definition of host and port in the `application.conf` file.
-However, this approach does not fit all environments. For example, Heroku supplies `REDIS_URL` environment variable
+However, this approach does not fit all environments. For example, Heroku supplies `REDISCLOUD_URL` environment variable
 defining the connection string. To resolve this diversity, the library expects an implementation of the `Configuration`
 trait available through DI. By default, it enables `static` configuration source, i.e., it reads the settings from the
 static configuration file. Another supplied configuration reader is `env`, which reads the environment variable such as
-`REDIS_URL` but the name is configurable. To disable built-in providers you are free to set `custom` and supply your
+`REDIS_URL` but the variable name is configurable. To easy use on Heroku, we also provide `heroku` configuration
+profile expecting `REDISCLOUD_URL` variable. To disable built-in providers you are free to set `custom` and supply your
 own implementation of the `Configuration` trait.
 
 ### Running on Heroku
@@ -179,7 +180,7 @@ To enable redis cache on Heroku we have to do the following steps:
  1. add library into application dependencies
  2. enable `RedisCacheModule`
  3. disable `EhCacheModule`
- 4. set `play.cache.redis.configuration: env`
+ 4. set `play.cache.redis.configuration: heroku`, which expects `REDISCLOUD_URL` environment variable
  5. done, we can run it and use any of 3 provided interfaces
 
 ### Custom configuration source
@@ -211,7 +212,7 @@ Nevertheless, this module **replaces** the EHCache and it is not intended to use
 
 | play framework  | play-redis     |
 |-----------------|---------------:|
-| 2.5.x           | 1.2.0          |
+| 2.5.x           | 1.3.0          |
 | 2.4.x           | 1.0.0          |
 | 2.3.x           | 0.2.1          |
 
@@ -219,6 +220,16 @@ Nevertheless, this module **replaces** the EHCache and it is not intended to use
 </center>
 
 ## Changelog
+
+### [:link: 1.3.0](https://github.com/KarelCemus/play-redis/tree/1.3.0) (Possibly breaking)
+
+Major internal code refactoring, library has been modularized into several packages.
+However, **public API remained unchanged**, although its implementation significantly
+changed.
+
+Added `heroku` configuration profile.
+
+
 
 ### [:link: 1.2.0](https://github.com/KarelCemus/play-redis/tree/1.2.0)
 
