@@ -30,7 +30,7 @@ trait Synchronization {
 
   /** waits for future responses and returns them synchronously */
   protected implicit class Synchronizer[ T ]( future: AsynchronousResult[ T ] ) {
-    def sync = Await.result( future, 1.second )
+    def sync = Await.result( future, 3.second )
   }
 }
 

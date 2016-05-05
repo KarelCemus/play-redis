@@ -7,7 +7,7 @@ import javax.inject.Singleton
  * the connection string. This configuration is often used by PaaS environments.
  */
 @Singleton
-class EnvironmentConfiguration(
+class ConnectionString(
 
   /** host with redis server */
   override val host: String,
@@ -18,4 +18,4 @@ class EnvironmentConfiguration(
   /** authentication password */
   override val password: Option[ String ]
 
-) extends StaticConfiguration
+) extends ConfigurationFile

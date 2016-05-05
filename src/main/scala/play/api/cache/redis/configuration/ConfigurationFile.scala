@@ -11,7 +11,7 @@ import play.api.cache.redis.Configuration
   * located in there. This is default configuration provider. It expects all settings under the 'play.cache.redis' node.
   */
 @Singleton
-class StaticConfiguration extends Configuration {
+private[ redis ] class ConfigurationFile extends Configuration {
 
   import scala.language.implicitConversions
 
