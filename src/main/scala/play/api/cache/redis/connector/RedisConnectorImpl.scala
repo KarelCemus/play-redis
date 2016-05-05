@@ -1,6 +1,6 @@
 package play.api.cache.redis.connector
 
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -25,6 +25,7 @@ import brando.{Ok, Pong}
   * @param configuration connection settings
   * @author Karel Cemus
   */
+@Singleton
 private [ connector ] class RedisConnectorImpl @Inject( )( redis: RedisActor, serializer: AkkaSerializer, configuration: Configuration )( implicit system: ActorSystem ) extends RedisConnector {
 
   // implicit ask timeout

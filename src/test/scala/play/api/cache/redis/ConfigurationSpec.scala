@@ -32,7 +32,7 @@ class ConfigurationSpec extends Specification {
     }
 
     "read timeout" in {
-      configuration.timeout must beEqualTo( 1.second )
+      configuration.timeout must beEqualTo( 3.second )
     }
 
     "read password" in {
@@ -63,7 +63,7 @@ class ConfigurationSpec extends Specification {
     }
 
     "read timeout" in {
-      configuration.timeout must beEqualTo( 1.second )
+      configuration.timeout must beEqualTo( 3.second )
     }
 
     "read password" in {
