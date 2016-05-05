@@ -23,9 +23,6 @@ class RedisCacheModule extends Module {
     configuration.ConfigurationModule
   )
 
-  override def bindings( environment: Environment, configuration: play.api.Configuration ) = Seq(
-    // extracts the configuration
-    bind[ ConnectionSettings ].toProvider[ ConnectionSettingsProvider ]
-
-  ) ++ layers.flatMap( _.bindings( environment, configuration ) )
+  override def bindings( environment: Environment, configuration: play.api.Configuration ) =
+    layers.flatMap( _.bindings( environment, configuration ) )
 }
