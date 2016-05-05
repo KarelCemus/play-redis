@@ -17,7 +17,7 @@ package object exception {
   /** helper indicating serialization failure, it throws an exception */
   @throws[ SerializationException ]
   def serializationFailed( key: String, message: String, cause: Throwable ) =
-    throw new SerializationException( key, message )
+    throw new SerializationException( key, message, cause )
 
   //  def timedOut( key: String ) = throw new TimeoutException( key )
 
@@ -28,5 +28,5 @@ package object exception {
     throw new ExecutionFailedException( key, command, cause )
 
   def invalidConfiguration( message: String ): Nothing =
-    throw new ConfigurationException( message )
+    throw new IllegalStateException( message )
 }
