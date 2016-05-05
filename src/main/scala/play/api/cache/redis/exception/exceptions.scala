@@ -36,3 +36,10 @@ class UnexpectedResponseException( key: Option[ String ], command: String ) exte
   * @author Karel Cemus
   */
 class SerializationException( value: Any, message: String ) extends RedisException( message )
+
+/**
+  * Indicates invalid module configuration
+  *
+  * @author Karel Cemus
+  */
+class ConfigurationException( message: String ) extends RedisException( message )
