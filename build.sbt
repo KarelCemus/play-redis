@@ -12,7 +12,7 @@ scalaVersion := "2.11.8"
 
 crossScalaVersions := Seq( scalaVersion.value )
 
-val playVersion = "2.5.2"
+val playVersion = "2.5.3"
 
 val brandoVersion = "3.0.3"
 
