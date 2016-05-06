@@ -159,7 +159,19 @@ There is already default configuration but it can be overwritten in your `conf/a
 | play.cache.redis.configuration      | String   | `static`                        | Defines which configuration source enable. Accepted values are `static`, `env`, `custom` |
 | play.cache.redis.password           | String   | `null`                          | When authentication is required, this is the password. Value is optional. |
 | play.cache.redis.connection-string-variable | String   | `REDIS_URL`             | Name of the environment variable with the connection string. This is used in combination with the `env` configuration. This allows customization of the variable name in PaaS environment. Value is optional. |
+| play.cache.redis.recovery           | String   | `log-and-default`               | Defines behavior when command execution fails. Accepted values are `log-and-fail` to log the error and rethrow the exception, `log-and-default` to log the failure and return default value neutral to the operation, and 'custom' indicating the user binds his own implementation of `RecoveryPolicy`. |
 
+### Recovery policy
+
+The intention of cache is usually to optimize the application behavior, not to provide any business logic.
+In this case it makes sense the cache could be removed without any visible change except for possible
+performance loss. In consequence, we think that **failed cache requests should not break the application flow**,
+they should be logged and ignored. However, not always this is desired behavior. To resolve this ambiguity,
+we provide `RecoveryPolicy` trait implementing the behavior to be executed when the cache request  fails.
+By default, we provide two implementations. They both log the failure at first and while one produces
+the exception and let the application to deal with it, the other returns some neutral value, which
+should result in behavior like there is no cache. However, besides these, it is possible, e.g., to also
+rerun a failed command. For more information see `RecoveryPolicy` trait.
 
 ### Connection settings on different platforms
 
@@ -227,8 +239,11 @@ Major internal code refactoring, library has been modularized into several packa
 However, **public API remained unchanged**, although its implementation significantly
 changed.
 
-Added `heroku` configuration profile.
+Added `heroku` configuration profile simplifying [running on Heroku](#running-on-heroku).
 
+Introduced [`RecoveryPolicy`](#recovery-policy) defining behavior when execution fails. Default
+policy is `log-and-default`. To re-enable previous *fail-on-error* behavior, set `log-and-fail`.
+See the [`RecoveryPolicy`](#recovery-policy) for more details.
 
 
 ### [:link: 1.2.0](https://github.com/KarelCemus/play-redis/tree/1.2.0)
