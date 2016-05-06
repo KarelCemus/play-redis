@@ -1,16 +1,16 @@
 package play.api.cache.redis
 
+import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
 import scala.language.implicitConversions
 
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 
-import akka.actor.{ActorSystem, ActorRef}
+import akka.actor.{ActorRef, ActorSystem}
 import akka.pattern.AskableActorRef
 import akka.util.Timeout
-import brando.{StashingRedis, Request}
+import brando.{Request, StashingRedis}
 import org.specs2.matcher._
 import org.specs2.specification.BeforeAll
 
@@ -28,9 +28,11 @@ trait Redis extends EmptyRedis with RedisAsker with RedisMatcher {
 
 trait Synchronization {
 
+  protected implicit val timeout = Timeout( 3.second )
+
   /** waits for future responses and returns them synchronously */
   protected implicit class Synchronizer[ T ]( future: AsynchronousResult[ T ] ) {
-    def sync = Await.result( future, 3.second )
+    def sync = Await.result( future, timeout.duration )
   }
 }
 
@@ -57,9 +59,6 @@ trait RedisMatcher extends Synchronization {
 }
 
 trait RedisSettings {
-
-  /** timeout of cache requests */
-  protected implicit val timeout = Timeout( 1.second )
 
   def host = "localhost"
 

@@ -13,7 +13,7 @@ import scala.reflect.ClassTag
   *
   * @author Karel Cemus
   */
-private[ redis ] trait InternalCacheApi[ Result[ _ ] ] {
+private[ redis ] trait AbstractCacheApi[ Result[ _ ] ] {
 
   /** Retrieve a value from the cache.
     *
@@ -129,7 +129,7 @@ private[ redis ] trait InternalCacheApi[ Result[ _ ] ] {
 }
 
 /** Synchronous and blocking implementation of the connection to the redis database */
-trait CacheApi extends InternalCacheApi[ SynchronousResult ]
+trait CacheApi extends AbstractCacheApi[ SynchronousResult ]
 
 /** Asynchronous non-blocking implementation of the connection to the redis database */
-trait CacheAsyncApi extends InternalCacheApi[ AsynchronousResult ]
+trait CacheAsyncApi extends AbstractCacheApi[ AsynchronousResult ]

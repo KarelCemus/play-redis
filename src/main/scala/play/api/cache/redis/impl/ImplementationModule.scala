@@ -1,6 +1,7 @@
 package play.api.cache.redis.impl
 
 import play.api.cache.redis.{CacheApi, CacheAsyncApi}
+import play.api.cache.redis.exception._
 import play.api.inject.Module
 import play.api.{Configuration, Environment}
 
@@ -20,5 +21,16 @@ object ImplementationModule extends Module {
     bind[ CacheAsyncApi ].to[ AsyncRedis ],
     // java api
     bind[ play.cache.CacheApi ].to[ JavaRedis ]
-  )
+  ) ++ policy( configuration )
+
+  /** reads the configuration and provides proper recovery policy binding */
+  private def policy( configuration: Configuration ) = {
+    configuration.getString( "play.cache.redis.recovery" ) match {
+      case Some( "log-and-fail" ) => Some( bind[ RecoveryPolicy ].to[ LogAndFailPolicy ] )
+      case Some( "log-and-default" ) => Some( bind[ RecoveryPolicy ].to[ LogAndDefaultPolicy ] )
+      case Some( "custom" ) => None // do nothing, user provides own implementation
+      case Some( _ ) => invalidConfiguration( "Invalid value in 'play.cache.redis.recovery'. Accepted values are 'log-and-fail', 'log-and-default', and 'custom'." )
+      case None => invalidConfiguration( "Key 'play.cache.redis.recovery' is mandatory. Accepted values are 'log-and-fail', 'log-and-default', and 'custom'." )
+    }
+  }
 }
