@@ -14,7 +14,7 @@ sealed abstract class RedisException( message: String, cause: Throwable ) extend
   *
   * @author Karel Cemus
   */
-case class TimeoutException( key: Option[ String ], command: String ) extends RedisException( "" )
+case class TimeoutException( cause: Throwable ) extends RedisException( "" )
 
 /**
   * Command execution failed with exception

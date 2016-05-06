@@ -5,6 +5,7 @@ import scala.reflect.ClassTag
 
 import play.api.cache.redis.exception._
 
+import akka.pattern.AskTimeoutException
 import org.specs2.matcher.Matcher
 import org.specs2.mutable.Specification
 
@@ -53,11 +54,7 @@ class RecoveryPolicySpec extends Specification {
     s"$name policy" should "recover from" >> {
 
       "TimeoutException with a key" in {
-        policy.recoverFrom( rerun, default, new TimeoutException( Some( "key" ), "GET" ) ) must expects[ TimeoutException ]
-      }
-
-      "TimeoutException without a key" in {
-        policy.recoverFrom( rerun, default, new TimeoutException( None, "GET" ) ) must expects[ TimeoutException ]
+        policy.recoverFrom( rerun, default, new TimeoutException( new AskTimeoutException( "Simulated execution timeout" ) ) ) must expects[ TimeoutException ]
       }
 
       "SerializationException" in {

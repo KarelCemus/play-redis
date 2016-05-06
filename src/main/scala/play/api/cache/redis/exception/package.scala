@@ -19,7 +19,7 @@ package object exception {
   def serializationFailed( key: String, message: String, cause: Throwable ) =
     throw new SerializationException( key, message, cause )
 
-  //  def timedOut( key: String ) = throw new TimeoutException( key )
+  def timedOut( cause: Throwable ) = throw new TimeoutException( cause )
 
   def unexpected( key: Option[ String ], command: String ): Nothing =
     throw new UnexpectedResponseException( key, command )

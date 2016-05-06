@@ -17,9 +17,10 @@ import org.specs2.matcher.{Expectable, MatchResult, Matcher}
 import org.specs2.mutable.Specification
 
 /**
- * <p>Test of cache to be sure that keys are differentiated, expires etc.</p>
- */
-class RedisCacheSpec extends Specification with Redis { outer =>
+  * <p>Test of cache to be sure that keys are differentiated, expires etc.</p>
+  */
+class RedisCacheSpec extends Specification with Redis {
+  outer =>
 
   private type Cache = RedisCache[ SynchronousResult ]
 
@@ -28,15 +29,15 @@ class RedisCacheSpec extends Specification with Redis { outer =>
   // test proper implementation, no fails
   new RedisCacheSuite( "implement", "redis-cache-implements", new Cache( workingConnector )( Builders.SynchronousBuilder, new LogAndFailPolicy ), AlwaysSuccess )
 
-  new RedisCacheSuite( "recover from", "redis-cache-recovers", new Cache( FailingConnector )( Builders.SynchronousBuilder, new LogAndDefaultPolicy ), AlwaysDefault )
+  new RedisCacheSuite( "recover from", "redis-cache-recovery", new Cache( FailingConnector )( Builders.SynchronousBuilder, new LogAndDefaultPolicy ), AlwaysDefault )
 
-  new RedisCacheSuite( "fail on", "redis-cache-fails", new Cache( FailingConnector )( Builders.SynchronousBuilder, new LogAndFailPolicy ), AlwaysException )
+  new RedisCacheSuite( "fail on", "redis-cache-fail", new Cache( FailingConnector )( Builders.SynchronousBuilder, new LogAndFailPolicy ), AlwaysException )
 
   class RedisCacheSuite( suiteName: String, prefix: String, cache: Cache, expectation: Expectation ) {
 
     "RedisCache" should {
-      
-      import expectation._  
+
+      import expectation._
 
       suiteName >> {
 
@@ -105,9 +106,9 @@ class RedisCacheSpec extends Specification with Redis { outer =>
           cache.set( s"$prefix-test-13-key-A", "value", 3.second ) must expects( beUnit )
           cache.set( s"$prefix-test-13-note-A", "value", 3.second ) must expects( beUnit )
           cache.set( s"$prefix-test-13-key-B", "value", 3.second ) must expects( beUnit )
-          cache.matching( s"$prefix-test-13*" ) must expects( beEqualTo( Set( s"$prefix-test-13-key-A", s"$prefix-test-13-note-A", s"$prefix-test-13-key-B" ) ) )
-          cache.matching( s"$prefix-test-13*A" ) must expects( beEqualTo( Set( s"$prefix-test-13-key-A", s"$prefix-test-13-note-A" ) ) )
-          cache.matching( s"$prefix-test-13-key-*" ) must expects( beEqualTo( Set( s"$prefix-test-13-key-A", s"$prefix-test-13-key-B" ) ) )
+          cache.matching( s"$prefix-test-13*" ) must expects( beEqualTo( Set( s"$prefix-test-13-key-A", s"$prefix-test-13-note-A", s"$prefix-test-13-key-B" ) ), beEqualTo( Set.empty ) )
+          cache.matching( s"$prefix-test-13*A" ) must expects( beEqualTo( Set( s"$prefix-test-13-key-A", s"$prefix-test-13-note-A" ) ), beEqualTo( Set.empty ) )
+          cache.matching( s"$prefix-test-13-key-*" ) must expects( beEqualTo( Set( s"$prefix-test-13-key-A", s"$prefix-test-13-key-B" ) ), beEqualTo( Set.empty ) )
           cache.matching( s"$prefix-test-13A*" ) must expects( beEqualTo( Set.empty ) )
         }
 
@@ -115,7 +116,7 @@ class RedisCacheSpec extends Specification with Redis { outer =>
           cache.set( s"$prefix-test-14-key-A", "value", 3.second ) must expects( beUnit )
           cache.set( s"$prefix-test-14-note-A", "value", 3.second ) must expects( beUnit )
           cache.set( s"$prefix-test-14-key-B", "value", 3.second ) must expects( beUnit )
-          cache.matching( s"$prefix-test-14*" ) must expects( beEqualTo( Set( s"$prefix-test-14-key-A", s"$prefix-test-14-note-A", s"$prefix-test-14-key-B" ) ) )
+          cache.matching( s"$prefix-test-14*" ) must expects( beEqualTo( Set( s"$prefix-test-14-key-A", s"$prefix-test-14-note-A", s"$prefix-test-14-key-B" ) ), beEqualTo( Set.empty ) )
           cache.removeMatching( s"$prefix-test-14*" ) must expects( beUnit )
           cache.matching( s"$prefix-test-14*" ) must expects( beEqualTo( Set.empty ) )
         }
@@ -124,14 +125,14 @@ class RedisCacheSpec extends Specification with Redis { outer =>
           cache.set( s"$prefix-test-15-key-A", "value", 3.second ) must expects( beUnit )
           cache.set( s"$prefix-test-15-note-A", "value", 3.second ) must expects( beUnit )
           cache.set( s"$prefix-test-15-key-B", "value", 3.second ) must expects( beUnit )
-          cache.matching( s"$prefix-test-15*A" ) must expects( beEqualTo( Set( s"$prefix-test-15-key-A", s"$prefix-test-15-note-A" ) ) )
-          cache.removeMatching( s"$prefix-test-15*A") must expects( beUnit )
-          cache.matching( s"$prefix-test-15*A") must expects( beEqualTo( Set.empty ) )
+          cache.matching( s"$prefix-test-15*A" ) must expects( beEqualTo( Set( s"$prefix-test-15-key-A", s"$prefix-test-15-note-A" ) ), beEqualTo( Set.empty ) )
+          cache.removeMatching( s"$prefix-test-15*A" ) must expects( beUnit )
+          cache.matching( s"$prefix-test-15*A" ) must expects( beEqualTo( Set.empty ) )
         }
 
         "remove all matching keys, no match" in {
           cache.matching( s"$prefix-test-16*" ) must expects( beEqualTo( Set.empty ) )
-          cache.removeMatching( s"$prefix-test-16*") must expects( beUnit )
+          cache.removeMatching( s"$prefix-test-16*" ) must expects( beUnit )
           cache.matching( s"$prefix-test-16*" ) must expects( beEqualTo( Set.empty ) )
         }
 
@@ -151,7 +152,7 @@ class RedisCacheSpec extends Specification with Redis { outer =>
         }
 
         "propagate fail in future" in {
-          cache.getOrFuture[ String ]( s"$prefix-test-9" ){
+          cache.getOrFuture[ String ]( s"$prefix-test-9" ) {
             Future.failed( new IllegalStateException( "Exception in test." ) )
           }.sync must expects( throwA( new IllegalStateException( "Exception in test." ) ) )
         }
@@ -294,7 +295,7 @@ class RedisCacheSpec extends Specification with Redis { outer =>
 
     /** invokes internal getOrElse but it accumulate invocations of orElse clause in the accumulator */
     def getOrFutureCounting( key: String )( accumulator: Accumulator ) = {
-      cache.getOrFuture[ String ]( key ){
+      cache.getOrFuture[ String ]( key ) {
         Future {
           // increment miss counter
           accumulator.incrementAndGet( )
@@ -311,29 +312,37 @@ class RedisCacheSpec extends Specification with Redis { outer =>
 
     override implicit def timeout: Timeout = outer.timeout
 
-    override def set( key: String, value: Any, expiration: Duration ): Future[ Unit ] =
+    override def set( key: String, value: Any, expiration: Duration ): Future[ Unit ] = Future {
       failed( Some( key ), "SET", new IllegalStateException( "Redis connector failure reproduction" ) )
+    }
 
-    override def get[ T: ClassTag ]( key: String ): Future[ Option[ T ] ] =
+    override def get[ T: ClassTag ]( key: String ): Future[ Option[ T ] ] = Future {
       failed( Some( key ), "GET", new IllegalStateException( "Redis connector failure reproduction" ) )
+    }
 
-    override def expire( key: String, expiration: Duration ): Future[ Unit ] =
+    override def expire( key: String, expiration: Duration ): Future[ Unit ] = Future {
       failed( Some( key ), "EXPIRE", new IllegalStateException( "Redis connector failure reproduction" ) )
+    }
 
-    override def remove( keys: String* ): Future[ Unit ] =
+    override def remove( keys: String* ): Future[ Unit ] = Future {
       failed( Some( keys.mkString( " " ) ), "DEL", new IllegalStateException( "Redis connector failure reproduction" ) )
+    }
 
-    override def matching( pattern: String ): Future[ Set[ String ] ] =
+    override def matching( pattern: String ): Future[ Set[ String ] ] = Future {
       failed( None, "KEYS", new IllegalStateException( "Redis connector failure reproduction" ) )
+    }
 
-    override def invalidate( ): Future[ Unit ] =
+    override def invalidate( ): Future[ Unit ] = Future {
       failed( None, "FLUSHDB", new IllegalStateException( "Redis connector failure reproduction" ) )
+    }
 
-    override def ping( ): Future[ Unit ] =
+    override def ping( ): Future[ Unit ] = Future {
       failed( None, "PING", new IllegalStateException( "Redis connector failure reproduction" ) )
+    }
 
-    override def exists( key: String ): Future[ Boolean ] =
+    override def exists( key: String ): Future[ Boolean ] = Future {
       failed( Some( key ), "EXISTS", new IllegalStateException( "Redis connector failure reproduction" ) )
+    }
   }
 
   object beUnit extends Matcher[ Any ] {

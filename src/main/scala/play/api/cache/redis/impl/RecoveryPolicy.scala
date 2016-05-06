@@ -46,8 +46,7 @@ trait AbstractPolicy extends RecoveryPolicy {
   protected def report( failure: RedisException ) = {
     // create a failure report
     val report = failure match {
-      case TimeoutException( Some( key ), command ) => s"Command $command for key '$key' timed out."
-      case TimeoutException( None, command ) => s"Command $command timed out."
+      case TimeoutException( cause ) => s"Command execution timed out."
       case SerializationException( key, message, cause ) => s"$message for key '$key'."
       case ExecutionFailedException( Some( key ), command, cause ) => s"Command $command for key '$key' failed."
       case ExecutionFailedException( None, command, cause ) => s"Command $command failed."
