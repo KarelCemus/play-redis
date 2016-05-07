@@ -19,7 +19,7 @@ import org.specs2.mutable.Specification
 /**
   * <p>Test of cache to be sure that keys are differentiated, expires etc.</p>
   */
-class RedisCacheSpec extends Specification with Redis {
+class AsynchronousCacheSpec extends Specification with Redis {
   outer =>
 
   private type Cache = RedisCache[ SynchronousResult ]
@@ -35,7 +35,7 @@ class RedisCacheSpec extends Specification with Redis {
 
   class RedisCacheSuite( suiteName: String, prefix: String, cache: Cache, expectation: Expectation ) {
 
-    "RedisCache" should {
+    "AsynchronousCacheApi" should {
 
       import expectation._
 
