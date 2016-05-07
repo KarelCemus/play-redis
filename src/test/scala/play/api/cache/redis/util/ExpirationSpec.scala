@@ -19,6 +19,8 @@ class ExpirationSpec extends Specification with Redis with Expiration {
   private def nowInJava = new Date( )
 
   private def in2seconds = nowInJoda.plusSeconds( 2 )
+  
+  private val prefix = "expiration"
 
   "Expiration" should {
 
@@ -41,16 +43,16 @@ class ExpirationSpec extends Specification with Redis with Expiration {
     }
 
     "hit after set" in {
-      Cache.set( "expiration-test-1", "value", in2seconds.asExpiration )
-      Cache.get[ String ]( "expiration-test-1" ) must beSome( "value" )
+      Cache.set( s"$prefix-test-1", "value", in2seconds.asExpiration )
+      Cache.get[ String ]( s"$prefix-test-1" ) must beSome( "value" )
     }
 
     "miss after expiration" in {
-      Cache.set( "expiration-test-2", "value", in2seconds.asExpiration )
-      Cache.get[ String ]( "expiration-test-2" ) must beSome( "value" )
+      Cache.set( s"$prefix-test-2", "value", in2seconds.asExpiration )
+      Cache.get[ String ]( s"$prefix-test-2" ) must beSome( "value" )
       // wait until the duration expires
       Thread.sleep( 2500 )
-      Cache.get[ String ]( "expiration-test-2" ) must beNone
+      Cache.get[ String ]( s"$prefix-test-2" ) must beNone
     }
   }
 }
