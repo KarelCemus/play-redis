@@ -1,14 +1,12 @@
-package play.api.cache.redis
+package play.api.cache.redis.configuration
 
 import scala.concurrent.duration._
-
-import play.api.cache.redis.configuration.{ConnectionStringProvider, ConfigurationFile}
 
 import org.specs2.mutable.Specification
 
 /**
- * <p>This test verifies reading of the configuration to deliver proper redis connection settings.</p>
- */
+  * <p>This test verifies reading of the configuration to deliver proper redis connection settings.</p>
+  */
 class ConfigurationSpec extends Specification {
 
   "Local configuration" should {
