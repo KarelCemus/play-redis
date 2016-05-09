@@ -244,6 +244,19 @@ class RedisConnectorSpec extends Specification with Redis {
       Cache.increment( s"$prefix-test-decr-by-some", -2 ).sync must beEqualTo( 2 )
       Cache.increment( s"$prefix-test-decr-by-some", -3 ).sync must beEqualTo( -1 )
     }
+
+    "append like set when value is undefined" in {
+      Cache.get[ String ]( s"$prefix-test-append-to-null" ) must beNone
+      Cache.append( s"$prefix-test-append-to-null", "value" ).sync
+      Cache.get[ String ]( s"$prefix-test-append-to-null" ) must beSome( "value" )
+    }
+
+    "append to existing string" in {
+      Cache.set( s"$prefix-test-append-to-some", "some" ).sync
+      Cache.get[ String ]( s"$prefix-test-append-to-some" ) must beSome( "some" )
+      Cache.append( s"$prefix-test-append-to-some", " value" ).sync
+      Cache.get[ String ]( s"$prefix-test-append-to-some" ) must beSome( "some value" )
+    }
   }
 
 }
