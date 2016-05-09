@@ -22,16 +22,16 @@ import org.specs2.mutable.Specification
 class AsynchronousCacheSpec extends Specification with Redis {
   outer =>
 
-  private type Cache = RedisCache[ SynchronousResult ]
+  private type Cache = RedisCache[ AsynchronousResult ]
 
   private val workingConnector = injector.instanceOf[ RedisConnector ]
 
   // test proper implementation, no fails
-  new RedisCacheSuite( "implement", "redis-cache-implements", new Cache( workingConnector )( Builders.SynchronousBuilder, new LogAndFailPolicy ), AlwaysSuccess )
+  new RedisCacheSuite( "implement", "redis-cache-implements", new RedisCache( workingConnector )( Builders.AsynchronousBuilder, new LogAndFailPolicy ), AlwaysSuccess )
 
-  new RedisCacheSuite( "recover from", "redis-cache-recovery", new Cache( FailingConnector )( Builders.SynchronousBuilder, new LogAndDefaultPolicy ), AlwaysDefault )
+  new RedisCacheSuite( "recover from", "redis-cache-recovery", new RedisCache( FailingConnector )( Builders.AsynchronousBuilder, new LogAndDefaultPolicy ), AlwaysDefault )
 
-  new RedisCacheSuite( "fail on", "redis-cache-fail", new Cache( FailingConnector )( Builders.SynchronousBuilder, new LogAndFailPolicy ), AlwaysException )
+  new RedisCacheSuite( "fail on", "redis-cache-fail", new RedisCache( FailingConnector )( Builders.AsynchronousBuilder, new LogAndFailPolicy ), AlwaysException )
 
   class RedisCacheSuite( suiteName: String, prefix: String, cache: Cache, expectation: Expectation ) {
 
@@ -118,13 +118,13 @@ class AsynchronousCacheSpec extends Specification with Redis {
         "miss at first getOrElse " in {
           val counter = new AtomicInteger( 0 )
           cache.getOrElseCounting( s"$prefix-test-5" )( counter ) must expects( beEqualTo( "value" ) )
-          counter.get must expects( beEqualTo( 1 ), beEqualTo( 1 ), beEqualTo( 0 ) )
+          counter.get must expectsNow( beEqualTo( 1 ), beEqualTo( 1 ), beEqualTo( 0 ) )
         }
 
         "hit at second getOrElse" in {
           val counter = new AtomicInteger( 0 )
           for ( index <- 1 to 10 ) cache.getOrElseCounting( s"$prefix-test-6" )( counter ) must expects( beEqualTo( "value" ) )
-          counter.get must expects( beEqualTo( 1 ), beEqualTo( 10 ), beEqualTo( 0 ) )
+          counter.get must expectsNow( beEqualTo( 1 ), beEqualTo( 10 ), beEqualTo( 0 ) )
         }
 
         "find all matching keys" in {
@@ -165,21 +165,21 @@ class AsynchronousCacheSpec extends Specification with Redis {
           val counter = new AtomicInteger( 0 )
           cache.getOrElseCounting( s"$prefix-test-7A" )( counter ) must expects( beEqualTo( "value" ) )
           cache.getOrElseCounting( s"$prefix-test-7B" )( counter ) must expects( beEqualTo( "value" ) )
-          counter.get must expects( beEqualTo( 2 ), beEqualTo( 2 ), beEqualTo( 0 ) )
+          counter.get must expectsNow( beEqualTo( 2 ), beEqualTo( 2 ), beEqualTo( 0 ) )
         }
 
         "perform future and store result" in {
           val counter = new AtomicInteger( 0 )
           // perform test
-          for ( index <- 1 to 5 ) cache.getOrFutureCounting( s"$prefix-test-8" )( counter ).sync must expects( beEqualTo( "value" ) )
+          for ( index <- 1 to 5 ) cache.getOrFutureCounting( s"$prefix-test-8" )( counter ) must expects( beEqualTo( "value" ) )
           // verify
-          counter.get must expects( beEqualTo( 1 ), beEqualTo( 5 ), beEqualTo( 0 ) )
+          counter.get must expectsNow( beEqualTo( 1 ), beEqualTo( 5 ), beEqualTo( 0 ) )
         }
 
         "propagate fail in future" in {
           cache.getOrFuture[ String ]( s"$prefix-test-9" ) {
             Future.failed( new IllegalStateException( "Exception in test." ) )
-          }.sync must expects( throwA( new IllegalStateException( "Exception in test." ) ) )
+          } must expects( throwA( new IllegalStateException( "Exception in test." ) ) )
         }
 
         "support list" in {
@@ -324,25 +324,34 @@ class AsynchronousCacheSpec extends Specification with Redis {
   }
 
   trait Expectation {
-    def expects[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ]
+    def expectsNow[ T ]( success: => Matcher[ T ] ): Matcher[ T ] =
+      expectsNow( success, success )
 
-    def expects[ T ]( success: => Matcher[ T ], default: => Matcher[ T ] ): Matcher[ T ] =
+    def expectsNow[ T ]( success: => Matcher[ T ], default: => Matcher[ T ] ): Matcher[ T ] =
+      expectsNow( success, default, throwA[ ExecutionFailedException ] )
+
+    def expectsNow[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ]
+
+    def expects[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ AsynchronousResult[ T ] ] =
+      expectsNow( success, default, exception )
+
+    def expects[ T ]( success: => Matcher[ T ], default: => Matcher[ T ] ): Matcher[ AsynchronousResult[ T ] ] =
       expects( success, default, throwA[ ExecutionFailedException ] )
 
-    def expects[ T ]( successAndDefault: => Matcher[ T ] ): Matcher[ T ] =
+    def expects[ T ]( successAndDefault: => Matcher[ T ] ): Matcher[ AsynchronousResult[ T ] ] =
       expects( successAndDefault, successAndDefault )
   }
 
   object AlwaysDefault extends Expectation {
-    override def expects[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ] = default
+    override def expectsNow[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ] = default
   }
 
   object AlwaysException extends Expectation {
-    override def expects[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ] = exception
+    override def expectsNow[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ] = exception
   }
 
   object AlwaysSuccess extends Expectation {
-    override def expects[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ] = success
+    override def expectsNow[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ] = success
   }
 
   implicit class RichCache( cache: Cache ) {
