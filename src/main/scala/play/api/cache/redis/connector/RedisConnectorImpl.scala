@@ -78,6 +78,13 @@ private [ connector ] class RedisConnectorImpl @Inject( )( redis: RedisActor, se
       case None => log.warn( s"Set on key '$key' failed." )
     }
 
+  def setIfNotExists( key: String, value: Any ): Future[ Boolean ] =
+    redis ? ( "SETNX", key,  encode( key, value ) ) expects {
+      case Some( 0 ) => log.debug( s"Set if not exists on key '$key' ignored. Value already exists." ); false
+      case Some( 1 ) => log.debug( s"Set if not exists on key '$key' succeeded." ); true
+      case None => log.warn( s"Set if not exists on key '$key' failed." ); false
+    }
+
   def expire( key: String, expiration: Duration ): Future[ Unit ] =
     redis ? ( "EXPIRE", key, expiration.toSeconds.toString ) expects {
       case Some( 1 ) => log.debug( s"Expiration set on key '$key'." ) // expiration was set

@@ -113,6 +113,14 @@ class MyController @Inject() ( cache: CacheApi ) {
 
   // refreshes expiration of the key if present
   cache.expire( "key", 1.second )
+  
+  // stores the value for infinite time if the key is not used
+  // returns true when store performed successfully
+  // returns false when some value was already defined
+  cache.setIfNotExists( "key", 1.23 )
+  // stores the value for limited time if the key is not used
+  // this is not atomic operation, redis does not provide direct support
+  cache.setIfNotExists( "key", 1.23, 5.seconds )
 
   // returns true if the key is in the storage, false otherwise
   cache.exists( "key" )

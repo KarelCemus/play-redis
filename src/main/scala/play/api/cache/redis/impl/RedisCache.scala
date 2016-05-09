@@ -19,6 +19,12 @@ private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implic
   override def set( key: String, value: Any, expiration: Duration ) =
     redis.set( key, value, expiration ).recoverWithUnit
 
+  override def setIfNotExists( key: String, value: Any, expiration: Duration ) =
+    redis.setIfNotExists( key, value ).map { result =>
+      if ( result && expiration.isFinite( ) ) redis.expire( key, expiration )
+      result
+    }.recoverWithDefault( true )
+
   override def expire( key: String, expiration: Duration ) =
     redis.expire( key, expiration ).recoverWithUnit
 
