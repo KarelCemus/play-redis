@@ -25,6 +25,13 @@ private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implic
       result
     }.recoverWithDefault( true )
 
+  override def append( key: String, value: String, expiration: Duration ): Result[ Unit ] =
+    redis.append( key, value ).map[ Unit ] { result =>
+      // if the new string length is equal to the appended string, it means they should equal
+      // when the finite duration is required, set it
+      if ( result == value.length && expiration.isFinite( ) ) redis.expire( key, expiration )
+    }.recoverWithUnit
+
   override def expire( key: String, expiration: Duration ) =
     redis.expire( key, expiration ).recoverWithUnit
 
