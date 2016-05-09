@@ -279,6 +279,46 @@ class AsynchronousCacheSpec extends Specification with Redis {
           cache.get[ String ]( s"$prefix-test-remove-batch-2" ) must expects( beNone )
           cache.get[ String ]( s"$prefix-test-remove-batch-3" ) must expects( beNone )
         }
+
+        "set a zero when not exists and then increment" in {
+          cache.increment( s"$prefix-test-incr-null" ) must expects( beEqualTo( 1 ), beEqualTo( 1 ) )
+        }
+
+        "throw an exception when not integer" in {
+          cache.set( s"$prefix-test-incr-string", "value" ) must expects( beUnit )
+          cache.increment( s"$prefix-test-incr-string", 1 ) must expects( throwA[ ExecutionFailedException ], beEqualTo( 1 ) )
+        }
+
+        "increment by one" in {
+          cache.set( s"$prefix-test-incr-by-one", 5 ) must expects( beUnit )
+          cache.increment( s"$prefix-test-incr-by-one" ) must expects( beEqualTo( 6 ), beEqualTo( 1 ) )
+          cache.increment( s"$prefix-test-incr-by-one" ) must expects( beEqualTo( 7 ), beEqualTo( 1 ) )
+          cache.increment( s"$prefix-test-incr-by-one" ) must expects( beEqualTo( 8 ), beEqualTo( 1 ) )
+        }
+
+        "increment by some" in {
+          cache.set( s"$prefix-test-incr-by-some", 5 ) must expects( beUnit )
+          cache.increment( s"$prefix-test-incr-by-some", 1 ) must expects( beEqualTo( 6 ), beEqualTo( 1 ) )
+          cache.increment( s"$prefix-test-incr-by-some", 2 ) must expects( beEqualTo( 8 ), beEqualTo( 2 ) )
+          cache.increment( s"$prefix-test-incr-by-some", 3 ) must expects( beEqualTo( 11 ), beEqualTo( 3 ) )
+        }
+
+        "decrement by one" in {
+          cache.set( s"$prefix-test-decr-by-one", 5 ) must expects( beUnit )
+          cache.decrement( s"$prefix-test-decr-by-one" ) must expects( beEqualTo( 4 ), beEqualTo( -1 ) )
+          cache.decrement( s"$prefix-test-decr-by-one" ) must expects( beEqualTo( 3 ), beEqualTo( -1 ) )
+          cache.decrement( s"$prefix-test-decr-by-one" ) must expects( beEqualTo( 2 ), beEqualTo( -1 ) )
+          cache.decrement( s"$prefix-test-decr-by-one" ) must expects( beEqualTo( 1 ), beEqualTo( -1 ) )
+          cache.decrement( s"$prefix-test-decr-by-one" ) must expects( beEqualTo( 0 ), beEqualTo( -1 ) )
+          cache.decrement( s"$prefix-test-decr-by-one" ) must expects( beEqualTo( -1 ), beEqualTo( -1 ) )
+        }
+
+        "decrement by some" in {
+          cache.set( s"$prefix-test-decr-by-some", 5 ) must expects( beUnit )
+          cache.decrement( s"$prefix-test-decr-by-some", 1 ) must expects( beEqualTo( 4 ), beEqualTo( -1 ) )
+          cache.decrement( s"$prefix-test-decr-by-some", 2 ) must expects( beEqualTo( 2 ), beEqualTo( -2 ) )
+          cache.decrement( s"$prefix-test-decr-by-some", 3 ) must expects( beEqualTo( -1 ), beEqualTo( -3 ) )
+        }
       }
     }
   }

@@ -11,9 +11,9 @@ By default, [Play framework 2](http://playframework.com/) is delivered with EHCa
 This module enables use of the **redis-server**, i.e., key/value cache, within the
 Play framework 2. Besides the backward compatibility with the [CacheApi](https://www.playframework.com/documentation/2.5.x/api/scala/index.html#play.api.cache.CacheApi),
 it introduces more evolved API providing various handful operations. Besides the basic methods such as
-`get`, `set` and `remove`, it provides more convenient methods such as `expire`, `exists`, `invalidate` and much more. 
+`get`, `set` and `remove`, it provides more convenient methods such as `expire`, `exists`, `invalidate` and much more.
 As the cache implementation uses Akka actor system, it is **completely non-blocking and asynchronous**.
-Furthermore, we deliver the library with several configuration providers to let you easily use 
+Furthermore, we deliver the library with several configuration providers to let you easily use
 play-redis on Heroku as well as on your premise.
 
 ## Provided APIs
@@ -113,7 +113,7 @@ class MyController @Inject() ( cache: CacheApi ) {
 
   // refreshes expiration of the key if present
   cache.expire( "key", 1.second )
-  
+
   // stores the value for infinite time if the key is not used
   // returns true when store performed successfully
   // returns false when some value was already defined
@@ -142,6 +142,18 @@ class MyController @Inject() ( cache: CacheApi ) {
   // can do it for us
   import play.api.cache.redis._
   cache.set( "key", "value", DateTime.parse( "2015-12-01T00:00" ).asExpiration )
+
+  // atomically increments stored value by one
+  // initializes with 0 if not exists
+  cache.increment( "integer" ) // returns 1
+  cache.increment( "integer" ) // returns 2
+  cache.increment( "integer", 5 ) // returns 7
+
+  // atomically decrements stored value by one
+  // initializes with 0 if not exists
+  cache.decrement( "integer" ) // returns -1
+  cache.decrement( "integer" ) // returns -2
+  cache.decrement( "integer", 5 ) // returns -7
 }
 ```
 

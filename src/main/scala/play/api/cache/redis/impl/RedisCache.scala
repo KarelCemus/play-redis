@@ -59,4 +59,10 @@ private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implic
 
   override def exists( key: String ) =
     redis.exists( key ).recoverWithDefault( false )
+
+  override def increment( key: String, by: Long ) =
+    redis.increment( key, by ).recoverWithDefault( by )
+
+  override def decrement( key: String, by: Long ) =
+    increment( key, -by )
 }

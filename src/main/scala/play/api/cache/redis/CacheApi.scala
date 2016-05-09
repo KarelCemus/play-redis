@@ -143,6 +143,25 @@ private[ redis ] trait AbstractCacheApi[ Result[ _ ] ] {
     * @return promise
     */
   def invalidate( ): Result[ Unit ]
+
+  /** Increments the stored string value representing 10-based signed integer
+    * by given value.
+    *
+    * @param key cache storage key
+    * @param by  size of increment
+    * @return the value after the increment
+    */
+  def increment( key: String, by: Long = 1 ): Result[ Long ]
+
+
+  /** Decrements the stored string value representing 10-based signed integer
+    * by given value.
+    *
+    * @param key cache storage key
+    * @param by  size of decrement
+    * @return the value after the decrement
+    */
+  def decrement( key: String, by: Long = 1 ): Result[ Long ]
 }
 
 /** Synchronous and blocking implementation of the connection to the redis database */
