@@ -372,6 +372,10 @@ class AsynchronousCacheSpec extends Specification with Redis {
     override def exists( key: String ): Future[ Boolean ] = Future {
       failed( Some( key ), "EXISTS", new IllegalStateException( "Redis connector failure reproduction" ) )
     }
+
+    override def increment( key: String, by: Long ): Future[ Long ] = Future {
+      failed( Some( key ), "INCR", new IllegalStateException( "Redis connector failure reproduction" ) )
+    }
   }
 
   object beUnit extends Matcher[ Any ] {
