@@ -179,7 +179,10 @@ There is already default configuration but it can be overwritten in your `conf/a
 | play.cache.redis.configuration      | String   | `static`                        | Defines which configuration source enable. Accepted values are `static`, `env`, `custom` |
 | play.cache.redis.password           | String   | `null`                          | When authentication is required, this is the password. Value is optional. |
 | play.cache.redis.connection-string-variable | String   | `REDIS_URL`             | Name of the environment variable with the connection string. This is used in combination with the `env` configuration. This allows customization of the variable name in PaaS environment. Value is optional. |
-| play.cache.redis.recovery           | String   | `log-and-default`               | Defines behavior when command execution fails. Accepted values are `log-and-fail` to log the error and rethrow the exception, `log-and-default` to log the failure and return default value neutral to the operation, and 'custom' indicating the user binds his own implementation of `RecoveryPolicy`. |
+| play.cache.redis.recovery           | String   | `log-and-default`               | Defines behavior when command execution fails. Accepted values are `log-and-fail` to log the error 
+                                                                                     and rethrow the exception, `log-and-default` to log the failure and return default value neutral 
+                                                                                     to the operation, `log-condensed-and-default` `log-condensed-and-fail` produce shorter but less 
+                                                                                     informative error logs, and `custom` indicates the user binds his own implementation of `RecoveryPolicy`.        |
 
 ### Recovery policy
 
