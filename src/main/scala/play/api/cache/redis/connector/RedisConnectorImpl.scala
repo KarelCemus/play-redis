@@ -121,4 +121,9 @@ private [ connector ] class RedisConnectorImpl @Inject( )( redis: RedisActor, se
   def ping( ): Future[ Unit ] = redis ! "PING" expects {
     case Pong => Unit
   }
+
+  override def increment( key: String, by: Long ): Future[ Long ] =
+    redis ? ( "INCRBY", key, by.toString ) expects {
+      case Some( value: Long ) => log.debug( s"The value at key '$key' was incremented by $by to $value." ); value
+    }
 }
