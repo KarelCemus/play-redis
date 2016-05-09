@@ -52,6 +52,14 @@ private[ redis ] trait RedisConnector {
     */
   def set( key: String, value: Any, expiration: Duration = Duration.Inf ): Future[ Unit ]
 
+  /** Set a value into the cache, if the key is not used. Otherwise ignore.
+    *
+    * @param key        cache storage key
+    * @param value      value to set
+    * @return true if set was successful, false if key was already defined
+    */
+  def setIfNotExists( key: String, value: Any ): Future[ Boolean ]
+
   /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration
     *
     * @param key        cache storage key

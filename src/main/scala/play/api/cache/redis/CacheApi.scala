@@ -67,6 +67,23 @@ private[ redis ] trait AbstractCacheApi[ Result[ _ ] ] {
     */
   def set( key: String, value: Any, expiration: Duration = Duration.Inf ): Result[ Unit ]
 
+  /** Set a value into the cache if the given key is not already used, otherwise do nothing.
+    * Expiration time in seconds (0 second means eternity).
+    *
+    * Note: When expiration is defined, it is not an atomic operation. Redis does not
+    * provide a command for store-if-not-exists with duration. First, it sets the value
+    * if exists. Then, if the operation succeeded, it sets its expiration date.
+    *
+    * Note: When recovery policy used, it recovers with TRUE to indicate
+    * **"the lock was acquired"** despite actually **not storing** anything.
+    *
+    * @param key        cache storage key
+    * @param value      value to store
+    * @param expiration record duration in seconds
+    * @return true if value was set, false if was ignored because it existed before
+    */
+  def setIfNotExists( key: String, value: Any, expiration: Duration = Duration.Inf ): Result[ Boolean ]
+
   /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration
     *
     * @param key        cache storage key
