@@ -27,11 +27,11 @@ class AsynchronousCacheSpec extends Specification with Redis {
   private val workingConnector = injector.instanceOf[ RedisConnector ]
 
   // test proper implementation, no fails
-  new RedisCacheSuite( "implement", "redis-cache-implements", new RedisCache( workingConnector )( Builders.AsynchronousBuilder, new LogAndFailPolicy ), AlwaysSuccess )
+  new RedisCacheSuite( "implement", "redis-cache-implements", new RedisCache( workingConnector )( Builders.AsynchronousBuilder, new FailThrough {} ), AlwaysSuccess )
 
-  new RedisCacheSuite( "recover from", "redis-cache-recovery", new RedisCache( FailingConnector )( Builders.AsynchronousBuilder, new LogAndDefaultPolicy ), AlwaysDefault )
+  new RedisCacheSuite( "recover from", "redis-cache-recovery", new RedisCache( FailingConnector )( Builders.AsynchronousBuilder, new RecoverWithDefault {} ), AlwaysDefault )
 
-  new RedisCacheSuite( "fail on", "redis-cache-fail", new RedisCache( FailingConnector )( Builders.AsynchronousBuilder, new LogAndFailPolicy ), AlwaysException )
+  new RedisCacheSuite( "fail on", "redis-cache-fail", new RedisCache( FailingConnector )( Builders.AsynchronousBuilder, new FailThrough {} ), AlwaysException )
 
   class RedisCacheSuite( suiteName: String, prefix: String, cache: Cache, expectation: Expectation ) {
 
@@ -74,12 +74,12 @@ class AsynchronousCacheSpec extends Specification with Redis {
         }
 
         "ignore set if not exists when already defined and preserve original expiration mark" in {
-          cache.set( s"$prefix-test-if-not-exists-when-exists", "previous", 1.seconds ) must expects( beUnit )
+          cache.set( s"$prefix-test-if-not-exists-when-exists", "previous", 2.seconds ) must expects( beUnit )
           cache.setIfNotExists( s"$prefix-test-if-not-exists-when-exists", "value", 5.seconds ) must expects( beFalse, beTrue )
           cache.get[ String ]( s"$prefix-test-if-not-exists-when-exists" ) must expects( beSome[ Any ], beNone )
           cache.get[ String ]( s"$prefix-test-if-not-exists-when-exists" ) must expects( beSome( "previous" ), beNone )
           // wait until the duration expires
-          Thread.sleep( 2000 )
+          Thread.sleep( 3000 )
           cache.get[ String ]( s"$prefix-test-if-not-exists-when-exists" ) must expects( beNone )
         }
 
