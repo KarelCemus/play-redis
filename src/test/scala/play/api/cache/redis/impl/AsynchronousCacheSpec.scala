@@ -319,6 +319,38 @@ class AsynchronousCacheSpec extends Specification with Redis {
           cache.decrement( s"$prefix-test-decr-by-some", 2 ) must expects( beEqualTo( 2 ), beEqualTo( -2 ) )
           cache.decrement( s"$prefix-test-decr-by-some", 3 ) must expects( beEqualTo( -1 ), beEqualTo( -3 ) )
         }
+
+        "append like set when value is undefined" in {
+          cache.get[ String ]( s"$prefix-test-append-to-null" ) must expects( beNone )
+          cache.append( s"$prefix-test-append-to-null", "value" ) must expects( beUnit )
+          cache.get[ String ]( s"$prefix-test-append-to-null" ) must expects( beSome( "value" ), beNone )
+        }
+
+        "append to existing string" in {
+          cache.set( s"$prefix-test-append-to-some", "some" ) must expects( beUnit )
+          cache.get[ String ]( s"$prefix-test-append-to-some" ) must expects( beSome( "some" ), beNone )
+          cache.append( s"$prefix-test-append-to-some", " value" ) must expects( beUnit )
+          cache.get[ String ]( s"$prefix-test-append-to-some" ) must expects( beSome( "some value" ), beNone )
+        }
+
+        "append with applied expiration" in {
+          cache.get[ String ]( s"$prefix-test-append-and-expire" ) must expects( beNone )
+          cache.append( s"$prefix-test-append-and-expire", "value", 2.seconds ) must expects( beUnit )
+          cache.get[ String ]( s"$prefix-test-append-and-expire" ) must expects( beSome( "value" ), beNone )
+          // wait until the first duration expires
+          Thread.sleep( 3000 )
+          cache.get[ String ]( s"$prefix-test-append-and-expire" ) must expects( beNone )
+        }
+
+        "append but do not apply expiration" in {
+          cache.set( s"$prefix-test-append-and-not-expire", "some", 5.seconds ) must expects( beUnit )
+          cache.get[ String ]( s"$prefix-test-append-and-not-expire" ) must expects( beSome( "some" ), beNone )
+          cache.append( s"$prefix-test-append-and-not-expire", " value", 2.seconds ) must expects( beUnit )
+          cache.get[ String ]( s"$prefix-test-append-and-not-expire" ) must expects( beSome( "some value" ), beNone )
+          // wait until the first duration expires
+          Thread.sleep( 3000 )
+          cache.get[ String ]( s"$prefix-test-append-and-not-expire" ) must expects( beSome( "some value" ), beNone )
+        }
       }
     }
   }

@@ -84,6 +84,19 @@ private[ redis ] trait AbstractCacheApi[ Result[ _ ] ] {
     */
   def setIfNotExists( key: String, value: Any, expiration: Duration = Duration.Inf ): Result[ Boolean ]
 
+  /** If key already exists and is a string, this command appends the value at the end of
+    * the string. If key does not exist it is created and set as an empty string, so APPEND
+    * will be similar to SET in this special case.
+    *
+    * If it sets new value, it subsequently calls EXPIRE to set required expiration time
+    *
+    * @param key        cache storage key
+    * @param value      value to append
+    * @param expiration record duration, applies only when appends to nothing
+    * @return promise
+    */
+  def append( key: String, value: String, expiration: Duration = Duration.Inf ): Result[ Unit ]
+
   /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration
     *
     * @param key        cache storage key
