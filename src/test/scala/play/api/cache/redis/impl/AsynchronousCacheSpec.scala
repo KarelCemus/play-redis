@@ -73,6 +73,31 @@ class AsynchronousCacheSpec extends Specification with Redis {
           cache.exists( s"$prefix-test-12B" ) must expects( beFalse, beFalse )
         }
 
+        "ignore set if not exists when already defined and preserve original expiration mark" in {
+          cache.set( s"$prefix-test-if-not-exists-when-exists", "previous", 1.seconds ) must expects( beUnit )
+          cache.setIfNotExists( s"$prefix-test-if-not-exists-when-exists", "value", 5.seconds ) must expects( beFalse, beTrue )
+          cache.get[ String ]( s"$prefix-test-if-not-exists-when-exists" ) must expects( beSome[ Any ], beNone )
+          cache.get[ String ]( s"$prefix-test-if-not-exists-when-exists" ) must expects( beSome( "previous" ), beNone )
+          // wait until the duration expires
+          Thread.sleep( 2000 )
+          cache.get[ String ]( s"$prefix-test-if-not-exists-when-exists" ) must expects( beNone )
+        }
+
+        "perform set if not exists when undefined" in {
+          cache.setIfNotExists( s"$prefix-test-if-not-exists", "value" ) must expects( beTrue )
+          cache.get[ String ]( s"$prefix-test-if-not-exists" ) must expects( beSome[ Any ], beNone )
+          cache.get[ String ]( s"$prefix-test-if-not-exists" ) must expects( beSome( "value" ), beNone )
+        }
+
+        "perform set if not exists when undefined but expire after some time" in {
+          cache.setIfNotExists( s"$prefix-test-if-not-exists-and-expire", "value", 1.seconds ) must expects( beTrue )
+          cache.get[ String ]( s"$prefix-test-if-not-exists-and-expire" ) must expects( beSome[ Any ], beNone )
+          cache.get[ String ]( s"$prefix-test-if-not-exists-and-expire" ) must expects( beSome( "value" ), beNone )
+          // wait until the duration expires
+          Thread.sleep( 2000 )
+          cache.get[ String ]( s"$prefix-test-if-not-exists-and-expire" ) must expects( beNone )
+        }
+
         "miss after remove" in {
           cache.set( s"$prefix-test-3", "value" ) must expects( beUnit )
           cache.get[ String ]( s"$prefix-test-3" ) must expects( beSome[ Any ], beNone )
@@ -314,6 +339,10 @@ class AsynchronousCacheSpec extends Specification with Redis {
 
     override def set( key: String, value: Any, expiration: Duration ): Future[ Unit ] = Future {
       failed( Some( key ), "SET", new IllegalStateException( "Redis connector failure reproduction" ) )
+    }
+
+    override def setIfNotExists( key: String, value: Any ): Future[ Boolean ] = Future {
+      failed( Some( key ), "SETNX", new IllegalStateException( "Redis connector failure reproduction" ) )
     }
 
     override def get[ T: ClassTag ]( key: String ): Future[ Option[ T ] ] = Future {
