@@ -22,16 +22,16 @@ import org.specs2.mutable.Specification
 class AsynchronousCacheSpec extends Specification with Redis {
   outer =>
 
-  private type Cache = RedisCache[ SynchronousResult ]
+  private type Cache = RedisCache[ AsynchronousResult ]
 
   private val workingConnector = injector.instanceOf[ RedisConnector ]
 
   // test proper implementation, no fails
-  new RedisCacheSuite( "implement", "redis-cache-implements", new Cache( workingConnector )( Builders.SynchronousBuilder, new LogAndFailPolicy ), AlwaysSuccess )
+  new RedisCacheSuite( "implement", "redis-cache-implements", new RedisCache( workingConnector )( Builders.AsynchronousBuilder, new LogAndFailPolicy ), AlwaysSuccess )
 
-  new RedisCacheSuite( "recover from", "redis-cache-recovery", new Cache( FailingConnector )( Builders.SynchronousBuilder, new LogAndDefaultPolicy ), AlwaysDefault )
+  new RedisCacheSuite( "recover from", "redis-cache-recovery", new RedisCache( FailingConnector )( Builders.AsynchronousBuilder, new LogAndDefaultPolicy ), AlwaysDefault )
 
-  new RedisCacheSuite( "fail on", "redis-cache-fail", new Cache( FailingConnector )( Builders.SynchronousBuilder, new LogAndFailPolicy ), AlwaysException )
+  new RedisCacheSuite( "fail on", "redis-cache-fail", new RedisCache( FailingConnector )( Builders.AsynchronousBuilder, new LogAndFailPolicy ), AlwaysException )
 
   class RedisCacheSuite( suiteName: String, prefix: String, cache: Cache, expectation: Expectation ) {
 
@@ -118,13 +118,13 @@ class AsynchronousCacheSpec extends Specification with Redis {
         "miss at first getOrElse " in {
           val counter = new AtomicInteger( 0 )
           cache.getOrElseCounting( s"$prefix-test-5" )( counter ) must expects( beEqualTo( "value" ) )
-          counter.get must expects( beEqualTo( 1 ), beEqualTo( 1 ), beEqualTo( 0 ) )
+          counter.get must expectsNow( beEqualTo( 1 ), beEqualTo( 1 ), beEqualTo( 0 ) )
         }
 
         "hit at second getOrElse" in {
           val counter = new AtomicInteger( 0 )
           for ( index <- 1 to 10 ) cache.getOrElseCounting( s"$prefix-test-6" )( counter ) must expects( beEqualTo( "value" ) )
-          counter.get must expects( beEqualTo( 1 ), beEqualTo( 10 ), beEqualTo( 0 ) )
+          counter.get must expectsNow( beEqualTo( 1 ), beEqualTo( 10 ), beEqualTo( 0 ) )
         }
 
         "find all matching keys" in {
@@ -165,21 +165,21 @@ class AsynchronousCacheSpec extends Specification with Redis {
           val counter = new AtomicInteger( 0 )
           cache.getOrElseCounting( s"$prefix-test-7A" )( counter ) must expects( beEqualTo( "value" ) )
           cache.getOrElseCounting( s"$prefix-test-7B" )( counter ) must expects( beEqualTo( "value" ) )
-          counter.get must expects( beEqualTo( 2 ), beEqualTo( 2 ), beEqualTo( 0 ) )
+          counter.get must expectsNow( beEqualTo( 2 ), beEqualTo( 2 ), beEqualTo( 0 ) )
         }
 
         "perform future and store result" in {
           val counter = new AtomicInteger( 0 )
           // perform test
-          for ( index <- 1 to 5 ) cache.getOrFutureCounting( s"$prefix-test-8" )( counter ).sync must expects( beEqualTo( "value" ) )
+          for ( index <- 1 to 5 ) cache.getOrFutureCounting( s"$prefix-test-8" )( counter ) must expects( beEqualTo( "value" ) )
           // verify
-          counter.get must expects( beEqualTo( 1 ), beEqualTo( 5 ), beEqualTo( 0 ) )
+          counter.get must expectsNow( beEqualTo( 1 ), beEqualTo( 5 ), beEqualTo( 0 ) )
         }
 
         "propagate fail in future" in {
           cache.getOrFuture[ String ]( s"$prefix-test-9" ) {
             Future.failed( new IllegalStateException( "Exception in test." ) )
-          }.sync must expects( throwA( new IllegalStateException( "Exception in test." ) ) )
+          } must expects( throwA( new IllegalStateException( "Exception in test." ) ) )
         }
 
         "support list" in {
@@ -279,30 +279,79 @@ class AsynchronousCacheSpec extends Specification with Redis {
           cache.get[ String ]( s"$prefix-test-remove-batch-2" ) must expects( beNone )
           cache.get[ String ]( s"$prefix-test-remove-batch-3" ) must expects( beNone )
         }
+
+        "set a zero when not exists and then increment" in {
+          cache.increment( s"$prefix-test-incr-null" ) must expects( beEqualTo( 1 ), beEqualTo( 1 ) )
+        }
+
+        "throw an exception when not integer" in {
+          cache.set( s"$prefix-test-incr-string", "value" ) must expects( beUnit )
+          cache.increment( s"$prefix-test-incr-string", 1 ) must expects( throwA[ ExecutionFailedException ], beEqualTo( 1 ) )
+        }
+
+        "increment by one" in {
+          cache.set( s"$prefix-test-incr-by-one", 5 ) must expects( beUnit )
+          cache.increment( s"$prefix-test-incr-by-one" ) must expects( beEqualTo( 6 ), beEqualTo( 1 ) )
+          cache.increment( s"$prefix-test-incr-by-one" ) must expects( beEqualTo( 7 ), beEqualTo( 1 ) )
+          cache.increment( s"$prefix-test-incr-by-one" ) must expects( beEqualTo( 8 ), beEqualTo( 1 ) )
+        }
+
+        "increment by some" in {
+          cache.set( s"$prefix-test-incr-by-some", 5 ) must expects( beUnit )
+          cache.increment( s"$prefix-test-incr-by-some", 1 ) must expects( beEqualTo( 6 ), beEqualTo( 1 ) )
+          cache.increment( s"$prefix-test-incr-by-some", 2 ) must expects( beEqualTo( 8 ), beEqualTo( 2 ) )
+          cache.increment( s"$prefix-test-incr-by-some", 3 ) must expects( beEqualTo( 11 ), beEqualTo( 3 ) )
+        }
+
+        "decrement by one" in {
+          cache.set( s"$prefix-test-decr-by-one", 5 ) must expects( beUnit )
+          cache.decrement( s"$prefix-test-decr-by-one" ) must expects( beEqualTo( 4 ), beEqualTo( -1 ) )
+          cache.decrement( s"$prefix-test-decr-by-one" ) must expects( beEqualTo( 3 ), beEqualTo( -1 ) )
+          cache.decrement( s"$prefix-test-decr-by-one" ) must expects( beEqualTo( 2 ), beEqualTo( -1 ) )
+          cache.decrement( s"$prefix-test-decr-by-one" ) must expects( beEqualTo( 1 ), beEqualTo( -1 ) )
+          cache.decrement( s"$prefix-test-decr-by-one" ) must expects( beEqualTo( 0 ), beEqualTo( -1 ) )
+          cache.decrement( s"$prefix-test-decr-by-one" ) must expects( beEqualTo( -1 ), beEqualTo( -1 ) )
+        }
+
+        "decrement by some" in {
+          cache.set( s"$prefix-test-decr-by-some", 5 ) must expects( beUnit )
+          cache.decrement( s"$prefix-test-decr-by-some", 1 ) must expects( beEqualTo( 4 ), beEqualTo( -1 ) )
+          cache.decrement( s"$prefix-test-decr-by-some", 2 ) must expects( beEqualTo( 2 ), beEqualTo( -2 ) )
+          cache.decrement( s"$prefix-test-decr-by-some", 3 ) must expects( beEqualTo( -1 ), beEqualTo( -3 ) )
+        }
       }
     }
   }
 
   trait Expectation {
-    def expects[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ]
+    def expectsNow[ T ]( success: => Matcher[ T ] ): Matcher[ T ] =
+      expectsNow( success, success )
 
-    def expects[ T ]( success: => Matcher[ T ], default: => Matcher[ T ] ): Matcher[ T ] =
+    def expectsNow[ T ]( success: => Matcher[ T ], default: => Matcher[ T ] ): Matcher[ T ] =
+      expectsNow( success, default, throwA[ ExecutionFailedException ] )
+
+    def expectsNow[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ]
+
+    def expects[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ AsynchronousResult[ T ] ] =
+      expectsNow( success, default, exception )
+
+    def expects[ T ]( success: => Matcher[ T ], default: => Matcher[ T ] ): Matcher[ AsynchronousResult[ T ] ] =
       expects( success, default, throwA[ ExecutionFailedException ] )
 
-    def expects[ T ]( successAndDefault: => Matcher[ T ] ): Matcher[ T ] =
+    def expects[ T ]( successAndDefault: => Matcher[ T ] ): Matcher[ AsynchronousResult[ T ] ] =
       expects( successAndDefault, successAndDefault )
   }
 
   object AlwaysDefault extends Expectation {
-    override def expects[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ] = default
+    override def expectsNow[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ] = default
   }
 
   object AlwaysException extends Expectation {
-    override def expects[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ] = exception
+    override def expectsNow[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ] = exception
   }
 
   object AlwaysSuccess extends Expectation {
-    override def expects[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ] = success
+    override def expectsNow[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ] = success
   }
 
   implicit class RichCache( cache: Cache ) {
@@ -371,6 +420,10 @@ class AsynchronousCacheSpec extends Specification with Redis {
 
     override def exists( key: String ): Future[ Boolean ] = Future {
       failed( Some( key ), "EXISTS", new IllegalStateException( "Redis connector failure reproduction" ) )
+    }
+
+    override def increment( key: String, by: Long ): Future[ Long ] = Future {
+      failed( Some( key ), "INCR", new IllegalStateException( "Redis connector failure reproduction" ) )
     }
   }
 

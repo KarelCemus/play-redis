@@ -54,8 +54,8 @@ private[ redis ] trait RedisConnector {
 
   /** Set a value into the cache, if the key is not used. Otherwise ignore.
     *
-    * @param key        cache storage key
-    * @param value      value to set
+    * @param key   cache storage key
+    * @param value value to set
     * @return true if set was successful, false if key was already defined
     */
   def setIfNotExists( key: String, value: Any ): Future[ Boolean ]
@@ -86,4 +86,13 @@ private[ redis ] trait RedisConnector {
     * @return promise
     */
   def ping( ): Future[ Unit ]
+
+  /** Increments the stored string value representing 10-based signed integer
+    * by given value.
+    *
+    * @param key cache storage key
+    * @param by  size of increment
+    * @return the value after the increment
+    */
+  def increment( key: String, by: Long ): Future[ Long ]
 }

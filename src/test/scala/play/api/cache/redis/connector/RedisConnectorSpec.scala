@@ -204,6 +204,46 @@ class RedisConnectorSpec extends Specification with Redis {
       val connector = new RedisConnectorImpl( fakeActor, injector.instanceOf[ AkkaSerializer ], injector.instanceOf[ Configuration ] )
       connector.set( s"$prefix-test-fail-1", "value" ).sync must throwA[ ExecutionFailedException ]
     }
+
+    "set a zero when not exists and then increment" in {
+      Cache.increment( s"$prefix-test-incr-null", 1 ).sync must beEqualTo( 1 )
+    }
+
+    "throw an exception when not integer" in {
+      Cache.set( s"$prefix-test-incr-string", "value" ).sync
+      Cache.increment( s"$prefix-test-incr-string", 1 ).sync must throwA[ ExecutionFailedException ]
+    }
+
+    "increment by one" in {
+      Cache.set( s"$prefix-test-incr-by-one", 5 ).sync
+      Cache.increment( s"$prefix-test-incr-by-one", 1 ).sync must beEqualTo( 6 )
+      Cache.increment( s"$prefix-test-incr-by-one", 1 ).sync must beEqualTo( 7 )
+      Cache.increment( s"$prefix-test-incr-by-one", 1 ).sync must beEqualTo( 8 )
+    }
+
+    "increment by some" in {
+      Cache.set( s"$prefix-test-incr-by-some", 5 ).sync
+      Cache.increment( s"$prefix-test-incr-by-some", 1 ).sync must beEqualTo( 6 )
+      Cache.increment( s"$prefix-test-incr-by-some", 2 ).sync must beEqualTo( 8 )
+      Cache.increment( s"$prefix-test-incr-by-some", 3 ).sync must beEqualTo( 11 )
+    }
+
+    "decrement by one" in {
+      Cache.set( s"$prefix-test-decr-by-one", 5 ).sync
+      Cache.increment( s"$prefix-test-decr-by-one", -1 ).sync must beEqualTo( 4 )
+      Cache.increment( s"$prefix-test-decr-by-one", -1 ).sync must beEqualTo( 3 )
+      Cache.increment( s"$prefix-test-decr-by-one", -1 ).sync must beEqualTo( 2 )
+      Cache.increment( s"$prefix-test-decr-by-one", -1 ).sync must beEqualTo( 1 )
+      Cache.increment( s"$prefix-test-decr-by-one", -1 ).sync must beEqualTo( 0 )
+      Cache.increment( s"$prefix-test-decr-by-one", -1 ).sync must beEqualTo( -1 )
+    }
+
+    "decrement by some" in {
+      Cache.set( s"$prefix-test-decr-by-some", 5 ).sync
+      Cache.increment( s"$prefix-test-decr-by-some", -1 ).sync must beEqualTo( 4 )
+      Cache.increment( s"$prefix-test-decr-by-some", -2 ).sync must beEqualTo( 2 )
+      Cache.increment( s"$prefix-test-decr-by-some", -3 ).sync must beEqualTo( -1 )
+    }
   }
 
 }
