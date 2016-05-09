@@ -122,8 +122,13 @@ private [ connector ] class RedisConnectorImpl @Inject( )( redis: RedisActor, se
     case Pong => Unit
   }
 
-  override def increment( key: String, by: Long ): Future[ Long ] =
+  def increment( key: String, by: Long ): Future[ Long ] =
     redis ? ( "INCRBY", key, by.toString ) expects {
       case Some( value: Long ) => log.debug( s"The value at key '$key' was incremented by $by to $value." ); value
+    }
+
+  def append( key: String, value: String ): Future[ Long ] =
+    redis ? ( "APPEND", key, value ) expects {
+      case Some( value: Long ) => log.debug( s"The value was appended to key '$key'." ); value
     }
 }

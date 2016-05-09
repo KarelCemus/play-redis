@@ -95,4 +95,14 @@ private[ redis ] trait RedisConnector {
     * @return the value after the increment
     */
   def increment( key: String, by: Long ): Future[ Long ]
+
+  /** If key already exists and is a string, this command appends the value at the
+    * end of the string. If key does not exist it is created and set as an empty string,
+    * so APPEND will be similar to SET in this special case.
+    *
+    * @param key   cache storage key
+    * @param value value to be appended
+    * @return number of characters of current value
+    */
+  def append( key: String, value: String ): Future[ Long ]
 }
