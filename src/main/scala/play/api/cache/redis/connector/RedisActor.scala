@@ -2,17 +2,14 @@ package play.api.cache.redis.connector
 
 import javax.inject._
 
-import scala.concurrent.{ExecutionContext, Future}
-
+import akka.actor.ActorSystem
+import akka.util.Timeout
 import play.api.Logger
 import play.api.cache.redis.Configuration
 import play.api.inject.ApplicationLifecycle
+import scredis.Client
 
-import akka.actor.{ActorRef, ActorSystem}
-import akka.pattern.AskableActorRef
-import akka.util.Timeout
-import brando.{Redis, Request, StashingRedis}
-
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
   * Constructs an actor directly communicating with the redis server. Internally, it uses
@@ -25,12 +22,8 @@ private[ connector ] class RedisActorProvider @Inject( )( configuration: Configu
 
   override def get( ): RedisActor = {
     import configuration._
-    // internal brando connector
-    val internal = system actorOf Redis( host, port, database = database, auth = password )
-    // stashing brando connector, queuing messages when disconnected
-    val stashing = system actorOf StashingRedis( internal )
     // actor wrapper with rich API
-    val actor = new RedisActor( stashing, host, port, database )( system )
+    val actor = new RedisActor( host, port, database, password )( system )
     // start the actor
     actor.start( )
     // listen on system stop
@@ -45,20 +38,24 @@ private[ connector ] class RedisActorProvider @Inject( )( configuration: Configu
   *
   * @author Karel Cemus
   */
-private[ connector ] class RedisActor( brando: ActorRef, host: String, port: Int, database: Int )( implicit system: ActorSystem ) {
-
-  /** actor handler */
-  private val actor = new AskableActorRef( brando )
+private[ connector ] class RedisActor( host: String, port: Int, database: Int, auth: Option[ String ] )( implicit system: ActorSystem ) {
 
   protected def log = Logger( "play.api.cache.redis" )
 
+  private val redis = Client(
+    host = host,
+    port = port,
+    database = database,
+    passwordOpt = auth
+  )
+
   /** execute the given request, we expect some data in return */
-  def ?[ T ]( command: String, key: String, params: String* )( implicit timeout: Timeout, context: ExecutionContext ): ExpectedFuture[ T ] =
-    new ExpectedFuture[ T ]( actor ask Request( command, key +: params: _* ), Some( key ), s"$command ${ key +: params.headOption.toList mkString " " }" )
+  def ?[ T ]( key: String, f: Client => Future[ T ], command: => String )( implicit timeout: Timeout, context: ExecutionContext ): ExpectedFuture[ T ] =
+    new ExpectedFuture[ T ]( f( redis ), Some( key ), command )
 
   /** executes the request but does NOT expect data in return */
-  def !( command: String, params: String* )( implicit timeout: Timeout, context: ExecutionContext ): ExpectedFuture[ Unit ] =
-    new ExpectedFuture[ Unit ]( actor ask Request( command, params: _* ), None, s"${ command +: params.headOption.toList mkString " " }" )
+  def !( f: Client => Future[ Unit ], command: => String )( implicit timeout: Timeout, context: ExecutionContext ): ExpectedFuture[ Unit ] =
+    new ExpectedFuture[ Unit ]( f( redis ), None, command )
 
   /** starts the actor */
   def start( ) = {
@@ -66,9 +63,11 @@ private[ connector ] class RedisActor( brando: ActorRef, host: String, port: Int
   }
 
   /** stops the actor */
-  def stop( ) = Future.successful {
+  def stop( ) = {
     log.info( "Stopping the redis cache actor ..." )
-    system.stop( actor.actorRef )
-    log.info( "Redis cache stopped." )
+    redis.quit( ).map { result =>
+      log.info( "Redis cache stopped." )
+      result
+    }
   }
 }
