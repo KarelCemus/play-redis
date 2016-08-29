@@ -46,7 +46,8 @@ private[ connector ] class RedisActor( host: String, port: Int, database: Int, a
     host = host,
     port = port,
     database = database,
-    passwordOpt = auth
+    passwordOpt = auth   ,
+    system
   )
 
   /** execute the given request, we expect some data in return */
