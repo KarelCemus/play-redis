@@ -2,7 +2,9 @@ import sbt._
 import sbt.Keys._
 import com.typesafe.sbt.pgp.PgpKeys
 
-name := "play-redis"
+normalizedName := "play-redis"
+
+name := "Redis Cache for Play"
 
 description := "Redis cache plugin for the Play framework 2"
 
