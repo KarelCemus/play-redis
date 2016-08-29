@@ -12,11 +12,11 @@ scalaVersion := "2.11.8"
 
 crossScalaVersions := Seq( scalaVersion.value )
 
-val playVersion = "2.5.3"
+val playVersion = "2.5.6"
 
 val brandoVersion = "3.0.3"
 
-val specs2Version = "3.7.3"
+val specs2Version = "3.8.4"
 
 libraryDependencies ++= Seq(
   // play framework cache API
