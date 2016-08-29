@@ -14,15 +14,15 @@ crossScalaVersions := Seq( scalaVersion.value )
 
 val playVersion = "2.5.6"
 
-val brandoVersion = "3.0.3"
+val connectorVersion = "2.0.8"
 
 val specs2Version = "3.8.4"
 
 libraryDependencies ++= Seq(
   // play framework cache API
   "com.typesafe.play" %% "play-cache" % playVersion % "provided" exclude("net.sf.ehcache", "ehcache-core"),
-  // redis connector - NOTE: not published yet
-  "com.digital-achiever" %% "brando" % brandoVersion,
+  // redis connector
+  "com.livestream" %% "scredis" % connectorVersion,
   // test framework
   "org.specs2" %% "specs2-core" % specs2Version % "test",
   // test module for play framework
@@ -32,7 +32,6 @@ libraryDependencies ++= Seq(
 )
 
 resolvers ++= Seq(
-  "Brando Repository" at "http://chrisdinn.github.io/releases/",
   "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
 )
 
