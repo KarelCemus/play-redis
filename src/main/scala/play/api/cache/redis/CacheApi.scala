@@ -163,6 +163,7 @@ private[ redis ] trait AbstractCacheApi[ Result[ _ ] ] {
     * @param key cache storage key
     * @param by  size of increment
     * @return the value after the increment
+    * @since 1.3.0
     */
   def increment( key: String, by: Long = 1 ): Result[ Long ]
 
@@ -173,6 +174,7 @@ private[ redis ] trait AbstractCacheApi[ Result[ _ ] ] {
     * @param key cache storage key
     * @param by  size of decrement
     * @return the value after the decrement
+    * @since 1.3.0
     */
   def decrement( key: String, by: Long = 1 ): Result[ Long ]
 }

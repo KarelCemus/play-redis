@@ -34,17 +34,14 @@ the `play.cache.CacheApi` is implementation of standard `CacheApi` for Java.
 
 ## How to add the module into the project
 
-This module builds over [Brando connector](https://github.com/chrisdinn/brando) and is intended **only for Scala version**
+**Since 1.3.x version** this module builds over [Scredis connector](https://github.com/scredis/scredis) and is intended **only for Scala version**
 of the Play framework.
 
 To your SBT `build.sbt` add the following lines:
 
 ```scala
 // redis-server cache
-libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.3.0"
-
-// repository with the Brando connector
-resolvers += "Brando Repository" at "http://chrisdinn.github.io/releases/"
+libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.3.0-M1"
 ```
 
 Now we **must enable our redis** cache module and **disable default Play's EhCache** module. Into `application.conf` and following
@@ -267,6 +264,10 @@ Added `heroku` configuration profile simplifying [running on Heroku](#running-on
 Introduced [`RecoveryPolicy`](#recovery-policy) defining behavior when execution fails. Default
 policy is `log-and-default`. To re-enable previous *fail-on-error* behavior, set `log-and-fail`.
 See the [`RecoveryPolicy`](#recovery-policy) for more details.
+
+**[Brando](https://github.com/chrisdinn/brando) connector replaced by [scredis](https://github.com/scredis/scredis) implementation** due to Brando repository inactivity
+and major issues ([#44](https://github.com/KarelCemus/play-redis/issues/44)). Scredis seems to be efficient, build over Akka and should not
+contain any major issues as they are not reported.
 
 
 ### [:link: 1.2.0](https://github.com/KarelCemus/play-redis/tree/1.2.0)

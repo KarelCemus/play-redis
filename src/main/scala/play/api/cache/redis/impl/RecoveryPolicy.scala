@@ -11,6 +11,7 @@ import play.api.cache.redis.exception._
   * it may try it again, recover with a default value or just simply log the
   * failure. Either way, it is up to user to define what to do on failure.
   *
+  * @since 1.3.0
   * @author Karel Cemus
   */
 trait RecoveryPolicy {
