@@ -14,8 +14,6 @@ object RedisConnectorModule extends Module {
   override def bindings( environment: Environment, configuration: Configuration ): Seq[ Binding[ _ ] ] = Seq(
     // binds akka serializer to its implementation
     bind[ AkkaSerializer ].to[ AkkaSerializerImpl ],
-    // redis actor encapsulating brando
-    bind[ RedisActor ].toProvider[ RedisActorProvider ],
     // redis connector implementing the protocol
     bind[ RedisConnector ].to[ RedisConnectorImpl ]
   )

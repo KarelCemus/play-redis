@@ -2,13 +2,11 @@ package play.api.cache.redis.connector
 
 import java.util.Date
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 import play.api.cache.redis._
 import play.api.cache.redis.exception.ExecutionFailedException
 
-import akka.util.Timeout
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
 
@@ -193,16 +191,6 @@ class RedisConnectorSpec extends Specification with Redis {
       Cache.get[ String ]( s"$prefix-test-remove-batch-1" ) must beNone
       Cache.get[ String ]( s"$prefix-test-remove-batch-2" ) must beNone
       Cache.get[ String ]( s"$prefix-test-remove-batch-3" ) must beNone
-    }
-
-    "capture Brando exceptions" in {
-      val fakeActor = new RedisActor( null, null, 0, 0 ) {
-        /** executes the request but does NOT expect data in return */
-        override def ?[ T ]( command: String, key: String, params: String* )( implicit timeout: Timeout, context: ExecutionContext ): ExpectedFuture[ T ] =
-          new ExpectedFuture[ T ]( Future.failed( new IllegalStateException( "Connection failed" ) ), None, command )
-      }
-      val connector = new RedisConnectorImpl( fakeActor, injector.instanceOf[ AkkaSerializer ], injector.instanceOf[ Configuration ] )
-      connector.set( s"$prefix-test-fail-1", "value" ).sync must throwA[ ExecutionFailedException ]
     }
 
     "set a zero when not exists and then increment" in {
