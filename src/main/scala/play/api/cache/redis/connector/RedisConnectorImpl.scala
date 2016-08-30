@@ -12,7 +12,6 @@ import play.api.cache.redis.{Configuration, RedisConnector}
 import play.api.inject.ApplicationLifecycle
 
 import akka.actor.ActorSystem
-import akka.util.ByteString
 import scredis.Client
 
 
@@ -45,122 +44,103 @@ private[ connector ] class RedisConnectorImpl @Inject( )( serializer: AkkaSerial
     passwordOpt = configuration.password
   )
 
-  def get[ T: ClassTag ]( key: String ): Future[ Option[ T ] ] = ???
-
-  //    redis ? ("GET", _.get[ String ]( key ), s"GET $key") expects {
-  //    case Some( response: ByteString ) =>
-  //      log.trace( s"Hit on key '$key'." )
-  //      Some( decode[ T ]( key, response.utf8String ) )
-  //    case None =>
-  //      log.debug( s"Miss on key '$key'." )
-  //      None
-  //  }
+  def get[ T: ClassTag ]( key: String ): Future[ Option[ T ] ] =
+    redis.get[ String ]( key ) executing "GET" withParameter key expects {
+      case Some( response: String ) =>
+        log.trace( s"Hit on key '$key'." )
+        Some( decode[ T ]( key, response ) )
+      case None =>
+        log.debug( s"Miss on key '$key'." )
+        None
+    }
 
   /** decodes the object, reports an exception if fails */
-  private def decode[ T: ClassTag ]( key: String, encoded: String ): T = ???
+  private def decode[ T: ClassTag ]( key: String, encoded: String ): T =
+    serializer.decode[ T ]( encoded ).recover {
+      case ex => serializationFailed( key, "Deserialization failed", ex )
+    }.get
 
-  //  serializer.decode[ T ]( encoded ).recover {
-  //    case ex => serializationFailed( key, "Deserialization failed", ex )
-  //  }.get
-
-  def set( key: String, value: Any, expiration: Duration ): Future[ Unit ] = ???
-
-  //    // no value to set
-  //    if ( value == null ) remove( key )
-  //    // set for finite duration
-  //    else if ( expiration.isFinite( ) ) setTemporally( key, encode( key, value ), expiration )
-  //    // set for infinite duration
-  //    else setEternally( key, encode( key, value ) )
+  def set( key: String, value: Any, expiration: Duration ): Future[ Unit ] =
+    // no value to set
+    if ( value == null ) remove( key )
+    // set for finite duration
+    else if ( expiration.isFinite( ) ) setTemporally( key, encode( key, value ), expiration )
+    // set for infinite duration
+    else setEternally( key, encode( key, value ) )
 
   /** encodes the object, reports an exception if fails */
-  private def encode( key: String, value: Any ): String = ???
-
-  //  serializer.encode( value ).recover {
-  //    case ex => serializationFailed( key, "Serialization failed", ex )
-  //  }.get
+  private def encode( key: String, value: Any ): String =
+    serializer.encode( value ).recover {
+      case ex => serializationFailed( key, "Serialization failed", ex )
+    }.get
 
   /** temporally stores already encoded value into the storage */
-  private def setTemporally( key: String, value: String, expiration: Duration ): Future[ Unit ] = ???
-
-  //    redis ? ( "SETEX", key, expiration.toSeconds.toString, value ) expects {
-  //      case Some( Ok ) => log.debug( s"Set on key '$key' on $expiration seconds." )
-  //      case None => log.warn( s"Set on key '$key' failed." )
-  //    }
+  private def setTemporally( key: String, value: String, expiration: Duration ): Future[ Unit ] =
+    redis.setEX( key, value, expiration.toSeconds.toInt ) executing "SETEX" withParameters s"$key $value $expiration" expects {
+      case _ => log.debug( s"Set on key '$key' on $expiration seconds." )
+    }
 
   /** eternally stores already encoded value into the storage */
-  private def setEternally( key: String, value: String ): Future[ Unit ] = ???
+  private def setEternally( key: String, value: String ): Future[ Unit ] =
+    redis.set( key, value ) executing "SET" withParameters s"$key $value" expects {
+      case true => log.debug( s"Set on key '$key' for infinite seconds." )
+      case false => log.warn( s"Set on key '$key' failed. Condition was not met." )
+    }
 
-  //    redis ? ( "SET", key, value ) expects {
-  //      case Some( Ok ) => log.debug( s"Set on key '$key' for infinite seconds." )
-  //      case None => log.warn( s"Set on key '$key' failed." )
-  //    }
+  def setIfNotExists( key: String, value: Any ): Future[ Boolean ] =
+    redis.setNX( key, encode( key, value ) ) executing "SETNX" withParameters s"$key ${ encode( key, value ) }" expects {
+      case false => log.debug( s"Set if not exists on key '$key' ignored. Value already exists." ); false
+      case true => log.debug( s"Set if not exists on key '$key' succeeded." ); true
+    }
 
-  def setIfNotExists( key: String, value: Any ): Future[ Boolean ] = ???
+  def expire( key: String, expiration: Duration ): Future[ Unit ] =
+    redis.expire( key, expiration.toSeconds.toInt ) executing "EXPIRE" withParameters s"$key, $expiration" expects {
+      case true => log.debug( s"Expiration set on key '$key'." ) // expiration was set
+      case false => log.debug( s"Expiration set on key '$key' failed. Key does not exist." ) // Nothing was removed
+    }
 
-  //    redis ? ( "SETNX", key,  encode( key, value ) ) expects {
-  //      case Some( 0 ) => log.debug( s"Set if not exists on key '$key' ignored. Value already exists." ); false
-  //      case Some( 1 ) => log.debug( s"Set if not exists on key '$key' succeeded." ); true
-  //      case None => log.warn( s"Set if not exists on key '$key' failed." ); false
-  //    }
+  def matching( pattern: String ): Future[ Set[ String ] ] =
+    redis.keys( pattern ) executing "KEYS" withParameter pattern expects {
+      case keys =>
+        log.debug( s"KEYS on '$pattern' responded '${ keys.mkString( ", " ) }'." )
+        keys
+    }
 
-  def expire( key: String, expiration: Duration ): Future[ Unit ] = ???
+  def invalidate( ): Future[ Unit ] =
+    redis.flushDB( ) executing "FLUSHDB" expects {
+      case _ => log.info( "Invalidated." ) // cache was invalidated
+    }
 
-  //    redis ? ( "EXPIRE", key, expiration.toSeconds.toString ) expects {
-  //      case Some( 1 ) => log.debug( s"Expiration set on key '$key'." ) // expiration was set
-  //      case Some( 0 ) => log.debug( s"Expiration set on key '$key' failed. Key does not exist." ) // Nothing was removed
-  //    }
+  def exists( key: String ): Future[ Boolean ] =
+    redis.exists( key ) executing "EXISTS" withParameter key expects {
+      case true => log.debug( s"Key '$key' exists." ); true
+      case false => log.debug( s"Key '$key' doesn't exist." ); false
+    }
 
-  def matching( pattern: String ): Future[ Set[ String ] ] = ???
+  def remove( keys: String* ): Future[ Unit ] =
+    if ( keys.nonEmpty ) // if any key to remove do it
+      redis.del( keys: _* ) executing "DEL" withParameters keys.mkString( " " ) expects {
+        // Nothing was removed
+        case 0L => log.debug( s"Remove on keys ${ keys.mkString( "'", ",", "'" ) } succeeded but nothing was removed." )
+        // Some entries were removed
+        case removed => log.debug( s"Remove on keys ${ keys.mkString( "'", ",", "'" ) } removed $removed values." )
+      }
+    else Future( Unit ) // otherwise return immediately
 
-  //    redis ? ( "KEYS", pattern ) expects {
-  //    case Some( response: List[ _ ] ) =>
-  //      val keys = response.asInstanceOf[ List[ Option[ ByteString ] ] ].flatten.map( _.utf8String ).toSet
-  //      log.debug( s"KEYS on '$pattern' responded '${ keys.mkString( ", " ) }'." )
-  //      keys
-  //  }
+  def ping( ): Future[ Unit ] =
+    redis.ping( ) executing "PING" expects {
+      case "PONG" => Unit
+    }
 
-  def invalidate( ): Future[ Unit ] = ???
+  def increment( key: String, by: Long ): Future[ Long ] =
+    redis.incrBy( key, by ) executing "INCRBY" withParameters s"$key, $by" expects {
+      case value => log.debug( s"The value at key '$key' was incremented by $by to $value." ); value
+    }
 
-  //    redis ! "FLUSHDB" expects {
-  //    case Some( Ok ) => log.info( "Invalidated." ) // cache was invalidated
-  //    case None => log.warn( "Invalidation failed." ) // execution failed
-  //  }
-
-  def exists( key: String ): Future[ Boolean ] = ???
-
-  //    redis ? ( "EXISTS", key ) expects {
-  //    case Some( 1L ) => log.debug( s"Key '$key' exists." ); true
-  //    case Some( 0L ) => log.debug( s"Key '$key' doesn't exist." ); false
-  //  }
-
-  def remove( keys: String* ): Future[ Unit ] = ???
-
-  //    if ( keys.nonEmpty ) // if any key to remove do it
-  //      redis ! ( "DEL", keys: _* ) expects {
-  //        // Nothing was removed
-  //        case Some( 0 ) => log.debug( s"Remove on keys ${ keys.mkString( "'", ",", "'" ) } succeeded but nothing was removed." )
-  //        // Some entries were removed
-  //        case Some( number ) => log.debug( s"Remove on keys ${ keys.mkString( "'", ",", "'" ) } removed $number values." )
-  //      }
-  //    else Future( Unit ) // otherwise return immediately
-
-  def ping( ): Future[ Unit ] = ???
-
-  //    redis ! "PING" expects {
-  //    case Pong => Unit
-  //  }
-
-  def increment( key: String, by: Long ): Future[ Long ] = ???
-
-  //    redis ? ( "INCRBY", key, by.toString ) expects {
-  //      case Some( value: Long ) => log.debug( s"The value at key '$key' was incremented by $by to $value." ); value
-  //    }
-
-  def append( key: String, value: String ): Future[ Long ] = ???
-
-  //    redis ? ( "APPEND", key, value ) expects {
-  //      case Some( value: Long ) => log.debug( s"The value was appended to key '$key'." ); value
-  //    }
+  def append( key: String, value: String ): Future[ Long ] =
+    redis.append( key, value ) executing "APPEND" withParameters s"$key $value" expects {
+      case length => log.debug( s"The value was appended to key '$key'." ); length
+    }
 
   def start( ) = {
     import configuration.{host, port, database}
