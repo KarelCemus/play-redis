@@ -40,7 +40,9 @@ of the Play framework.
 To your SBT `build.sbt` add the following lines:
 
 ```scala
-// redis-server cache
+// enable Play cache API (based on your Play version) and optionally exclude EhCache implementation
+libraryDependencies += PlayImport.cache exclude("net.sf.ehcache", "ehcache-core")
+// include play-redis library
 libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.3.0-M1"
 ```
 
@@ -176,10 +178,7 @@ There is already default configuration but it can be overwritten in your `conf/a
 | play.cache.redis.configuration      | String   | `static`                        | Defines which configuration source enable. Accepted values are `static`, `env`, `custom` |
 | play.cache.redis.password           | String   | `null`                          | When authentication is required, this is the password. Value is optional. |
 | play.cache.redis.connection-string-variable | String   | `REDIS_URL`             | Name of the environment variable with the connection string. This is used in combination with the `env` configuration. This allows customization of the variable name in PaaS environment. Value is optional. |
-| play.cache.redis.recovery           | String   | `log-and-default`               | Defines behavior when command execution fails. Accepted values are `log-and-fail` to log the error 
-                                                                                     and rethrow the exception, `log-and-default` to log the failure and return default value neutral 
-                                                                                     to the operation, `log-condensed-and-default` `log-condensed-and-fail` produce shorter but less 
-                                                                                     informative error logs, and `custom` indicates the user binds his own implementation of `RecoveryPolicy`.        |
+| play.cache.redis.recovery           | String   | `log-and-default`               | Defines behavior when command execution fails. Accepted values are `log-and-fail` to log the error and rethrow the exception, `log-and-default` to log the failure and return default value neutral to the operation, `log-condensed-and-default` `log-condensed-and-fail` produce shorter but less informative error logs, and `custom` indicates the user binds his own implementation of `RecoveryPolicy`.        |
 
 ### Recovery policy
 
@@ -212,7 +211,7 @@ To enable redis cache on Heroku we have to do the following steps:
  1. add library into application dependencies
  2. enable `RedisCacheModule`
  3. disable `EhCacheModule`
- 4. set `play.cache.redis.configuration: heroku`, which expects `REDISCLOUD_URL` environment variable
+ 4. set either `play.cache.redis.configuration: "heroku"` or  `play.cache.redis.configuration: "heroku-cloud"` depending whether your Heroku addon provides `REDIS_URL` or `REDISCLOUD_URL` environment variable.  
  5. done, we can run it and use any of 3 provided interfaces
 
 ### Custom configuration source
@@ -259,7 +258,7 @@ Major internal code refactoring, library has been modularized into several packa
 However, **public API remained unchanged**, although its implementation significantly
 changed.
 
-Added `heroku` configuration profile simplifying [running on Heroku](#running-on-heroku).
+Added `heroku` and `heroku-cloud` configuration profiles simplifying [running on Heroku](#running-on-heroku).
 
 Introduced [`RecoveryPolicy`](#recovery-policy) defining behavior when execution fails. Default
 policy is `log-and-default`. To re-enable previous *fail-on-error* behavior, set `log-and-fail`.
