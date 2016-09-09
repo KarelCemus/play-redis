@@ -1,8 +1,10 @@
 package play.api.cache.redis
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
+
+import akka.util.Timeout
 
 /**
   * Internal non-blocking Redis API implementing REDIS protocol
@@ -10,7 +12,13 @@ import scala.reflect.ClassTag
   * @see http://redis.io/commands
   * @author Karel Cemus
   */
-trait RedisConnector {
+private[ redis ] trait RedisConnector {
+
+  /** implicit execution context */
+  implicit def context: ExecutionContext
+
+  /** implicit ask timeout */
+  implicit def timeout: Timeout
 
   /** Retrieve a value from the cache.
     *
@@ -37,16 +45,24 @@ trait RedisConnector {
 
   /** Set a value into the cache. Expiration time in seconds (0 second means eternity).
     *
-    * @param key cache storage key
-    * @param value value to store
+    * @param key        cache storage key
+    * @param value      value to store
     * @param expiration record duration in seconds
     * @return promise
     */
   def set( key: String, value: Any, expiration: Duration = Duration.Inf ): Future[ Unit ]
 
+  /** Set a value into the cache, if the key is not used. Otherwise ignore.
+    *
+    * @param key   cache storage key
+    * @param value value to set
+    * @return true if set was successful, false if key was already defined
+    */
+  def setIfNotExists( key: String, value: Any ): Future[ Boolean ]
+
   /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration
     *
-    * @param key cache storage key
+    * @param key        cache storage key
     * @param expiration new expiration in seconds
     * @return promise
     */
@@ -71,16 +87,22 @@ trait RedisConnector {
     */
   def ping( ): Future[ Unit ]
 
-  /** Starts the connector, tests the connection
+  /** Increments the stored string value representing 10-based signed integer
+    * by given value.
     *
-    * @return promise
+    * @param key cache storage key
+    * @param by  size of increment
+    * @return the value after the increment
     */
-  def start( ): Future[ Unit ]
+  def increment( key: String, by: Long ): Future[ Long ]
 
-  /** Stops the connector
+  /** If key already exists and is a string, this command appends the value at the
+    * end of the string. If key does not exist it is created and set as an empty string,
+    * so APPEND will be similar to SET in this special case.
     *
-    * @return promise
+    * @param key   cache storage key
+    * @param value value to be appended
+    * @return number of characters of current value
     */
-  def stop( ): Future[ Unit ]
-  
+  def append( key: String, value: String ): Future[ Long ]
 }

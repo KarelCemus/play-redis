@@ -11,9 +11,9 @@ By default, [Play framework 2](http://playframework.com/) is delivered with EHCa
 This module enables use of the **redis-server**, i.e., key/value cache, within the
 Play framework 2. Besides the backward compatibility with the [CacheApi](https://www.playframework.com/documentation/2.5.x/api/scala/index.html#play.api.cache.CacheApi),
 it introduces more evolved API providing various handful operations. Besides the basic methods such as
-`get`, `set` and `remove`, it provides more convenient methods such as `expire`, `exists`, `invalidate` and much more. 
+`get`, `set` and `remove`, it provides more convenient methods such as `expire`, `exists`, `invalidate` and much more.
 As the cache implementation uses Akka actor system, it is **completely non-blocking and asynchronous**.
-Furthermore, we deliver the library with several configuration providers to let you easily use 
+Furthermore, we deliver the library with several configuration providers to let you easily use
 play-redis on Heroku as well as on your premise.
 
 ## Provided APIs
@@ -34,17 +34,16 @@ the `play.cache.CacheApi` is implementation of standard `CacheApi` for Java.
 
 ## How to add the module into the project
 
-This module builds over [Brando connector](https://github.com/chrisdinn/brando) and is intended **only for Scala version**
+**Since 1.3.x version** this module builds over [Scredis connector](https://github.com/scredis/scredis) and is intended **only for Scala version**
 of the Play framework.
 
 To your SBT `build.sbt` add the following lines:
 
 ```scala
-// redis-server cache
-libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.2.0"
-
-// repository with the Brando connector
-resolvers += "Brando Repository" at "http://chrisdinn.github.io/releases/"
+// enable Play cache API (based on your Play version) and optionally exclude EhCache implementation
+libraryDependencies += PlayImport.cache exclude("net.sf.ehcache", "ehcache-core")
+// include play-redis library
+libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.3.0-M1"
 ```
 
 Now we **must enable our redis** cache module and **disable default Play's EhCache** module. Into `application.conf` and following
@@ -114,6 +113,14 @@ class MyController @Inject() ( cache: CacheApi ) {
   // refreshes expiration of the key if present
   cache.expire( "key", 1.second )
 
+  // stores the value for infinite time if the key is not used
+  // returns true when store performed successfully
+  // returns false when some value was already defined
+  cache.setIfNotExists( "key", 1.23 )
+  // stores the value for limited time if the key is not used
+  // this is not atomic operation, redis does not provide direct support
+  cache.setIfNotExists( "key", 1.23, 5.seconds )
+
   // returns true if the key is in the storage, false otherwise
   cache.exists( "key" )
 
@@ -134,6 +141,18 @@ class MyController @Inject() ( cache: CacheApi ) {
   // can do it for us
   import play.api.cache.redis._
   cache.set( "key", "value", DateTime.parse( "2015-12-01T00:00" ).asExpiration )
+
+  // atomically increments stored value by one
+  // initializes with 0 if not exists
+  cache.increment( "integer" ) // returns 1
+  cache.increment( "integer" ) // returns 2
+  cache.increment( "integer", 5 ) // returns 7
+
+  // atomically decrements stored value by one
+  // initializes with 0 if not exists
+  cache.decrement( "integer" ) // returns -1
+  cache.decrement( "integer" ) // returns -2
+  cache.decrement( "integer", 5 ) // returns -7
 }
 ```
 
@@ -159,17 +178,30 @@ There is already default configuration but it can be overwritten in your `conf/a
 | play.cache.redis.configuration      | String   | `static`                        | Defines which configuration source enable. Accepted values are `static`, `env`, `custom` |
 | play.cache.redis.password           | String   | `null`                          | When authentication is required, this is the password. Value is optional. |
 | play.cache.redis.connection-string-variable | String   | `REDIS_URL`             | Name of the environment variable with the connection string. This is used in combination with the `env` configuration. This allows customization of the variable name in PaaS environment. Value is optional. |
+| play.cache.redis.recovery           | String   | `log-and-default`               | Defines behavior when command execution fails. Accepted values are `log-and-fail` to log the error and rethrow the exception, `log-and-default` to log the failure and return default value neutral to the operation, `log-condensed-and-default` `log-condensed-and-fail` produce shorter but less informative error logs, and `custom` indicates the user binds his own implementation of `RecoveryPolicy`.        |
 
+### Recovery policy
+
+The intention of cache is usually to optimize the application behavior, not to provide any business logic.
+In this case it makes sense the cache could be removed without any visible change except for possible
+performance loss. In consequence, we think that **failed cache requests should not break the application flow**,
+they should be logged and ignored. However, not always this is desired behavior. To resolve this ambiguity,
+we provide `RecoveryPolicy` trait implementing the behavior to be executed when the cache request  fails.
+By default, we provide two implementations. They both log the failure at first and while one produces
+the exception and let the application to deal with it, the other returns some neutral value, which
+should result in behavior like there is no cache. However, besides these, it is possible, e.g., to also
+rerun a failed command. For more information see `RecoveryPolicy` trait.
 
 ### Connection settings on different platforms
 
 In various environments there are various sources of the connection string defining how to connect to Redis instance.
 For example, at localhost we are interested in direct definition of host and port in the `application.conf` file.
-However, this approach does not fit all environments. For example, Heroku supplies `REDIS_URL` environment variable
+However, this approach does not fit all environments. For example, Heroku supplies `REDISCLOUD_URL` environment variable
 defining the connection string. To resolve this diversity, the library expects an implementation of the `Configuration`
 trait available through DI. By default, it enables `static` configuration source, i.e., it reads the settings from the
 static configuration file. Another supplied configuration reader is `env`, which reads the environment variable such as
-`REDIS_URL` but the name is configurable. To disable built-in providers you are free to set `custom` and supply your
+`REDIS_URL` but the variable name is configurable. To easy use on Heroku, we also provide `heroku` configuration
+profile expecting `REDISCLOUD_URL` variable. To disable built-in providers you are free to set `custom` and supply your
 own implementation of the `Configuration` trait.
 
 ### Running on Heroku
@@ -179,7 +211,7 @@ To enable redis cache on Heroku we have to do the following steps:
  1. add library into application dependencies
  2. enable `RedisCacheModule`
  3. disable `EhCacheModule`
- 4. set `play.cache.redis.configuration: env`
+ 4. set either `play.cache.redis.configuration: "heroku"` or  `play.cache.redis.configuration: "heroku-cloud"` depending whether your Heroku addon provides `REDIS_URL` or `REDISCLOUD_URL` environment variable.  
  5. done, we can run it and use any of 3 provided interfaces
 
 ### Custom configuration source
@@ -211,7 +243,7 @@ Nevertheless, this module **replaces** the EHCache and it is not intended to use
 
 | play framework  | play-redis     |
 |-----------------|---------------:|
-| 2.5.x           | 1.2.0          |
+| 2.5.x           | 1.3.0          |
 | 2.4.x           | 1.0.0          |
 | 2.3.x           | 0.2.1          |
 
@@ -219,6 +251,23 @@ Nevertheless, this module **replaces** the EHCache and it is not intended to use
 </center>
 
 ## Changelog
+
+### [:link: 1.3.0](https://github.com/KarelCemus/play-redis/tree/1.3.0) (Possibly breaking)
+
+Major internal code refactoring, library has been modularized into several packages.
+However, **public API remained unchanged**, although its implementation significantly
+changed.
+
+Added `heroku` and `heroku-cloud` configuration profiles simplifying [running on Heroku](#running-on-heroku).
+
+Introduced [`RecoveryPolicy`](#recovery-policy) defining behavior when execution fails. Default
+policy is `log-and-default`. To re-enable previous *fail-on-error* behavior, set `log-and-fail`.
+See the [`RecoveryPolicy`](#recovery-policy) for more details.
+
+**[Brando](https://github.com/chrisdinn/brando) connector replaced by [scredis](https://github.com/scredis/scredis) implementation** due to Brando repository inactivity
+and major issues ([#44](https://github.com/KarelCemus/play-redis/issues/44)). Scredis seems to be efficient, build over Akka and should not
+contain any major issues as they are not reported.
+
 
 ### [:link: 1.2.0](https://github.com/KarelCemus/play-redis/tree/1.2.0)
 

@@ -1,34 +1,24 @@
-package play.api.cache.redis
+package play.api.cache.redis.impl
 
-import javax.inject._
+import javax.inject.{Inject, Singleton}
 
-import play.api._
+import play.api.Environment
+import play.api.cache.redis.CacheApi
 
-/** Synchronous and blocking implementation of the connection to the redis database */
-trait CacheApi extends InternalCacheApi[ Builders.Identity ]
-
+/**
+  * Implements Play Java version of play.api.CacheApi
+  *
+  * This acts as an adapter to Play Scala CacheApi, because Java Api is slightly different than Scala Api
+  *
+  * @author Karel Cemus
+  */
 @Singleton
-class SyncRedis @Inject( )( redis: RedisConnector, settings: ConnectionSettings )
-  extends RedisCache( redis, settings )( Builders.SynchronousBuilder ) with CacheApi with play.api.cache.CacheApi
-
-/** Asynchronous non-blocking implementation of the connection to the redis database */
-trait CacheAsyncApi extends InternalCacheApi[ Builders.Future ]
-
-@Singleton
-class AsyncRedis @Inject( )( redis: RedisConnector, settings: ConnectionSettings )
-  extends RedisCache( redis, settings )( Builders.AsynchronousBuilder ) with CacheAsyncApi
-
-/** Java version of play.api.CacheApi */
-trait JavaCacheApi extends play.cache.CacheApi {
+private[ impl ] class JavaRedis @Inject( )( internal: CacheApi, environment: Environment ) extends play.cache.CacheApi {
 
   import java.util.concurrent.Callable
 
   import scala.concurrent.duration._
   import scala.reflect.ClassTag
-
-  protected def internal: CacheApi
-
-  protected def classLoader: ClassLoader
 
   override def set( key: String, value: scala.Any, duration: Int ): Unit =
     set( key, value, duration.seconds )
@@ -54,7 +44,7 @@ trait JavaCacheApi extends play.cache.CacheApi {
     play.libs.Scala.orNull {
       // load classTag
       internal.get[ String ]( s"classTag::$key" ).map[ ClassTag[ T ] ] {
-        name => if ( name == null ) ClassTag.Null.asInstanceOf[ ClassTag[ T ] ] else ClassTag( classLoader.loadClass( name ) )
+        name => if ( name == null ) ClassTag.Null.asInstanceOf[ ClassTag[ T ] ] else ClassTag( environment.classLoader.loadClass( name ) )
       }.flatMap {
         implicit tag => internal.get[ T ]( key )
       }.orElse {
@@ -68,9 +58,4 @@ trait JavaCacheApi extends play.cache.CacheApi {
 
   override def remove( key: String ): Unit =
     internal.remove( key )
-}
-
-@Singleton
-class JavaRedis @Inject( )( protected val internal: CacheApi, environment: Environment ) extends JavaCacheApi {
-  override protected def classLoader: ClassLoader = environment.classLoader
 }

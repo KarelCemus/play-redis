@@ -1,8 +1,10 @@
-package play.api.cache.redis
+package play.api.cache.redis.connector
 
 import java.util.Date
 
 import scala.reflect.ClassTag
+
+import play.api.cache.redis.{Redis, SimpleObject}
 
 import org.joda.time.{DateTime, DateTimeZone}
 import org.specs2.mutable.Specification

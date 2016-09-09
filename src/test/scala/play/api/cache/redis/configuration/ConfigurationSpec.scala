@@ -1,17 +1,17 @@
-package play.api.cache.redis
+package play.api.cache.redis.configuration
 
 import scala.concurrent.duration._
 
 import org.specs2.mutable.Specification
 
 /**
- * <p>This test verifies reading of the configuration to deliver proper redis connection settings.</p>
- */
+  * <p>This test verifies reading of the configuration to deliver proper redis connection settings.</p>
+  */
 class ConfigurationSpec extends Specification {
 
   "Local configuration" should {
 
-    val configuration = new StaticConfiguration( )
+    val configuration = new ConfigurationFile( )
 
     "read host" in {
       configuration.host must beEqualTo( "localhost" )
@@ -30,7 +30,7 @@ class ConfigurationSpec extends Specification {
     }
 
     "read timeout" in {
-      configuration.timeout must beEqualTo( 1.second )
+      configuration.timeout must beEqualTo( 3.second )
     }
 
     "read password" in {
@@ -40,7 +40,7 @@ class ConfigurationSpec extends Specification {
 
   "Heroku configuration" should {
 
-    val configuration = new EnvironmentConfigurationProvider( "undefined" ) {
+    val configuration = new ConnectionStringProvider( "undefined" ) {
       override protected def url = Some( "redis://h:my-password@redis.server:1234" )
     }.get( )
 
@@ -61,7 +61,7 @@ class ConfigurationSpec extends Specification {
     }
 
     "read timeout" in {
-      configuration.timeout must beEqualTo( 1.second )
+      configuration.timeout must beEqualTo( 3.second )
     }
 
     "read password" in {
@@ -69,7 +69,7 @@ class ConfigurationSpec extends Specification {
     }
 
     "without password" in {
-      new EnvironmentConfigurationProvider( "undefined" ) {
+      new ConnectionStringProvider( "undefined" ) {
         override protected def url = Some( "redis://redis.server:1234" )
       }.get( ).password must beNone
     }

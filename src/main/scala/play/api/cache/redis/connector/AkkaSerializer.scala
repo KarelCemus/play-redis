@@ -1,4 +1,4 @@
-package play.api.cache.redis
+package play.api.cache.redis.connector
 
 import javax.inject.{Inject, Singleton}
 
@@ -8,6 +8,8 @@ import scala.util._
 
 import akka.actor.ActorSystem
 import akka.serialization._
+
+import play.api.cache.redis.exception._
 
 /**
   * Provides a encode and decode methods to serialize objects into strings
@@ -44,12 +46,10 @@ trait AkkaSerializer {
   * for different objects.
   *
   */
-private[ redis ] trait AkkaEncoder {
-
-  protected def serializer: Serialization
+private[ connector ] class AkkaEncoder( serializer: Serialization ) {
 
   /** Unsafe method encoding the given value into a string */
-  protected def unsafeEncode( value: Any ): String = value match {
+  def encode( value: Any ): String = value match {
     // null is special case
     case null => unsupported( "Null is not supported by the redis cache connector." )
     // AnyVal is not supported by default, have to be implemented manually; also basic types are processed as primitives
@@ -84,36 +84,29 @@ private[ redis ] trait AkkaEncoder {
   * for different objects.
   *
   */
-private[ redis ] trait AkkaDecoder {
+private[ connector ] class AkkaDecoder( serializer: Serialization ) {
 
-  protected def serializer: Serialization
+  import scala.reflect.{ClassTag => Scala}
+  import play.api.cache.redis.connector.{JavaClassTag => Java}
 
   /** unsafe method decoding a string into an object. It directly throws exceptions */
-  protected def unsafeDecode[ T ]( value: String )( implicit classTag: ClassTag[ T ] ): T =
+  def decode[ T ]( value: String )( implicit classTag: ClassTag[ T ] ): T =
     untypedDecode[ T ]( value ).asInstanceOf[ T ]
 
   /** unsafe method decoding a string into an object. It directly throws exceptions. It does not perform type cast */
-  protected def untypedDecode[ T ]( value: String )( implicit classTag: ClassTag[ T ] ): Any = value match {
+  protected def untypedDecode[ T ]( value: String )( implicit tag: ClassTag[ T ] ): Any = value match {
     // AnyVal is not supported by default, have to be implemented manually
-    case "" => null
-    case string if classTag == ClassTag( classOf[ String ] ) => string
-    case boolean if classTag == ClassTag.Boolean => boolean.toBoolean
-    case boolean if classTag == JavaClassTag.Boolean => boolean.toBoolean
-    case byte if classTag == ClassTag.Byte => byte.toByte
-    case byte if classTag == JavaClassTag.Byte => byte.toByte
-    case char if classTag == ClassTag.Char => char.charAt( 0 )
-    case char if classTag == JavaClassTag.Char => char.charAt( 0 )
-    case short if classTag == ClassTag.Short => short.toShort
-    case short if classTag == JavaClassTag.Short => short.toShort
-    case int if classTag == ClassTag.Int => int.toInt
-    case int if classTag == JavaClassTag.Int => int.toInt
-    case long if classTag == ClassTag.Long => long.toLong
-    case long if classTag == JavaClassTag.Long => long.toLong
-    case float if classTag == ClassTag.Float => float.toFloat
-    case float if classTag == JavaClassTag.Float => float.toFloat
-    case double if classTag == ClassTag.Double => double.toDouble
-    case double if classTag == JavaClassTag.Double => double.toDouble
-    case anyRef => stringToAnyRef[ T ]( anyRef )
+    case ""                                                        => null
+    case string   if tag == Java.String                            => string
+    case boolean  if tag == Java.Boolean || tag == Scala.Boolean   => boolean.toBoolean
+    case byte     if tag == Java.Byte    || tag == Scala.Byte      => byte.toByte
+    case char     if tag == Java.Char    || tag == Scala.Char      => char.charAt( 0 )
+    case short    if tag == Java.Short   || tag == Scala.Short     => short.toShort
+    case int      if tag == Java.Int     || tag == Scala.Int       => int.toInt
+    case long     if tag == Java.Long    || tag == Scala.Long      => long.toLong
+    case float    if tag == Java.Float   || tag == Scala.Float     => float.toFloat
+    case double   if tag == Java.Double  || tag == Scala.Double    => double.toDouble
+    case anyRef                                                    => stringToAnyRef[ T ]( anyRef )
   }
 
   /** consumes BASE64 string and returns array of bytes */
@@ -130,13 +123,19 @@ private[ redis ] trait AkkaDecoder {
 }
 
 @Singleton
-private[ redis ] class AkkaSerializerImpl @Inject( )( system: ActorSystem ) extends AkkaSerializer with AkkaEncoder with AkkaDecoder {
+private[ connector ] class AkkaSerializerImpl @Inject( )( system: ActorSystem ) extends AkkaSerializer {
 
   /**
     * serializer dispatcher used to serialize the objects into bytes;
     * the instance is retrieved from Akka based on its configuration
     */
   protected val serializer: Serialization = SerializationExtension( system )
+
+  /** value serializer based on Akka serialization */
+  private val encoder = new AkkaEncoder( serializer )
+
+  /** value decoder based on Akka serialization */
+  private val decoder = new AkkaDecoder( serializer )
 
   /** Method accepts a value to be serialized into the string.
     * Based on the implementation, it returns a string representing the value or
@@ -146,7 +145,7 @@ private[ redis ] class AkkaSerializerImpl @Inject( )( system: ActorSystem ) exte
     * @return serialized string or exception
     */
   override def encode( value: Any ): Try[ String ] =
-    Try( unsafeEncode( value ) )
+    Try( encoder.encode( value ) )
 
   /** Method accepts a valid serialized string and based on the accepted class it deserializes it.
     * If the expected class does not match expectations, deserialization fails with an exception.
@@ -157,24 +156,24 @@ private[ redis ] class AkkaSerializerImpl @Inject( )( system: ActorSystem ) exte
     * @return deserialized object or exception
     */
   override def decode[ T: ClassTag ]( value: String ): Try[ T ] =
-    Try( unsafeDecode[ T ]( value ) )
+    Try( decoder.decode[ T ]( value ) )
 }
 
 /**
   * Registry of known Scala and Java primitives
   */
-private[ redis ] object Primitives {
+private[ connector ] object Primitives {
 
   /** primitive types with simplified encoding */
   val primitives = Seq(
     classOf[ Boolean ], classOf[ java.lang.Boolean ],
-    classOf[ Byte ], classOf[ java.lang.Byte ],
-    classOf[ Char ], classOf[ java.lang.Character ],
-    classOf[ Short ], classOf[ java.lang.Short ],
-    classOf[ Int ], classOf[ java.lang.Integer ],
-    classOf[ Long ], classOf[ java.lang.Long ],
-    classOf[ Float ], classOf[ java.lang.Float ],
-    classOf[ Double ], classOf[ java.lang.Double ],
+    classOf[ Byte ],    classOf[ java.lang.Byte ],
+    classOf[ Char ],    classOf[ java.lang.Character ],
+    classOf[ Short ],   classOf[ java.lang.Short ],
+    classOf[ Int ],     classOf[ java.lang.Integer ],
+    classOf[ Long ],    classOf[ java.lang.Long ],
+    classOf[ Float ],   classOf[ java.lang.Float ],
+    classOf[ Double ],  classOf[ java.lang.Double ],
     classOf[ String ]
   )
 }
@@ -182,14 +181,15 @@ private[ redis ] object Primitives {
 /**
   * Registry of class tags for Java primitives
   */
-private[ redis ] object JavaClassTag {
+private[ connector ] object JavaClassTag {
 
-  val Byte = ClassTag( classOf[ java.lang.Byte ] )
-  val Short = ClassTag( classOf[ java.lang.Short ] )
-  val Char = ClassTag( classOf[ java.lang.Character ] )
-  val Int = ClassTag( classOf[ java.lang.Integer ] )
-  val Long = ClassTag( classOf[ java.lang.Long ] )
-  val Float = ClassTag( classOf[ java.lang.Float ] )
-  val Double = ClassTag( classOf[ java.lang.Double ] )
+  val Byte    = ClassTag( classOf[ java.lang.Byte ] )
+  val Short   = ClassTag( classOf[ java.lang.Short ] )
+  val Char    = ClassTag( classOf[ java.lang.Character ] )
+  val Int     = ClassTag( classOf[ java.lang.Integer ] )
+  val Long    = ClassTag( classOf[ java.lang.Long ] )
+  val Float   = ClassTag( classOf[ java.lang.Float ] )
+  val Double  = ClassTag( classOf[ java.lang.Double ] )
   val Boolean = ClassTag( classOf[ java.lang.Boolean ] )
+  val String  = ClassTag( classOf[ String ] )
 }

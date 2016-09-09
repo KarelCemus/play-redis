@@ -1,23 +1,22 @@
 package play.api.cache.redis
 
+import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
 import scala.language.implicitConversions
 
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 
-import akka.actor.{ActorSystem, ActorRef}
-import akka.pattern.AskableActorRef
+import akka.actor.ActorSystem
 import akka.util.Timeout
-import brando.{StashingRedis, Request}
 import org.specs2.matcher._
 import org.specs2.specification.BeforeAll
+import scredis.Client
 
 /**
- * Provides implicits and configuration for redis tests invocation
- */
-trait Redis extends EmptyRedis with RedisAsker with RedisMatcher {
+  * Provides implicits and configuration for redis tests invocation
+  */
+trait Redis extends EmptyRedis with RedisMatcher {
 
   def injector = Redis.injector
 
@@ -28,38 +27,26 @@ trait Redis extends EmptyRedis with RedisAsker with RedisMatcher {
 
 trait Synchronization {
 
+  protected implicit val timeout = Timeout( 3.second )
+
   /** waits for future responses and returns them synchronously */
-  protected implicit class Synchronizer[ T ]( future: Future[ T ] ) {
-    def sync = Await.result( future, 1.second )
-  }
-}
-
-trait RedisAsker extends Synchronization {
-
-  implicit class RichRedis( redis: ActorRef )( implicit timeout: Timeout ) {
-    def ?( request: Request ) =
-      new AskableActorRef( redis ).ask( request ).sync.asInstanceOf[ Option[ Any ] ]
-
-    def execute( command: String, params: String* ) =
-      this ? Request( command, params: _* )
+  protected implicit class Synchronizer[ T ]( future: AsynchronousResult[ T ] ) {
+    def sync = Await.result( future, timeout.duration )
   }
 
 }
 
 trait RedisMatcher extends Synchronization {
 
-  implicit def matcher[ T ]( matcher: Matcher[ T ] ): Matcher[ Future[ T ] ] = new Matcher[ Future[ T ] ] {
-    override def apply[ S <: Future[ T ] ]( value: Expectable[ S ] ): MatchResult[ S ] = {
-      val matched = value.map( ( _: Future[ T ] ).sync ).applyMatcher( matcher )
+  implicit def matcher[ T ]( matcher: Matcher[ T ] ): Matcher[ AsynchronousResult[ T ] ] = new Matcher[ AsynchronousResult[ T ] ] {
+    override def apply[ S <: AsynchronousResult[ T ] ]( value: Expectable[ S ] ): MatchResult[ S ] = {
+      val matched = value.map( ( _: AsynchronousResult[ T ] ).sync ).applyMatcher( matcher )
       result( matched, value )
     }
   }
 }
 
 trait RedisSettings {
-
-  /** timeout of cache requests */
-  protected implicit val timeout = Timeout( 1.second )
 
   def host = "localhost"
 
@@ -69,29 +56,28 @@ trait RedisSettings {
 }
 
 /**
- * Provides testing redis instance
- *
- * @author Karel Cemus
- */
-trait RedisInstance extends RedisAsker with RedisSettings {
+  * Provides testing redis instance
+  *
+  * @author Karel Cemus
+  */
+trait RedisInstance extends RedisSettings with Synchronization {
 
-  private var _redis: RichRedis = null
+  private var _redis: Client = _
 
   /** instance of brando */
   protected def redis( implicit application: Application, system: ActorSystem ) = synchronized {
-    if ( _redis == null ) _redis = system actorOf StashingRedis {
-      system.actorOf( brando.Redis( host = host, port = port, database = database ) )
-    }
+    if ( _redis == null ) _redis = Client( host = host, port = port, database = database )
     _redis
   }
 }
 
 /**
- * Set up Redis server, empty its testing database to avoid any inference with previous tests
- *
- * @author Karel Cemus
- */
-trait EmptyRedis extends BeforeAll { self: Redis =>
+  * Set up Redis server, empty its testing database to avoid any inference with previous tests
+  *
+  * @author Karel Cemus
+  */
+trait EmptyRedis extends BeforeAll {
+  self: Redis =>
 
   /** before all specifications reset redis database */
   override def beforeAll( ): Unit = EmptyRedis.empty
@@ -106,7 +92,7 @@ object EmptyRedis extends RedisInstance {
   def empty( implicit application: Application, system: ActorSystem ): Unit = synchronized {
     // execute only once
     if ( !executed ) {
-      redis execute "FLUSHDB"
+      redis.flushDB( ).sync
       executed = true
     }
   }

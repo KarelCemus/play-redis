@@ -6,14 +6,14 @@ import scala.language.higherKinds
 import scala.reflect.ClassTag
 
 /**
- * <p>Cache API inspired by basic Play play.api.cache.CacheApi. It implements all its
- * operations and in addition it declares couple more useful operations handful
- * with cache storage. Furthermore, due to its parametrization it allows to decide
- * whether it produces blocking results or non-blocking promises.</p>
- *
- * @author Karel Cemus
- */
-trait InternalCacheApi[ Result[ _ ] ] {
+  * <p>Cache API inspired by basic Play play.api.cache.CacheApi. It implements all its
+  * operations and in addition it declares couple more useful operations handful
+  * with cache storage. Furthermore, due to its parametrization it allows to decide
+  * whether it produces blocking results or non-blocking promises.</p>
+  *
+  * @author Karel Cemus
+  */
+private[ redis ] trait AbstractCacheApi[ Result[ _ ] ] {
 
   /** Retrieve a value from the cache.
     *
@@ -25,9 +25,9 @@ trait InternalCacheApi[ Result[ _ ] ] {
   /** Retrieve a value from the cache. If is missing, set default value with
     * given expiration and return the value.
     *
-    * @param key cache storage key
+    * @param key        cache storage key
     * @param expiration expiration period in seconds.
-    * @param orElse The default function to invoke if the value was not found in cache.
+    * @param orElse     The default function to invoke if the value was not found in cache.
     * @return stored or default record, Some if exists, otherwise None
     */
   def getOrElse[ T: ClassTag ]( key: String, expiration: Duration = Duration.Inf )( orElse: => T ): Result[ T ]
@@ -35,9 +35,9 @@ trait InternalCacheApi[ Result[ _ ] ] {
   /** Retrieve a value from the cache. If is missing, set default value with
     * given expiration and return the value.
     *
-    * @param key cache storage key
+    * @param key        cache storage key
     * @param expiration expiration period in seconds.
-    * @param orElse The default function to invoke if the value was not found in cache.
+    * @param orElse     The default function to invoke if the value was not found in cache.
     * @return stored or default record, Some if exists, otherwise None
     */
   def getOrFuture[ T: ClassTag ]( key: String, expiration: Duration = Duration.Inf )( orElse: => Future[ T ] ): Future[ T ]
@@ -60,27 +60,60 @@ trait InternalCacheApi[ Result[ _ ] ] {
 
   /** Set a value into the cache. Expiration time in seconds (0 second means eternity).
     *
-    * @param key cache storage key
-    * @param value value to store
+    * @param key        cache storage key
+    * @param value      value to store
     * @param expiration record duration in seconds
     * @return promise
     */
   def set( key: String, value: Any, expiration: Duration = Duration.Inf ): Result[ Unit ]
 
+  /** Set a value into the cache if the given key is not already used, otherwise do nothing.
+    * Expiration time in seconds (0 second means eternity).
+    *
+    * Note: When expiration is defined, it is not an atomic operation. Redis does not
+    * provide a command for store-if-not-exists with duration. First, it sets the value
+    * if exists. Then, if the operation succeeded, it sets its expiration date.
+    *
+    * Note: When recovery policy used, it recovers with TRUE to indicate
+    * **"the lock was acquired"** despite actually **not storing** anything.
+    *
+    * @param key        cache storage key
+    * @param value      value to store
+    * @param expiration record duration in seconds
+    * @return true if value was set, false if was ignored because it existed before
+    */
+  def setIfNotExists( key: String, value: Any, expiration: Duration = Duration.Inf ): Result[ Boolean ]
+
+  /** If key already exists and is a string, this command appends the value at the end of
+    * the string. If key does not exist it is created and set as an empty string, so APPEND
+    * will be similar to SET in this special case.
+    *
+    * If it sets new value, it subsequently calls EXPIRE to set required expiration time
+    *
+    * @param key        cache storage key
+    * @param value      value to append
+    * @param expiration record duration, applies only when appends to nothing
+    * @return promise
+    */
+  def append( key: String, value: String, expiration: Duration = Duration.Inf ): Result[ Unit ]
+
   /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration
-    * @param key cache storage key
+    *
+    * @param key        cache storage key
     * @param expiration new expiration in seconds
     * @return promise
     */
   def expire( key: String, expiration: Duration ): Result[ Unit ]
 
   /** Remove a value under the given key from the cache
+    *
     * @param key cache storage key
     * @return promise
     */
   def remove( key: String ): Result[ Unit ]
 
   /** Remove all values from the cache
+    *
     * @param key1 cache storage key
     * @param key2 cache storage key
     * @param keys cache storage keys
@@ -89,6 +122,7 @@ trait InternalCacheApi[ Result[ _ ] ] {
   def remove( key1: String, key2: String, keys: String* ): Result[ Unit ]
 
   /** Removes all keys in arguments. The other remove methods are for syntax sugar
+    *
     * @param keys cache storage keys
     * @return promise
     */
@@ -110,7 +144,7 @@ trait InternalCacheApi[ Result[ _ ] ] {
     * the given page. The benefit is we do not need to maintain the list of all keys to invalidate,
     * we invalidate them all at once.</p>
     *
-  <p>* '''Warning:''' complexity is O(n) where n are all keys in the database</p>
+    * <p>* '''Warning:''' complexity is O(n) where n are all keys in the database</p>
     *
     * @param pattern this must be valid KEYS pattern
     * @return nothing
@@ -122,4 +156,31 @@ trait InternalCacheApi[ Result[ _ ] ] {
     * @return promise
     */
   def invalidate( ): Result[ Unit ]
+
+  /** Increments the stored string value representing 10-based signed integer
+    * by given value.
+    *
+    * @param key cache storage key
+    * @param by  size of increment
+    * @return the value after the increment
+    * @since 1.3.0
+    */
+  def increment( key: String, by: Long = 1 ): Result[ Long ]
+
+
+  /** Decrements the stored string value representing 10-based signed integer
+    * by given value.
+    *
+    * @param key cache storage key
+    * @param by  size of decrement
+    * @return the value after the decrement
+    * @since 1.3.0
+    */
+  def decrement( key: String, by: Long = 1 ): Result[ Long ]
 }
+
+/** Synchronous and blocking implementation of the connection to the redis database */
+trait CacheApi extends AbstractCacheApi[ SynchronousResult ]
+
+/** Asynchronous non-blocking implementation of the connection to the redis database */
+trait CacheAsyncApi extends AbstractCacheApi[ AsynchronousResult ]
