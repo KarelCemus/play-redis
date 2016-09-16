@@ -41,7 +41,7 @@ To your SBT `build.sbt` add the following lines:
 
 ```scala
 // enable Play cache API (based on your Play version) and optionally exclude EhCache implementation
-libraryDependencies += PlayImport.cache exclude("net.sf.ehcache", "ehcache-core")
+libraryDependencies += play.sbt.PlayImport.cache exclude("net.sf.ehcache", "ehcache-core")
 // include play-redis library
 libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.3.0-M1"
 ```
