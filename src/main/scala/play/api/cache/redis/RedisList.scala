@@ -199,10 +199,10 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ] ] {
     *
     * @return size of the list
     */
-  def size: Int
+  def size: Result[ Int ]
 
   /**
-    * Inserts value in the list stored at key either before or after the
+    * Inserts value in the list stored at key either before the
     * reference value pivot. When key does not exist, it is considered
     * an empty list and no operation is performed. An error is returned
     * when key exists but does not hold a list value.
@@ -227,6 +227,32 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ] ] {
     * @return this collection to chain commands
     */
   def set( position: Int, element: Elem ): Result[ This ]
+
+  /**
+    * Removes first N values equal to the given value from the list.
+    *
+    * Note: If the value is serialized object, it is not proofed that serialized
+    * strings will match and the value will be actually deleted. This function
+    * is intended to be used with primitive types only.
+    *
+    * Time complexity: O(N)
+    *
+    * @param element element to be removed from the list
+    * @param count   first N occurrences
+    * @return this collection to chain commands
+    */
+  def remove( element: Elem, count: Int = 1 ): Result[ This ]
+
+  /**
+    * Removes the element at the given position. If the index
+    * is out of range, it throws an exception.
+    *
+    * Time complexity: O(N)
+    *
+    * @param position element index to be removed
+    * @return this collection to chain commands
+    */
+  def removeAt( position: Int ): Result[ This ]
 
   /**
     * @return read-only operations over the collection, does not modify data

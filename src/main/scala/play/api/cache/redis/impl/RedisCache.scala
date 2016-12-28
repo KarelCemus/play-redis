@@ -73,6 +73,6 @@ private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implic
   override def decrement( key: String, by: Long ) =
     increment( key, -by )
 
-  override def list[ T: ClassTag ]( key: String ) =
+  override def list[ T: ClassTag ]( key: String ): RedisList[ T, Result ] =
     new RedisListImpl( key, redis )
 }

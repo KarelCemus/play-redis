@@ -37,4 +37,8 @@ private[ impl ] class RedisListImpl[ Elem: ClassTag, Result[ _ ] ]( key: String,
   def view = ???
 
   def modify = ???
+
+  def remove( element: Elem, count: Int ) = ???
+
+  def removeAt( position: Int ) = ???
 }
