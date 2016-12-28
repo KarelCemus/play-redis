@@ -35,4 +35,4 @@ case class UnexpectedResponseException( key: Option[ String ], command: String )
   *
   * @author Karel Cemus
   */
-case class SerializationException( key: String, message: String, cause: Throwable ) extends RedisException( s"$message failed for $key", cause )
+case class SerializationException( key: String, message: String, cause: Throwable ) extends RedisException( s"$message for $key", cause )

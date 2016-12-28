@@ -245,6 +245,62 @@ class RedisConnectorSpec extends Specification with Redis {
       Cache.append( s"$prefix-test-append-to-some", " value" ).sync
       Cache.get[ String ]( s"$prefix-test-append-to-some" ) must beSome( "some value" )
     }
+
+    "list push left" in {
+      Cache.listPrepend( s"$prefix-test-list-prepend", "A", "B", "C" ).sync must beEqualTo( 3 )
+      Cache.listPrepend( s"$prefix-test-list-prepend", "D", "E", "F" ).sync must beEqualTo( 6 )
+      Cache.listSlice[ String ]( s"$prefix-test-list-prepend", 0, -1 ).sync must beEqualTo( List( "F", "E", "D", "C", "B", "A" ) )
+    }
+
+    "list push right" in {
+      Cache.listAppend( s"$prefix-test-list-append", "A", "B", "C" ).sync must beEqualTo( 3 )
+      Cache.listAppend( s"$prefix-test-list-append", "D", "E", "A" ).sync must beEqualTo( 6 )
+      Cache.listSlice[ String ]( s"$prefix-test-list-append", 0, -1 ).sync must beEqualTo( List( "A", "B", "C", "D", "E", "A" ) )
+    }
+
+    "list size" in {
+      Cache.listSize( s"$prefix-test-list-size" ).sync must beEqualTo( 0 )
+      Cache.listPrepend( s"$prefix-test-list-size", "A", "B", "C" ).sync must beEqualTo( 3 )
+      Cache.listSize( s"$prefix-test-list-size" ).sync must beEqualTo( 3 )
+    }
+
+    "list overwrite at index" in {
+      Cache.listPrepend( s"$prefix-test-list-set", "C", "B", "A" ).sync must beEqualTo( 3 )
+      Cache.listSetAt( s"$prefix-test-list-set", 1, "D" ).sync
+      Cache.listSlice[ String ]( s"$prefix-test-list-set", 0, -1 ).sync must beEqualTo( List( "A", "D", "C" ) )
+      Cache.listSetAt( s"$prefix-test-list-set", 3, "D" ).sync must throwA[ IndexOutOfBoundsException ]
+    }
+
+    "list pop head" in {
+      Cache.listHeadPop[ String ]( s"$prefix-test-list-pop" ).sync must beNone
+      Cache.listPrepend( s"$prefix-test-list-pop", "C", "B", "A" ).sync must beEqualTo( 3 )
+      Cache.listHeadPop[ String ]( s"$prefix-test-list-pop" ).sync must beSome( "A" )
+      Cache.listHeadPop[ String ]( s"$prefix-test-list-pop" ).sync must beSome( "B" )
+      Cache.listHeadPop[ String ]( s"$prefix-test-list-pop" ).sync must beSome( "C" )
+      Cache.listHeadPop[ String ]( s"$prefix-test-list-pop" ).sync must beNone
+    }
+
+    "list slice view" in {
+      Cache.listSlice[ String ]( s"$prefix-test-list-slice", 0, -1 ).sync must beEqualTo( List.empty )
+      Cache.listPrepend( s"$prefix-test-list-slice", "C", "B", "A" ).sync must beEqualTo( 3 )
+      Cache.listSlice[ String ]( s"$prefix-test-list-slice", 0, -1 ).sync must beEqualTo( List( "A", "B", "C" ) )
+      Cache.listSlice[ String ]( s"$prefix-test-list-slice", 0, 0 ).sync must beEqualTo( List( "A" ) )
+      Cache.listSlice[ String ]( s"$prefix-test-list-slice", -2, -1 ).sync must beEqualTo( List( "B", "C" ) )
+    }
+
+    "list remove by value" in {
+      Cache.listRemove( s"$prefix-test-list-remove", "A", count = 1 ).sync must beEqualTo( 0 )
+      Cache.listPrepend( s"$prefix-test-list-remove", "A", "B", "C" ).sync must beEqualTo( 3 )
+      Cache.listRemove( s"$prefix-test-list-remove", "A", count = 1 ).sync must beEqualTo( 1 )
+      Cache.listSize( s"$prefix-test-list-remove" ).sync must beEqualTo( 2 )
+    }
+
+    "list trim" in {
+      Cache.listPrepend( s"$prefix-test-list-trim", "C", "B", "A" ).sync must beEqualTo( 3 )
+      Cache.listTrim( s"$prefix-test-list-trim", 1, 2 ).sync
+      Cache.listSize( s"$prefix-test-list-trim" ).sync must beEqualTo( 2 )
+      Cache.listSlice[ String ]( s"$prefix-test-list-trim", 0, -1 ).sync must beEqualTo( List( "B", "C" ) )
+    }
   }
 
 }

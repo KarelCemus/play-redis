@@ -15,47 +15,70 @@ object FailingConnector extends RedisConnector with Synchronization {
 
   implicit def context: ExecutionContext = global
 
-  def set( key: String, value: Any, expiration: Duration ): Future[ Unit ] = Future {
-    failed( Some( key ), "SET", new IllegalStateException( "Redis connector failure reproduction" ) )
+  private def theError = new IllegalStateException( "Redis connector failure reproduction" )
+
+  private def failKeyed( key: String, command: String ) = Future {
+    failed( Some( key ), command, theError )
   }
 
-  def setIfNotExists( key: String, value: Any ): Future[ Boolean ] = Future {
-    failed( Some( key ), "SETNX", new IllegalStateException( "Redis connector failure reproduction" ) )
+  private def failCommand( command: String ) = Future {
+    failed( None, command, theError )
   }
 
-  def get[ T: ClassTag ]( key: String ): Future[ Option[ T ] ] = Future {
-    failed( Some( key ), "GET", new IllegalStateException( "Redis connector failure reproduction" ) )
-  }
+  def set( key: String, value: Any, expiration: Duration ): Future[ Unit ] =
+    failKeyed( key, "SET" )
 
-  def expire( key: String, expiration: Duration ): Future[ Unit ] = Future {
-    failed( Some( key ), "EXPIRE", new IllegalStateException( "Redis connector failure reproduction" ) )
-  }
+  def setIfNotExists( key: String, value: Any ): Future[ Boolean ] =
+    failKeyed( key, "SETNX" )
 
-  def remove( keys: String* ): Future[ Unit ] = Future {
-    failed( Some( keys.mkString( " " ) ), "DEL", new IllegalStateException( "Redis connector failure reproduction" ) )
-  }
+  def get[ T: ClassTag ]( key: String ): Future[ Option[ T ] ] =
+    failKeyed( key, "GET" )
 
-  def matching( pattern: String ): Future[ Set[ String ] ] = Future {
-    failed( None, "KEYS", new IllegalStateException( "Redis connector failure reproduction" ) )
-  }
+  def expire( key: String, expiration: Duration ): Future[ Unit ] =
+    failKeyed( key, "EXPIRE" )
 
-  def invalidate( ): Future[ Unit ] = Future {
-    failed( None, "FLUSHDB", new IllegalStateException( "Redis connector failure reproduction" ) )
-  }
+  def remove( keys: String* ): Future[ Unit ] =
+    failed( Some( keys.mkString( " " ) ), "DEL", theError )
 
-  def ping( ): Future[ Unit ] = Future {
-    failed( None, "PING", new IllegalStateException( "Redis connector failure reproduction" ) )
-  }
+  def matching( pattern: String ): Future[ Set[ String ] ] =
+    failCommand( "KEYS" )
 
-  def exists( key: String ): Future[ Boolean ] = Future {
-    failed( Some( key ), "EXISTS", new IllegalStateException( "Redis connector failure reproduction" ) )
-  }
+  def invalidate( ): Future[ Unit ] =
+    failCommand( "FLUSHDB" )
 
-  def increment( key: String, by: Long ): Future[ Long ] = Future {
-    failed( Some( key ), "INCR", new IllegalStateException( "Redis connector failure reproduction" ) )
-  }
+  def ping( ): Future[ Unit ] =
+    failCommand( "PING" )
 
-  def append( key: String, value: String ): Future[ Long ] = Future {
-    failed( Some( key ), "APPEND", new IllegalStateException( "Redis connector failure reproduction" ) )
-  }
+  def exists( key: String ): Future[ Boolean ] =
+    failKeyed( key, "EXISTS" )
+
+  def increment( key: String, by: Long ): Future[ Long ] =
+    failKeyed( key, "INCR" )
+
+  def append( key: String, value: String ): Future[ Long ] =
+    failKeyed( key, "APPEND" )
+
+  def listPrepend( key: String, value: Any* ) =
+    failKeyed( key, "LPUSH" )
+
+  def listAppend( key: String, value: Any* ) =
+    failKeyed( key, "RPUSH" )
+
+  def listSize( key: String ) =
+    failKeyed( key, "LLEN" )
+
+  def listSetAt( key: String, position: Int, value: Any ) =
+    failKeyed( key, "LSET" )
+
+  def listHeadPop[ T: ClassTag ]( key: String ) =
+    failKeyed( key, "LPOP" )
+
+  def listSlice[ T: ClassTag ]( key: String, start: Int, end: Int ) =
+    failKeyed( key, "LRANGE" )
+
+  def listRemove( key: String, value: Any, count: Int ) =
+    failKeyed( key, "LREM" )
+
+  def listTrim( key: String, start: Int, end: Int ) =
+    failKeyed( key, "LTRIM" )
 }
