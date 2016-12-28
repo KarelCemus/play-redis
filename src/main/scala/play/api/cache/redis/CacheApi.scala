@@ -177,6 +177,15 @@ private[ redis ] trait AbstractCacheApi[ Result[ _ ] ] {
     * @since 1.3.0
     */
   def decrement( key: String, by: Long = 1 ): Result[ Long ]
+
+  /**
+    * Scala wrapper around Redis list-related commands. This simplifies use of the lists.
+    *
+    * @param key the key storing the list
+    * @tparam T type of elements within the list
+    * @return Scala wrapper
+    */
+  def list[ T: ClassTag ]( key: String ): RedisList[ T, Result ]
 }
 
 /** Synchronous and blocking implementation of the connection to the redis database */
