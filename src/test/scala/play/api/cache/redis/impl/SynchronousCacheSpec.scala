@@ -3,7 +3,6 @@ package play.api.cache.redis.impl
 import java.util.Date
 import java.util.concurrent.atomic.AtomicInteger
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -190,29 +189,6 @@ class SynchronousCacheSpec extends Specification with Redis {
       Cache.get[ String ]( s"$prefix-test-remove-multiple-1" ) must beNone
       Cache.get[ String ]( s"$prefix-test-remove-multiple-2" ) must beNone
       Cache.get[ String ]( s"$prefix-test-remove-multiple-3" ) must beNone
-    }
-  }
-
-
-  implicit class RichCache( cache: Cache ) {
-    private type Accumulator = AtomicInteger
-
-    /** invokes internal getOrElse but it accumulate invocations of orElse clause in the accumulator */
-    def getOrElseCounting( key: String )( accumulator: Accumulator ) = cache.getOrElse( key ) {
-      // increment miss counter
-      accumulator.incrementAndGet( )
-      // return the value to store into the cache
-      "value"
-    }
-
-    /** invokes internal getOrElse but it accumulate invocations of orElse clause in the accumulator */
-    def getOrFutureCounting( key: String )( accumulator: Accumulator ) = cache.getOrFuture[ String ]( key ){
-      Future {
-        // increment miss counter
-        accumulator.incrementAndGet( )
-        // return the value to store into the cache
-        "value"
-      }
     }
   }
 }

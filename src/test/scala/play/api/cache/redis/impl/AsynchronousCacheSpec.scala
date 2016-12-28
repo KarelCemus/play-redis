@@ -3,35 +3,30 @@ package play.api.cache.redis.impl
 import java.util.Date
 import java.util.concurrent.atomic.AtomicInteger
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.reflect.ClassTag
 
 import play.api.cache.redis._
 import play.api.cache.redis.exception._
 
-import akka.util.Timeout
 import org.joda.time.DateTime
-import org.specs2.matcher.{Expectable, MatchResult, Matcher}
 import org.specs2.mutable.Specification
 
 /**
   * <p>Test of cache to be sure that keys are differentiated, expires etc.</p>
   */
 class AsynchronousCacheSpec extends Specification with Redis {
-  outer =>
 
   private type Cache = RedisCache[ AsynchronousResult ]
 
   private val workingConnector = injector.instanceOf[ RedisConnector ]
 
   // test proper implementation, no fails
-  new RedisCacheSuite( "implement", "redis-cache-implements", new RedisCache( workingConnector )( Builders.AsynchronousBuilder, new FailThrough {} ), AlwaysSuccess )
+  new RedisCacheSuite( "implement", "redis-cache-implements", new RedisCache( workingConnector )( Builders.AsynchronousBuilder, FailThrough ), AlwaysSuccess )
 
-  new RedisCacheSuite( "recover from", "redis-cache-recovery", new RedisCache( FailingConnector )( Builders.AsynchronousBuilder, new RecoverWithDefault {} ), AlwaysDefault )
+  new RedisCacheSuite( "recover from", "redis-cache-recovery", new RedisCache( FailingConnector )( Builders.AsynchronousBuilder, RecoverWithDefault ), AlwaysDefault )
 
-  new RedisCacheSuite( "fail on", "redis-cache-fail", new RedisCache( FailingConnector )( Builders.AsynchronousBuilder, new FailThrough {} ), AlwaysException )
+  new RedisCacheSuite( "fail on", "redis-cache-fail", new RedisCache( FailingConnector )( Builders.AsynchronousBuilder, FailThrough ), AlwaysException )
 
   class RedisCacheSuite( suiteName: String, prefix: String, cache: Cache, expectation: Expectation ) {
 
@@ -354,120 +349,4 @@ class AsynchronousCacheSpec extends Specification with Redis {
       }
     }
   }
-
-  trait Expectation {
-    def expectsNow[ T ]( success: => Matcher[ T ] ): Matcher[ T ] =
-      expectsNow( success, success )
-
-    def expectsNow[ T ]( success: => Matcher[ T ], default: => Matcher[ T ] ): Matcher[ T ] =
-      expectsNow( success, default, throwA[ ExecutionFailedException ] )
-
-    def expectsNow[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ]
-
-    def expects[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ AsynchronousResult[ T ] ] =
-      expectsNow( success, default, exception )
-
-    def expects[ T ]( success: => Matcher[ T ], default: => Matcher[ T ] ): Matcher[ AsynchronousResult[ T ] ] =
-      expects( success, default, throwA[ ExecutionFailedException ] )
-
-    def expects[ T ]( successAndDefault: => Matcher[ T ] ): Matcher[ AsynchronousResult[ T ] ] =
-      expects( successAndDefault, successAndDefault )
-  }
-
-  object AlwaysDefault extends Expectation {
-    override def expectsNow[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ] = default
-  }
-
-  object AlwaysException extends Expectation {
-    override def expectsNow[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ] = exception
-  }
-
-  object AlwaysSuccess extends Expectation {
-    override def expectsNow[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ] = success
-  }
-
-  implicit class RichCache( cache: Cache ) {
-    private type Accumulator = AtomicInteger
-
-    /** invokes internal getOrElse but it accumulate invocations of orElse clause in the accumulator */
-    def getOrElseCounting( key: String )( accumulator: Accumulator ) = {
-      cache.getOrElse( key ) {
-        // increment miss counter
-        accumulator.incrementAndGet( )
-        // return the value to store into the cache
-        "value"
-      }
-    }
-
-    /** invokes internal getOrElse but it accumulate invocations of orElse clause in the accumulator */
-    def getOrFutureCounting( key: String )( accumulator: Accumulator ) = {
-      cache.getOrFuture[ String ]( key ) {
-        Future {
-          // increment miss counter
-          accumulator.incrementAndGet( )
-          // return the value to store into the cache
-          "value"
-        }
-      }
-    }
-  }
-
-  object FailingConnector extends RedisConnector {
-
-    override implicit def context: ExecutionContext = global
-
-    override implicit def timeout: Timeout = outer.timeout
-
-    override def set( key: String, value: Any, expiration: Duration ): Future[ Unit ] = Future {
-      failed( Some( key ), "SET", new IllegalStateException( "Redis connector failure reproduction" ) )
-    }
-
-    override def setIfNotExists( key: String, value: Any ): Future[ Boolean ] = Future {
-      failed( Some( key ), "SETNX", new IllegalStateException( "Redis connector failure reproduction" ) )
-    }
-
-    override def get[ T: ClassTag ]( key: String ): Future[ Option[ T ] ] = Future {
-      failed( Some( key ), "GET", new IllegalStateException( "Redis connector failure reproduction" ) )
-    }
-
-    override def expire( key: String, expiration: Duration ): Future[ Unit ] = Future {
-      failed( Some( key ), "EXPIRE", new IllegalStateException( "Redis connector failure reproduction" ) )
-    }
-
-    override def remove( keys: String* ): Future[ Unit ] = Future {
-      failed( Some( keys.mkString( " " ) ), "DEL", new IllegalStateException( "Redis connector failure reproduction" ) )
-    }
-
-    override def matching( pattern: String ): Future[ Set[ String ] ] = Future {
-      failed( None, "KEYS", new IllegalStateException( "Redis connector failure reproduction" ) )
-    }
-
-    override def invalidate( ): Future[ Unit ] = Future {
-      failed( None, "FLUSHDB", new IllegalStateException( "Redis connector failure reproduction" ) )
-    }
-
-    override def ping( ): Future[ Unit ] = Future {
-      failed( None, "PING", new IllegalStateException( "Redis connector failure reproduction" ) )
-    }
-
-    override def exists( key: String ): Future[ Boolean ] = Future {
-      failed( Some( key ), "EXISTS", new IllegalStateException( "Redis connector failure reproduction" ) )
-    }
-
-    override def increment( key: String, by: Long ): Future[ Long ] = Future {
-      failed( Some( key ), "INCR", new IllegalStateException( "Redis connector failure reproduction" ) )
-    }
-
-    override def append( key: String, value: String ): Future[ Long ] = Future {
-      failed( Some( key ), "APPEND", new IllegalStateException( "Redis connector failure reproduction" ) )
-    }
-  }
-
-  object beUnit extends Matcher[ Any ] {
-
-    override def apply[ S <: Any ]( value: Expectable[ S ] ): MatchResult[ S ] = {
-      result( test = true, value.description + " is Unit", value.description + " is not Unit", value.evaluate )
-    }
-  }
-
 }

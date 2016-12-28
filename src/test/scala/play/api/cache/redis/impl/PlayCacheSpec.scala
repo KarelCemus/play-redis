@@ -2,7 +2,7 @@ package play.api.cache.redis.impl
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import play.api.cache.redis.Redis
+import play.api.cache.redis.{AbstractCacheApi, Redis, SynchronousResult}
 
 import org.specs2.mutable.Specification
 
@@ -13,7 +13,7 @@ class PlayCacheSpec extends Specification with Redis {
 
   private type Cache = play.api.cache.CacheApi
 
-  private val Cache = injector.instanceOf[ Cache ]
+  private val Cache = injector.instanceOf[ Cache ].asInstanceOf[ Cache with AbstractCacheApi[ SynchronousResult ] ]
   
   private val prefix = "play"
   
@@ -53,18 +53,6 @@ class PlayCacheSpec extends Specification with Redis {
       Cache.get[ String ]( s"$prefix-test-3" ) must beSome[ Any ]
       Cache.remove( s"$prefix-test-3" )
       Cache.get[ String ]( s"$prefix-test-3" ) must beNone
-    }
-  }
-
-  implicit class RichCache( cache: Cache ) {
-    private type Accumulator = AtomicInteger
-
-    /** invokes internal getOrElse but it accumulate invocations of orElse clause in the accumulator */
-    def getOrElseCounting( key: String )( accumulator: Accumulator ) = cache.getOrElse( key ) {
-      // increment miss counter
-      accumulator.incrementAndGet( )
-      // return the value to store into the cache
-      "value"
     }
   }
 }
