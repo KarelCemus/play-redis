@@ -156,6 +156,63 @@ class MyController @Inject() ( cache: CacheApi ) {
 }
 ```
 
+**Example of Lists:**
+
+```scala
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
+import play.api.cache.redis.CacheApi
+
+class MyController @Inject() ( cache: CacheApi ) {
+
+  // enables List operations
+  // Scala wrapper over the list at this key
+  cache.list[ String ]( "my-list" )
+
+  // get the whole list
+  cache.list[ String ]( "my-list" ).toList
+
+  // prepend values, beware, values are prepended in the reversed order!
+  // result List( "EFG", "ABC" )
+  cache.list[ String ]( "my-list" ).prepend( "ABC" ).prepend( "EFG" )
+  "EFG" +: "ABC" +: cache.list[ String ]( "my-list" )
+  List( "ABC", "EFG" ) ++: cache.list[ String ]( "my-list" )
+
+  // append values to the list
+  // result List( "ABC", "EFG" )
+  cache.list[ String ]( "my-list" ).append( "ABC" ).append( "EFG" )
+  cache.list[ String ]( "my-list" ) :+ "ABC" :+ "EFG"
+  cache.list[ String ]( "my-list" ) :++ List( "ABC", "EFG" )
+
+  // getting a value
+  cache.list[ String ]( "my-list" ).apply( index = 1 ) // get or an exception
+  cache.list[ String ]( "my-list" ).get( index = 1 ) // Some or None
+  cache.list[ String ]( "my-list" ).head // get or an exception
+  cache.list[ String ]( "my-list" ).headOption // Some or None
+  cache.list[ String ]( "my-list" ).headPop // Some or None and REMOVE the head
+  cache.list[ String ]( "my-list" ).last // get or an exception
+  cache.list[ String ]( "my-list" ).lastOption // Some or None
+
+  // size of the list
+  cache.list[ String ]( "my-list" ).size
+
+  // overwrite the value at index
+  cache.list[ String ]( "my-list" ).set( position = 1, element = "HIJ" )
+
+  // remove the value
+  cache.list[ String ]( "my-list" ).remove( "ABC", count = 2 ) // remove by value
+  cache.list[ String ]( "my-list" ).removeAt( position = 1 ) // remove by index
+
+  // returns an API to reading but not modifying the list
+  cache.list[ String ]( "my-list" ).view
+
+  // returns an API to modify the underlying list
+  cache.list[ String ]( "my-list" ).modify
+}
+```
+
 ## Checking operation result
 
 Regardless of current API, all operations throw an exception when fail. Consequently,
@@ -211,7 +268,7 @@ To enable redis cache on Heroku we have to do the following steps:
  1. add library into application dependencies
  2. enable `RedisCacheModule`
  3. disable `EhCacheModule`
- 4. set either `play.cache.redis.configuration: "heroku"` or  `play.cache.redis.configuration: "heroku-cloud"` depending whether your Heroku addon provides `REDIS_URL` or `REDISCLOUD_URL` environment variable.  
+ 4. set either `play.cache.redis.configuration: "heroku"` or  `play.cache.redis.configuration: "heroku-cloud"` depending whether your Heroku addon provides `REDIS_URL` or `REDISCLOUD_URL` environment variable.
  5. done, we can run it and use any of 3 provided interfaces
 
 ### Custom configuration source
@@ -257,6 +314,8 @@ Nevertheless, this module **replaces** the EHCache and it is not intended to use
 Major internal code refactoring, library has been modularized into several packages.
 However, **public API remained unchanged**, although its implementation significantly
 changed.
+
+Implemented [Scala wrapper](src/main/scala/play/api/cache/redis/RedisList.scala) over List API to use [Redis Lists](https://redis.io/topics/data-types#lists).
 
 Added `heroku` and `heroku-cloud` configuration profiles simplifying [running on Heroku](#running-on-heroku).
 
