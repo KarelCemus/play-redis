@@ -27,7 +27,7 @@ trait Redis extends EmptyRedis with RedisMatcher {
 
 trait Synchronization {
 
-  protected implicit val timeout = Timeout( 3.second )
+  implicit val timeout = Timeout( 3.second )
 
   /** waits for future responses and returns them synchronously */
   protected implicit class Synchronizer[ T ]( future: AsynchronousResult[ T ] ) {

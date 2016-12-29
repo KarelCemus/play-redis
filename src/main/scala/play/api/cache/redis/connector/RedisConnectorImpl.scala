@@ -12,7 +12,7 @@ import play.api.cache.redis.{Configuration, RedisConnector}
 import play.api.inject.ApplicationLifecycle
 
 import akka.actor.ActorSystem
-import scredis.Client
+import scredis._
 
 
 /**
@@ -26,7 +26,7 @@ import scredis.Client
   * @author Karel Cemus
   */
 @Singleton
-private[ connector ] class RedisConnectorImpl @Inject( )( serializer: AkkaSerializer, configuration: Configuration, lifecycle: ApplicationLifecycle )( implicit system: ActorSystem ) extends RedisConnector {
+private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSerializer, configuration: Configuration, lifecycle: ApplicationLifecycle )( implicit system: ActorSystem ) extends RedisConnector {
 
   // implicit ask timeout
   implicit val timeout = akka.util.Timeout( configuration.timeout )
@@ -64,7 +64,7 @@ private[ connector ] class RedisConnectorImpl @Inject( )( serializer: AkkaSerial
     // no value to set
     if ( value == null ) remove( key )
     // set for finite duration
-    else if ( expiration.isFinite( ) ) setTemporally( key, encode( key, value ), expiration )
+    else if ( expiration.isFinite() ) setTemporally( key, encode( key, value ), expiration )
     // set for infinite duration
     else setEternally( key, encode( key, value ) )
 
@@ -107,7 +107,7 @@ private[ connector ] class RedisConnectorImpl @Inject( )( serializer: AkkaSerial
     }
 
   def invalidate( ): Future[ Unit ] =
-    redis.flushDB( ) executing "FLUSHDB" expects {
+    redis.flushDB() executing "FLUSHDB" expects {
       case _ => log.info( "Invalidated." ) // cache was invalidated
     }
 
@@ -128,7 +128,7 @@ private[ connector ] class RedisConnectorImpl @Inject( )( serializer: AkkaSerial
     else Future( Unit ) // otherwise return immediately
 
   def ping( ): Future[ Unit ] =
-    redis.ping( ) executing "PING" expects {
+    redis.ping() executing "PING" expects {
       case "PONG" => Unit
     }
 
@@ -142,19 +142,84 @@ private[ connector ] class RedisConnectorImpl @Inject( )( serializer: AkkaSerial
       case length => log.debug( s"The value was appended to key '$key'." ); length
     }
 
+  def listPrepend( key: String, values: Any* ): Future[ Long ] =
+    redis.lPush( key, values.map( encode( key, _ ) ): _* ) executing "LPUSH" withParameters s"$key ${ values mkString " " }" expects {
+      case length => log.debug( s"The $length values was prepended to key '$key'." ); length
+    } recover {
+      case ExecutionFailedException( _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
+        log.warn( s"Value at '$key' is not a list." )
+        throw new IllegalArgumentException( s"Value at '$key' is not a list." )
+    }
+
+  def listAppend( key: String, values: Any* ) =
+    redis.rPush( key, values.map( encode( key, _ ) ): _* ) executing "RPUSH" withParameters s"$key ${ values mkString " " }" expects {
+      case length => log.debug( s"The $length values was appended to key '$key'." ); length
+    }
+
+  def listSize( key: String ) =
+    redis.lLen( key ) executing "LLEN" withParameter key expects {
+      case length => log.debug( s"The collection at '$key' has $length items." ); length
+    }
+
+  def listSetAt( key: String, position: Int, value: Any ) =
+    redis.lSet( key, position, encode( key, value ) ) executing "LSET" withParameters s"$key $value" expects {
+      case _ => log.debug( s"Updated value at $position in '$key' to $value." )
+    } recover {
+      case ExecutionFailedException( _, _, exceptions.RedisErrorResponseException( "ERR index out of range" ) ) =>
+        log.debug( s"Update of the value at $position in '$key' failed due to index out of range." )
+        throw new IndexOutOfBoundsException( "Index out of range" )
+    }
+
+  def listHeadPop[ T: ClassTag ]( key: String ) =
+    redis.lPop[ String ]( key ) executing "LPOP" withParameter key expects {
+      case Some( encoded ) =>
+        log.trace( s"Hit on head in key '$key'." )
+        Some( decode[ T ]( key, encoded ) )
+      case None =>
+        log.trace( s"Miss on head in key '$key'." )
+        None
+    }
+
+  def listSlice[ T: ClassTag ]( key: String, start: Int, end: Int ) =
+    redis.lRange[ String ]( key, start, end ) executing "LRANGE" withParameters s"$start $end" expects {
+      case values =>
+        log.debug( s"The range on '$key' from $start to $end included returned ${ values.size } values." )
+        values.map( decode[ T ]( key, _ ) )
+    }
+
+  def listRemove( key: String, value: Any, count: Int ) =
+    redis.lRem( key, encode( key, value ), count ) executing "LREM" withParameter s"$key $value $count" expects {
+      case removed => log.debug( s"Removed $removed occurrences of $value in '$key'." ); removed
+    }
+
+  def listTrim( key: String, start: Int, end: Int ) =
+    redis.lTrim( key, start, end ) executing "LTRIM" withParameter s"$key $start $end" expects {
+      case _ => log.debug( s"Trimmed collection at '$key' to $start:$end " )
+    }
+
+  def listInsert( key: String, pivot: Any, value: Any ) =
+    redis.lInsert( key, Position.Before, encode( key, pivot ), encode( key, value ) ) executing "LINSERT" withParameter s"$key $pivot $value" expects {
+      case None | Some( 0L ) => log.debug( s"Insert into the list at '$key' failed. Pivot not found." ); None
+      case Some( length ) => log.debug( s"Inserted $value into the list at '$key'. New size is $length." ); Some( length )
+    } recover {
+      case ExecutionFailedException( _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
+        log.warn( s"Value at '$key' is not a list." )
+        throw new IllegalArgumentException( s"Value at '$key' is not a list." )
+    }
+
   def start( ) = {
-    import configuration.{host, port, database}
+    import configuration.{database, host, port}
     log.info( s"Redis cache actor started. It is connected to $host:$port?database=$database" )
   }
 
   /** stops the actor */
   def stop( ): Future[ Unit ] = {
     log.info( "Stopping the redis cache actor ..." )
-    redis.quit( ).map[ Unit ] { _ => log.info( "Redis cache stopped." ) }
+    redis.quit().map[ Unit ] { _ => log.info( "Redis cache stopped." ) }
   }
 
   // start the connector
-  start( )
+  start()
   // listen on system stop
   lifecycle.addStopHook( stop _ )
 }

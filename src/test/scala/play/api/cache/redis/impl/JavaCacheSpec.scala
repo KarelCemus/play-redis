@@ -1,7 +1,6 @@
 package play.api.cache.redis.impl
 
 import java.util.Date
-import java.util.concurrent.Callable
 import java.util.concurrent.atomic.AtomicInteger
 
 import play.api.cache.redis.{Redis, SimpleObject}
@@ -133,20 +132,4 @@ class JavaCacheSpec extends Specification with Redis {
       Cache.get[ SimpleObject ]( s"$prefix-type.null" ) must beNull
     }
   }
-
-
-  implicit class RichCache( cache: Cache ) {
-    private type Accumulator = AtomicInteger
-
-    /** invokes internal getOrElse but it accumulate invocations of orElse clause in the accumulator */
-    def getOrElseCounting( key: String )( accumulator: Accumulator ) = cache.getOrElse[ String ]( key, new Callable[String] {
-      override def call(): String = {
-        // increment miss counter
-        accumulator.incrementAndGet( )
-        // return the value to store into the cache
-        "value"
-      }
-    } )
-  }
-
 }
