@@ -97,10 +97,10 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ] ] {
     * LPUSH mylist a b c will result into a list containing c as first element,
     * b as second element and a as third element.
     *
-    * @param element element to be prepended
+    * @param elements element to be prepended
     * @return this collection to chain commands
     */
-  def ++:( element: Traversable[ Elem ] ): Result[ This ]
+  def ++:( elements: Traversable[ Elem ] ): Result[ This ]
 
   /**
     * Insert all the specified values at the tail of the list stored at key.
@@ -115,10 +115,10 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ] ] {
     * RPUSH mylist a b c will result into a list containing a as first element,
     * b as second element and c as third element.
     *
-    * @param element to be apended
+    * @param elements to be apended
     * @return this collection to chain commands
     */
-  def :++( element: Traversable[ Elem ] ): Result[ This ]
+  def :++( elements: Traversable[ Elem ] ): Result[ This ]
 
   /**
     * Returns the element at index index in the list stored at key.
@@ -199,7 +199,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ] ] {
     *
     * @return size of the list
     */
-  def size: Result[ Int ]
+  def size: Result[ Long ]
 
   /**
     * Inserts value in the list stored at key either before the
@@ -212,11 +212,11 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ] ] {
     * on the left end on the list (head) can be considered O(1) and
     * inserting somewhere on the right end (tail) is O(N).
     *
-    * @param position position to insert at
-    * @param element  elements to be inserted
-    * @return this collection to chain commands
+    * @param pivot   insert before this value
+    * @param element elements to be inserted
+    * @return new size of the collection or None if pivot not found
     */
-  def insert( position: Int, element: Elem* ): Result[ This ]
+  def insertBefore( pivot: Elem, element: Elem ): Result[ Option[ Long ] ]
 
   /**
     * Sets the list element at index to value. For more information on the
@@ -320,7 +320,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ] ] {
     /**
       * @return RedisList object with Redis API
       */
-    def collection: Result[ This ]
+    def collection: This
 
     /**
       * Helper method of slice. For more details see that method.

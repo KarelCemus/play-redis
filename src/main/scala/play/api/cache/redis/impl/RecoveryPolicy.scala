@@ -16,6 +16,9 @@ import play.api.cache.redis.exception._
   */
 trait RecoveryPolicy {
 
+  /** name of the policy used for internal purposes */
+  def name: String = this.getClass.getSimpleName
+
   /** When a failure occurs, this method handles it. It may re-run it, return default value,
     * log it or propagate the exception.
     *
@@ -26,6 +29,8 @@ trait RecoveryPolicy {
     * @return failure recovery or exception
     */
   def recoverFrom[ T ]( rerun: => Future[ T ], default: => Future[ T ], failure: RedisException ): Future[ T ]
+
+  override def toString = s"RecoveryPolicy($name)"
 }
 
 /** Abstract recovery policy provides a general helpers for

@@ -144,6 +144,20 @@ private[ redis ] trait RedisConnector {
   def listSize( key: String ): Future[ Long ]
 
   /**
+    * Inserts value in the list stored at key either before or after the reference value pivot.
+    * When key does not exist, it is considered an empty list and no operation is performed.
+    * An error is returned when key exists but does not hold a list value.
+    *
+    * Time complexity: O(N) where N is the number of elements to traverse before seeing the value pivot.
+    *
+    * @param key   cache storage key
+    * @param pivot value used as markup
+    * @param value value to be inserted
+    * @return the length of the list after the insert operation, or None when the value pivot was not found.
+    */
+  def listInsert( key: String, pivot: Any, value: Any ): Future[ Option[ Long ] ]
+
+  /**
     * Sets the list element at index to value. For more information on the index argument, see LINDEX. An error is
     * returned for out of range indexes.
     *

@@ -38,7 +38,7 @@ object FailingConnector extends RedisConnector with Synchronization {
     failKeyed( key, "EXPIRE" )
 
   def remove( keys: String* ): Future[ Unit ] =
-    failed( Some( keys.mkString( " " ) ), "DEL", theError )
+    failKeyed( keys.mkString( " " ), "DEL" )
 
   def matching( pattern: String ): Future[ Set[ String ] ] =
     failCommand( "KEYS" )
@@ -81,4 +81,7 @@ object FailingConnector extends RedisConnector with Synchronization {
 
   def listTrim( key: String, start: Int, end: Int ) =
     failKeyed( key, "LTRIM" )
+
+  def listInsert( key: String, pivot: Any, value: Any ) =
+    failKeyed( key, "LINSERT" )
 }

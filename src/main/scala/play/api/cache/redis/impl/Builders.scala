@@ -16,12 +16,19 @@ object Builders {
   import akka.pattern.AskTimeoutException
 
   trait ResultBuilder[ Result[ X ] ] {
+    /** name of the builder used for internal purposes */
+    def name: String = this.getClass.getSimpleName
     /** converts future result produced by Redis to the result of desired type */
     def toResult[ T ]( run: => Future[ T ], default: => Future[ T ] )( implicit policy: RecoveryPolicy, context: ExecutionContext, timeout: akka.util.Timeout ): Result[ T ]
+    /** show the builder name */
+    override def toString = s"ResultBuilder($name)"
   }
 
   /** returns the future itself without any transformation */
   object AsynchronousBuilder extends ResultBuilder[ AsynchronousResult ] {
+
+    override def name = "AsynchronousBuilder"
+
     override def toResult[ T ]( run: => Future[ T ], default: => Future[ T ] )( implicit policy: RecoveryPolicy, context: ExecutionContext, timeout: akka.util.Timeout ): AsynchronousResult[ T ] =
       run recoverWith {
         // recover from known exceptions
@@ -34,6 +41,8 @@ object Builders {
 
     import scala.concurrent.Await
     import scala.util._
+
+    override def name = "SynchronousBuilder"
 
     override def toResult[ T ]( run: => Future[ T ], default: => Future[ T ] )( implicit policy: RecoveryPolicy, context: ExecutionContext, timeout: akka.util.Timeout ): SynchronousResult[ T ] =
       Try {

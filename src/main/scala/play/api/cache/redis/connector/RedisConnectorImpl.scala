@@ -61,7 +61,7 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
     }.get
 
   def set( key: String, value: Any, expiration: Duration ): Future[ Unit ] =
-  // no value to set
+    // no value to set
     if ( value == null ) remove( key )
     // set for finite duration
     else if ( expiration.isFinite() ) setTemporally( key, encode( key, value ), expiration )
@@ -145,6 +145,10 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
   def listPrepend( key: String, values: Any* ): Future[ Long ] =
     redis.lPush( key, values.map( encode( key, _ ) ): _* ) executing "LPUSH" withParameters s"$key ${ values mkString " " }" expects {
       case length => log.debug( s"The $length values was prepended to key '$key'." ); length
+    } recover {
+      case ExecutionFailedException( _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
+        log.warn( s"Value at '$key' is not a list." )
+        throw new IllegalArgumentException( s"Value at '$key' is not a list." )
     }
 
   def listAppend( key: String, values: Any* ) =
@@ -191,6 +195,16 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
   def listTrim( key: String, start: Int, end: Int ) =
     redis.lTrim( key, start, end ) executing "LTRIM" withParameter s"$key $start $end" expects {
       case _ => log.debug( s"Trimmed collection at '$key' to $start:$end " )
+    }
+
+  def listInsert( key: String, pivot: Any, value: Any ) =
+    redis.lInsert( key, Position.Before, encode( key, pivot ), encode( key, value ) ) executing "LINSERT" withParameter s"$key $pivot $value" expects {
+      case None | Some( 0L ) => log.debug( s"Insert into the list at '$key' failed. Pivot not found." ); None
+      case Some( length ) => log.debug( s"Inserted $value into the list at '$key'. New size is $length." ); Some( length )
+    } recover {
+      case ExecutionFailedException( _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
+        log.warn( s"Value at '$key' is not a list." )
+        throw new IllegalArgumentException( s"Value at '$key' is not a list." )
     }
 
   def start( ) = {

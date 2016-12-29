@@ -301,6 +301,18 @@ class RedisConnectorSpec extends Specification with Redis {
       Cache.listSize( s"$prefix-test-list-trim" ).sync must beEqualTo( 2 )
       Cache.listSlice[ String ]( s"$prefix-test-list-trim", 0, -1 ).sync must beEqualTo( List( "B", "C" ) )
     }
+
+    "list insert" in {
+      Cache.listSize( s"$prefix-test-list-insert-1" ).sync must beEqualTo( 0 )
+      Cache.listInsert( s"$prefix-test-list-insert-1", "C", "B" ).sync must beNone
+      Cache.listPrepend( s"$prefix-test-list-insert-1", "C", "A" ).sync must beEqualTo( 2 )
+      Cache.listInsert( s"$prefix-test-list-insert-1", "C", "B" ).sync must beSome( 3 )
+      Cache.listInsert( s"$prefix-test-list-insert-1", "E", "D" ).sync must beNone
+      Cache.listSlice[ String ]( s"$prefix-test-list-insert-1", 0, -1 ).sync must beEqualTo( List( "A", "B", "C" ) )
+
+      Cache.set( s"$prefix-test-list-insert-2", "string value" ).sync
+      Cache.listInsert( s"$prefix-test-list-insert-2", "C", "B" ).sync must throwA[ IllegalArgumentException ]
+    }
   }
 
 }

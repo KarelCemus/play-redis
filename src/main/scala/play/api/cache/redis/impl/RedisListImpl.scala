@@ -9,36 +9,76 @@ import play.api.cache.redis._
 private[ impl ] class RedisListImpl[ Elem: ClassTag, Result[ _ ] ]( key: String, redis: RedisConnector )( implicit builder: Builders.ResultBuilder[ Result ], policy: RecoveryPolicy ) extends RedisList[ Elem, Result ] with Implicits {
 
   // implicit ask timeout and execution context
-  // import redis.{context, timeout}
-  def prepend( element: Elem ) = ???
+  import redis.{context, timeout}
 
-  def append( element: Elem ) = ???
+  @inline
+  private def This: This = this
 
-  def +:( element: Elem ) = ???
+  def prepend( element: Elem ) = prependAll( element )
 
-  def :+( element: Elem ) = ???
+  def append( element: Elem ) = appendAll( element )
 
-  def ++:( element: Traversable[ Elem ] ) = ???
+  def +:( element: Elem ) = prependAll( element )
 
-  def :++( element: Traversable[ Elem ] ) = ???
+  def :+( element: Elem ) = appendAll( element )
 
-  def apply( index: Int ) = ???
+  def ++:( elements: Traversable[ Elem ] ) = prependAll( elements.toSeq: _* )
 
-  def get( index: Int ) = ???
+  def :++( elements: Traversable[ Elem ] ) = appendAll( elements.toSeq: _* )
 
-  def headPop = ???
+  private def prependAll( elements: Elem* ) =
+    redis.listPrepend( key, elements: _* ).map( _ => This ).recoverWithDefault( This )
 
-  def size = ???
+  private def appendAll( elements: Elem* ) =
+    redis.listAppend( key, elements: _* ).map( _ => This ).recoverWithDefault( This )
 
-  def insert( position: Int, element: Elem* ) = ???
+  def apply( index: Int ) = redis.listSlice[ Elem ]( key, index, index ).map {
+    _.headOption getOrElse ( throw new NoSuchElementException( s"Element at index $index is missing." ) )
+  }.recoverWithDefault {
+    throw new NoSuchElementException( s"Element at index $index is missing." )
+  }
 
-  def set( position: Int, element: Elem ) = ???
+  def get( index: Int ) =
+    redis.listSlice[ Elem ]( key, index, index ).map( _.headOption ).recoverWithDefault( None )
 
-  def view = ???
+  def headPop = redis.listHeadPop[ Elem ]( key ).recoverWithDefault( None )
 
-  def modify = ???
+  def size = redis.listSize( key ).recoverWithDefault( 0 )
 
-  def remove( element: Elem, count: Int ) = ???
+  def insertBefore( pivot: Elem, element: Elem ) =
+    redis.listInsert( key, pivot, element ).recoverWithDefault( None )
 
-  def removeAt( position: Int ) = ???
+  def set( position: Int, element: Elem ) =
+    redis.listSetAt( key, position, element ).map( _ => This ).recoverWithDefault( This )
+
+  def view = ListView
+
+  object ListView extends RedisListView {
+    def slice( start: Int, end: Int ) = redis.listSlice[ Elem ]( key, start, end ).recoverWithDefault( List.empty )
+  }
+
+  def modify = ListModifier
+
+  object ListModifier extends RedisListModification {
+
+    def collection = This
+
+    def clear( ) =
+      redis.remove( key ).map {
+        _ => this: this.type
+      }.recoverWithDefault( this )
+
+    def slice( start: Int, end: Int ) =
+      redis.listTrim( key, start, end ).map {
+        _ => this: this.type
+      }.recoverWithDefault( this )
+  }
+
+  def remove( element: Elem, count: Int ) =
+    redis.listRemove( key, element, count ).map( _ => This ).recoverWithDefault( This )
+
+  def removeAt( position: Int ) =
+    redis.listSetAt( key, position, "play-redis:DELETED" ).flatMap {
+      _ => redis.listRemove( key, "play-redis:DELETED", count = 0 )
+    }.map( _ => This ).recoverWithDefault( This )
 }
