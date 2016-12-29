@@ -230,4 +230,82 @@ private[ redis ] trait RedisConnector {
     * @return promise
     */
   def listTrim( key: String, start: Int, end: Int ): Future[ Unit ]
+
+  /**
+    * Adds a member to a sorted set, or update its score if it already exists.
+    *
+    * @note If a specified member is already a member of the sorted set, the score is updated and
+    *       the element reinserted at the right position to ensure the correct ordering.
+    * @note The score values should be the string representation of a double precision floating point number.
+    *       +inf and -inf values are valid values as well.
+    * @note Time complexity: O(log(N)) for each item added, where N is the number of elements in the sorted set.
+    * @param key   cache storage key
+    * @param value values to be added with their score
+    * @return number of inserted elements ignoring already existing. If the INCR option is specified, it returns 0
+    */
+  def setAdd( key: String, value: (Any, Double)* ): Future[ Long ]
+
+  /**
+    * Returns the sorted set cardinality (number of elements) of the sorted set stored at key.
+    *
+    * Time complexity: O(1)
+    *
+    * @param key cache storage key
+    * @return the cardinality (number of elements) of the sorted set, or 0 if key does not exist.
+    */
+  def setSize( key: String ): Future[ Long ]
+
+  /**
+    * Returns the specified range of elements in the sorted set stored at key. The elements are considered to be
+    * ordered from the lowest to the highest score. Lexicographical order is used for elements with equal score.
+    *
+    * See ZREVRANGE when you need the elements ordered from highest to lowest score (and descending lexicographical
+    * order for elements with equal score).
+    *
+    * Both start and stop are zero-based indexes, where 0 is the first element, 1 is the next element and so on.
+    * They can also be negative numbers indicating offsets from the end of the sorted set, with -1 being the last
+    * element of the sorted set, -2 the penultimate element and so on.
+    *
+    * start and stop are inclusive ranges, so for example ZRANGE myzset 0 1 will return both the first and the
+    * second element of the sorted set.
+    *
+    * Out of range indexes will not produce an error. If start is larger than the largest index in the sorted set,
+    * or start > stop, an empty list is returned. If stop is larger than the end of the sorted set Redis will treat
+    * it like it is the last element of the sorted set.
+    *
+    * Time complexity: O(log(N)+M) with N being the number of elements in the sorted set and M the number of
+    * elements returned.
+    *
+    * @param key   cache storage key
+    * @param start start index of the subset
+    * @param end   end index of the subset
+    * @tparam T expected type of the elements
+    * @return the subset
+    */
+  def setSlice[ T: ClassTag ]( key: String, start: Long, end: Long ): Future[ Set[ T ] ]
+
+  /**
+    * Returns the rank of member in the sorted set stored at key, with the scores ordered from low to high. The
+    * rank (or index) is 0-based, which means that the member with the lowest score has rank 0.
+    *
+    * Use ZREVRANK to get the rank of an element with the scores ordered from high to low.
+    *
+    * @param key   cache storage key
+    * @param value tested element
+    * @return index of the element if exists, None otherwise
+    */
+  def setRank( key: String, value: Any ): Future[ Option[ Long ] ]
+
+  /**
+    * Removes the specified members from the sorted set stored at key. Non existing members are ignored.
+    *
+    * An error is returned when key exists and does not hold a sorted set.
+    *
+    * Time complexity: O(M*log(N)) with N being the number of elements in the sorted set and M the number of elements to be removed.
+    *
+    * @param key   cache storage key
+    * @param value values to be removed
+    * @return total number of removed values, non existing are ignored
+    */
+  def setRemove( key: String, value: Any* ): Future[ Long ]
 }
