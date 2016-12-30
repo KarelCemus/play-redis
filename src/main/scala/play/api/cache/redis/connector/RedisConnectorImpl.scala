@@ -207,18 +207,10 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
         throw new IllegalArgumentException( s"Value at '$key' is not a list." )
     }
 
-  def setAdd( key: String, values: (Any, Double)* ) = {
-    // produces the label of the scored tuple
-    def toLabel( tuple: (Any, Double) ) = s"${ tuple._1 }@${ tuple._2 }"
-    // converts double value to the Score
-    def toScore( score: Double ) = Score( score.toString )
+  def setAdd( key: String, values: Any* ) = {
     // encodes the value
     def toEncoded( value: Any ) = encode( key, value )
-    // produces insertable tuples
-    def toInsertTuple( tuple: (Any, Double) ) = toEncoded( tuple._1 ) -> toScore( tuple._2 )
-    // returns all values and their scores as a single string
-    def labeled = values map toLabel mkString " "
-    redis.zAdd( key, values.toMap map toInsertTuple ) executing "ZADD" withParameters s"$key $labeled" expects {
+    redis.sAdd( key, values map toEncoded: _* ) executing "SADD" withParameters s"$key ${ values mkString " " }" expects {
       case inserted => log.debug( s"Inserted $inserted elements into the set at '$key'." ); inserted
     } recover {
       case ExecutionFailedException( _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
@@ -228,27 +220,27 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
   }
 
   def setSize( key: String ) =
-    redis.zCard( key ) executing "ZCARD" withParameter key expects {
+    redis.sCard( key ) executing "SCARD" withParameter key expects {
       case length => log.debug( s"The collection at '$key' has $length items." ); length
     }
 
-  def setSlice[ T: ClassTag ]( key: String, start: Long, stop: Long ) =
-    redis.zRange( key, start, stop ) executing "ZRANGE" withParameters s"$key $start $stop" expects {
+  def setMembers[ T: ClassTag ]( key: String ) =
+    redis.sMembers( key ) executing "SMEMBERS" withParameter key expects {
       case items =>
-        log.debug( s"Returned ${items.size} items from the collection at '$key' from the range $start:$stop." )
+        log.debug( s"Returned ${items.size} items from the collection at '$key'." )
         items.map( decode[ T ]( key, _ ) )
     }
 
-  def setRank( key: String, value: Any ) =
-    redis.zRank( key, encode( key, value ) ) executing "ZRANK" withParameters s"$key $value" expects {
-      case Some( index ) => log.debug( s"Item $value exists in the collection at '$key' at $index. position." ); Some( index )
-      case None => log.debug( s"Item $value does not exists in the collection at '$key'" ); None
+  def setIsMember( key: String, value: Any ) =
+    redis.sIsMember( key, encode( key, value ) ) executing "SISMEMBER" withParameters s"$key $value" expects {
+      case true => log.debug( s"Item $value exists in the collection at '$key'." ); true
+      case false => log.debug( s"Item $value does not exist in the collection at '$key'" ); false
     }
 
   def setRemove( key: String, values: Any* ) = {
     // encodes the value
     def toEncoded( value: Any ) = encode( key, value )
-    redis.zRem( key, values map toEncoded: _* ) executing "ZREM" withParameters s"$key ${ values mkString " " }" expects {
+    redis.sRem( key, values map toEncoded: _* ) executing "SREM" withParameters s"$key ${ values mkString " " }" expects {
       case removed => log.debug( s"Removed $removed elements from the collection at '$key'." ); removed
     }
   }

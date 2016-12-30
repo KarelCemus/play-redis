@@ -316,37 +316,37 @@ class RedisConnectorSpec extends Specification with Redis {
 
     "set add" in {
       Cache.setSize( s"$prefix-test-set-add" ).sync must beEqualTo( 0 )
-      Cache.setAdd( s"$prefix-test-set-add", "A" -> 1, "B" -> 2 ).sync must beEqualTo( 2 )
+      Cache.setAdd( s"$prefix-test-set-add", "A", "B" ).sync must beEqualTo( 2 )
       Cache.setSize( s"$prefix-test-set-add" ).sync must beEqualTo( 2 )
-      Cache.setAdd( s"$prefix-test-set-add", "C" -> 2, "B" -> 3 ).sync must beEqualTo( 1 )
+      Cache.setAdd( s"$prefix-test-set-add", "C", "B" ).sync must beEqualTo( 1 )
       Cache.setSize( s"$prefix-test-set-add" ).sync must beEqualTo( 3 )
     }
 
     "set rank" in {
       Cache.setSize( s"$prefix-test-set-rank" ).sync must beEqualTo( 0 )
-      Cache.setAdd( s"$prefix-test-set-rank", "A" -> 1, "B" -> 2 ).sync must beEqualTo( 2 )
+      Cache.setAdd( s"$prefix-test-set-rank", "A", "B" ).sync must beEqualTo( 2 )
       Cache.setSize( s"$prefix-test-set-rank" ).sync must beEqualTo( 2 )
 
-      Cache.setRank( s"$prefix-test-set-rank", "A" ).sync must beSome( 0 )
-      Cache.setRank( s"$prefix-test-set-rank", "B" ).sync must beSome( 1 )
-      Cache.setRank( s"$prefix-test-set-rank", "C" ).sync must beNone
+      Cache.setIsMember( s"$prefix-test-set-rank", "A" ).sync must beTrue
+      Cache.setIsMember( s"$prefix-test-set-rank", "B" ).sync must beTrue
+      Cache.setIsMember( s"$prefix-test-set-rank", "C" ).sync must beFalse
 
-      Cache.setAdd( s"$prefix-test-set-rank", "C" -> 2, "B" -> 3 ).sync must beEqualTo( 1 )
+      Cache.setAdd( s"$prefix-test-set-rank", "C", "B" ).sync must beEqualTo( 1 )
 
-      Cache.setRank( s"$prefix-test-set-rank", "A" ).sync must beSome( 0 )
-      Cache.setRank( s"$prefix-test-set-rank", "B" ).sync must beSome( 2 )
-      Cache.setRank( s"$prefix-test-set-rank", "C" ).sync must beSome( 1 )
+      Cache.setIsMember( s"$prefix-test-set-rank", "A" ).sync must beTrue
+      Cache.setIsMember( s"$prefix-test-set-rank", "B" ).sync must beTrue
+      Cache.setIsMember( s"$prefix-test-set-rank", "C" ).sync must beTrue
     }
 
     "set size" in {
       Cache.setSize( s"$prefix-test-set-size" ).sync must beEqualTo( 0 )
-      Cache.setAdd( s"$prefix-test-set-size", "A" -> 1, "B" -> 2 ).sync must beEqualTo( 2 )
+      Cache.setAdd( s"$prefix-test-set-size", "A", "B" ).sync must beEqualTo( 2 )
       Cache.setSize( s"$prefix-test-set-size" ).sync must beEqualTo( 2 )
     }
 
     "set rem" in {
       Cache.setSize( s"$prefix-test-set-rem" ).sync must beEqualTo( 0 )
-      Cache.setAdd( s"$prefix-test-set-rem", "A" -> 1, "B" -> 2, "C" -> 3 ).sync must beEqualTo( 3 )
+      Cache.setAdd( s"$prefix-test-set-rem", "A", "B", "C" ).sync must beEqualTo( 3 )
       Cache.setSize( s"$prefix-test-set-rem" ).sync must beEqualTo( 3 )
 
       Cache.setRemove( s"$prefix-test-set-rem", "A" ).sync must beEqualTo( 1 )
@@ -357,12 +357,10 @@ class RedisConnectorSpec extends Specification with Redis {
 
     "set slice" in {
       Cache.setSize( s"$prefix-test-set-slice" ).sync must beEqualTo( 0 )
-      Cache.setAdd( s"$prefix-test-set-slice", "A" -> 1, "B" -> 2, "C" -> 3 ).sync must beEqualTo( 3 )
+      Cache.setAdd( s"$prefix-test-set-slice", "A", "B", "C" ).sync must beEqualTo( 3 )
       Cache.setSize( s"$prefix-test-set-slice" ).sync must beEqualTo( 3 )
 
-      Cache.setSlice[ String ]( s"$prefix-test-set-slice", 0, 0 ).sync must beEqualTo( Set( "A" ) )
-      Cache.setSlice[ String ]( s"$prefix-test-set-slice", 0, -1 ).sync must beEqualTo( Set( "A", "B", "C" ) )
-      Cache.setSlice[ String ]( s"$prefix-test-set-slice", 1, 2 ).sync must beEqualTo( Set( "B", "C" ) )
+      Cache.setMembers[ String ]( s"$prefix-test-set-slice" ).sync must beEqualTo( Set( "A", "B", "C" ) )
 
       Cache.setSize( s"$prefix-test-set-slice" ).sync must beEqualTo( 3 )
     }
