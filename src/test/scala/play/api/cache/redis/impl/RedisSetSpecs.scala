@@ -19,9 +19,9 @@ class RedisSetSpecs extends Specification with Redis {
   // test proper implementation, no fails
   new RedisSetSuite( "implement", "redis-cache-implements", new RedisCache( workingConnector )( Builders.SynchronousBuilder, FailThrough ), AlwaysSuccess )
 
-  //  new RedisSetSuite( "recover from", "redis-cache-recovery", new RedisCache( FailingConnector )( Builders.SynchronousBuilder, RecoverWithDefault ), AlwaysDefault )
+  new RedisSetSuite( "recover from", "redis-cache-recovery", new RedisCache( FailingConnector )( Builders.SynchronousBuilder, RecoverWithDefault ), AlwaysDefault )
 
-  //  new RedisSetSuite( "fail on", "redis-cache-fail", new RedisCache( FailingConnector )( Builders.SynchronousBuilder, FailThrough ), AlwaysException )
+  new RedisSetSuite( "fail on", "redis-cache-fail", new RedisCache( FailingConnector )( Builders.SynchronousBuilder, FailThrough ), AlwaysException )
 
   class RedisSetSuite( suiteName: String, prefix: String, cache: Cache, expectation: Expectation ) {
 
@@ -86,7 +86,7 @@ class RedisSetSpecs extends Specification with Redis {
           implicit val key: Key = s"$prefix-set-invalid"
 
           cache.set( key.key, "invalid" ) must expectsNow( beUnit )
-          strings.add( "A" ) must expectsNow( throwA[ IllegalArgumentException ], beAnInstanceOf[ RedisList[ String, AsynchronousResult ] ] )
+          strings.add( "A" ) must expectsNow( throwA[ IllegalArgumentException ], beAnInstanceOf[ RedisSet[ String, AsynchronousResult ] ] )
         }
 
         "objects in the set" in {
