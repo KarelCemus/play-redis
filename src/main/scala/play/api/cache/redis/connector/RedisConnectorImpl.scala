@@ -283,6 +283,10 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
     redis.hSet( key, field, encode( key, value ) ) executing "HSET" withParameters s"$key $field $value" expects {
       case true => log.debug( s"Item $field in the collection at '$key' was inserted." ); true
       case false => log.debug( s"Item $field in the collection at '$key' was updated." ); false
+    } recover {
+      case ExecutionFailedException( _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
+        log.warn( s"Value at '$key' is not a map." )
+        throw new IllegalArgumentException( s"Value at '$key' is not a map." )
     }
 
   def hashValues[ T: ClassTag ]( key: String ) =
