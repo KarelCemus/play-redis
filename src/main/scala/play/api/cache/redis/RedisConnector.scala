@@ -230,4 +230,64 @@ private[ redis ] trait RedisConnector {
     * @return promise
     */
   def listTrim( key: String, start: Int, end: Int ): Future[ Unit ]
+
+  /**
+    * Add the specified members to the set stored at key. Specified members that are already a member of this set
+    * are ignored. If key does not exist, a new set is created before adding the specified members.
+    *
+    * An error is returned when the value stored at key is not a set.
+    *
+    * @note Time complexity: O(1) for each element added, so O(N) to add N elements when the command is called
+    *       with multiple arguments.
+    * @param key   cache storage key
+    * @param value values to be added
+    * @return number of inserted elements ignoring already existing
+    */
+  def setAdd( key: String, value: Any* ): Future[ Long ]
+
+  /**
+    * Returns the set cardinality (number of elements) of the set stored at key.
+    *
+    * Time complexity: O(1)
+    *
+    * @param key cache storage key
+    * @return the cardinality (number of elements) of the set, or 0 if key does not exist.
+    */
+  def setSize( key: String ): Future[ Long ]
+
+  /**
+    * Returns all the members of the set value stored at key.
+    *
+    * This has the same effect as running SINTER with one argument key.
+    *
+    * Time complexity: O(N) where N is the set cardinality.
+    *
+    * @param key cache storage key
+    * @tparam T expected type of the elements
+    * @return the subset
+    */
+  def setMembers[ T: ClassTag ]( key: String ): Future[ Set[ T ] ]
+
+  /**
+    * Returns if member is a member of the set stored at key.
+    *
+    * @param key   cache storage key
+    * @param value tested element
+    * @return true if the element exists in the set, otherwise false
+    */
+  def setIsMember( key: String, value: Any ): Future[ Boolean ]
+
+  /**
+    * Remove the specified members from the set stored at key. Specified members that are not a member of this set
+    * are ignored. If key does not exist, it is treated as an empty set and this command returns 0.
+    *
+    * An error is returned when the value stored at key is not a set.
+    *
+    * Time complexity: O(N) where N is the number of members to be removed.
+    *
+    * @param key   cache storage key
+    * @param value values to be removed
+    * @return total number of removed values, non existing are ignored
+    */
+  def setRemove( key: String, value: Any* ): Future[ Long ]
 }

@@ -84,4 +84,19 @@ object FailingConnector extends RedisConnector with Synchronization {
 
   def listInsert( key: String, pivot: Any, value: Any ) =
     failKeyed( key, "LINSERT" )
+
+  def setAdd( key: String, value: Any* ) =
+    failKeyed( key, "SADD" )
+
+  def setSize( key: String ) =
+    failKeyed( key, "SCARD" )
+
+  def setMembers[ T: ClassTag ]( key: String ) =
+    failKeyed( key, "SMEMBERS" )
+
+  def setIsMember( key: String, value: Any ) =
+    failKeyed( key, "SISMEMBER" )
+
+  def setRemove( key: String, value: Any* ) =
+    failKeyed( key, "SREM" )
 }

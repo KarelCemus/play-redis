@@ -207,6 +207,44 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
         throw new IllegalArgumentException( s"Value at '$key' is not a list." )
     }
 
+  def setAdd( key: String, values: Any* ) = {
+    // encodes the value
+    def toEncoded( value: Any ) = encode( key, value )
+    redis.sAdd( key, values map toEncoded: _* ) executing "SADD" withParameters s"$key ${ values mkString " " }" expects {
+      case inserted => log.debug( s"Inserted $inserted elements into the set at '$key'." ); inserted
+    } recover {
+      case ExecutionFailedException( _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
+        log.warn( s"Value at '$key' is not a set." )
+        throw new IllegalArgumentException( s"Value at '$key' is not a set." )
+    }
+  }
+
+  def setSize( key: String ) =
+    redis.sCard( key ) executing "SCARD" withParameter key expects {
+      case length => log.debug( s"The collection at '$key' has $length items." ); length
+    }
+
+  def setMembers[ T: ClassTag ]( key: String ) =
+    redis.sMembers( key ) executing "SMEMBERS" withParameter key expects {
+      case items =>
+        log.debug( s"Returned ${items.size} items from the collection at '$key'." )
+        items.map( decode[ T ]( key, _ ) )
+    }
+
+  def setIsMember( key: String, value: Any ) =
+    redis.sIsMember( key, encode( key, value ) ) executing "SISMEMBER" withParameters s"$key $value" expects {
+      case true => log.debug( s"Item $value exists in the collection at '$key'." ); true
+      case false => log.debug( s"Item $value does not exist in the collection at '$key'" ); false
+    }
+
+  def setRemove( key: String, values: Any* ) = {
+    // encodes the value
+    def toEncoded( value: Any ) = encode( key, value )
+    redis.sRem( key, values map toEncoded: _* ) executing "SREM" withParameters s"$key ${ values mkString " " }" expects {
+      case removed => log.debug( s"Removed $removed elements from the collection at '$key'." ); removed
+    }
+  }
+
   def start( ) = {
     import configuration.{database, host, port}
     log.info( s"Redis cache actor started. It is connected to $host:$port?database=$database" )

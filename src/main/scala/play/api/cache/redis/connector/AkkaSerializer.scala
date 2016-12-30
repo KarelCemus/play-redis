@@ -6,10 +6,10 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util._
 
+import play.api.cache.redis.exception._
+
 import akka.actor.ActorSystem
 import akka.serialization._
-
-import play.api.cache.redis.exception._
 
 /**
   * Provides a encode and decode methods to serialize objects into strings
@@ -89,6 +89,8 @@ private[ connector ] class AkkaDecoder( serializer: Serialization ) {
   import scala.reflect.{ClassTag => Scala}
   import play.api.cache.redis.connector.{JavaClassTag => Java}
 
+  private val Nothing = ClassTag( classOf[ Nothing ] )
+
   /** unsafe method decoding a string into an object. It directly throws exceptions */
   def decode[ T ]( value: String )( implicit classTag: ClassTag[ T ] ): T =
     untypedDecode[ T ]( value ).asInstanceOf[ T ]
@@ -97,6 +99,7 @@ private[ connector ] class AkkaDecoder( serializer: Serialization ) {
   protected def untypedDecode[ T ]( value: String )( implicit tag: ClassTag[ T ] ): Any = value match {
     // AnyVal is not supported by default, have to be implemented manually
     case ""                                                        => null
+    case _        if tag == Nothing                                => throw new IllegalArgumentException( "Type Nothing is not supported. You have probably forgot to specify expected data type." )
     case string   if tag == Java.String                            => string
     case boolean  if tag == Java.Boolean || tag == Scala.Boolean   => boolean.toBoolean
     case byte     if tag == Java.Byte    || tag == Scala.Byte      => byte.toByte

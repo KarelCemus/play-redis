@@ -75,4 +75,7 @@ private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implic
 
   override def list[ T: ClassTag ]( key: String ): RedisList[ T, Result ] =
     new RedisListImpl( key, redis )
+
+  override def set[ T: ClassTag ]( key: String ): RedisSet[ T, Result ] =
+    new RedisSetImpl( key, redis )
 }

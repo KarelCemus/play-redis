@@ -313,6 +313,57 @@ class RedisConnectorSpec extends Specification with Redis {
       Cache.set( s"$prefix-test-list-insert-2", "string value" ).sync
       Cache.listInsert( s"$prefix-test-list-insert-2", "C", "B" ).sync must throwA[ IllegalArgumentException ]
     }
+
+    "set add" in {
+      Cache.setSize( s"$prefix-test-set-add" ).sync must beEqualTo( 0 )
+      Cache.setAdd( s"$prefix-test-set-add", "A", "B" ).sync must beEqualTo( 2 )
+      Cache.setSize( s"$prefix-test-set-add" ).sync must beEqualTo( 2 )
+      Cache.setAdd( s"$prefix-test-set-add", "C", "B" ).sync must beEqualTo( 1 )
+      Cache.setSize( s"$prefix-test-set-add" ).sync must beEqualTo( 3 )
+    }
+
+    "set rank" in {
+      Cache.setSize( s"$prefix-test-set-rank" ).sync must beEqualTo( 0 )
+      Cache.setAdd( s"$prefix-test-set-rank", "A", "B" ).sync must beEqualTo( 2 )
+      Cache.setSize( s"$prefix-test-set-rank" ).sync must beEqualTo( 2 )
+
+      Cache.setIsMember( s"$prefix-test-set-rank", "A" ).sync must beTrue
+      Cache.setIsMember( s"$prefix-test-set-rank", "B" ).sync must beTrue
+      Cache.setIsMember( s"$prefix-test-set-rank", "C" ).sync must beFalse
+
+      Cache.setAdd( s"$prefix-test-set-rank", "C", "B" ).sync must beEqualTo( 1 )
+
+      Cache.setIsMember( s"$prefix-test-set-rank", "A" ).sync must beTrue
+      Cache.setIsMember( s"$prefix-test-set-rank", "B" ).sync must beTrue
+      Cache.setIsMember( s"$prefix-test-set-rank", "C" ).sync must beTrue
+    }
+
+    "set size" in {
+      Cache.setSize( s"$prefix-test-set-size" ).sync must beEqualTo( 0 )
+      Cache.setAdd( s"$prefix-test-set-size", "A", "B" ).sync must beEqualTo( 2 )
+      Cache.setSize( s"$prefix-test-set-size" ).sync must beEqualTo( 2 )
+    }
+
+    "set rem" in {
+      Cache.setSize( s"$prefix-test-set-rem" ).sync must beEqualTo( 0 )
+      Cache.setAdd( s"$prefix-test-set-rem", "A", "B", "C" ).sync must beEqualTo( 3 )
+      Cache.setSize( s"$prefix-test-set-rem" ).sync must beEqualTo( 3 )
+
+      Cache.setRemove( s"$prefix-test-set-rem", "A" ).sync must beEqualTo( 1 )
+      Cache.setSize( s"$prefix-test-set-rem" ).sync must beEqualTo( 2 )
+      Cache.setRemove( s"$prefix-test-set-rem", "B", "C", "D" ).sync must beEqualTo( 2 )
+      Cache.setSize( s"$prefix-test-set-rem" ).sync must beEqualTo( 0 )
+    }
+
+    "set slice" in {
+      Cache.setSize( s"$prefix-test-set-slice" ).sync must beEqualTo( 0 )
+      Cache.setAdd( s"$prefix-test-set-slice", "A", "B", "C" ).sync must beEqualTo( 3 )
+      Cache.setSize( s"$prefix-test-set-slice" ).sync must beEqualTo( 3 )
+
+      Cache.setMembers[ String ]( s"$prefix-test-set-slice" ).sync must beEqualTo( Set( "A", "B", "C" ) )
+
+      Cache.setSize( s"$prefix-test-set-slice" ).sync must beEqualTo( 3 )
+    }
   }
 
 }
