@@ -213,6 +213,42 @@ class MyController @Inject() ( cache: CacheApi ) {
 }
 ```
 
+
+
+**Example of Sets:**
+
+```scala
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
+import play.api.cache.redis.CacheApi
+
+class MyController @Inject() ( cache: CacheApi ) {
+
+  // enables Set operations
+  // Scala wrapper over the set at this key
+  cache.set[ String ]( "my-set" )
+
+  // get the whole set
+  cache.set[ String ]( "my-set" ).toSet
+
+  // add values into the set
+  cache.set[ String ]( "my-set" ).add( "ABC", "EDF" )
+
+  // test existence in the set
+  cache.set[ String ]( "my-set" ).contains( "ABC" )
+
+  // size of the set
+  cache.set[ String ]( "my-set" ).size
+  cache.set[ String ]( "my-set" ).isEmpty
+  cache.set[ String ]( "my-set" ).nonEmpty
+
+  // remove the value
+  cache.set[ String ]( "my-set" ).remove( "ABC" )
+}
+```
+
 ## Checking operation result
 
 Regardless of current API, all operations throw an exception when fail. Consequently,
@@ -316,6 +352,8 @@ However, **public API remained unchanged**, although its implementation signific
 changed.
 
 Implemented [Scala wrapper](src/main/scala/play/api/cache/redis/RedisList.scala) over List API to use [Redis Lists](https://redis.io/topics/data-types#lists).
+
+Implemented [Scala wrapper](src/main/scala/play/api/cache/redis/RedisSet.scala) over Set API to use [Redis Sets](https://redis.io/topics/data-types#sets).
 
 Added `heroku` and `heroku-cloud` configuration profiles simplifying [running on Heroku](#running-on-heroku).
 
