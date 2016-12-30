@@ -364,6 +364,40 @@ class RedisConnectorSpec extends Specification with Redis {
 
       Cache.setSize( s"$prefix-test-set-slice" ).sync must beEqualTo( 3 )
     }
+
+    "hash set values" in {
+      val key = s"$prefix-test-hash-set"
+
+      Cache.hashSize( key ).sync must beEqualTo( 0 )
+      Cache.hashGetAll( key ).sync must beEqualTo( Map.empty )
+      Cache.hashKeys( key ).sync must beEqualTo( Set.empty )
+      Cache.hashValues[ String ]( key ).sync must beEqualTo( Set.empty )
+
+      Cache.hashGet[ String ]( key, "KA" ).sync must beNone
+      Cache.hashSet( key, "KA", "VA1" ).sync must beTrue
+      Cache.hashGet[ String ]( key, "KA" ).sync must beSome( "VA1" )
+      Cache.hashSet( key, "KA", "VA2" ).sync must beFalse
+      Cache.hashGet[ String ]( key, "KA" ).sync must beSome( "VA2" )
+      Cache.hashSet( key, "KB", "VB" ).sync must beTrue
+
+      Cache.hashExists( key, "KB" ).sync must beTrue
+      Cache.hashExists( key, "KC" ).sync must beFalse
+
+      Cache.hashSize( key ).sync must beEqualTo( 2 )
+      Cache.hashGetAll[ String ]( key ).sync must beEqualTo( Map( "KA" -> "VA2", "KB" -> "VB" ) )
+      Cache.hashKeys( key ).sync must beEqualTo( Set( "KA", "KB" ) )
+      Cache.hashValues[ String ]( key ).sync must beEqualTo( Set( "VA2", "VB" ) )
+
+      Cache.hashRemove( key, "KB" ).sync must beEqualTo( 1 )
+      Cache.hashRemove( key, "KC" ).sync must beEqualTo( 0 )
+      Cache.hashExists( key, "KB" ).sync must beFalse
+      Cache.hashExists( key, "KA" ).sync must beTrue
+
+      Cache.hashSize( key ).sync must beEqualTo( 1 )
+      Cache.hashGetAll[ String ]( key ).sync must beEqualTo( Map( "KA" -> "VA2" ) )
+      Cache.hashKeys( key ).sync must beEqualTo( Set( "KA" ) )
+      Cache.hashValues[ String ]( key ).sync must beEqualTo( Set( "VA2" ) )
+    }
   }
 
 }
