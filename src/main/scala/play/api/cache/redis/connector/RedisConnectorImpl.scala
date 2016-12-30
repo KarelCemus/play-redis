@@ -220,6 +220,10 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
     def labeled = values map toLabel mkString " "
     redis.zAdd( key, values.toMap map toInsertTuple ) executing "ZADD" withParameters s"$key $labeled" expects {
       case inserted => log.debug( s"Inserted $inserted elements into the set at '$key'." ); inserted
+    } recover {
+      case ExecutionFailedException( _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
+        log.warn( s"Value at '$key' is not a set." )
+        throw new IllegalArgumentException( s"Value at '$key' is not a set." )
     }
   }
 

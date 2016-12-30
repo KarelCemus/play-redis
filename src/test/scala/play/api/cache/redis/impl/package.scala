@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.language.higherKinds
+import scala.language.{higherKinds, implicitConversions}
 
 import play.api.cache.redis.exception.ExecutionFailedException
 
@@ -78,6 +78,7 @@ package object impl extends LowPriorityImplicits {
     } )
   }
 
+  implicit def expected2matcher[T]( expected: => T ): Matcher[ T ] = Matchers.beEqualTo(expected)
 }
 
 trait LowPriorityImplicits {

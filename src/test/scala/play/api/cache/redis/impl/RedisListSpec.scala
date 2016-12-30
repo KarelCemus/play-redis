@@ -31,7 +31,7 @@ class RedisListSpec extends Specification with Redis {
 
     def objects( key: String ) = list[ SimpleObject ]( key )
 
-    "AsynchronousRedisList" should {
+    "SynchronousRedisList" should {
 
       import expectation._
 
