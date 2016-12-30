@@ -227,7 +227,7 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
   def setMembers[ T: ClassTag ]( key: String ) =
     redis.sMembers( key ) executing "SMEMBERS" withParameter key expects {
       case items =>
-        log.debug( s"Returned ${items.size} items from the collection at '$key'." )
+        log.debug( s"Returned ${ items.size } items from the collection at '$key'." )
         items.map( decode[ T ]( key, _ ) )
     }
 
@@ -240,10 +240,59 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
   def setRemove( key: String, values: Any* ) = {
     // encodes the value
     def toEncoded( value: Any ) = encode( key, value )
+
     redis.sRem( key, values map toEncoded: _* ) executing "SREM" withParameters s"$key ${ values mkString " " }" expects {
       case removed => log.debug( s"Removed $removed elements from the collection at '$key'." ); removed
     }
   }
+
+  def hashRemove( key: String, fields: String* ) =
+    redis.hDel( key, fields: _* ) executing "HDEL" withParameters s"$key ${ fields mkString " " }" expects {
+      case removed => log.debug( s"Removed $removed elements from the collection at '$key'." ); removed
+    }
+
+  def hashExists( key: String, field: String ) =
+    redis.hExists( key, field ) executing "HEXISTS" withParameters s"$key $field" expects {
+      case true => log.debug( s"Item $field exists in the collection at '$key'." ); true
+      case false => log.debug( s"Item $field does not exist in the collection at '$key'" ); false
+    }
+
+  def hashGet[ T: ClassTag ]( key: String, field: String ) =
+    redis.hGet[ String ]( key, field ) executing "HGET" withParameters s"$key $field" expects {
+      case Some( encoded ) => log.debug( s"Item $field exists in the collection at '$key'." ); Some( decode[ T ]( key, encoded ) )
+      case None => log.debug( s"Item $field is not in the collection at '$key'." ); None
+    }
+
+  def hashGetAll[ T: ClassTag ]( key: String ) =
+    redis.hGetAll[ String ]( key ) executing "HGETALL" withParameter key expects {
+      case Some( encoded ) => log.debug( s"Collection at '$key' has ${ encoded.size } items." ); encoded.mapValues( decode[ T ]( key, _ ) )
+      case None => log.debug( s"Collection at '$key' is empty." ); Map.empty
+    }
+
+  def hashSize( key: String ) =
+    redis.hLen( key ) executing "HLEN" withParameter key expects {
+      case length => log.debug( s"The collection at '$key' has $length items." ); length
+    }
+
+  def hashKeys( key: String ) =
+    redis.hKeys( key ) executing "HKEYS" withParameter key expects {
+      case keys => log.debug( s"The collection at '$key' defines: ${ keys mkString " " }." ); keys
+    }
+
+  def hashSet( key: String, field: String, value: Any ) =
+    redis.hSet( key, field, encode( key, value ) ) executing "HSET" withParameters s"$key $field $value" expects {
+      case true => log.debug( s"Item $field in the collection at '$key' was inserted." ); true
+      case false => log.debug( s"Item $field in the collection at '$key' was updated." ); false
+    } recover {
+      case ExecutionFailedException( _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
+        log.warn( s"Value at '$key' is not a map." )
+        throw new IllegalArgumentException( s"Value at '$key' is not a map." )
+    }
+
+  def hashValues[ T: ClassTag ]( key: String ) =
+    redis.hVals( key ) executing "HVALS" withParameter key expects {
+      case values => log.debug( s"The collection at '$key' contains ${ values.size } values." ); values.map( decode[ T ]( key, _ ) ).toSet
+    }
 
   def start( ) = {
     import configuration.{database, host, port}

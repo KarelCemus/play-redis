@@ -99,4 +99,28 @@ object FailingConnector extends RedisConnector with Synchronization {
 
   def setRemove( key: String, value: Any* ) =
     failKeyed( key, "SREM" )
+
+  def hashRemove( key: String, field: String* ) =
+    failKeyed( key, "HREM" )
+
+  def hashExists( key: String, field: String ) =
+    failKeyed( key, "HEXISTS" )
+
+  def hashGet[ T: ClassTag ]( key: String, field: String ) =
+    failKeyed( key, "HGET" )
+
+  def hashGetAll[ T: ClassTag ]( key: String ) =
+    failKeyed( key, "HGETALL" )
+
+  def hashSize( key: String ) =
+    failKeyed( key, "HLEN" )
+
+  def hashKeys( key: String ) =
+    failKeyed( key, "HKEYS" )
+
+  def hashSet( key: String, field: String, value: Any ) =
+    failKeyed( key, "HSET" )
+
+  def hashValues[ T: ClassTag ]( key: String ) =
+    failKeyed( key, "HVALS" )
 }
