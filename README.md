@@ -213,8 +213,6 @@ class MyController @Inject() ( cache: CacheApi ) {
 }
 ```
 
-
-
 **Example of Sets:**
 
 ```scala
@@ -246,6 +244,45 @@ class MyController @Inject() ( cache: CacheApi ) {
 
   // remove the value
   cache.set[ String ]( "my-set" ).remove( "ABC" )
+}
+```
+
+**Example of Maps:**
+
+```scala
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
+import play.api.cache.redis.CacheApi
+
+class MyController @Inject() ( cache: CacheApi ) {
+
+  // enables Set operations
+  // Scala wrapper over the map at this key
+  cache.map[ Int ]( "my-map" )
+
+  // get the whole map
+  cache.map[ Int ]( "my-map" ).toMap
+  cache.map[ Int ]( "my-map" ).keySet
+  cache.map[ Int ]( "my-map" ).values
+
+  // test existence in the map
+  cache.map[ Int ]( "my-map" ).contains( "ABC" )
+
+  // get single value
+  cache.map[ Int ]( "my-map" ).get( "ABC" )
+
+  // add values into the map
+  cache.map[ Int ]( "my-map" ).add( "ABC", 5 )
+
+  // size of the map
+  cache.map[ Int ]( "my-map" ).size
+  cache.map[ Int ]( "my-map" ).isEmpty
+  cache.map[ Int ]( "my-map" ).nonEmpty
+
+  // remove the value
+  cache.map[ Int ]( "my-map" ).remove( "ABC" )
 }
 ```
 
@@ -354,6 +391,8 @@ changed.
 Implemented [Scala wrapper](src/main/scala/play/api/cache/redis/RedisList.scala) over List API to use [Redis Lists](https://redis.io/topics/data-types#lists).
 
 Implemented [Scala wrapper](src/main/scala/play/api/cache/redis/RedisSet.scala) over Set API to use [Redis Sets](https://redis.io/topics/data-types#sets).
+
+Implemented [Scala wrapper](src/main/scala/play/api/cache/redis/RedisMap.scala) over Map API to use [Redis Hashes](https://redis.io/topics/data-types#hashes).
 
 Added `heroku` and `heroku-cloud` configuration profiles simplifying [running on Heroku](#running-on-heroku).
 
