@@ -1,19 +1,18 @@
 package play.api.cache.redis.connector
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent._
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 
+import play.api.cache.redis.Synchronization
 import play.api.cache.redis.exception.failed
-import play.api.cache.redis.{RedisConnector, Synchronization}
 
 /**
   * @author Karel Cemus
   */
 object FailingConnector extends RedisConnector with Synchronization {
 
-  implicit def context: ExecutionContext = global
+  implicit def context: ExecutionContext = ExecutionContext.Implicits.global
 
   private def theError = new IllegalStateException( "Redis connector failure reproduction" )
 
