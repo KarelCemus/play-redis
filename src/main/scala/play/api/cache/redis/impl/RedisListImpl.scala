@@ -51,6 +51,12 @@ private[ impl ] class RedisListImpl[ Elem: ClassTag, Result[ _ ] ]( key: String,
   def set( position: Int, element: Elem ) =
     redis.listSetAt( key, position, element ).map( _ => This ).recoverWithDefault( This )
 
+  def isEmpty =
+    redis.listSize( key ).map( _ == 0 ).recoverWithDefault( true )
+
+  def nonEmpty =
+    redis.listSize( key ).map( _ > 0 ).recoverWithDefault( false )
+
   def view = ListView
 
   object ListView extends RedisListView {
