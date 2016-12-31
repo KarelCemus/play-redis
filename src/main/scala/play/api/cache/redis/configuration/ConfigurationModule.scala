@@ -1,9 +1,9 @@
 package play.api.cache.redis.configuration
 
 import play.api.cache.redis.exception._
-import play.api.cache.redis.{Configuration => RedisConfiguration}
 import play.api.inject.Module
 import play.api.{Configuration, Environment}
+
 /**
   * Configures low-level classes communicating with the redis server.
   *
@@ -15,7 +15,7 @@ object ConfigurationModule extends Module {
     provider( configuration ).toSeq
 
   /** returns configuration provider based on the application configuration */
-  private def provider( configuration: play.api.Configuration ) = configuration.getString( "play.cache.redis.configuration" ) match {
+  private def provider( configuration: Configuration ) = configuration.getString( "play.cache.redis.configuration" ) match {
     case Some( "static" ) => // required static implementation using application.conf
       Some( bind[ RedisConfiguration ].to[ ConfigurationFile ] )
     case Some( "env" ) if connectionStringVariable( configuration ).nonEmpty => // required environmental implementation
@@ -35,6 +35,6 @@ object ConfigurationModule extends Module {
   }
 
   /** returns name of the variable with the connection string */
-  private def connectionStringVariable( configuration: play.api.Configuration ) =
+  private def connectionStringVariable( configuration: Configuration ) =
     configuration.getString( "play.cache.redis.connection-string-variable" )
 }

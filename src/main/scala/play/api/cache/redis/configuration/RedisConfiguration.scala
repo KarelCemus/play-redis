@@ -1,4 +1,4 @@
-package play.api.cache.redis
+package play.api.cache.redis.configuration
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -12,7 +12,7 @@ import scala.concurrent.duration.FiniteDuration
   *
   * @author Karel Cemus
   */
-trait Configuration {
+trait RedisConfiguration {
 
   /** the name of the invocation context executing all commands to Redis */
   def invocationContext: String
