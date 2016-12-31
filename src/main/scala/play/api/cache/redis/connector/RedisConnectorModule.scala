@@ -1,6 +1,5 @@
 package play.api.cache.redis.connector
 
-import play.api.cache.redis.RedisConnector
 import play.api.{Configuration, Environment}
 import play.api.inject.{Binding, Module}
 

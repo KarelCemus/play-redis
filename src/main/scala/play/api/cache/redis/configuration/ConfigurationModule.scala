@@ -1,9 +1,9 @@
 package play.api.cache.redis.configuration
 
+import play.api.cache.redis.exception._
 import play.api.cache.redis.{Configuration => RedisConfiguration}
 import play.api.inject.Module
-import play.api.{Configuration, Environment, Logger}
-import play.api.cache.redis.exception._
+import play.api.{Configuration, Environment}
 /**
   * Configures low-level classes communicating with the redis server.
   *
@@ -29,7 +29,7 @@ object ConfigurationModule extends Module {
     case Some( "custom" ) => // supplied custom implementation
       None // ignore, supplied custom configuration provider
     case Some( other ) => // found but unrecognized
-      invalidConfiguration( "Unrecognized configuration provider in key 'play.cache.redis.configuration'. Expected values are 'custom', 'static', 'heroku', 'heroku-cloud', and 'env'." )
+      invalidConfiguration( s"Unrecognized configuration provider '$other' in key 'play.cache.redis.configuration'. Expected values are 'custom', 'static', 'heroku', 'heroku-cloud', and 'env'." )
     case None => // key is missing
       invalidConfiguration( "Configuration provider definition is missing. Please define the key 'play.cache.redis.configuration'. Expected values are 'custom', 'static', 'herouk', 'heroku-cloud', and 'env'." )
   }
