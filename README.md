@@ -43,7 +43,7 @@ To your SBT `build.sbt` add the following lines:
 // enable Play cache API (based on your Play version) and optionally exclude EhCache implementation
 libraryDependencies += play.sbt.PlayImport.cache exclude("net.sf.ehcache", "ehcache-core")
 // include play-redis library
-libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.3.0-M1"
+libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.3.0"
 ```
 
 Now we **must enable our redis** cache module and **disable default Play's EhCache** module. Into `application.conf` and following
