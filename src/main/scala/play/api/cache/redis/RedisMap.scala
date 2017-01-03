@@ -11,7 +11,7 @@ import scala.language.higherKinds
   * @tparam Elem Data type of the inserted element
   * @author Karel Cemus
   */
-trait RedisMap[ Elem, Result[ _ ] ] extends RedisCollection[ Map[ String, Elem ] ] {
+trait RedisMap[ Elem, Result[ _ ] ] extends RedisCollection[ Map[ String, Elem ], Result ] {
 
   /**
     * Insert the value at the given key into the map
@@ -56,29 +56,6 @@ trait RedisMap[ Elem, Result[ _ ] ] extends RedisCollection[ Map[ String, Elem ]
     * @return all elements in the map
     */
   def toMap: Result[ Map[ String, Elem ] ]
-
-  /**
-    * <p>Returns the map cardinality (number of elements) of the map stored at key.</p>
-    *
-    * <p><strong>Time complexity:</strong> O(1)</p>
-    *
-    * @return size of the map or 0 if does not exists
-    */
-  def size: Result[ Long ]
-
-  /**
-    * <p><strong>Time complexity:</strong> O(1)</p>
-    *
-    * @return returns true if the map is empty or key is not used
-    */
-  def isEmpty: Result[ Boolean ]
-
-  /**
-    * <p><strong>Time complexity:</strong> O(1)</p>
-    *
-    * @return returns true if the map exists and is not empty
-    */
-  def nonEmpty: Result[ Boolean ]
 
   /**
     * Returns all keys defined in the map

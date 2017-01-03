@@ -1,4 +1,4 @@
-package play.api.cache.redis
+package play.api.cache.redis.connector
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
@@ -9,16 +9,12 @@ import akka.util.Timeout
 /**
   * Internal non-blocking Redis API implementing REDIS protocol
   *
+  * Subset of REDIS commands, basic commands.
+  *
   * @see http://redis.io/commands
   * @author Karel Cemus
   */
-private[ redis ] trait RedisConnector {
-
-  /** implicit execution context */
-  implicit def context: ExecutionContext
-
-  /** implicit ask timeout */
-  implicit def timeout: Timeout
+private[ redis ] trait CoreCommands {
 
   /** Retrieve a value from the cache.
     *
@@ -105,6 +101,116 @@ private[ redis ] trait RedisConnector {
     * @return number of characters of current value
     */
   def append( key: String, value: String ): Future[ Long ]
+}
+
+/**
+  * Internal non-blocking Redis API implementing REDIS protocol
+  *
+  * Subset of REDIS commands, Hash-related commands.
+  *
+  * @see http://redis.io/commands
+  * @author Karel Cemus
+  */
+private[ redis ] trait HashCommands {
+
+  /**
+    * Removes the specified fields from the hash stored at key. Specified fields that do not exist within this
+    * hash are ignored. If key does not exist, it is treated as an empty hash and this command returns 0.
+    *
+    * Time complexity: O(N) where N is the number of fields to be removed.
+    *
+    * @param key   cache storage key
+    * @param field fields to be removed
+    * @return the number of fields that were removed from the hash, not including specified but non existing fields.
+    */
+  def hashRemove( key: String, field: String* ): Future[ Long ]
+
+  /**
+    * Returns if field is an existing field in the hash stored at key.
+    *
+    * Time complexity: O(1)
+    *
+    * @param key   cache storage key
+    * @param field tested field name
+    * @return true if the field exists, false otherwise
+    */
+  def hashExists( key: String, field: String ): Future[ Boolean ]
+
+  /**
+    * Returns the value associated with field in the hash stored at key.
+    *
+    * Time complexity: O(1)
+    *
+    * @param key   cache storage key
+    * @param field accessed field
+    * @return Some value if the field exists, otherwise None
+    */
+  def hashGet[ T: ClassTag ]( key: String, field: String ): Future[ Option[ T ] ]
+
+  /**
+    * Returns all fields and values of the hash stored at key. In the returned value, every field name is followed
+    * by its value, so the length of the reply is twice the size of the hash.
+    *
+    * Time complexity: O(N) where N is the size of the hash.
+    *
+    * @param key cache storage key
+    * @tparam T expected type of the elements
+    * @return the stored map
+    */
+  def hashGetAll[ T: ClassTag ]( key: String ): Future[ Map[ String, T ] ]
+
+  /**
+    * Returns the number of fields contained in the hash stored at key.
+    *
+    * Time complexity: O(1)
+    *
+    * @param key cache storage key
+    * @return size of the hash
+    */
+  def hashSize( key: String ): Future[ Long ]
+
+  /**
+    * Returns all field names in the hash stored at key.
+    *
+    * Time complexity: O(N) where N is the size of the hash.
+    *
+    * @param key cache storage key
+    * @return set of field names
+    */
+  def hashKeys( key: String ): Future[ Set[ String ] ]
+
+  /**
+    * Sets field in the hash stored at key to value. If key does not exist, a new key holding a hash is created. If field already exists in the hash, it is overwritten.
+    *
+    * Time complexity: O(1)
+    *
+    * @param key   cache storage key
+    * @param field field to be set
+    * @param value value to be set
+    * @return true if the field was newly set, false if was updated
+    */
+  def hashSet( key: String, field: String, value: Any ): Future[ Boolean ]
+
+  /**
+    * Returns all values in the hash stored at key.
+    *
+    * Time complexity: O(N) where N is the size of the hash.
+    *
+    * @param key cache storage key
+    * @return all values in the hash object
+    */
+  def hashValues[ T: ClassTag ]( key: String ): Future[ Set[ T ] ]
+}
+
+/**
+  * Internal non-blocking Redis API implementing REDIS protocol
+  *
+  * Subset of REDIS commands, List-related commands.
+  *
+  * @see http://redis.io/commands
+  * @author Karel Cemus
+  */
+private[ redis ] trait ListCommands {
 
   /**
     * Insert (LPUSH) all the specified values at the head of the list stored at key.
@@ -230,6 +336,17 @@ private[ redis ] trait RedisConnector {
     * @return promise
     */
   def listTrim( key: String, start: Int, end: Int ): Future[ Unit ]
+}
+
+/**
+  * Internal non-blocking Redis API implementing REDIS protocol
+  *
+  * Subset of REDIS commands, unordered Set-related commands.
+  *
+  * @see http://redis.io/commands
+  * @author Karel Cemus
+  */
+private[ redis ] trait SetCommands {
 
   /**
     * Add the specified members to the set stored at key. Specified members that are already a member of this set
@@ -292,92 +409,23 @@ private[ redis ] trait RedisConnector {
     * @return total number of removed values, non existing are ignored
     */
   def setRemove( key: String, value: Any* ): Future[ Long ]
+}
 
-  /**
-    * Removes the specified fields from the hash stored at key. Specified fields that do not exist within this
-    * hash are ignored. If key does not exist, it is treated as an empty hash and this command returns 0.
-    *
-    * Time complexity: O(N) where N is the number of fields to be removed.
-    *
-    * @param key   cache storage key
-    * @param field fields to be removed
-    * @return the number of fields that were removed from the hash, not including specified but non existing fields.
-    */
-  def hashRemove( key: String, field: String* ): Future[ Long ]
+/**
+  * Internal non-blocking Redis API implementing REDIS protocol
+  *
+  * @see http://redis.io/commands
+  * @author Karel Cemus
+  */
+private[ redis ] trait RedisConnector extends AnyRef
+  with CoreCommands
+  with ListCommands
+  with SetCommands
+  with HashCommands
+{
+  /** implicit execution context */
+  implicit def context: ExecutionContext
 
-  /**
-    * Returns if field is an existing field in the hash stored at key.
-    *
-    * Time complexity: O(1)
-    *
-    * @param key   cache storage key
-    * @param field tested field name
-    * @return true if the field exists, false otherwise
-    */
-  def hashExists( key: String, field: String ): Future[ Boolean ]
-
-  /**
-    * Returns the value associated with field in the hash stored at key.
-    *
-    * Time complexity: O(1)
-    *
-    * @param key   cache storage key
-    * @param field accessed field
-    * @return Some value if the field exists, otherwise None
-    */
-  def hashGet[ T: ClassTag ]( key: String, field: String ): Future[ Option[ T ] ]
-
-  /**
-    * Returns all fields and values of the hash stored at key. In the returned value, every field name is followed
-    * by its value, so the length of the reply is twice the size of the hash.
-    *
-    * Time complexity: O(N) where N is the size of the hash.
-    *
-    * @param key cache storage key
-    * @tparam T expected type of the elements
-    * @return the stored map
-    */
-  def hashGetAll[ T: ClassTag ]( key: String ): Future[ Map[ String, T ] ]
-
-  /**
-    * Returns the number of fields contained in the hash stored at key.
-    *
-    * Time complexity: O(1)
-    *
-    * @param key cache storage key
-    * @return size of the hash
-    */
-  def hashSize( key: String ): Future[ Long ]
-
-  /**
-    * Returns all field names in the hash stored at key.
-    *
-    * Time complexity: O(N) where N is the size of the hash.
-    *
-    * @param key cache storage key
-    * @return set of field names
-    */
-  def hashKeys( key: String ): Future[ Set[ String ] ]
-
-  /**
-    * Sets field in the hash stored at key to value. If key does not exist, a new key holding a hash is created. If field already exists in the hash, it is overwritten.
-    *
-    * Time complexity: O(1)
-    *
-    * @param key   cache storage key
-    * @param field field to be set
-    * @param value value to be set
-    * @return true if the field was newly set, false if was updated
-    */
-  def hashSet( key: String, field: String, value: Any ): Future[ Boolean ]
-
-  /**
-    * Returns all values in the hash stored at key.
-    *
-    * Time complexity: O(N) where N is the size of the hash.
-    *
-    * @param key cache storage key
-    * @return all values in the hash object
-    */
-  def hashValues[ T: ClassTag ]( key: String ): Future[ Set[ T ] ]
+  /** implicit ask timeout */
+  implicit def timeout: Timeout
 }

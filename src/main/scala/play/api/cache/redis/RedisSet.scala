@@ -11,7 +11,7 @@ import scala.language.higherKinds
   * @tparam Elem Data type of the inserted element
   * @author Karel Cemus
   */
-trait RedisSet[ Elem, Result[ _ ] ] extends RedisCollection[ Set[ Elem ] ] {
+trait RedisSet[ Elem, Result[ _ ] ] extends RedisCollection[ Set[ Elem ], Result ] {
 
   /**
     * <p>Add the specified members to the set stored at key. Specified members that are already a member of this
@@ -51,27 +51,4 @@ trait RedisSet[ Elem, Result[ _ ] ] extends RedisCollection[ Set[ Elem ] ] {
     * @return all elements in the set
     */
   def toSet: Result[ Set[ Elem ] ]
-
-  /**
-    * <p>Returns the set cardinality (number of elements) of the set stored at key.</p>
-    *
-    * <p><strong>Time complexity:</strong> O(1)</p>
-    *
-    * @return size of the set or 0 if does not exists
-    */
-  def size: Result[ Long ]
-
-  /**
-    * <p><strong>Time complexity:</strong> O(1)</p>
-    *
-    * @return returns true if the set is empty or key is not used
-    */
-  def isEmpty: Result[ Boolean ]
-
-  /**
-    * <p><strong>Time complexity:</strong> O(1)</p>
-    *
-    * @return returns true if the set exists and is not empty
-    */
-  def nonEmpty: Result[ Boolean ]
 }

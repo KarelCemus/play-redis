@@ -4,14 +4,12 @@ import javax.inject.Singleton
 
 import scala.concurrent.duration.FiniteDuration
 
-import play.api.cache.redis.Configuration
-
 /**
   * This configuration source reads the static configuration in the `application.conf` file and provides settings
   * located in there. This is default configuration provider. It expects all settings under the 'play.cache.redis' node.
   */
 @Singleton
-private[ redis ] class ConfigurationFile extends Configuration {
+private[ redis ] class ConfigurationFile extends RedisConfiguration {
 
   import scala.language.implicitConversions
 

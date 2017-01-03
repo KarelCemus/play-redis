@@ -10,7 +10,7 @@ import scala.language.higherKinds
   * @tparam Elem Data type of the inserted element
   * @author Karel Cemus
   */
-trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ] ] {
+trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Result ] {
 
   /**
     * Insert all the specified values at the head of the list stored at key.
@@ -189,17 +189,6 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ] ] {
     * @return Helper to this.view.all returning all object in the list
     */
   def toList: Result[ List[ Elem ] ] = view.all
-
-  /**
-    * Returns the length of the list stored at key. If key does not exist,
-    * it is interpreted as an empty list and 0 is returned. An error is
-    * returned when the value stored at key is not a list.
-    *
-    * Time complexity: O(1)
-    *
-    * @return size of the list
-    */
-  def size: Result[ Long ]
 
   /**
     * Inserts value in the list stored at key either before the

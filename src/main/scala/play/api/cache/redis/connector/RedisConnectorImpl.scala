@@ -7,13 +7,12 @@ import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 
 import play.api.Logger
+import play.api.cache.redis.Configuration
 import play.api.cache.redis.exception._
-import play.api.cache.redis.{Configuration, RedisConnector}
 import play.api.inject.ApplicationLifecycle
 
 import akka.actor.ActorSystem
 import scredis._
-
 
 /**
   * The connector directly connects with the REDIS instance, implements protocol commands
