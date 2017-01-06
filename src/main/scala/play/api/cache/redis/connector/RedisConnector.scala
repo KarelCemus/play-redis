@@ -417,7 +417,7 @@ private[ redis ] trait SetCommands {
   * @see http://redis.io/commands
   * @author Karel Cemus
   */
-private[ redis ] trait RedisConnector extends AnyRef
+trait RedisConnector extends AnyRef
   with CoreCommands
   with ListCommands
   with SetCommands
