@@ -43,7 +43,7 @@ To your SBT `build.sbt` add the following lines:
 // enable Play cache API (based on your Play version) and optionally exclude EhCache implementation
 libraryDependencies += play.sbt.PlayImport.cache exclude("net.sf.ehcache", "ehcache-core")
 // include play-redis library
-libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.3.0"
+libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.3.1"
 ```
 
 Now we **must enable our redis** cache module and **disable default Play's EhCache** module. Into `application.conf` and following
@@ -373,7 +373,7 @@ Nevertheless, this module **replaces** the EHCache and it is not intended to use
 
 | play framework  | play-redis     |
 |-----------------|---------------:|
-| 2.5.x           | 1.3.0          |
+| 2.5.x           | 1.3.1          |
 | 2.4.x           | 1.0.0          |
 | 2.3.x           | 0.2.1          |
 
@@ -381,6 +381,10 @@ Nevertheless, this module **replaces** the EHCache and it is not intended to use
 </center>
 
 ## Changelog
+
+### [:link: 1.3.1](https://github.com/KarelCemus/play-redis/tree/1.3.1)
+
+Exposed `RedisConnector`, it is publicaly available for injection now.
 
 ### [:link: 1.3.0](https://github.com/KarelCemus/play-redis/tree/1.3.0) (Possibly breaking)
 
