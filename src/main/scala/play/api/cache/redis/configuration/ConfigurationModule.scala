@@ -1,8 +1,81 @@
 package play.api.cache.redis.configuration
 
 import play.api.cache.redis.exception._
-import play.api.inject.Module
+import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
+
+/**
+  * Dispatches redis url configuration and declares methods
+  * to initialize the configuration provider properly.
+  * This is reusable implementation encapsulating all supported values
+  * in configuration and to ensure consistency if the keys are
+  * added or changed.
+  *
+  * @author Karel Cemus
+  */
+private[ configuration ] trait ConfigurationResolver[ T ] {
+
+  /** returns configuration provider based on the application configuration */
+  def resolve( configuration: Configuration ) = configuration.getString( "play.cache.redis.configuration" ) match {
+    // required static implementation using application.conf
+    case Some( "static" ) => static
+    // required environmental implementation
+    case Some( "env" ) => connectionStringVariable( configuration ).fold {
+      // required environmental implementation but the variable with the connection string is unknown
+      invalidConfiguration( "Unknown name of the environmental variable with the connection string. Please define 'play.redis.cache.connection-string-variable' value in the application.conf." )
+    }( env )
+    // required heroku configuration
+    case Some( "heroku" ) => heroku
+    // required heroku configuration
+    case Some( "heroku-cloud" ) => herokuCloud
+    // supplied custom implementation
+    case Some( "custom" ) => custom
+    // found but unrecognized
+    case Some( other ) => invalidConfiguration( s"Unrecognized configuration provider '$other' in key 'play.cache.redis.configuration'. Expected values are 'custom', 'static', 'heroku', 'heroku-cloud', and 'env'." )
+    // key is missing
+    case None => invalidConfiguration( "Configuration provider definition is missing. Please define the key 'play.cache.redis.configuration'. Expected values are 'custom', 'static', 'herouk', 'heroku-cloud', and 'env'." )
+  }
+
+  /** returns name of the variable with the connection string */
+  private def connectionStringVariable( configuration: Configuration ) =
+    configuration.getString( "play.cache.redis.connection-string-variable" )
+
+  /**
+    * creates the configuration provider based on the resolver implementation
+    *
+    * Note: required static implementation using application.conf
+    */
+  protected def static: T
+
+  /**
+    * creates the configuration provider based on the resolver implementation
+    *
+    * Note: required environmental implementation
+    */
+  protected def env( connectionString: String ): T
+
+  /**
+    * creates the configuration provider based on the resolver implementation
+    *
+    * Note: required heroku configuration
+    */
+  protected def heroku: T
+
+  /**
+    * creates the configuration provider based on the resolver implementation
+    *
+    * Note: required heroku configuration
+    */
+  protected def herokuCloud: T
+
+  /**
+    * creates the configuration provider based on the resolver implementation
+    *
+    * Note: supplied custom implementation
+    */
+  protected def custom: T
+}
+
 
 /**
   * Configures low-level classes communicating with the redis server.
@@ -11,30 +84,39 @@ import play.api.{Configuration, Environment}
   */
 object ConfigurationModule extends Module {
 
-  override def bindings( environment: Environment, configuration: Configuration ) =
-    provider( configuration ).toSeq
-
-  /** returns configuration provider based on the application configuration */
-  private def provider( configuration: Configuration ) = configuration.getString( "play.cache.redis.configuration" ) match {
-    case Some( "static" ) => // required static implementation using application.conf
-      Some( bind[ RedisConfiguration ].to[ ConfigurationFile ] )
-    case Some( "env" ) if connectionStringVariable( configuration ).nonEmpty => // required environmental implementation
-      Some( bind[ RedisConfiguration ].to( new ConnectionStringProvider( connectionStringVariable( configuration ).get ) ) )
-    case Some( "env" ) => // required environmental implementation but the variable with the connection string is unknown
-      invalidConfiguration( "Unknown name of the environmental variable with the connection string. Please define 'play.redis.cache.connection-string-variable' value in the application.conf." )
-    case Some( "heroku" ) => // required heroku configuration
-      Some( bind[ RedisConfiguration ].to( new ConnectionStringProvider( "REDIS_URL" ) ) )
-    case Some( "heroku-cloud" ) => // required heroku configuration
-      Some( bind[ RedisConfiguration ].to( new ConnectionStringProvider( "REDISCLOUD_URL" ) ) )
-    case Some( "custom" ) => // supplied custom implementation
-      None // ignore, supplied custom configuration provider
-    case Some( other ) => // found but unrecognized
-      invalidConfiguration( s"Unrecognized configuration provider '$other' in key 'play.cache.redis.configuration'. Expected values are 'custom', 'static', 'heroku', 'heroku-cloud', and 'env'." )
-    case None => // key is missing
-      invalidConfiguration( "Configuration provider definition is missing. Please define the key 'play.cache.redis.configuration'. Expected values are 'custom', 'static', 'herouk', 'heroku-cloud', and 'env'." )
+  private object RedisConfigurationResolver extends ConfigurationResolver[ Option[ Binding[ RedisConfiguration ] ] ] {
+    protected def static = Some( bind[ RedisConfiguration ].to[ ConfigurationFile ] )
+    protected def env( connectionString: String ) = Some( bind[ RedisConfiguration ].to( new ConnectionStringProvider( connectionString ) ) )
+    protected def heroku = Some( bind[ RedisConfiguration ].to( new ConnectionStringProvider( "REDIS_URL" ) ) )
+    protected def herokuCloud = Some( bind[ RedisConfiguration ].to( new ConnectionStringProvider( "REDISCLOUD_URL" ) ) )
+    protected def custom = None // ignore, supplied custom configuration provider
   }
 
-  /** returns name of the variable with the connection string */
-  private def connectionStringVariable( configuration: Configuration ) =
-    configuration.getString( "play.cache.redis.connection-string-variable" )
+  override def bindings( environment: Environment, configuration: Configuration ) =
+    RedisConfigurationResolver.resolve( configuration ).toSeq
+}
+
+
+/**
+  * Components for compile-time dependency injection.
+  * It binds components from configuration package
+  *
+  * @author Karel Cemus
+  */
+private[ redis ] trait ConfigurationComponents {
+
+  def configuration: Configuration
+
+  private object RedisConfigurationResolver extends ConfigurationResolver[ RedisConfiguration ] {
+    protected def static = new ConfigurationFile
+    protected def env( connectionString: String ) = new ConnectionStringProvider( connectionString ).get()
+    protected def heroku = new ConnectionStringProvider( "REDIS_URL" ).get()
+    protected def herokuCloud = new ConnectionStringProvider( "REDISCLOUD_URL" ).get()
+    protected def custom = customRedisConfiguration
+  }
+
+  protected def customRedisConfiguration: RedisConfiguration =
+    shouldBeOverwritten( "In order to use custom RedisConfiguration overwrite this method." )
+
+  lazy val redisConfiguration = RedisConfigurationResolver.resolve( configuration )
 }

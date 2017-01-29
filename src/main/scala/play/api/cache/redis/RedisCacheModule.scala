@@ -26,3 +26,12 @@ class RedisCacheModule extends Module {
   override def bindings( environment: Environment, configuration: play.api.Configuration ) =
     layers.flatMap( _.bindings( environment, configuration ) )
 }
+
+/**
+  * <p>Redis cache components for use with compile time dependency injection.</p>
+  *
+  * @author Karel Cemus
+  */
+trait RedisCacheComponents
+ extends configuration.ConfigurationComponents
+ with impl.ImplementationComponents
