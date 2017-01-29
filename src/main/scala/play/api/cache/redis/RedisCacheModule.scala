@@ -34,4 +34,5 @@ class RedisCacheModule extends Module {
   */
 trait RedisCacheComponents
  extends configuration.ConfigurationComponents
+ with connector.RedisConnectorComponents
  with impl.ImplementationComponents
