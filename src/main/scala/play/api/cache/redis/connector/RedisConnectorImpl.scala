@@ -7,8 +7,7 @@ import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 
 import play.api.Logger
-import play.api.cache.redis.Configuration
-import play.api.cache.redis.exception._
+import play.api.cache.redis._
 import play.api.inject.ApplicationLifecycle
 
 import akka.actor.ActorSystem
@@ -25,7 +24,9 @@ import scredis._
   * @author Karel Cemus
   */
 @Singleton
-private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSerializer, configuration: Configuration, lifecycle: ApplicationLifecycle )( implicit system: ActorSystem ) extends RedisConnector {
+private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSerializer, configuration: RedisConfiguration, lifecycle: ApplicationLifecycle )( implicit system: ActorSystem ) extends RedisConnector {
+
+  import exception._
 
   // implicit ask timeout
   implicit val timeout = akka.util.Timeout( configuration.timeout )

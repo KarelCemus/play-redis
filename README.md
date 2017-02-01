@@ -46,6 +46,8 @@ libraryDependencies += play.sbt.PlayImport.cache exclude("net.sf.ehcache", "ehca
 libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.3.1"
 ```
 
+### Using with Guice
+
 Now we **must enable our redis** cache module and **disable default Play's EhCache** module. Into `application.conf` and following
 two lines:
 
@@ -56,6 +58,14 @@ play.modules.disabled += "play.api.cache.EhCacheModule"
 # enable redis cache module
 play.modules.enabled += "play.api.cache.redis.RedisCacheModule"
 ```
+
+It will bind all required components and make them available through runtime DI.
+
+### Using with compile-time DI
+
+To use compile-time DI mix `play.api.cache.redis.RedisCacheComponents` 
+into your `BuiltInComponentsFromContext` subclass. It exposes all kinds of supported API.
+Next, it exposes a few methods to override and provide customized configuration.
 
 ## How to use this module
 
@@ -381,6 +391,10 @@ Nevertheless, this module **replaces** the EHCache and it is not intended to use
 </center>
 
 ## Changelog
+
+### [:link: 1.3.2](https://github.com/KarelCemus/play-redis/tree/1.3.2)
+
+Implemented `RedisCacheComponents` to support [compile-time DI](#using-with-compile-time-di)
 
 ### [:link: 1.3.1](https://github.com/KarelCemus/play-redis/tree/1.3.1)
 
