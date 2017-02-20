@@ -5,12 +5,11 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
-
 import play.api.Logger
 import play.api.cache.redis._
 import play.api.inject.ApplicationLifecycle
-
 import akka.actor.ActorSystem
+import akka.actor.Status.Success
 import scredis._
 
 /**
@@ -135,6 +134,40 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
   def increment( key: String, by: Long ): Future[ Long ] =
     redis.incrBy( key, by ) executing "INCRBY" withParameters s"$key, $by" expects {
       case value => log.debug( s"The value at key '$key' was incremented by $by to $value." ); value
+    }
+
+  def mGet[ T: ClassTag ](keys: String* ): Future[ List[ Option[T] ] ] =
+    redis.mGet[String](keys: _*) executing "MGET" withParameters keys.mkString(" ") expects {
+      case list => // list is always returned
+        keys
+          .zip(list)
+          .map{
+            case (key, Some( response: String )) =>
+              log.trace( s"Hit on key '$key'." )
+              Some( decode[ T ]( key, response ) )
+            case (key, None) =>
+              log.debug( s"Miss on key '$key'." )
+              None
+          }
+          .toList
+    }
+
+  def mSet(keyValues: Map[String, Any]): Future[ Unit ] = {
+    keyValues
+      .filter{case (key,value) => value == null }
+      .foreach{case (key,value) =>  remove(key)}
+
+
+    mSetEternally( keyValues
+      .filter{case (key,value) => value != null }
+      .map{case (key,value) => (key, encode(key,value)) }
+    )
+  }
+
+  /** eternally stores already encoded value into the storage */
+  private def mSetEternally( keyValues: Map[String, String] ): Future[ Unit ] =
+    redis.mSet( keyValues ) executing "MSET" withParameters s"$keyValues" expects {
+      case _ => log.debug( s"Set on key '$keyValues' for infinite seconds." )
     }
 
   def append( key: String, value: String ): Future[ Long ] =

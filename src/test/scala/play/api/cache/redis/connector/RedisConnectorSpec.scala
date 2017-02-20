@@ -3,10 +3,8 @@ package play.api.cache.redis.connector
 import java.util.Date
 
 import scala.concurrent.duration._
-
 import play.api.cache.redis._
 import play.api.cache.redis.exception.ExecutionFailedException
-
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
 
@@ -31,6 +29,11 @@ class RedisConnectorSpec extends Specification with Redis {
       Cache.set( s"$prefix-test-2", "value" ).sync
       Cache.get[ String ]( s"$prefix-test-2" ) must beSome[ Any ]
       Cache.get[ String ]( s"$prefix-test-2" ) must beSome( "value" )
+    }
+
+    "hit after mset" in {
+      Cache.mSet(Map(s"$prefix-test-2-1" -> "value-1", s"$prefix-test-2-2" -> "value-2") ).sync
+      Cache.mGet[ String ]( s"$prefix-test-2-1", s"$prefix-test-2-2" ).sync must beEqualTo(List(Some("value-1"), Some("value-2")))
     }
 
     "ignore set if not exists when already defined" in {

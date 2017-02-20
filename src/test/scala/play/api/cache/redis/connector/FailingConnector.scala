@@ -54,6 +54,13 @@ object FailingConnector extends RedisConnector with Synchronization {
   def increment( key: String, by: Long ): Future[ Long ] =
     failKeyed( key, "INCR" )
 
+
+  def mGet[ T: ClassTag ](keys: String* ): Future[ List[ Option[T] ] ] =
+    failKeyed( keys.mkString(" "), "MGET" )
+
+  def mSet(keyValues: Map[String, Any]): Future[ Unit ]=
+    failKeyed( keyValues.map{case (key,value) => s"""$key "$value""""}.mkString(" "), "MSET" )
+
   def append( key: String, value: String ): Future[ Long ] =
     failKeyed( key, "APPEND" )
 

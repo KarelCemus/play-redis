@@ -92,6 +92,20 @@ private[ redis ] trait CoreCommands {
     */
   def increment( key: String, by: Long ): Future[ Long ]
 
+  /** Retrieve a values from the cache.
+    *
+    * @param keys cache storage key
+    * @return stored record, Some if exists, otherwise None
+    */
+  def mGet[ T: ClassTag ](keys: String* ): Future[ List[ Option[T] ] ]
+
+  /** Set a value into the cache. Expiration time in seconds for eternity.
+    *
+    * @param keyValues  cache storage key-value pairs to store
+    * @return promise
+    */
+  def mSet(keyValues: Map[String, Any]): Future[ Unit ]
+
   /** If key already exists and is a string, this command appends the value at the
     * end of the string. If key does not exist it is created and set as an empty string,
     * so APPEND will be similar to SET in this special case.
