@@ -178,6 +178,20 @@ private[ redis ] trait AbstractCacheApi[ Result[ _ ] ] {
     */
   def decrement( key: String, by: Long = 1 ): Result[ Long ]
 
+  /** Retrieve the values of all specified keys from the cache.
+    *
+    * @param key cache storage keys
+    * @return stored record, Some if exists, otherwise None
+    */
+  def mGet[ T: ClassTag ](key: String* ): Result[ List[Option[ T] ] ]
+
+  /** Sets the given keys to their respective values for eternity.
+    *
+    * @param keyValues  cache storage key-value pairs to store
+    * @return promise
+    */
+  def mSet(keyValues: Map[String, Any]): Result[ Unit ]
+
   /**
     * Scala wrapper around Redis list-related commands. This simplifies use of the lists.
     *
