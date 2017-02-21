@@ -23,6 +23,13 @@ private[ redis ] trait CoreCommands {
     */
   def get[ T: ClassTag ]( key: String ): Future[ Option[ T ] ]
 
+  /** Retrieve a values from the cache.
+    *
+    * @param keys cache storage key
+    * @return stored record, Some if exists, otherwise None
+    */
+  def mGet[ T: ClassTag ]( keys: String* ): Future[ List[ Option[ T ] ] ]
+
   /** Determines whether value exists in cache.
     *
     * @param key cache storage key
@@ -55,6 +62,21 @@ private[ redis ] trait CoreCommands {
     * @return true if set was successful, false if key was already defined
     */
   def setIfNotExists( key: String, value: Any ): Future[ Boolean ]
+
+  /** Set a value into the cache. Expiration time is the eternity.
+    *
+    * @param keyValues cache storage key-value pairs to store
+    * @return promise
+    */
+  def mSet( keyValues: (String, Any)* ): Future[ Unit ]
+
+  /** Set a value into the cache. Expiration time is the eternity.
+    * It either set all values or it sets none if any of them already exists.
+    *
+    * @param keyValues cache storage key-value pairs to store
+    * @return promise
+    */
+  def mSetIfNotExist( keyValues: (String, Any)* ): Future[ Boolean ]
 
   /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration
     *
@@ -91,20 +113,6 @@ private[ redis ] trait CoreCommands {
     * @return the value after the increment
     */
   def increment( key: String, by: Long ): Future[ Long ]
-
-  /** Retrieve a values from the cache.
-    *
-    * @param keys cache storage key
-    * @return stored record, Some if exists, otherwise None
-    */
-  def mGet[ T: ClassTag ](keys: String* ): Future[ List[ Option[T] ] ]
-
-  /** Set a value into the cache. Expiration time in seconds for eternity.
-    *
-    * @param keyValues  cache storage key-value pairs to store
-    * @return promise
-    */
-  def mSet(keyValues: Map[String, Any]): Future[ Unit ]
 
   /** If key already exists and is a string, this command appends the value at the
     * end of the string. If key does not exist it is created and set as an empty string,

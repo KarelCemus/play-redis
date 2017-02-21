@@ -101,6 +101,13 @@ class MyController @Inject() ( cache: CacheApi ) {
   cache.get[ Double ]( "key" )
   // returns Option[ MyCaseClass ]
   cache.get[ MyCaseClass ]( "object" )
+  
+  // set multiple values at once
+  cache.setAll( "key" -> 1.23, "key2" -> 5, "key3" -> 6 )
+  // set only when all keys are unused
+  cache.setAllIfNotExist( "key" -> 1.23, "key2" -> 5, "key3" -> 6 )
+  // get multiple keys at once, returns a list of options
+  cache.getAll[ Double ]( "key", "key2", "key3", "key6" )
 
   // returns T where T is Double. If the value is not in the cache
   // the computed result is saved
@@ -395,6 +402,8 @@ Nevertheless, this module **replaces** the EHCache and it is not intended to use
 ### [:link: 1.3.2](https://github.com/KarelCemus/play-redis/tree/1.3.2)
 
 Implemented `RedisCacheComponents` to support [compile-time DI](#using-with-compile-time-di)
+
+Implemented [MGET](https://redis.io/commands/mget), [MSET](https://redis.io/commands/mset) and [MSETNX](https://redis.io/commands/msetnx) redis commands.
 
 ### [:link: 1.3.1](https://github.com/KarelCemus/play-redis/tree/1.3.1)
 

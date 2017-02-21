@@ -3,8 +3,10 @@ package play.api.cache.redis.connector
 import java.util.Date
 
 import scala.concurrent.duration._
+
 import play.api.cache.redis._
 import play.api.cache.redis.exception.ExecutionFailedException
+
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
 
@@ -31,11 +33,6 @@ class RedisConnectorSpec extends Specification with Redis {
       Cache.get[ String ]( s"$prefix-test-2" ) must beSome( "value" )
     }
 
-    "hit after mset" in {
-      Cache.mSet(Map(s"$prefix-test-2-1" -> "value-1", s"$prefix-test-2-2" -> "value-2") ).sync
-      Cache.mGet[ String ]( s"$prefix-test-2-1", s"$prefix-test-2-2" ).sync must beEqualTo(List(Some("value-1"), Some("value-2")))
-    }
-
     "ignore set if not exists when already defined" in {
       Cache.set( s"$prefix-test-if-not-exists-when-exists", "previous" ).sync
       Cache.setIfNotExists( s"$prefix-test-if-not-exists-when-exists", "value" ) must beFalse
@@ -47,6 +44,17 @@ class RedisConnectorSpec extends Specification with Redis {
       Cache.setIfNotExists( s"$prefix-test-if-not-exists", "value" ) must beTrue
       Cache.get[ String ]( s"$prefix-test-if-not-exists" ) must beSome[ Any ]
       Cache.get[ String ]( s"$prefix-test-if-not-exists" ) must beSome( "value" )
+    }
+
+    "hit after mset" in {
+      Cache.mSet( s"$prefix-test-mset-1" -> "value-1", s"$prefix-test-mset-2" -> "value-2" ).sync
+      Cache.mGet[ String ]( s"$prefix-test-mset-1", s"$prefix-test-mset-2" ).sync must beEqualTo( List( Some( "value-1" ), Some( "value-2" ) ) )
+    }
+
+    "ignore msetnx if already defined" in {
+      Cache.mSetIfNotExist( s"$prefix-test-msetnx-1" -> "value-1", s"$prefix-test-msetnx-2" -> "value-2" ) must beTrue
+      Cache.mGet[ String ]( s"$prefix-test-msetnx-1", s"$prefix-test-msetnx-2" ).sync must beEqualTo( List( Some( "value-1" ), Some( "value-2" ) ) )
+      Cache.mSetIfNotExist( s"$prefix-test-msetnx-3" -> "value-3", s"$prefix-test-msetnx-2" -> "value-2" ) must beFalse
     }
 
     "expire refreshes expiration" in {

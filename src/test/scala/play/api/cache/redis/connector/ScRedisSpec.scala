@@ -1,15 +1,15 @@
 package play.api.cache.redis.connector
 
 import scala.concurrent.Future
+
 import play.api.cache.redis.{Redis, RedisInstance}
+
 import org.specs2.matcher.MustExpectable
 import org.specs2.mutable.Specification
 
-import scala.collection.immutable.List
-
 /**
- * <p>Test of brando to be sure that it works etc.</p>
- */
+  * <p>Test of brando to be sure that it works etc.</p>
+  */
 class ScRedisSpec extends Specification with Redis with RedisInstance {
 
   sequential
@@ -19,7 +19,7 @@ class ScRedisSpec extends Specification with Redis with RedisInstance {
   "ScRedis" should {
 
     "ping" in {
-      redis.ping( ) must beEqualTo( "PONG" )
+      redis.ping() must beEqualTo( "PONG" )
     }
 
     "set value" in {
@@ -27,7 +27,7 @@ class ScRedisSpec extends Specification with Redis with RedisInstance {
     }
 
     "set values" in {
-      redis.mSet( Map("some-key1" -> "this-value", "some-key2" -> "that-value")) must not beNull
+      redis.mSet( Map( "some-key1" -> "this-value", "some-key2" -> "that-value" ) ) must not( beNull )
     }
 
     "get stored value" in {
@@ -35,11 +35,11 @@ class ScRedisSpec extends Specification with Redis with RedisInstance {
     }
 
     "get stored values" in {
-      redis.mGet[ String ]( "some-key1", "some-key2" ) must beEqualTo(List(Some("this-value"), Some("that-value")))
+      redis.mGet[ String ]( "some-key1", "some-key2" ) must beEqualTo( List( Some( "this-value" ), Some( "that-value" ) ) )
     }
 
     "get stored key values" in {
-      redis.mGetAsMap[ String ]( "some-key1", "some-key2" ) must beEqualTo(Map("some-key1" -> "this-value", "some-key2" -> "that-value"))
+      redis.mGetAsMap[ String ]( "some-key1", "some-key2" ) must beEqualTo( Map( "some-key1" -> "this-value", "some-key2" -> "that-value" ) )
     }
 
     "get non-existing value" in {
