@@ -54,6 +54,19 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
         None
     }
 
+  def mGet[ T: ClassTag ]( keys: String* ): Future[ List[ Option[ T ] ] ] =
+    redis.mGet[ String ]( keys: _* ) executing "MGET" withParameters keys.mkString( " " ) expects {
+      // list is always returned
+      case list => keys.zip( list ).map {
+        case (key, Some( response: String )) =>
+          log.trace( s"Hit on key '$key'." )
+          Some( decode[ T ]( key, response ) )
+        case (key, None) =>
+          log.debug( s"Miss on key '$key'." )
+          None
+      }.toList
+    }
+
   /** decodes the object, reports an exception if fails */
   private def decode[ T: ClassTag ]( key: String, encoded: String ): T =
     serializer.decode[ T ]( encoded ).recover {
@@ -91,6 +104,34 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
     redis.setNX( key, encode( key, value ) ) executing "SETNX" withParameters s"$key ${ encode( key, value ) }" expects {
       case false => log.debug( s"Set if not exists on key '$key' ignored. Value already exists." ); false
       case true => log.debug( s"Set if not exists on key '$key' succeeded." ); true
+    }
+
+  def mSet( keyValues: (String, Any)* ): Future[ Unit ] = mSetUsing( mSetEternally, (), keyValues: _* )
+
+  def mSetIfNotExist( keyValues: (String, Any)* ): Future[ Boolean ] = mSetUsing( mSetEternallyIfNotExist, true, keyValues: _* )
+
+  /** eternally stores or removes all given values, using the given mSet implementation */
+  private def mSetUsing[ T ]( f: Seq[ (String, String) ] => Future[ T ], default: T, keyValues: (String, Any)* ): Future[ T ] = {
+    val (toBeRemoved, toBeSet) = keyValues.partition( _.isNull )
+    // remove all keys to be removed
+    val toBeRemovedFuture = if ( toBeRemoved.isEmpty ) Future.successful( () ) else remove( toBeRemoved.map( _.key ): _* )
+    // set all keys to be set
+    val toBeSetFuture = if ( toBeSet.isEmpty ) Future.successful( default ) else f( toBeSet.map( tuple => tuple.key -> encode( tuple.key, tuple.value ) ) )
+    // combine futures ignoring the result of removal
+    toBeRemovedFuture.flatMap( _ => toBeSetFuture )
+  }
+
+  /** eternally stores already encoded values into the storage */
+  private def mSetEternally( keyValues: (String, String)* ): Future[ Unit ] =
+    redis.mSet( keyValues.toMap ) executing "MSET" withParameters keyValues.map( _.asString ).mkString( " " ) expects {
+      case _ => log.debug( s"Set on keys ${ keyValues.map( _.key ) } for infinite seconds." )
+    }
+
+  /** eternally stores already encoded values into the storage */
+  private def mSetEternallyIfNotExist( keyValues: (String, String)* ): Future[ Boolean ] =
+    redis.mSetNX( keyValues.toMap ) executing "MSETNX" withParameters keyValues.map( _.asString ).mkString( " " ) expects {
+      case true => log.debug( s"Set if not exists on keys ${ keyValues.map( _.key ) mkString " " } succeeded." ); true
+      case false => log.debug( s"Set if not exists on keys ${ keyValues.map( _.key ) mkString " " } ignored. Some value already exists." ); false
     }
 
   def expire( key: String, expiration: Duration ): Future[ Unit ] =

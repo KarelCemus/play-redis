@@ -16,6 +16,9 @@ private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implic
   override def get[ T: ClassTag ]( key: String ) =
     redis.get[ T ]( key ).recoverWithDefault( None )
 
+  override def getAll[ T: ClassTag ]( keys: String* ): Result[ List[ Option[ T ] ] ] =
+    redis.mGet[ T ]( keys: _* ).recoverWithDefault( keys.toList.map( _ => None ) )
+
   override def set( key: String, value: Any, expiration: Duration ) =
     redis.set( key, value, expiration ).recoverWithUnit
 
@@ -24,6 +27,12 @@ private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implic
       if ( result && expiration.isFinite( ) ) redis.expire( key, expiration )
       result
     }.recoverWithDefault( true )
+
+  override def setAll( keyValues: (String, Any)* ): Result[ Unit ] =
+    redis.mSet( keyValues: _* ).recoverWithDefault( None )
+
+  override def setAllIfNotExist( keyValues: (String, Any)* ): Result[ Boolean ] =
+    redis.mSetIfNotExist( keyValues: _* ).recoverWithDefault( true )
 
   override def append( key: String, value: String, expiration: Duration ): Result[ Unit ] =
     redis.append( key, value ).map[ Unit ] { result =>

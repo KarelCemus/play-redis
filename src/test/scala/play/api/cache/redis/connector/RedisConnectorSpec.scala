@@ -46,6 +46,17 @@ class RedisConnectorSpec extends Specification with Redis {
       Cache.get[ String ]( s"$prefix-test-if-not-exists" ) must beSome( "value" )
     }
 
+    "hit after mset" in {
+      Cache.mSet( s"$prefix-test-mset-1" -> "value-1", s"$prefix-test-mset-2" -> "value-2" ).sync
+      Cache.mGet[ String ]( s"$prefix-test-mset-1", s"$prefix-test-mset-2" ).sync must beEqualTo( List( Some( "value-1" ), Some( "value-2" ) ) )
+    }
+
+    "ignore msetnx if already defined" in {
+      Cache.mSetIfNotExist( s"$prefix-test-msetnx-1" -> "value-1", s"$prefix-test-msetnx-2" -> "value-2" ) must beTrue
+      Cache.mGet[ String ]( s"$prefix-test-msetnx-1", s"$prefix-test-msetnx-2" ).sync must beEqualTo( List( Some( "value-1" ), Some( "value-2" ) ) )
+      Cache.mSetIfNotExist( s"$prefix-test-msetnx-3" -> "value-3", s"$prefix-test-msetnx-2" -> "value-2" ) must beFalse
+    }
+
     "expire refreshes expiration" in {
       Cache.set( s"$prefix-test-10", "value", 2.second ).sync
       Cache.get[ String ]( s"$prefix-test-10" ) must beSome( "value" )

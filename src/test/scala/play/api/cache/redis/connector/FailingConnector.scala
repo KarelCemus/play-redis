@@ -30,8 +30,17 @@ object FailingConnector extends RedisConnector with Synchronization {
   def setIfNotExists( key: String, value: Any ): Future[ Boolean ] =
     failKeyed( key, "SETNX" )
 
+  def mSet( keyValues: (String, Any)* ): Future[ Unit ] =
+    failKeyed( keyValues.map( _._1 ).mkString( " " ), "MSET" )
+
+  def mSetIfNotExist( keyValues: (String, Any)* ): Future[ Boolean ] =
+    failKeyed( keyValues.map( _._1 ).mkString( " " ), "MSETNX" )
+
   def get[ T: ClassTag ]( key: String ): Future[ Option[ T ] ] =
     failKeyed( key, "GET" )
+
+  def mGet[ T: ClassTag ]( keys: String* ): Future[ List[ Option[ T ] ] ] =
+    failKeyed( keys.mkString( " " ), "MGET" )
 
   def expire( key: String, expiration: Duration ): Future[ Unit ] =
     failKeyed( key, "EXPIRE" )

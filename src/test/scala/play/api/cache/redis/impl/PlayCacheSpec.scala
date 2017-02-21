@@ -54,5 +54,13 @@ class PlayCacheSpec extends Specification with Redis {
       Cache.remove( s"$prefix-test-3" )
       Cache.get[ String ]( s"$prefix-test-3" ) must beNone
     }
+
+    "work with batch operations" in {
+      Cache.setAll( s"$prefix-test-4-1" -> "value-1", s"$prefix-test-4-2" -> "value-2" )
+      Cache.getAll[ String ]( s"$prefix-test-4-1", s"$prefix-test-4-2" ) must beEqualTo( List( Some( "value-1" ), Some( "value-2" ) ) )
+      Cache.remove( s"$prefix-test-4-1" )
+      Cache.get[ String ]( s"$prefix-test-4-1" ) must beNone
+      Cache.getAll[ String ]( s"$prefix-test-4-1", s"$prefix-test-4-2" ) must beEqualTo( List( None, Some( "value-2" ) ) )
+    }
   }
 }
