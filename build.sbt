@@ -14,7 +14,7 @@ scalaVersion := "2.11.8"
 
 crossScalaVersions := Seq( scalaVersion.value )
 
-val playVersion = "2.5.10"
+val playVersion = "2.5.12"
 
 val connectorVersion = "2.0.8"
 
@@ -30,7 +30,7 @@ libraryDependencies ++= Seq(
   // test module for play framework
   "com.typesafe.play" %% "play-test" % playVersion % "test",
   // logger for tests
-  "org.slf4j" % "slf4j-simple" % "1.7.22" % "test"
+  "org.slf4j" % "slf4j-simple" % "1.7.24" % "test"
 )
 
 resolvers ++= Seq(
