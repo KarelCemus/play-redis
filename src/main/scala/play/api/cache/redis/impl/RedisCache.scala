@@ -8,7 +8,7 @@ import scala.reflect.ClassTag
 import play.api.cache.redis._
 
 /** <p>Implementation of plain API using redis-server cache and Brando connector implementation.</p> */
-private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implicit builder: Builders.ResultBuilder[ Result ], policy: RecoveryPolicy ) extends AbstractCacheApi[ Result ] with Implicits {
+private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implicit protected val implicitBuilder: Builders.ResultBuilder[ Result ], protected val implicitPolicy: RecoveryPolicy ) extends AbstractCacheApi[ Result ] with Implicits {
 
   // implicit ask timeout and execution context
   import redis.{context, timeout}
