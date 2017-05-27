@@ -320,12 +320,28 @@ There is already default configuration but it can be overwritten in your `conf/a
 | play.cache.redis.host               | String   | `localhost`                     | redis-server address                |
 | play.cache.redis.port               | Int      | `6379`                          | redis-server port                   |
 | play.cache.redis.database           | Int      | `1`                             | redis-server database, 1-15         |
-| play.cache.redis.timeout            | Duration | `1s`                            | connection timeout                  |
+| play.cache.redis.timeout            | Duration | `1s`                            | conversion timeout applied by `SyncAPI` to convert `Future[T]` to `T`|
 | play.cache.redis.dispatcher         | String   | `akka.actor.default-dispatcher` | Akka actor                          |
 | play.cache.redis.configuration      | String   | `static`                        | Defines which configuration source enable. Accepted values are `static`, `env`, `custom` |
 | play.cache.redis.password           | String   | `null`                          | When authentication is required, this is the password. Value is optional. |
 | play.cache.redis.connection-string-variable | String   | `REDIS_URL`             | Name of the environment variable with the connection string. This is used in combination with the `env` configuration. This allows customization of the variable name in PaaS environment. Value is optional. |
 | play.cache.redis.recovery           | String   | `log-and-default`               | Defines behavior when command execution fails. Accepted values are `log-and-fail` to log the error and rethrow the exception, `log-and-default` to log the failure and return default value neutral to the operation, `log-condensed-and-default` `log-condensed-and-fail` produce shorter but less informative error logs, and `custom` indicates the user binds his own implementation of `RecoveryPolicy`.        |
+
+### Timeout
+
+The `play-redis` is designed fully asynchronously and there is no timeout applied 
+by this library itself. However, there are other timeouts you might be interested in.
+First, when you use `SyncAPI` instead of `AsyncAPI`, the `Future[T]` has to converted
+into `T`. It uses [`Await.result`](https://www.scala-lang.org/api/current/scala/concurrent/Await$.html#result%5BT%5D(awaitable:scala.concurrent.Awaitable%5BT%5D,atMost:scala.concurrent.duration.Duration):T) 
+from standard Scala library, which requires a timeout definition. This is the `play.cache.redis.timeout`.
+It is the invocation of the whole request into cache including the communication to Redis, data serialization,
+and invocation `orElse` parts. If you don't want any timeout and your application logic cannot never timeout,
+just set it to something really high.
+
+The other timeouts you might be interested in are related to the communication to Redis, e.g., connection timeout
+and receive timeout. These are provided directly by the underlying connector and `play-redis` doesn't affect them. 
+For more details, see 
+the [`Scredis` configuration](https://github.com/scredis/scredis/blob/master/src/main/resources/reference.conf#L27).
 
 ### Recovery policy
 
