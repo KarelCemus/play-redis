@@ -24,6 +24,8 @@ class AsynchronousCacheSpec extends Specification with Redis {
   // test proper implementation, no fails
   new RedisCacheSuite( "implement", "redis-cache-implements", new RedisCache( workingConnector )( Builders.AsynchronousBuilder, FailThrough ), AlwaysSuccess )
 
+  new RedisCacheSuite( "recover from with working connector", "redis-cache-implements-and-recovery", new RedisCache( workingConnector )( Builders.AsynchronousBuilder, RecoverWithDefault ), SuccessOrDefault )
+
   new RedisCacheSuite( "recover from", "redis-cache-recovery", new RedisCache( FailingConnector )( Builders.AsynchronousBuilder, RecoverWithDefault ), AlwaysDefault )
 
   new RedisCacheSuite( "fail on", "redis-cache-fail", new RedisCache( FailingConnector )( Builders.AsynchronousBuilder, FailThrough ), AlwaysException )
@@ -346,7 +348,27 @@ class AsynchronousCacheSpec extends Specification with Redis {
           Thread.sleep( 3000 )
           cache.get[ String ]( s"$prefix-test-append-and-not-expire" ) must expects( beSome( "some value" ), beNone )
         }
+
+        "with failing serialization" in {
+          cache.set( s"$prefix-test-with-failing-serialization", UnserializableObject( "some" ), 5.seconds ) must expects( throwA[ SerializationException ], beUnit )
+          cache.getOrElse( s"$prefix-test-with-failing-serialization" )( UnserializableObject( "some" ) ) must expects(
+            throwA[ SerializationException ], beEqualTo( UnserializableObject( "some" ) )
+          )
+        }
       }
     }
   }
+}
+
+case class UnserializableObject( value: String )
+
+class FailingSerializer extends akka.serialization.Serializer {
+
+  def identifier = 2017052801
+
+  def toBinary( o: AnyRef ) = throw new IllegalStateException("Failing serialization")
+
+  def includeManifest = false
+
+  def fromBinary( bytes: Array[ Byte ], manifest: Option[ Class[ _ ] ] ) = throw new IllegalStateException("Failing deserialization")
 }
