@@ -74,34 +74,34 @@ class IntegrationSpec extends Specification with Redis {
       Cache.set( "integration-test-13-key-A", "value", 3.second ).sync
       Cache.set( "integration-test-13-note-A", "value", 3.second ).sync
       Cache.set( "integration-test-13-key-B", "value", 3.second ).sync
-      Cache.matching( "integration-test-13*" ).sync mustEqual Set( "integration-test-13-key-A", "integration-test-13-note-A", "integration-test-13-key-B" )
-      Cache.matching( "integration-test-13*A" ).sync mustEqual Set( "integration-test-13-key-A", "integration-test-13-note-A" )
-      Cache.matching( "integration-test-13-key-*" ).sync mustEqual Set( "integration-test-13-key-A", "integration-test-13-key-B" )
-      Cache.matching( "integration-test-13A*" ).sync mustEqual Set.empty
+      Cache.matching( "integration-test-13*" ).sync.sorted mustEqual Seq( "integration-test-13-key-A", "integration-test-13-note-A", "integration-test-13-key-B" ).sorted
+      Cache.matching( "integration-test-13*A" ).sync.sorted mustEqual Seq( "integration-test-13-key-A", "integration-test-13-note-A" ).sorted
+      Cache.matching( "integration-test-13-key-*" ).sync.sorted mustEqual Seq( "integration-test-13-key-A", "integration-test-13-key-B" ).sorted
+      Cache.matching( "integration-test-13A*" ).sync mustEqual Seq.empty
     }
 
     "remove all matching keys, wildcard at the end" in {
       Cache.set( "integration-test-14-key-A", "value", 3.second ).sync
       Cache.set( "integration-test-14-note-A", "value", 3.second ).sync
       Cache.set( "integration-test-14-key-B", "value", 3.second ).sync
-      Cache.matching( "integration-test-14*" ).sync mustEqual Set( "integration-test-14-key-A", "integration-test-14-note-A", "integration-test-14-key-B" )
+      Cache.matching( "integration-test-14*" ).sync.sorted mustEqual Seq( "integration-test-14-key-A", "integration-test-14-note-A", "integration-test-14-key-B" ).sorted
       Cache.removeMatching( "integration-test-14*" ).sync
-      Cache.matching( "integration-test-14*" ).sync mustEqual Set.empty
+      Cache.matching( "integration-test-14*" ).sync mustEqual Seq.empty
     }
 
     "remove all matching keys, wildcard in the middle" in {
       Cache.set( "integration-test-15-key-A", "value", 3.second ).sync
       Cache.set( "integration-test-15-note-A", "value", 3.second ).sync
       Cache.set( "integration-test-15-key-B", "value", 3.second ).sync
-      Cache.matching( "integration-test-15*A" ).sync mustEqual Set( "integration-test-15-key-A", "integration-test-15-note-A" )
+      Cache.matching( "integration-test-15*A" ).sync.sorted mustEqual Seq( "integration-test-15-key-A", "integration-test-15-note-A" ).sorted
       Cache.removeMatching( "integration-test-15*A").sync
-      Cache.matching( "integration-test-15*A").sync mustEqual Set.empty
+      Cache.matching( "integration-test-15*A").sync mustEqual Seq.empty
     }
 
     "remove all matching keys, no match" in {
-      Cache.matching( "integration-test-16*" ).sync mustEqual Set.empty
+      Cache.matching( "integration-test-16*" ).sync mustEqual Seq.empty
       Cache.removeMatching( "integration-test-16*").sync
-      Cache.matching( "integration-test-16*" ).sync mustEqual Set.empty
+      Cache.matching( "integration-test-16*" ).sync mustEqual Seq.empty
     }
 
     "propagate fail in future" in {
