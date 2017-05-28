@@ -16,7 +16,7 @@ crossScalaVersions := Seq( scalaVersion.value )
 
 val playVersion = "2.5.12"
 
-val connectorVersion = "2.0.8"
+val connectorVersion = "1.8.0"
 
 val specs2Version = "3.8.6"
 
@@ -24,7 +24,7 @@ libraryDependencies ++= Seq(
   // play framework cache API
   "com.typesafe.play" %% "play-cache" % playVersion % "provided" exclude("net.sf.ehcache", "ehcache-core"),
   // redis connector
-  "com.livestream" %% "scredis" % connectorVersion,
+  "com.github.etaty" %% "rediscala" % connectorVersion,
   // test framework
   "org.specs2" %% "specs2-core" % specs2Version % "test",
   // test module for play framework

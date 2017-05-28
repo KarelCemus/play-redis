@@ -16,7 +16,7 @@ private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implic
   override def get[ T: ClassTag ]( key: String ) =
     redis.get[ T ]( key ).recoverWithDefault( None )
 
-  override def getAll[ T: ClassTag ]( keys: String* ): Result[ List[ Option[ T ] ] ] =
+  override def getAll[ T: ClassTag ]( keys: String* ): Result[ Seq[ Option[ T ] ] ] =
     redis.mGet[ T ]( keys: _* ).recoverWithDefault( keys.toList.map( _ => None ) )
 
   override def set( key: String, value: Any, expiration: Duration ) =
@@ -45,7 +45,7 @@ private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implic
     redis.expire( key, expiration ).recoverWithUnit
 
   override def matching( pattern: String ) =
-    redis.matching( pattern ).recoverWithDefault( Set.empty[ String ] )
+    redis.matching( pattern ).recoverWithDefault( Seq.empty[ String ] )
 
   override def getOrElse[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => T ) =
     getOrFuture( key, expiration )( orElse.toFuture ).recoverWithDefault( orElse )
@@ -68,7 +68,7 @@ private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implic
     redis.remove( keys: _* ).recoverWithUnit
 
   override def removeMatching( pattern: String ): Result[ Unit ] =
-    redis.matching( pattern ).flatMap( keys => redis.remove( keys.toSeq: _* ) ).recoverWithUnit
+    redis.matching( pattern ).flatMap( keys => redis.remove( keys: _* ) ).recoverWithUnit
 
   override def invalidate( ) =
     redis.invalidate( ).recoverWithUnit

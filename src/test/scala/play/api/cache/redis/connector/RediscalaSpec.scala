@@ -10,7 +10,7 @@ import org.specs2.mutable.Specification
 /**
   * <p>Test of brando to be sure that it works etc.</p>
   */
-class ScRedisSpec extends Specification with Redis with RedisInstance {
+class RediscalaSpec extends Specification with Redis with RedisInstance {
 
   sequential
 
@@ -27,7 +27,7 @@ class ScRedisSpec extends Specification with Redis with RedisInstance {
     }
 
     "set values" in {
-      redis.mSet( Map( "some-key1" -> "this-value", "some-key2" -> "that-value" ) ) must not( beNull )
+      redis.mset( Map( "some-key1" -> "this-value", "some-key2" -> "that-value" ) ) must not( beNull )
     }
 
     "get stored value" in {
@@ -35,11 +35,7 @@ class ScRedisSpec extends Specification with Redis with RedisInstance {
     }
 
     "get stored values" in {
-      redis.mGet[ String ]( "some-key1", "some-key2" ) must beEqualTo( List( Some( "this-value" ), Some( "that-value" ) ) )
-    }
-
-    "get stored key values" in {
-      redis.mGetAsMap[ String ]( "some-key1", "some-key2" ) must beEqualTo( Map( "some-key1" -> "this-value", "some-key2" -> "that-value" ) )
+      redis.mget[ String ]( "some-key1", "some-key2" ) must beEqualTo( List( Some( "this-value" ), Some( "that-value" ) ) )
     }
 
     "get non-existing value" in {
