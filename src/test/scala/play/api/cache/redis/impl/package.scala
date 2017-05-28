@@ -60,6 +60,10 @@ package object impl extends LowPriorityImplicits {
     override def expectsNow[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ] = success
   }
 
+  object SuccessOrDefault extends Expectation {
+    override def expectsNow[ T ]( success: => Matcher[ T ], default: => Matcher[ T ], exception: => Matcher[ T ] ): Matcher[ T ] = success or default
+  }
+
   object beUnit extends Matcher[ Any ] {
     def apply[ S <: Any ]( value: Expectable[ S ] ): MatchResult[ S ] = result( test = true, value.description + " is Unit", value.description + " is not Unit", value.evaluate )
   }
