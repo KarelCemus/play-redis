@@ -413,6 +413,9 @@ some operations instead of `List` return `Seq` and instead of `Set` also
 return `Seq`. This change was introduced to avoid possibly unnecessary
 collection conversion inside the `play-redis`.
 
+Changed return type `Unit` in `AbstractCacheApi` to `akka.Done` with the same meaning but
+but better signalizing the intention.
+
 ### [:link: 1.4.0](https://github.com/KarelCemus/play-redis/tree/1.4.0)
 
 Implemented `RedisCacheComponents` to support [compile-time DI](#using-with-compile-time-di)

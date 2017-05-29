@@ -59,16 +59,19 @@ object ImplementationModule extends Module {
   }
 
   override def bindings( environment: Environment, configuration: Configuration ) = Seq(
-    // default binding for Play's CacheApi to SyncCache to replace default EHCache
-    bind[ play.api.cache.CacheApi ].to[ SyncRedis ],
-    // enable sync module when required
+    // play-redis APIs
     bind[ CacheApi ].to[ SyncRedis ],
-    // enable async module when required
+    bind[ AsyncRedis ].to[ AsyncRedis ],
     bind[ CacheAsyncApi ].to[ AsyncRedis ],
-    // java api
-    bind[ play.cache.CacheApi ].to[ JavaRedis ],
+    // scala api defined by Play
+    bind[ play.api.cache.CacheApi ].to[ play.api.cache.DefaultSyncCacheApi ],
+    bind[ play.api.cache.SyncCacheApi ].to[ play.api.cache.DefaultSyncCacheApi ],
+    bind[ play.api.cache.AsyncCacheApi ].to[ AsyncRedis ],
+    // java api defined by Play
+    bind[ play.cache.CacheApi ].to[ play.cache.DefaultSyncCacheApi ],
     bind[ play.cache.SyncCacheApi ].to[ play.cache.DefaultSyncCacheApi ],
-    bind[ play.cache.AsyncCacheApi ].to[ play.cache.DefaultAsyncCacheApi ]
+    bind[ play.cache.AsyncCacheApi ].to[ JavaRedis ]
+
   ) ++ RedisRecoveryPolicyResolver.resolve( configuration )
 }
 
@@ -98,21 +101,24 @@ private[ redis ] trait ImplementationComponents {
 
   private lazy val policy: RecoveryPolicy = RecoveryPolicyResolver.resolve( configuration )
 
-  private lazy val syncRedis: SyncRedis = new SyncRedis( redisConnector, policy )
+  // play-redis APIs
+  private lazy val asyncRedis = new AsyncRedis( redisConnector, policy )
+  lazy val syncRedisCacheApi: CacheApi = new SyncRedis( redisConnector, policy )
+  lazy val asyncRedisCacheApi: CacheAsyncApi = asyncRedis
 
-  lazy val syncRedisCacheApi: CacheApi = syncRedis
-
-  lazy val asyncRedisCacheApi: CacheAsyncApi = new AsyncRedis( redisConnector, policy )
-
+  // scala api defined by Play
+  lazy val asyncCacheApi: play.api.cache.AsyncCacheApi = asyncRedis
+  private lazy val defaultSyncCache = new play.api.cache.DefaultSyncCacheApi( asyncCacheApi )
   @deprecated( message = "Use syncCacheApi or asyncCacheApi.", since = "Play 2.6.0." )
-  lazy val defaultCacheApi: play.api.cache.CacheApi = syncRedis
+  lazy val defaultCacheApi: play.api.cache.CacheApi = defaultSyncCache
+  lazy val syncCacheApi: play.api.cache.SyncCacheApi = defaultSyncCache
 
+  // java api defined by Play
+  lazy val javaAsyncCacheApi: play.cache.AsyncCacheApi = new JavaRedis( asyncRedis, environment, redisConnector )
+  private lazy val javaDefaultSyncCache = new play.cache.DefaultSyncCacheApi( javaAsyncCacheApi )
   @deprecated( message = "Use javaSyncCacheApi or javaAsyncCacheApi.", since = "Play 2.6.0." )
-  lazy val javaCacheApi: play.cache.CacheApi = new JavaRedis( syncRedis, environment )
-
-  lazy val javaSyncCacheApi: play.cache.SyncCacheApi = new play.cache.DefaultSyncCacheApi( asyncCacheApi )
-
-  lazy val javaAsyncCacheApi: play.cache.AsyncCacheApi = new play.cache.DefaultAsyncCacheApi( asyncCacheApi )
+  lazy val javaCacheApi: play.cache.CacheApi = javaDefaultSyncCache
+  lazy val javaSyncCacheApi: play.cache.SyncCacheApi = javaDefaultSyncCache
 
   protected def customRedisRecoveryPolicy: RecoveryPolicy =
     shouldBeOverwritten( "In order to use custom RecoveryPolicy overwrite this method." )
