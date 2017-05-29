@@ -23,8 +23,10 @@ of the framework is fully non-blocking, most of provided facades are *blocking w
 
  1. `play.api.cache.redis.CacheApi` (*blocking* Scala implementation)
  2. `play.api.cache.redis.CacheAsyncApi` (non-blocking Scala implementation)
- 3. `play.api.cache.CacheApi` (Play's *blocking* API for Scala)
- 4. `play.cache.CacheApi` (Play's *blocking* API for Java)
+ 3. ~~`play.api.cache.CacheApi`~~ (Play's *blocking* API for Scala) *(deprecated since Play 2.6.x)*
+ 4. ~~`play.cache.CacheApi`~~ (Play's *blocking* API for Java) *(deprecated since Play 2.6.x)*
+ 4. `play.cache.SyncCacheApi` (Play's *blocking* API for Java) *(new in Play 2.6.x)*
+ 4. `play.cache.AsyncCacheApi` (Play's *non-blocking* API for Java) *(new in Play 2.6.x)*
 
 First, the `CacheApi` is extended `play.api.cache.CacheApi` and it implements the connection in the **blocking** manner.
 Second, the `CacheAsyncApi` enables **non-blocking** connection providing results through `scala.concurrent.Future`.
@@ -404,6 +406,7 @@ both implementations along.
 
 | play framework  | play-redis     |
 |-----------------|---------------:|
+| 2.6.x           | 1.5.0          |
 | 2.5.x           | 1.4.1          |
 | 2.4.x           | 1.0.0          |
 | 2.3.x           | 0.2.1          |
