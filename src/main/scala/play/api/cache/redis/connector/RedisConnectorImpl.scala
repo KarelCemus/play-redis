@@ -11,7 +11,7 @@ import play.api.cache.redis._
 import play.api.inject.ApplicationLifecycle
 
 import akka.actor.ActorSystem
-import scredis._
+import redis._
 
 /**
   * The connector directly connects with the REDIS instance, implements protocol commands
@@ -37,11 +37,11 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
   /** logger instance */
   protected val log = Logger( "play.api.cache.redis" )
 
-  private val redis = Client(
+  private val redis = RedisClient(
     host = configuration.host,
     port = configuration.port,
-    database = configuration.database,
-    passwordOpt = configuration.password
+    db = Some( configuration.database ),
+    password = configuration.password
   )
 
   def get[ T: ClassTag ]( key: String ): Future[ Option[ T ] ] =
@@ -54,8 +54,8 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
         None
     }
 
-  def mGet[ T: ClassTag ]( keys: String* ): Future[ List[ Option[ T ] ] ] =
-    redis.mGet[ String ]( keys: _* ) executing "MGET" withParameters keys.mkString( " " ) expects {
+  def mGet[ T: ClassTag ]( keys: String* ): Future[ Seq[ Option[ T ] ] ] =
+    redis.mget[ String ]( keys: _* ) executing "MGET" withParameters keys.mkString( " " ) expects {
       // list is always returned
       case list => keys.zip( list ).map {
         case (key, Some( response: String )) =>
@@ -64,7 +64,7 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
         case (key, None) =>
           log.debug( s"Miss on key '$key'." )
           None
-      }.toList
+      }
     }
 
   /** decodes the object, reports an exception if fails */
@@ -90,7 +90,7 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
 
   /** temporally stores already encoded value into the storage */
   private def setTemporally( key: String, value: String, expiration: Duration ): Future[ Unit ] =
-    redis.setEX( key, value, expiration.toSeconds.toInt ) executing "SETEX" withParameters s"$key $value $expiration" expects {
+    redis.setex( key, expiration.toSeconds, value ) executing "SETEX" withParameters s"$key $value $expiration" expects {
       case _ => log.debug( s"Set on key '$key' on $expiration seconds." )
     }
 
@@ -102,7 +102,7 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
     }
 
   def setIfNotExists( key: String, value: Any ): Future[ Boolean ] =
-    encode( key, value ).flatMap( redis.setNX( key, _ ) ) executing "SETNX" withParameters s"$key encoded($value)" expects {
+    encode( key, value ).flatMap( redis.setnx( key, _ ) ) executing "SETNX" withParameters s"$key encoded($value)" expects {
       case false => log.debug( s"Set if not exists on key '$key' ignored. Value already exists." ); false
       case true => log.debug( s"Set if not exists on key '$key' succeeded." ); true
     }
@@ -124,13 +124,13 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
 
   /** eternally stores already encoded values into the storage */
   private def mSetEternally( keyValues: (String, String)* ): Future[ Unit ] =
-    redis.mSet( keyValues.toMap ) executing "MSET" withParameters keyValues.map( _.asString ).mkString( " " ) expects {
+    redis.mset( keyValues.toMap ) executing "MSET" withParameters keyValues.map( _.asString ).mkString( " " ) expects {
       case _ => log.debug( s"Set on keys ${ keyValues.map( _.key ) } for infinite seconds." )
     }
 
   /** eternally stores already encoded values into the storage */
   private def mSetEternallyIfNotExist( keyValues: (String, String)* ): Future[ Boolean ] =
-    redis.mSetNX( keyValues.toMap ) executing "MSETNX" withParameters keyValues.map( _.asString ).mkString( " " ) expects {
+    redis.msetnx( keyValues.toMap ) executing "MSETNX" withParameters keyValues.map( _.asString ).mkString( " " ) expects {
       case true => log.debug( s"Set if not exists on keys ${ keyValues.map( _.key ) mkString " " } succeeded." ); true
       case false => log.debug( s"Set if not exists on keys ${ keyValues.map( _.key ) mkString " " } ignored. Some value already exists." ); false
     }
@@ -141,7 +141,7 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
       case false => log.debug( s"Expiration set on key '$key' failed. Key does not exist." ) // Nothing was removed
     }
 
-  def matching( pattern: String ): Future[ Set[ String ] ] =
+  def matching( pattern: String ): Future[ Seq[ String ] ] =
     redis.keys( pattern ) executing "KEYS" withParameter pattern expects {
       case keys =>
         log.debug( s"KEYS on '$pattern' responded '${ keys.mkString( ", " ) }'." )
@@ -149,7 +149,7 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
     }
 
   def invalidate( ): Future[ Unit ] =
-    redis.flushDB() executing "FLUSHDB" expects {
+    redis.flushdb( ) executing "FLUSHDB" expects {
       case _ => log.info( "Invalidated." ) // cache was invalidated
     }
 
@@ -175,7 +175,7 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
     }
 
   def increment( key: String, by: Long ): Future[ Long ] =
-    redis.incrBy( key, by ) executing "INCRBY" withParameters s"$key, $by" expects {
+    redis.incrby( key, by ) executing "INCRBY" withParameters s"$key, $by" expects {
       case value => log.debug( s"The value at key '$key' was incremented by $by to $value." ); value
     }
 
@@ -185,7 +185,7 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
     }
 
   def listPrepend( key: String, values: Any* ): Future[ Long ] =
-    Future.sequence( values.map( encode( key, _ ) ) ).flatMap( redis.lPush( key, _: _* ) ) executing "LPUSH" withParameters s"$key ${ values mkString " " }" expects {
+    Future.sequence( values.map( encode( key, _ ) ) ).flatMap( redis.lpush( key, _: _* ) ) executing "LPUSH" withParameters s"$key ${ values mkString " " }" expects {
       case length => log.debug( s"The $length values was prepended to key '$key'." ); length
     } recover {
       case ExecutionFailedException( _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
@@ -194,26 +194,26 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
     }
 
   def listAppend( key: String, values: Any* ) =
-    Future.sequence( values.map( encode( key, _ ) ) ).flatMap( redis.rPush( key, _: _* ) ) executing "RPUSH" withParameters s"$key ${ values mkString " " }" expects {
+    Future.sequence( values.map( encode( key, _ ) ) ).flatMap( redis.rpush( key, _: _* ) ) executing "RPUSH" withParameters s"$key ${ values mkString " " }" expects {
       case length => log.debug( s"The $length values was appended to key '$key'." ); length
     }
 
   def listSize( key: String ) =
-    redis.lLen( key ) executing "LLEN" withParameter key expects {
+    redis.llen( key ) executing "LLEN" withParameter key expects {
       case length => log.debug( s"The collection at '$key' has $length items." ); length
     }
 
   def listSetAt( key: String, position: Int, value: Any ) =
-    encode( key, value ).flatMap( redis.lSet( key, position, _ ) ) executing "LSET" withParameters s"$key $value" expects {
+    encode( key, value ).flatMap( redis.lset( key, position, _ ) ) executing "LSET" withParameters s"$key $value" expects {
       case _ => log.debug( s"Updated value at $position in '$key' to $value." )
     } recover {
-      case ExecutionFailedException( _, _, exceptions.RedisErrorResponseException( "ERR index out of range" ) ) =>
+      case ExecutionFailedException( _, _, actors.ReplyErrorException( "ERR index out of range" ) ) =>
         log.debug( s"Update of the value at $position in '$key' failed due to index out of range." )
         throw new IndexOutOfBoundsException( "Index out of range" )
     }
 
   def listHeadPop[ T: ClassTag ]( key: String ) =
-    redis.lPop[ String ]( key ) executing "LPOP" withParameter key expects {
+    redis.lpop[ String ]( key ) executing "LPOP" withParameter key expects {
       case Some( encoded ) =>
         log.trace( s"Hit on head in key '$key'." )
         Some( decode[ T ]( key, encoded ) )
@@ -223,28 +223,28 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
     }
 
   def listSlice[ T: ClassTag ]( key: String, start: Int, end: Int ) =
-    redis.lRange[ String ]( key, start, end ) executing "LRANGE" withParameters s"$start $end" expects {
+    redis.lrange[ String ]( key, start, end ) executing "LRANGE" withParameters s"$start $end" expects {
       case values =>
         log.debug( s"The range on '$key' from $start to $end included returned ${ values.size } values." )
         values.map( decode[ T ]( key, _ ) )
     }
 
   def listRemove( key: String, value: Any, count: Int ) =
-    encode( key, value ).flatMap( redis.lRem( key, _, count ) ) executing "LREM" withParameter s"$key $value $count" expects {
+    encode( key, value ).flatMap( redis.lrem( key, count, _ ) ) executing "LREM" withParameter s"$key $value $count" expects {
       case removed => log.debug( s"Removed $removed occurrences of $value in '$key'." ); removed
     }
 
   def listTrim( key: String, start: Int, end: Int ) =
-    redis.lTrim( key, start, end ) executing "LTRIM" withParameter s"$key $start $end" expects {
+    redis.ltrim( key, start, end ) executing "LTRIM" withParameter s"$key $start $end" expects {
       case _ => log.debug( s"Trimmed collection at '$key' to $start:$end " )
     }
 
   def listInsert( key: String, pivot: Any, value: Any ) = for {
     pivot <- encode( key, pivot )
     value <- encode( key, value )
-    result <- redis.lInsert( key, Position.Before, pivot, value ) executing "LINSERT" withParameter s"$key $pivot $value" expects {
-      case None | Some( 0L ) => log.debug( s"Insert into the list at '$key' failed. Pivot not found." ); None
-      case Some( length ) => log.debug( s"Inserted $value into the list at '$key'. New size is $length." ); Some( length )
+    result <- redis.linsert( key, api.BEFORE, pivot, value ) executing "LINSERT" withParameter s"$key $pivot $value" expects {
+      case -1L | 0L => log.debug( s"Insert into the list at '$key' failed. Pivot not found." ); None
+      case length => log.debug( s"Inserted $value into the list at '$key'. New size is $length." ); Some( length )
     } recover {
       case ExecutionFailedException( _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
         log.warn( s"Value at '$key' is not a list." )
@@ -255,7 +255,7 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
   def setAdd( key: String, values: Any* ) = {
     // encodes the value
     def toEncoded( value: Any ) = encode( key, value )
-    Future.sequence( values map toEncoded ).flatMap( redis.sAdd( key, _: _* ) ) executing "SADD" withParameters s"$key ${ values mkString " " }" expects {
+    Future.sequence( values map toEncoded ).flatMap( redis.sadd( key, _: _* ) ) executing "SADD" withParameters s"$key ${ values mkString " " }" expects {
       case inserted => log.debug( s"Inserted $inserted elements into the set at '$key'." ); inserted
     } recover {
       case ExecutionFailedException( _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
@@ -265,19 +265,19 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
   }
 
   def setSize( key: String ) =
-    redis.sCard( key ) executing "SCARD" withParameter key expects {
+    redis.scard( key ) executing "SCARD" withParameter key expects {
       case length => log.debug( s"The collection at '$key' has $length items." ); length
     }
 
   def setMembers[ T: ClassTag ]( key: String ) =
-    redis.sMembers( key ) executing "SMEMBERS" withParameter key expects {
+    redis.smembers[ String ]( key ) executing "SMEMBERS" withParameter key expects {
       case items =>
         log.debug( s"Returned ${ items.size } items from the collection at '$key'." )
-        items.map( decode[ T ]( key, _ ) )
+        items.map( decode[ T ]( key, _ ) ).toSet
     }
 
   def setIsMember( key: String, value: Any ) =
-    encode( key, value ).flatMap( redis.sIsMember( key, _ ) ) executing "SISMEMBER" withParameters s"$key $value" expects {
+    encode( key, value ).flatMap( redis.sismember( key, _ ) ) executing "SISMEMBER" withParameters s"$key $value" expects {
       case true => log.debug( s"Item $value exists in the collection at '$key'." ); true
       case false => log.debug( s"Item $value does not exist in the collection at '$key'" ); false
     }
@@ -286,46 +286,46 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
     // encodes the value
     def toEncoded( value: Any ) = encode( key, value )
 
-    Future.sequence( values map toEncoded ).flatMap( redis.sRem( key, _: _* ) ) executing "SREM" withParameters s"$key ${ values mkString " " }" expects {
+    Future.sequence( values map toEncoded ).flatMap( redis.srem( key, _: _* ) ) executing "SREM" withParameters s"$key ${ values mkString " " }" expects {
       case removed => log.debug( s"Removed $removed elements from the collection at '$key'." ); removed
     }
   }
 
   def hashRemove( key: String, fields: String* ) =
-    redis.hDel( key, fields: _* ) executing "HDEL" withParameters s"$key ${ fields mkString " " }" expects {
+    redis.hdel( key, fields: _* ) executing "HDEL" withParameters s"$key ${ fields mkString " " }" expects {
       case removed => log.debug( s"Removed $removed elements from the collection at '$key'." ); removed
     }
 
   def hashExists( key: String, field: String ) =
-    redis.hExists( key, field ) executing "HEXISTS" withParameters s"$key $field" expects {
+    redis.hexists( key, field ) executing "HEXISTS" withParameters s"$key $field" expects {
       case true => log.debug( s"Item $field exists in the collection at '$key'." ); true
       case false => log.debug( s"Item $field does not exist in the collection at '$key'" ); false
     }
 
   def hashGet[ T: ClassTag ]( key: String, field: String ) =
-    redis.hGet[ String ]( key, field ) executing "HGET" withParameters s"$key $field" expects {
+    redis.hget[ String ]( key, field ) executing "HGET" withParameters s"$key $field" expects {
       case Some( encoded ) => log.debug( s"Item $field exists in the collection at '$key'." ); Some( decode[ T ]( key, encoded ) )
       case None => log.debug( s"Item $field is not in the collection at '$key'." ); None
     }
 
   def hashGetAll[ T: ClassTag ]( key: String ) =
-    redis.hGetAll[ String ]( key ) executing "HGETALL" withParameter key expects {
-      case Some( encoded ) => log.debug( s"Collection at '$key' has ${ encoded.size } items." ); encoded.mapValues( decode[ T ]( key, _ ) )
-      case None => log.debug( s"Collection at '$key' is empty." ); Map.empty
+    redis.hgetall[ String ]( key ) executing "HGETALL" withParameter key expects {
+      case empty if empty.isEmpty => log.debug( s"Collection at '$key' is empty." ); Map.empty
+      case encoded => log.debug( s"Collection at '$key' has ${ encoded.size } items." ); encoded.mapValues( decode[ T ]( key, _ ) )
     }
 
   def hashSize( key: String ) =
-    redis.hLen( key ) executing "HLEN" withParameter key expects {
+    redis.hlen( key ) executing "HLEN" withParameter key expects {
       case length => log.debug( s"The collection at '$key' has $length items." ); length
     }
 
   def hashKeys( key: String ) =
-    redis.hKeys( key ) executing "HKEYS" withParameter key expects {
-      case keys => log.debug( s"The collection at '$key' defines: ${ keys mkString " " }." ); keys
+    redis.hkeys( key ) executing "HKEYS" withParameter key expects {
+      case keys => log.debug( s"The collection at '$key' defines: ${ keys mkString " " }." ); keys.toSet
     }
 
   def hashSet( key: String, field: String, value: Any ) =
-    encode( key, value ).flatMap( redis.hSet( key, field, _ ) ) executing "HSET" withParameters s"$key $field $value" expects {
+    encode( key, value ).flatMap( redis.hset( key, field, _ ) ) executing "HSET" withParameters s"$key $field $value" expects {
       case true => log.debug( s"Item $field in the collection at '$key' was inserted." ); true
       case false => log.debug( s"Item $field in the collection at '$key' was updated." ); false
     } recover {
@@ -335,7 +335,7 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
     }
 
   def hashValues[ T: ClassTag ]( key: String ) =
-    redis.hVals( key ) executing "HVALS" withParameter key expects {
+    redis.hvals[ String ]( key ) executing "HVALS" withParameter key expects {
       case values => log.debug( s"The collection at '$key' contains ${ values.size } values." ); values.map( decode[ T ]( key, _ ) ).toSet
     }
 

@@ -188,7 +188,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
   /**
     * @return Helper to this.view.all returning all object in the list
     */
-  def toList: Result[ List[ Elem ] ] = view.all
+  def toList: Result[ Seq[ Elem ] ] = view.all
 
   /**
     * Inserts value in the list stored at key either before the
@@ -261,7 +261,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
       * @param n takes initial N elements
       * @return first N elements of the collection if exist
       */
-    def take( n: Int ): Result[ List[ Elem ] ] = slice( 0, n - 1 )
+    def take( n: Int ): Result[ Seq[ Elem ] ] = slice( 0, n - 1 )
 
     /**
       * Helper method of slice. For more details see that method.
@@ -269,14 +269,14 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
       * @param n ignore initial N elements
       * @return rest of the collection ignoring initial N elements
       */
-    def drop( n: Int ): Result[ List[ Elem ] ] = slice( n, -1 )
+    def drop( n: Int ): Result[ Seq[ Elem ] ] = slice( n, -1 )
 
     /**
       * Helper method of slice. For more details see that method.
       *
       * @return whole collection
       */
-    def all: Result[ List[ Elem ] ] = slice( 0, -1 )
+    def all: Result[ Seq[ Elem ] ] = slice( 0, -1 )
 
     /**
       * Returns the specified elements of the list stored at key.
@@ -301,7 +301,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
       * @param end  index of the last element included
       * @return collection at the specified range
       */
-    def slice( from: Int, end: Int ): Result[ List[ Elem ] ]
+    def slice( from: Int, end: Int ): Result[ Seq[ Elem ] ]
   }
 
   trait RedisListModification {

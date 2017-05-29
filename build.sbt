@@ -1,5 +1,6 @@
 import sbt._
 import sbt.Keys._
+
 import com.typesafe.sbt.pgp.PgpKeys
 
 normalizedName := "play-redis"
@@ -10,27 +11,31 @@ description := "Redis cache plugin for the Play framework 2"
 
 organization := "com.github.karelcemus"
 
-scalaVersion := "2.11.8"
+scalaVersion := "2.12.2"
 
-crossScalaVersions := Seq( scalaVersion.value )
+crossScalaVersions := Seq( "2.11.11", scalaVersion.value )
 
-val playVersion = "2.5.12"
+val playVersion = "2.6.0-RC1" // todo update when 2.6.0
 
-val connectorVersion = "2.0.8"
+val connectorVersion = "1.8.0"
 
-val specs2Version = "3.8.6"
+val specs2Version = "3.8.9"
+
+parallelExecution in Test := false
 
 libraryDependencies ++= Seq(
   // play framework cache API
-  "com.typesafe.play" %% "play-cache" % playVersion % "provided" exclude("net.sf.ehcache", "ehcache-core"),
+  "com.typesafe.play" %% "play-cache" % playVersion % "provided",
   // redis connector
-  "com.livestream" %% "scredis" % connectorVersion,
+  "com.github.etaty" %% "rediscala" % connectorVersion,
   // test framework
   "org.specs2" %% "specs2-core" % specs2Version % "test",
   // test module for play framework
   "com.typesafe.play" %% "play-test" % playVersion % "test",
   // logger for tests
-  "org.slf4j" % "slf4j-simple" % "1.7.24" % "test"
+  "org.slf4j" % "slf4j-simple" % "1.7.25" % "test",
+  // todo remove when 2.6.0
+  "com.typesafe.akka" %% "akka-http-core" % "10.0.7" % "test"
 )
 
 resolvers ++= Seq(

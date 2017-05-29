@@ -11,7 +11,7 @@ import akka.actor.ActorSystem
 import akka.util.Timeout
 import org.specs2.matcher._
 import org.specs2.specification.BeforeAll
-import scredis.Client
+import redis.RedisClient
 
 /**
   * Provides implicits and configuration for redis tests invocation
@@ -20,9 +20,9 @@ trait Redis extends EmptyRedis with RedisMatcher {
 
   def injector = Redis.injector
 
-  implicit val application = injector.instanceOf[ Application ]
+  implicit val application: Application = injector.instanceOf[ Application ]
 
-  implicit val system = injector.instanceOf[ ActorSystem ]
+  implicit val system: ActorSystem = injector.instanceOf[ ActorSystem ]
 }
 
 trait Synchronization {
@@ -62,11 +62,11 @@ trait RedisSettings {
   */
 trait RedisInstance extends RedisSettings with Synchronization {
 
-  private var _redis: Client = _
+  private var _redis: RedisClient = _
 
   /** instance of brando */
   protected def redis( implicit application: Application, system: ActorSystem ) = synchronized {
-    if ( _redis == null ) _redis = Client( host = host, port = port, database = database )
+    if ( _redis == null ) _redis = RedisClient( host = host, port = port, db = Some( database ) )
     _redis
   }
 }
@@ -78,6 +78,10 @@ trait RedisInstance extends RedisSettings with Synchronization {
   */
 trait EmptyRedis extends BeforeAll {
   self: Redis =>
+
+  implicit def application: Application
+
+  implicit def system: ActorSystem
 
   /** before all specifications reset redis database */
   override def beforeAll( ): Unit = EmptyRedis.empty
@@ -92,7 +96,7 @@ object EmptyRedis extends RedisInstance {
   def empty( implicit application: Application, system: ActorSystem ): Unit = synchronized {
     // execute only once
     if ( !executed ) {
-      redis.flushDB( ).sync
+      redis.flushdb( ).sync
       executed = true
     }
   }
@@ -106,8 +110,6 @@ object Redis {
   val injector = new GuiceApplicationBuilder( )
     // load required bindings
     .bindings( Seq.empty: _* )
-    // #19: disable default EhCache module which is enabled by default
-    .disable( classOf[ play.api.cache.EhCacheModule ] )
     // #19 enable Redis module
     .bindings( new RedisCacheModule )
     // produce a fake application

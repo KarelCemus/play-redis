@@ -48,7 +48,7 @@ object FailingConnector extends RedisConnector with Synchronization {
   def remove( keys: String* ): Future[ Unit ] =
     failKeyed( keys.mkString( " " ), "DEL" )
 
-  def matching( pattern: String ): Future[ Set[ String ] ] =
+  def matching( pattern: String ): Future[ Seq[ String ] ] =
     failCommand( "KEYS" )
 
   def invalidate( ): Future[ Unit ] =
