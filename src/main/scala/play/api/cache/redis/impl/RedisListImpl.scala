@@ -60,7 +60,7 @@ private[ impl ] class RedisListImpl[ Elem: ClassTag, Result[ _ ] ]( key: String,
   def view = ListView
 
   object ListView extends RedisListView {
-    def slice( start: Int, end: Int ) = redis.listSlice[ Elem ]( key, start, end ).recoverWithDefault( List.empty )
+    def slice( start: Int, end: Int ) = redis.listSlice[ Elem ]( key, start, end ).recoverWithDefault( Seq.empty )
   }
 
   def modify = ListModifier

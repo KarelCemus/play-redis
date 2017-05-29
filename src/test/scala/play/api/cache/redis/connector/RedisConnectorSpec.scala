@@ -100,10 +100,10 @@ class RedisConnectorSpec extends Specification with Redis {
       Cache.set( s"$prefix-test-13-key-A", "value", 3.second ).sync
       Cache.set( s"$prefix-test-13-note-A", "value", 3.second ).sync
       Cache.set( s"$prefix-test-13-key-B", "value", 3.second ).sync
-      Cache.matching( s"$prefix-test-13*" ).sync mustEqual Set( s"$prefix-test-13-key-A", s"$prefix-test-13-note-A", s"$prefix-test-13-key-B" )
-      Cache.matching( s"$prefix-test-13*A" ).sync mustEqual Set( s"$prefix-test-13-key-A", s"$prefix-test-13-note-A" )
-      Cache.matching( s"$prefix-test-13-key-*" ).sync mustEqual Set( s"$prefix-test-13-key-A", s"$prefix-test-13-key-B" )
-      Cache.matching( s"$prefix-test-13A*" ).sync mustEqual Set.empty
+      Cache.matching( s"$prefix-test-13*" ).sync.sorted mustEqual Seq( s"$prefix-test-13-key-A", s"$prefix-test-13-note-A", s"$prefix-test-13-key-B" ).sorted
+      Cache.matching( s"$prefix-test-13*A" ).sync.sorted mustEqual Seq( s"$prefix-test-13-key-A", s"$prefix-test-13-note-A" ).sorted
+      Cache.matching( s"$prefix-test-13-key-*" ).sync.sorted mustEqual Seq( s"$prefix-test-13-key-A", s"$prefix-test-13-key-B" ).sorted
+      Cache.matching( s"$prefix-test-13A*" ).sync mustEqual Seq.empty
     }
 
     "support list" in {

@@ -34,7 +34,7 @@ the `play.cache.CacheApi` is implementation of standard `CacheApi` for Java.
 
 ## How to add the module into the project
 
-**Since 1.3.x version** this module builds over [Scredis connector](https://github.com/scredis/scredis) and is intended **only for Scala version**
+**Since 1.5.x version** this module builds over [Rediscala connector](https://github.com/etaty/rediscala) and is intended **only for Scala version**
 of the Play framework.
 
 To your SBT `build.sbt` add the following lines:
@@ -414,6 +414,13 @@ Nevertheless, this module **replaces** the EHCache and it is not intended to use
 </center>
 
 ## Changelog
+
+### [:link: 1.5.0](https://github.com/KarelCemus/play-redis/tree/1.5.0)
+
+**[Scredis](https://github.com/scredis/scredis) connector replaced 
+by [Rediscala](https://github.com/etaty/rediscala) implementation** 
+due to repository inactivity, no release management, missing support of cluster,
+and unreleased support of Scala 2.12.
 
 ### [:link: 1.4.1](https://github.com/KarelCemus/play-redis/tree/1.4.1)
 
