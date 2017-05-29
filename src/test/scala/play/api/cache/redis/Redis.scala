@@ -20,9 +20,9 @@ trait Redis extends EmptyRedis with RedisMatcher {
 
   def injector = Redis.injector
 
-  implicit val application = injector.instanceOf[ Application ]
+  implicit val application: Application = injector.instanceOf[ Application ]
 
-  implicit val system = injector.instanceOf[ ActorSystem ]
+  implicit val system: ActorSystem = injector.instanceOf[ ActorSystem ]
 }
 
 trait Synchronization {
@@ -79,6 +79,10 @@ trait RedisInstance extends RedisSettings with Synchronization {
 trait EmptyRedis extends BeforeAll {
   self: Redis =>
 
+  implicit def application: Application
+
+  implicit def system: ActorSystem
+
   /** before all specifications reset redis database */
   override def beforeAll( ): Unit = EmptyRedis.empty
 }
@@ -106,8 +110,6 @@ object Redis {
   val injector = new GuiceApplicationBuilder( )
     // load required bindings
     .bindings( Seq.empty: _* )
-    // #19: disable default EhCache module which is enabled by default
-    .disable( classOf[ play.api.cache.EhCacheModule ] )
     // #19 enable Redis module
     .bindings( new RedisCacheModule )
     // produce a fake application

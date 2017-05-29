@@ -16,29 +16,24 @@ import play.api.{Configuration, Environment}
 private[ configuration ] trait ConfigurationResolver[ T ] {
 
   /** returns configuration provider based on the application configuration */
-  def resolve( configuration: Configuration ) = configuration.getString( "play.cache.redis.configuration" ) match {
+  def resolve( configuration: Configuration ) = configuration.get[ String ]( "play.cache.redis.configuration" ) match {
     // required static implementation using application.conf
-    case Some( "static" ) => static
+    case "static" => static
     // required environmental implementation
-    case Some( "env" ) => connectionStringVariable( configuration ).fold {
-      // required environmental implementation but the variable with the connection string is unknown
-      invalidConfiguration( "Unknown name of the environmental variable with the connection string. Please define 'play.redis.cache.connection-string-variable' value in the application.conf." )
-    }( env )
+    case "env" => env( connectionStringVariable( configuration ) )
     // required heroku configuration
-    case Some( "heroku" ) => heroku
+    case "heroku" => heroku
     // required heroku configuration
-    case Some( "heroku-cloud" ) => herokuCloud
+    case "heroku-cloud" => herokuCloud
     // supplied custom implementation
-    case Some( "custom" ) => custom
+    case "custom" => custom
     // found but unrecognized
-    case Some( other ) => invalidConfiguration( s"Unrecognized configuration provider '$other' in key 'play.cache.redis.configuration'. Expected values are 'custom', 'static', 'heroku', 'heroku-cloud', and 'env'." )
-    // key is missing
-    case None => invalidConfiguration( "Configuration provider definition is missing. Please define the key 'play.cache.redis.configuration'. Expected values are 'custom', 'static', 'herouk', 'heroku-cloud', and 'env'." )
+    case other => invalidConfiguration( s"Unrecognized configuration provider '$other' in key 'play.cache.redis.configuration'. Expected values are 'custom', 'static', 'heroku', 'heroku-cloud', and 'env'." )
   }
 
   /** returns name of the variable with the connection string */
   private def connectionStringVariable( configuration: Configuration ) =
-    configuration.getString( "play.cache.redis.connection-string-variable" )
+    configuration.get[ String ]( "play.cache.redis.connection-string-variable" )
 
   /**
     * creates the configuration provider based on the resolver implementation
