@@ -61,7 +61,6 @@ object ImplementationModule extends Module {
   override def bindings( environment: Environment, configuration: Configuration ) = Seq(
     // play-redis APIs
     bind[ CacheApi ].to[ SyncRedis ],
-    bind[ AsyncRedis ].to[ AsyncRedis ],
     bind[ CacheAsyncApi ].to[ AsyncRedis ],
     // scala api defined by Play
     bind[ play.api.cache.CacheApi ].to[ play.api.cache.DefaultSyncCacheApi ],
