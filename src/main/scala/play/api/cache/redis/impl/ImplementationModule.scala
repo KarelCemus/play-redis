@@ -17,14 +17,13 @@ private[ impl ] trait PolicyResolver[ T ] {
 
   /** reads the configuration and provides proper recovery policy binding */
   def resolve( configuration: Configuration ) = {
-    configuration.getString( "play.cache.redis.recovery" ) match {
-      case Some( "log-and-fail" ) => logAndFail
-      case Some( "log-and-default" ) => logAndDefault
-      case Some( "log-condensed-and-fail" ) => logCondensedAndFail
-      case Some( "log-condensed-and-default" ) => logCondensedAndDefault
-      case Some( "custom" ) => custom
-      case Some( _ ) => invalidConfiguration( "Invalid value in 'play.cache.redis.recovery'. Accepted values are 'log-and-fail', 'log-and-default', and 'custom'." )
-      case None => invalidConfiguration( "Key 'play.cache.redis.recovery' is mandatory. Accepted values are 'log-and-fail', 'log-and-default', and 'custom'." )
+    configuration.get[ String ]( "play.cache.redis.recovery" ) match {
+      case "log-and-fail" => logAndFail
+      case "log-and-default" => logAndDefault
+      case "log-condensed-and-fail" => logCondensedAndFail
+      case "log-condensed-and-default" => logCondensedAndDefault
+      case "custom" => custom
+      case _ => invalidConfiguration( "Invalid value in 'play.cache.redis.recovery'. Accepted values are 'log-and-fail', 'log-and-default', and 'custom'." )
     }
   }
 
