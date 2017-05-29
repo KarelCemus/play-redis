@@ -72,7 +72,7 @@ private[ redis ] trait AbstractCacheApi[ Result[ _ ] ] {
     * @param expiration record duration in seconds
     * @return promise
     */
-  def set( key: String, value: Any, expiration: Duration = Duration.Inf ): Result[ Unit ]
+  def set( key: String, value: Any, expiration: Duration = Duration.Inf ): Result[ Done ]
 
   /** Set a value into the cache if the given key is not already used, otherwise do nothing.
     * Expiration time in seconds (0 second means eternity).
@@ -98,7 +98,7 @@ private[ redis ] trait AbstractCacheApi[ Result[ _ ] ] {
     * @param keyValues cache storage key-value pairs to store
     * @return promise
     */
-  def setAll( keyValues: (String, Any)* ): Result[ Unit ]
+  def setAll( keyValues: (String, Any)* ): Result[ Done ]
 
   /** Sets the given keys to their respective values for eternity. It sets all values if none of them
     * exist, if at least a single of them exists, it does not set any value, thus it is either all or none.
@@ -121,7 +121,7 @@ private[ redis ] trait AbstractCacheApi[ Result[ _ ] ] {
     * @param expiration record duration, applies only when appends to nothing
     * @return promise
     */
-  def append( key: String, value: String, expiration: Duration = Duration.Inf ): Result[ Unit ]
+  def append( key: String, value: String, expiration: Duration = Duration.Inf ): Result[ Done ]
 
   /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration
     *
@@ -129,14 +129,14 @@ private[ redis ] trait AbstractCacheApi[ Result[ _ ] ] {
     * @param expiration new expiration in seconds
     * @return promise
     */
-  def expire( key: String, expiration: Duration ): Result[ Unit ]
+  def expire( key: String, expiration: Duration ): Result[ Done ]
 
   /** Remove a value under the given key from the cache
     *
     * @param key cache storage key
     * @return promise
     */
-  def remove( key: String ): Result[ Unit ]
+  def remove( key: String ): Result[ Done ]
 
   /** Remove all values from the cache
     *
@@ -145,14 +145,14 @@ private[ redis ] trait AbstractCacheApi[ Result[ _ ] ] {
     * @param keys cache storage keys
     * @return promise
     */
-  def remove( key1: String, key2: String, keys: String* ): Result[ Unit ]
+  def remove( key1: String, key2: String, keys: String* ): Result[ Done ]
 
   /** Removes all keys in arguments. The other remove methods are for syntax sugar
     *
     * @param keys cache storage keys
     * @return promise
     */
-  def removeAll( keys: String* ): Result[ Unit ]
+  def removeAll( keys: String* ): Result[ Done ]
 
   /** <p>Removes all keys matching the given pattern. This command has no direct support
     * in Redis, it is combination of KEYS and DEL commands.</p>
@@ -175,13 +175,13 @@ private[ redis ] trait AbstractCacheApi[ Result[ _ ] ] {
     * @param pattern this must be valid KEYS pattern
     * @return nothing
     */
-  def removeMatching( pattern: String ): Result[ Unit ]
+  def removeMatching( pattern: String ): Result[ Done ]
 
   /** Remove all keys in cache
     *
     * @return promise
     */
-  def invalidate( ): Result[ Unit ]
+  def invalidate( ): Result[ Done ]
 
   /** Increments the stored string value representing 10-based signed integer
     * by given value.

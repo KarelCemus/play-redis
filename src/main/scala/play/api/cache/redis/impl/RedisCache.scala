@@ -20,7 +20,7 @@ private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implic
     redis.mGet[ T ]( keys: _* ).recoverWithDefault( keys.toList.map( _ => None ) )
 
   override def set( key: String, value: Any, expiration: Duration ) =
-    redis.set( key, value, expiration ).recoverWithUnit
+    redis.set( key, value, expiration ).recoverWithDone
 
   override def setIfNotExists( key: String, value: Any, expiration: Duration ) =
     redis.setIfNotExists( key, value ).map { result =>
@@ -28,21 +28,21 @@ private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implic
       result
     }.recoverWithDefault( true )
 
-  override def setAll( keyValues: (String, Any)* ): Result[ Unit ] =
-    redis.mSet( keyValues: _* ).recoverWithDefault( None )
+  override def setAll( keyValues: (String, Any)* ): Result[ Done ] =
+    redis.mSet( keyValues: _* ).recoverWithDone
 
   override def setAllIfNotExist( keyValues: (String, Any)* ): Result[ Boolean ] =
     redis.mSetIfNotExist( keyValues: _* ).recoverWithDefault( true )
 
-  override def append( key: String, value: String, expiration: Duration ): Result[ Unit ] =
-    redis.append( key, value ).map[ Unit ] { result =>
+  override def append( key: String, value: String, expiration: Duration ): Result[ Done ] =
+    redis.append( key, value ).flatMap { result =>
       // if the new string length is equal to the appended string, it means they should equal
       // when the finite duration is required, set it
-      if ( result == value.length && expiration.isFinite( ) ) redis.expire( key, expiration )
-    }.recoverWithUnit
+      if ( result == value.length && expiration.isFinite() ) redis.expire( key, expiration ) else Future.successful[ Unit ]( Unit )
+    }.recoverWithDone
 
   override def expire( key: String, expiration: Duration ) =
-    redis.expire( key, expiration ).recoverWithUnit
+    redis.expire( key, expiration ).recoverWithDone
 
   override def matching( pattern: String ) =
     redis.matching( pattern ).recoverWithDefault( Seq.empty[ String ] )
@@ -59,19 +59,19 @@ private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implic
     }.recoverWithFuture( orElse )
 
   override def remove( key: String ) =
-    redis.remove( key ).recoverWithUnit
+    redis.remove( key ).recoverWithDone
 
   override def remove( key1: String, key2: String, keys: String* ) =
-    redis.remove( key1 +: key2 +: keys: _* ).recoverWithUnit
+    redis.remove( key1 +: key2 +: keys: _* ).recoverWithDone
 
-  override def removeAll( keys: String* ): Result[ Unit ] =
-    redis.remove( keys: _* ).recoverWithUnit
+  override def removeAll( keys: String* ): Result[ Done ] =
+    redis.remove( keys: _* ).recoverWithDone
 
-  override def removeMatching( pattern: String ): Result[ Unit ] =
-    redis.matching( pattern ).flatMap( keys => redis.remove( keys: _* ) ).recoverWithUnit
+  override def removeMatching( pattern: String ): Result[ Done ] =
+    redis.matching( pattern ).flatMap( keys => redis.remove( keys: _* ) ).recoverWithDone
 
   override def invalidate( ) =
-    redis.invalidate( ).recoverWithUnit
+    redis.invalidate( ).recoverWithDone
 
   override def exists( key: String ) =
     redis.exists( key ).recoverWithDefault( false )
