@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import play.api.cache.redis._
 import play.api.cache.redis.exception._
@@ -128,34 +129,34 @@ class AsynchronousCacheSpec extends Specification with Redis {
           cache.set( s"$prefix-test-13-key-A", "value", 3.second ) must expects( beUnit )
           cache.set( s"$prefix-test-13-note-A", "value", 3.second ) must expects( beUnit )
           cache.set( s"$prefix-test-13-key-B", "value", 3.second ) must expects( beUnit )
-          cache.matching( s"$prefix-test-13*" ) must expects( beEqualTo( Set( s"$prefix-test-13-key-A", s"$prefix-test-13-note-A", s"$prefix-test-13-key-B" ) ), beEqualTo( Set.empty ) )
-          cache.matching( s"$prefix-test-13*A" ) must expects( beEqualTo( Set( s"$prefix-test-13-key-A", s"$prefix-test-13-note-A" ) ), beEqualTo( Set.empty ) )
-          cache.matching( s"$prefix-test-13-key-*" ) must expects( beEqualTo( Set( s"$prefix-test-13-key-A", s"$prefix-test-13-key-B" ) ), beEqualTo( Set.empty ) )
-          cache.matching( s"$prefix-test-13A*" ) must expects( beEqualTo( Set.empty ) )
+          cache.matching( s"$prefix-test-13*" ).map( _.sorted ) must expects( beEqualTo( Seq( s"$prefix-test-13-key-A", s"$prefix-test-13-note-A", s"$prefix-test-13-key-B" ).sorted ), beEqualTo( Seq.empty ) )
+          cache.matching( s"$prefix-test-13*A" ).map( _.sorted ) must expects( beEqualTo( Seq( s"$prefix-test-13-key-A", s"$prefix-test-13-note-A" ).sorted ), beEqualTo( Seq.empty ) )
+          cache.matching( s"$prefix-test-13-key-*" ).map( _.sorted ) must expects( beEqualTo( Seq( s"$prefix-test-13-key-A", s"$prefix-test-13-key-B" ).sorted ), beEqualTo( Seq.empty ) )
+          cache.matching( s"$prefix-test-13A*" ) must expects( beEqualTo( Seq.empty ) )
         }
 
         "remove all matching keys, wildcard at the end" in {
           cache.set( s"$prefix-test-14-key-A", "value", 3.second ) must expects( beUnit )
           cache.set( s"$prefix-test-14-note-A", "value", 3.second ) must expects( beUnit )
           cache.set( s"$prefix-test-14-key-B", "value", 3.second ) must expects( beUnit )
-          cache.matching( s"$prefix-test-14*" ) must expects( beEqualTo( Set( s"$prefix-test-14-key-A", s"$prefix-test-14-note-A", s"$prefix-test-14-key-B" ) ), beEqualTo( Set.empty ) )
+          cache.matching( s"$prefix-test-14*" ).map( _.sorted ) must expects( beEqualTo( Seq( s"$prefix-test-14-key-A", s"$prefix-test-14-note-A", s"$prefix-test-14-key-B" ).sorted ), beEqualTo( Seq.empty ) )
           cache.removeMatching( s"$prefix-test-14*" ) must expects( beUnit )
-          cache.matching( s"$prefix-test-14*" ) must expects( beEqualTo( Set.empty ) )
+          cache.matching( s"$prefix-test-14*" ) must expects( beEqualTo( Seq.empty ) )
         }
 
         "remove all matching keys, wildcard in the middle" in {
           cache.set( s"$prefix-test-15-key-A", "value", 3.second ) must expects( beUnit )
           cache.set( s"$prefix-test-15-note-A", "value", 3.second ) must expects( beUnit )
           cache.set( s"$prefix-test-15-key-B", "value", 3.second ) must expects( beUnit )
-          cache.matching( s"$prefix-test-15*A" ) must expects( beEqualTo( Set( s"$prefix-test-15-key-A", s"$prefix-test-15-note-A" ) ), beEqualTo( Set.empty ) )
+          cache.matching( s"$prefix-test-15*A" ).map( _.sorted ) must expects( beEqualTo( Seq( s"$prefix-test-15-key-A", s"$prefix-test-15-note-A" ).sorted ), beEqualTo( Seq.empty ) )
           cache.removeMatching( s"$prefix-test-15*A" ) must expects( beUnit )
-          cache.matching( s"$prefix-test-15*A" ) must expects( beEqualTo( Set.empty ) )
+          cache.matching( s"$prefix-test-15*A" ) must expects( beEqualTo( Seq.empty ) )
         }
 
         "remove all matching keys, no match" in {
-          cache.matching( s"$prefix-test-16*" ) must expects( beEqualTo( Set.empty ) )
+          cache.matching( s"$prefix-test-16*" ) must expects( beEqualTo( Seq.empty ) )
           cache.removeMatching( s"$prefix-test-16*" ) must expects( beUnit )
-          cache.matching( s"$prefix-test-16*" ) must expects( beEqualTo( Set.empty ) )
+          cache.matching( s"$prefix-test-16*" ) must expects( beEqualTo( Seq.empty ) )
         }
 
         "distinct different keys" in {

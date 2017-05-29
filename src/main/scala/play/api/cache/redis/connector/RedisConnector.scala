@@ -28,7 +28,7 @@ private[ redis ] trait CoreCommands {
     * @param keys cache storage key
     * @return stored record, Some if exists, otherwise None
     */
-  def mGet[ T: ClassTag ]( keys: String* ): Future[ List[ Option[ T ] ] ]
+  def mGet[ T: ClassTag ]( keys: String* ): Future[ Seq[ Option[ T ] ] ]
 
   /** Determines whether value exists in cache.
     *
@@ -44,7 +44,7 @@ private[ redis ] trait CoreCommands {
     * @param pattern valid KEYS pattern with wildcards
     * @return list of matching keys
     */
-  def matching( pattern: String ): Future[ Set[ String ] ]
+  def matching( pattern: String ): Future[ Seq[ String ] ]
 
   /** Set a value into the cache. Expiration time in seconds (0 second means eternity).
     *
@@ -326,7 +326,7 @@ private[ redis ] trait ListCommands {
     * @tparam T type of the values
     * @return subset of existing set
     */
-  def listSlice[ T: ClassTag ]( key: String, start: Int, end: Int ): Future[ List[ T ] ]
+  def listSlice[ T: ClassTag ]( key: String, start: Int, end: Int ): Future[ Seq[ T ] ]
 
   /**
     * Removes (LREM) the first count occurrences of elements equal to value from the list stored at key. The count

@@ -11,7 +11,7 @@ import akka.actor.ActorSystem
 import akka.util.Timeout
 import org.specs2.matcher._
 import org.specs2.specification.BeforeAll
-import scredis.Client
+import redis.RedisClient
 
 /**
   * Provides implicits and configuration for redis tests invocation
@@ -62,11 +62,11 @@ trait RedisSettings {
   */
 trait RedisInstance extends RedisSettings with Synchronization {
 
-  private var _redis: Client = _
+  private var _redis: RedisClient = _
 
   /** instance of brando */
   protected def redis( implicit application: Application, system: ActorSystem ) = synchronized {
-    if ( _redis == null ) _redis = Client( host = host, port = port, database = database )
+    if ( _redis == null ) _redis = RedisClient( host = host, port = port, db = Some( database ) )
     _redis
   }
 }
@@ -92,7 +92,7 @@ object EmptyRedis extends RedisInstance {
   def empty( implicit application: Application, system: ActorSystem ): Unit = synchronized {
     // execute only once
     if ( !executed ) {
-      redis.flushDB( ).sync
+      redis.flushdb( ).sync
       executed = true
     }
   }

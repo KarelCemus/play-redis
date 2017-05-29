@@ -27,7 +27,7 @@ private[ redis ] trait AbstractCacheApi[ Result[ _ ] ] {
     * @param key cache storage keys
     * @return stored record, Some if exists, otherwise None
     */
-  def getAll[ T: ClassTag ]( key: String* ): Result[ List[ Option[ T ] ] ]
+  def getAll[ T: ClassTag ]( key: String* ): Result[ Seq[ Option[ T ] ] ]
 
   /** Retrieve a value from the cache. If is missing, set default value with
     * given expiration and return the value.
@@ -63,7 +63,7 @@ private[ redis ] trait AbstractCacheApi[ Result[ _ ] ] {
     * @param pattern valid KEYS pattern with wildcards
     * @return list of matching keys
     */
-  def matching( pattern: String ): Result[ Set[ String ] ]
+  def matching( pattern: String ): Result[ Seq[ String ] ]
 
   /** Set a value into the cache. Expiration time in seconds (0 second means eternity).
     *
