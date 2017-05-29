@@ -373,7 +373,6 @@ To enable redis cache on Heroku we have to do the following steps:
 
  1. add library into application dependencies
  2. enable `RedisCacheModule`
- 3. disable `EhCacheModule`
  4. set either `play.cache.redis.configuration: "heroku"` or  `play.cache.redis.configuration: "heroku-cloud"` depending whether your Heroku addon provides `REDIS_URL` or `REDISCLOUD_URL` environment variable.
  5. done, we can run it and use any of 3 provided interfaces
 
@@ -385,7 +384,6 @@ implementation with customized configuration we have to do the following steps:
 
  1. add library into application dependencies
  2. enable `RedisCacheModule`
- 3. disable `EhCacheModule`
  4. set `play.cache.redis.configuration: custom`
  5. Implement `play.api.cache.redis.Configuration` trait
  6. Register the implementation into DI provider. This is specific for each provider. If you are using Guice, which is
@@ -395,10 +393,10 @@ implementation with customized configuration we have to do the following steps:
 
 ## Caveat
 
-The library **does not enable** the redis module by default. It is to avoid conflict with Play's default EhCache.
-The Play discourages disabling modules within the library thus it leaves it up to developers to disable EhCache
-and enable Redis manually. This also allows you to use EhCache in your *dev* environment and redis in *production*.
-Nevertheless, this module **replaces** the EHCache and it is not intended to use both implementations along.
+The library **does not enable** the redis module by default. It is to avoid conflict with Play's default EhCache
+and let the user define when use Redis. This allows you to use EhCache in your *dev* environment and 
+Redis in *production*. Nevertheless, this module **replaces** the EHCache and it is not intended to use 
+both implementations along.
 
 ## Compatibility matrix
 
@@ -421,6 +419,12 @@ Nevertheless, this module **replaces** the EHCache and it is not intended to use
 by [Rediscala](https://github.com/etaty/rediscala) implementation** 
 due to repository inactivity, no release management, missing support of cluster,
 and unreleased support of Scala 2.12.
+
+Due to changes in the connector, there are slightly relaxed constraints
+of return values in both `CacheApi` and `CacheAsyncApi`. For example,
+some operations instead of `List` return `Seq` and instead of `Set` also
+return `Seq`. This change was introduced to avoid possibly unnecessary
+collection conversion inside the `play-redis`.
 
 ### [:link: 1.4.1](https://github.com/KarelCemus/play-redis/tree/1.4.1)
 
