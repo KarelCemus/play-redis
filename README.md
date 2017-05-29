@@ -43,7 +43,7 @@ To your SBT `build.sbt` add the following lines:
 // enable Play cache API (based on your Play version) and optionally exclude EhCache implementation
 libraryDependencies += play.sbt.PlayImport.cache exclude("net.sf.ehcache", "ehcache-core")
 // include play-redis library
-libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.4.0"
+libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.4.1"
 ```
 
 ### Using with Guice
@@ -406,7 +406,7 @@ Nevertheless, this module **replaces** the EHCache and it is not intended to use
 
 | play framework  | play-redis     |
 |-----------------|---------------:|
-| 2.5.x           | 1.4.0          |
+| 2.5.x           | 1.4.1          |
 | 2.4.x           | 1.0.0          |
 | 2.3.x           | 0.2.1          |
 
@@ -414,6 +414,10 @@ Nevertheless, this module **replaces** the EHCache and it is not intended to use
 </center>
 
 ## Changelog
+
+### [:link: 1.4.1](https://github.com/KarelCemus/play-redis/tree/1.4.1)
+
+Fixed minor issues [#83](https://github.com/KarelCemus/play-redis/issues/83) and [#85](https://github.com/KarelCemus/play-redis/issues/85).
 
 ### [:link: 1.4.0](https://github.com/KarelCemus/play-redis/tree/1.4.0)
 
