@@ -1,15 +1,15 @@
 <h1 align="center">Redis Cache module for Play framework</h1>
 
-<p align="center"><strong>Note: This version supports Play framework 2.5.x with JDK 8.<br/>For previous versions see older releases.</strong></p>
+<p align="center"><strong>Note: This version supports Play framework 2.6.x with JDK 8 and both Scala 2.11 and Scala 2.12.<br/>For previous versions see older releases.</strong></p>
 
 <p align="center">
   <a href='https://travis-ci.org/KarelCemus/play-redis'><img src='https://travis-ci.org/KarelCemus/play-redis.svg?branch=master'></a>
 </p>
 
 By default, [Play framework 2](http://playframework.com/) is delivered with EHCache module implementing
-[CacheApi](https://www.playframework.com/documentation/2.5.x/api/scala/index.html#play.api.cache.CacheApi).
+[SyncCacheApi and AsyncCacheApi](https://playframework.com/documentation/2.6.x/ScalaCache).
 This module enables use of the **redis-server**, i.e., key/value cache, within the
-Play framework 2. Besides the backward compatibility with the [CacheApi](https://www.playframework.com/documentation/2.5.x/api/scala/index.html#play.api.cache.CacheApi),
+Play framework 2. Besides the backward compatibility with all Play's cache APIs,
 it introduces more evolved API providing various handful operations. Besides the basic methods such as
 `get`, `set` and `remove`, it provides more convenient methods such as `expire`, `exists`, `invalidate` and much more.
 As the cache implementation uses Akka actor system, it is **completely non-blocking and asynchronous**.
@@ -30,10 +30,11 @@ of the framework is fully non-blocking, most of provided facades are *blocking w
  4. `play.cache.SyncCacheApi` (Play's *blocking* API for Java) *(new in Play 2.6.x)*
  4. `play.cache.AsyncCacheApi` (Play's *non-blocking* API for Java) *(new in Play 2.6.x)*
 
-First, the `CacheApi` is extended `play.api.cache.CacheApi` and it implements the connection in the **blocking** manner.
-Second, the `CacheAsyncApi` enables **non-blocking** connection providing results through `scala.concurrent.Future`.
-Third, the synchronous implementation also implements standard `CacheApi` bundled within Play framework. Finally,
-the `play.cache.CacheApi` is implementation of standard `CacheApi` for Java.
+First, the `CacheAsyncApi` provides extended API to work with Redis and enables **non-blocking** 
+connection providing results through `scala.concurrent.Future`.
+Second, the `CacheApi` is a thin **blocking** wrapper around the asynchronous implementation.
+Third, there are other implementations supporting both contemporary and deprecated `CacheApi`s 
+bundled within Play framework. Finally, `play-redis` also supports Java version of the API.
 
 
 ## How to add the module into the project
@@ -44,21 +45,17 @@ of the Play framework.
 To your SBT `build.sbt` add the following lines:
 
 ```scala
-// enable Play cache API (based on your Play version) and optionally exclude EhCache implementation
-libraryDependencies += play.sbt.PlayImport.cache exclude("net.sf.ehcache", "ehcache-core")
+// enable Play cache API (based on your Play version)
+libraryDependencies += play.sbt.PlayImport.cacheApi
 // include play-redis library
 libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.4.1"
 ```
 
 ### Using with Guice
 
-Now we **must enable our redis** cache module and **disable default Play's EhCache** module. Into `application.conf` and following
-two lines:
+Now we **must enable our redis** cache module in `application.conf`:
 
 ```
-# disable default Play framework cache plugin
-play.modules.disabled += "play.api.cache.EhCacheModule"
-
 # enable redis cache module
 play.modules.enabled += "play.api.cache.redis.RedisCacheModule"
 ```
@@ -433,6 +430,8 @@ collection conversion inside the `play-redis`.
 
 Changed return type `Unit` in `AbstractCacheApi` to `akka.Done` with the same meaning but
 but better signalizing the intention.
+
+Cross-compiled for Scala 2.11 and Scala 2.12.
 
 ### [:link: 1.4.1](https://github.com/KarelCemus/play-redis/tree/1.4.1)
 
