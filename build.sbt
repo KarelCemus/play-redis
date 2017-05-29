@@ -1,5 +1,6 @@
 import sbt._
 import sbt.Keys._
+
 import com.typesafe.sbt.pgp.PgpKeys
 
 normalizedName := "play-redis"
@@ -14,7 +15,7 @@ scalaVersion := "2.11.11"
 
 crossScalaVersions := Seq( scalaVersion.value )
 
-val playVersion = "2.5.15"
+val playVersion = "2.6.0-RC1" // todo update when 2.6.0
 
 val connectorVersion = "1.8.0"
 
@@ -22,7 +23,7 @@ val specs2Version = "3.8.9"
 
 libraryDependencies ++= Seq(
   // play framework cache API
-  "com.typesafe.play" %% "play-cache" % playVersion % "provided" exclude("net.sf.ehcache", "ehcache-core"),
+  "com.typesafe.play" %% "play-cache" % playVersion % "provided",
   // redis connector
   "com.github.etaty" %% "rediscala" % connectorVersion,
   // test framework
@@ -30,7 +31,9 @@ libraryDependencies ++= Seq(
   // test module for play framework
   "com.typesafe.play" %% "play-test" % playVersion % "test",
   // logger for tests
-  "org.slf4j" % "slf4j-simple" % "1.7.25" % "test"
+  "org.slf4j" % "slf4j-simple" % "1.7.25" % "test",
+  // todo remove when 2.6.0
+  "com.typesafe.akka" %% "akka-http-core" % "10.0.7" % "test"
 )
 
 resolvers ++= Seq(
