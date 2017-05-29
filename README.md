@@ -24,6 +24,8 @@ of the framework is fully non-blocking, most of provided facades are *blocking w
  1. `play.api.cache.redis.CacheApi` (*blocking* Scala implementation)
  2. `play.api.cache.redis.CacheAsyncApi` (non-blocking Scala implementation)
  3. ~~`play.api.cache.CacheApi`~~ (Play's *blocking* API for Scala) *(deprecated since Play 2.6.x)*
+ 4. `play.api.cache.SyncCacheApi` (Play's *blocking* API for Scala) *(new in Play 2.6.x)*
+ 4. `play.api.cache.AsyncCacheApi` (Play's *non-blocking* API for Scala) *(new in Play 2.6.x)*
  4. ~~`play.cache.CacheApi`~~ (Play's *blocking* API for Java) *(deprecated since Play 2.6.x)*
  4. `play.cache.SyncCacheApi` (Play's *blocking* API for Java) *(new in Play 2.6.x)*
  4. `play.cache.AsyncCacheApi` (Play's *non-blocking* API for Java) *(new in Play 2.6.x)*
