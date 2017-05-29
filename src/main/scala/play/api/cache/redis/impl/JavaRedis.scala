@@ -13,6 +13,7 @@ import play.api.cache.redis.CacheApi
   * @author Karel Cemus
   */
 @Singleton
+@deprecated( message = "Use SyncCacheApi or AsyncCacheApi.", since = "Play 2.6.0." )
 private[ impl ] class JavaRedis @Inject( )( internal: CacheApi, environment: Environment ) extends play.cache.CacheApi {
 
   import java.util.concurrent.Callable

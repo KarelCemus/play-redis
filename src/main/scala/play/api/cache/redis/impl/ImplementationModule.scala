@@ -66,7 +66,9 @@ object ImplementationModule extends Module {
     // enable async module when required
     bind[ CacheAsyncApi ].to[ AsyncRedis ],
     // java api
-    bind[ play.cache.CacheApi ].to[ JavaRedis ]
+    bind[ play.cache.CacheApi ].to[ JavaRedis ],
+    bind[ play.cache.SyncCacheApi ].to[ play.cache.DefaultSyncCacheApi ],
+    bind[ play.cache.AsyncCacheApi ].to[ play.cache.DefaultAsyncCacheApi ]
   ) ++ RedisRecoveryPolicyResolver.resolve( configuration )
 }
 
@@ -102,9 +104,15 @@ private[ redis ] trait ImplementationComponents {
 
   lazy val asyncRedisCacheApi: CacheAsyncApi = new AsyncRedis( redisConnector, policy )
 
+  @deprecated( message = "Use syncCacheApi or asyncCacheApi.", since = "Play 2.6.0." )
   lazy val defaultCacheApi: play.api.cache.CacheApi = syncRedis
 
+  @deprecated( message = "Use javaSyncCacheApi or javaAsyncCacheApi.", since = "Play 2.6.0." )
   lazy val javaCacheApi: play.cache.CacheApi = new JavaRedis( syncRedis, environment )
+
+  lazy val javaSyncCacheApi: play.cache.SyncCacheApi = new play.cache.DefaultSyncCacheApi( asyncCacheApi )
+
+  lazy val javaAsyncCacheApi: play.cache.AsyncCacheApi = new play.cache.DefaultAsyncCacheApi( asyncCacheApi )
 
   protected def customRedisRecoveryPolicy: RecoveryPolicy =
     shouldBeOverwritten( "In order to use custom RecoveryPolicy overwrite this method." )
