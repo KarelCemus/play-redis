@@ -5,7 +5,7 @@ package play.api.cache.redis.exception
   *
   * @author Karel Cemus
   */
-sealed abstract class RedisException( message: String, cause: Throwable ) extends RuntimeException( message, cause ) {
+abstract class RedisException( message: String, cause: Throwable ) extends RuntimeException( message, cause ) {
   def this( message: String ) = this( message, null )
 }
 

@@ -4,14 +4,16 @@ import scala.concurrent._
 import scala.concurrent.duration.Duration
 import scala.language.{higherKinds, implicitConversions}
 import scala.reflect.ClassTag
-
 import play.api.cache.redis._
 
+import scala.util.{Failure, Success}
+
 /** <p>Implementation of plain API using redis-server cache and Brando connector implementation.</p> */
-private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implicit protected val implicitBuilder: Builders.ResultBuilder[ Result ], protected val implicitPolicy: RecoveryPolicy ) extends AbstractCacheApi[ Result ] with Implicits {
+private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implicit protected val implicitBuilder: Builders.ResultBuilder[ Result ], protected val implicitPolicy: RecoveryPolicy ) extends AbstractCacheApi[ Result ] {
 
   // implicit ask timeout and execution context
   import redis.{context, timeout}
+  import Implicits._
 
   override def get[ T: ClassTag ]( key: String ) =
     redis.get[ T ]( key ).recoverWithDefault( None )
@@ -54,8 +56,11 @@ private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector )( implic
     redis.get[ T ]( key ).flatMap {
       // cache hit, return the unwrapped value
       case Some( value: T ) => value.toFuture
-      // cache miss, compute the value, store it into cache and return the value
-      case None => orElse flatMap ( value => redis.set( key, value, expiration ) map ( _ => value ) )
+      // cache miss, compute the value, return the value and store it into cache
+      case None => orElse andThen {
+        case Success(value) => redis.set( key, value, expiration )
+        case Failure(e)     => Future.failed(e)
+      }
     }.recoverWithFuture( orElse )
 
   override def remove( key: String ) =
