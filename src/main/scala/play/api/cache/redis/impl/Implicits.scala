@@ -38,5 +38,4 @@ private[ impl ] object Implicits {
     def recoverWithDone[ Result[ X ] ]( implicit builder: Builders.ResultBuilder[ Result ], policy: RecoveryPolicy, context: ExecutionContext, timeout: akka.util.Timeout ): Result[ Done ] =
       builder.toResult( future.map( _ => Done ), Future.successful( Done ) )
   }
-
 }
