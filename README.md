@@ -1,3 +1,5 @@
+# TEST of the PR and Jenkins setup 2
+
 <h1 align="center">Redis Cache module for Play framework</h1>
 
 <p align="center"><strong>Note: This version supports Play framework 2.6.x with JDK 8 and both Scala 2.11 and Scala 2.12.<br/>For previous versions see older releases.</strong></p>
