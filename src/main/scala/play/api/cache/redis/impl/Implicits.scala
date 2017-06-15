@@ -10,15 +10,15 @@ import play.api.cache.redis._
   *
   * @author Karel Cemus
   */
-private[ impl ] trait Implicits {
+private[ impl ] object Implicits {
 
   /** enriches any ref by toFuture converting a value to Future.successful */
-  protected implicit class RichFuture[ T ]( any: T ) {
-    def toFuture( implicit context: ExecutionContext ) = Future( any )
+  implicit class RichFuture[ T ]( val any: T ) extends AnyVal {
+    def toFuture( implicit context: ExecutionContext ): Future[T] = Future.successful(any)
   }
 
   /** helper function enabling us to recover from command execution */
-  implicit class RecoveryFuture[ T ]( future: => Future[ T ] ) {
+  implicit class RecoveryFuture[ T ]( val future: Future[ T ] ) extends AnyVal {
 
     /** Transforms the promise into desired builder results, possibly recovers with provided default value */
     def recoverWithDefault[ Result[ X ] ]( default: => T )( implicit builder: Builders.ResultBuilder[ Result ], policy: RecoveryPolicy, context: ExecutionContext, timeout: akka.util.Timeout ): Result[ T ] =
@@ -33,12 +33,9 @@ private[ impl ] trait Implicits {
   }
 
   /** helper function enabling us to recover from command execution */
-  implicit class RecoveryUnitFuture( future: => Future[ Unit ] ) {
+  implicit class RecoveryUnitFuture( val future: Future[ Unit ] ) extends AnyVal {
     /** Transforms the promise into desired builder results, possibly recovers with provided default value */
     def recoverWithDone[ Result[ X ] ]( implicit builder: Builders.ResultBuilder[ Result ], policy: RecoveryPolicy, context: ExecutionContext, timeout: akka.util.Timeout ): Result[ Done ] =
-      builder.toResult( future.map( unitAsDone ), Future.successful( Done ) )
+      builder.toResult( future.map( _ => Done ), Future.successful( Done ) )
   }
-
-  /** maps units into akka.Done */
-  private def unitAsDone( unit: Unit ) = Done
 }

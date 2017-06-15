@@ -1,14 +1,15 @@
 package play.api.cache.redis.impl
 
+import play.api.cache.redis._
+
 import scala.language.{higherKinds, implicitConversions}
 import scala.reflect.ClassTag
 
-import play.api.cache.redis._
-
 /** <p>Implementation of List API using redis-server cache implementation.</p> */
-private[ impl ] class RedisListImpl[ Elem: ClassTag, Result[ _ ] ]( key: String, redis: RedisConnector )( implicit builder: Builders.ResultBuilder[ Result ], policy: RecoveryPolicy ) extends RedisList[ Elem, Result ] with Implicits {
+private[ impl ] class RedisListImpl[ Elem: ClassTag, Result[ _ ] ]( key: String, redis: RedisConnector )( implicit builder: Builders.ResultBuilder[ Result ], policy: RecoveryPolicy ) extends RedisList[ Elem, Result ] {
 
   // implicit ask timeout and execution context
+  import Implicits._
   import redis.{context, timeout}
 
   @inline
