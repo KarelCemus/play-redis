@@ -320,7 +320,7 @@ There is already default configuration but it can be overwritten in your `conf/a
 |-------------------------------------|---------:|--------------------------------:|-------------------------------------|
 | play.cache.redis.host               | String   | `localhost`                     | redis-server address                |
 | play.cache.redis.port               | Int      | `6379`                          | redis-server port                   |
-| play.cache.redis.database           | Int      | `1`                             | redis-server database, 1-15         |
+| play.cache.redis.database           | Int      | `1`                             | redis-server database               |
 | play.cache.redis.timeout            | Duration | `1s`                            | conversion timeout applied by `SyncAPI` to convert `Future[T]` to `T`|
 | play.cache.redis.dispatcher         | String   | `akka.actor.default-dispatcher` | Akka actor                          |
 | play.cache.redis.configuration      | String   | `static`                        | Defines which configuration source enable. Accepted values are `static`, `env`, `custom` |
