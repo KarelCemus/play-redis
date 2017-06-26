@@ -48,7 +48,7 @@ To your SBT `build.sbt` add the following lines:
 // enable Play cache API (based on your Play version)
 libraryDependencies += play.sbt.PlayImport.cacheApi
 // include play-redis library
-libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.4.1"
+libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.5.0"
 ```
 
 ### Using with Guice
