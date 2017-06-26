@@ -44,13 +44,13 @@ private[ impl ] class JavaRedis @Inject()( internal: CacheAsyncApi, environment:
 
   def remove( key: String ): CompletionStage[ Done ] = internal.remove( key ).toJava
 
-  override def get[ T ]( key: String ): CompletionStage[ T ] =
+  def get[ T ]( key: String ): CompletionStage[ T ] =
     getOrElse[ T ]( key, None )
 
-  override def getOrElseUpdate[ T ]( key: String, block: Callable[ CompletionStage[ T ] ] ): CompletionStage[ T ] =
+  def getOrElseUpdate[ T ]( key: String, block: Callable[ CompletionStage[ T ] ] ): CompletionStage[ T ] =
     getOrElse[ T ]( key, Some( block ) )
 
-  override def getOrElseUpdate[ T ]( key: String, block: Callable[ CompletionStage[ T ] ], expiration: Int ): CompletionStage[ T ] =
+  def getOrElseUpdate[ T ]( key: String, block: Callable[ CompletionStage[ T ] ], expiration: Int ): CompletionStage[ T ] =
     getOrElse[ T ]( key, Some( block ), duration = expiration.seconds )
 
   def getOrElse[ T ]( key: String, callable: Option[ Callable[ CompletionStage[ T ] ] ], duration: Duration = Duration.Inf ): CompletionStage[ T ] = {
@@ -75,6 +75,8 @@ private[ impl ] class JavaRedis @Inject()( internal: CacheAsyncApi, environment:
       play.libs.Scala.orNull( _ )
     }.toJava
   }
+
+  def removeAll( ) = internal.invalidate().toJava
 }
 
 private[ impl ] object JavaRedis {

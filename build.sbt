@@ -15,11 +15,11 @@ scalaVersion := "2.12.2"
 
 crossScalaVersions := Seq( "2.11.11", scalaVersion.value )
 
-val playVersion = "2.6.0-RC1" // todo update when 2.6.0
+val playVersion = "2.6.0"
 
 val connectorVersion = "1.8.0"
 
-val specs2Version = "3.8.9"
+val specs2Version = "3.9.1"
 
 parallelExecution in Test := false
 
@@ -33,9 +33,7 @@ libraryDependencies ++= Seq(
   // test module for play framework
   "com.typesafe.play" %% "play-test" % playVersion % "test",
   // logger for tests
-  "org.slf4j" % "slf4j-simple" % "1.7.25" % "test",
-  // todo remove when 2.6.0
-  "com.typesafe.akka" %% "akka-http-core" % "10.0.7" % "test"
+  "org.slf4j" % "slf4j-simple" % "1.7.25" % "test"
 )
 
 resolvers ++= Seq(
