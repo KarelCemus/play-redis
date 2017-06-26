@@ -9,7 +9,7 @@ import org.specs2.mutable.Specification
 /**
  * <p>Test of play.api.cache.CacheApi to verify compatibility with Redis implementation.</p>
  */
-object PlayCacheSpec extends Specification with Redis {
+class PlayCacheSpec extends Specification with Redis {
 
   private type Cache = play.api.cache.CacheApi
 
@@ -56,7 +56,7 @@ object PlayCacheSpec extends Specification with Redis {
     }
   }
 
-  implicit class AccumulatorCache( val cache: Cache ) extends AnyVal {
+  implicit class AccumulatorCache( cache: Cache ) {
     private type Accumulator = AtomicInteger
 
     /** invokes internal getOrElse but it accumulate invocations of orElse clause in the accumulator */

@@ -345,9 +345,10 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
   }
 
   /** stops the actor */
-  def stop( ): Future[ Unit ] = {
+  def stop( ): Future[ Unit ] = Future successful {
     log.info( "Stopping the redis cache actor ..." )
-    redis.quit().map[ Unit ] { _ => log.info( "Redis cache stopped." ) }
+    redis.stop()
+    log.info( "Redis cache stopped." )
   }
 
   // start the connector
