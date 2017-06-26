@@ -4,24 +4,29 @@ import scala.concurrent.duration._
 import scala.language.implicitConversions
 
 import play.api.Application
+import play.api.inject.ApplicationLifecycle
 import play.api.inject.guice.GuiceApplicationBuilder
 
 import akka.actor.ActorSystem
 import akka.util.Timeout
 import org.specs2.matcher._
-import org.specs2.specification.BeforeAll
+import org.specs2.specification._
 import redis.RedisClient
 
 /**
   * Provides implicits and configuration for redis tests invocation
   */
-trait Redis extends EmptyRedis with RedisMatcher {
+trait Redis extends EmptyRedis with RedisMatcher with AfterAll {
 
   def injector = Redis.injector
 
   implicit val application: Application = injector.instanceOf[ Application ]
 
   implicit val system: ActorSystem = injector.instanceOf[ ActorSystem ]
+
+  def afterAll( ) = {
+    Redis.close()
+  }
 }
 
 trait Synchronization {
@@ -93,7 +98,7 @@ object EmptyRedis extends RedisInstance {
   def empty( implicit application: Application, system: ActorSystem ): Unit = synchronized {
     // execute only once
     if ( !executed ) {
-      redis.flushdb( ).sync
+      redis.flushdb().sync
       executed = true
     }
   }
@@ -104,12 +109,33 @@ case class SimpleObject( key: String, value: Int )
 
 object Redis {
 
-  val injector = new GuiceApplicationBuilder( )
+  import java.util.concurrent.atomic.AtomicInteger
+
+  private val stopped = new AtomicInteger( 0 )
+
+  val allSpecs = List(
+    classOf[ configuration.ConfigurationSpec ],
+    classOf[ connector.RediscalaSpec ],
+    classOf[ connector.RedisConnectorSpec ],
+    classOf[ impl.AsynchronousCacheSpec ],
+    classOf[ impl.JavaCacheSpec ],
+    classOf[ impl.PlayCacheSpec ],
+    classOf[ impl.RecoveryPolicySpec ],
+    classOf[ impl.RedisListSpec ],
+    classOf[ impl.RedisMapSpecs ],
+    classOf[ impl.RedisSetSpecs ],
+    classOf[ impl.SynchronousCacheSpec ],
+    classOf[ RedisComponentsSpecs ]
+  ).size
+
+  def close( ): Unit = if ( stopped.incrementAndGet() == allSpecs )
+    injector.instanceOf[ ApplicationLifecycle ].stop()
+
+  val injector = new GuiceApplicationBuilder()
     // load required bindings
     .bindings( Seq.empty: _* )
     // #19 enable Redis module
     .bindings( new RedisCacheModule )
     // produce a fake application
-    .injector( )
-
+    .injector()
 }
