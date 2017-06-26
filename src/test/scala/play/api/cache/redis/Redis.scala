@@ -1,6 +1,5 @@
 package play.api.cache.redis
 
-import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.implicitConversions
 
@@ -27,13 +26,11 @@ trait Redis extends EmptyRedis with RedisMatcher {
 
 trait Synchronization {
 
+  import play.api.cache.redis.TestHelpers._
+
   implicit val timeout = Timeout( 3.second )
 
-  /** waits for future responses and returns them synchronously */
-  protected implicit class Synchronizer[ T ]( future: AsynchronousResult[ T ] ) {
-    def sync = Await.result( future, timeout.duration )
-  }
-
+  implicit def async2synchronizer[ T ]( future: AsynchronousResult[ T ] ): Synchronizer[ T ] = new Synchronizer[ T ]( future )
 }
 
 trait RedisMatcher extends Synchronization {

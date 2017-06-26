@@ -4,8 +4,8 @@ import java.util.concurrent.{Callable, CompletionStage}
 import javax.inject.{Inject, Singleton}
 
 import scala.compat.java8.FutureConverters
+import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 
 import play.api.Environment
@@ -21,6 +21,7 @@ import play.api.cache.redis._
 @Singleton
 private[ impl ] class JavaRedis @Inject()( internal: CacheAsyncApi, environment: Environment, connector: RedisConnector ) extends play.cache.AsyncCacheApi {
 
+  import JavaRedis._
   import connector.context
 
   def set( key: String, value: scala.Any, expiration: Int ): CompletionStage[ Done ] =
@@ -74,12 +75,15 @@ private[ impl ] class JavaRedis @Inject()( internal: CacheAsyncApi, environment:
       play.libs.Scala.orNull( _ )
     }.toJava
   }
+}
 
-  private implicit class Java8Compatibility[ T ]( future: Future[ T ] ) {
+private[ impl ] object JavaRedis {
+
+  private implicit class Java8Compatibility[ T ]( val future: Future[ T ] ) extends AnyVal {
     @inline def toJava: CompletionStage[ T ] = FutureConverters.toJava( future )
   }
 
-  private implicit class ScalaCompatibility[ T ]( future: CompletionStage[ T ] ) {
+  private implicit class ScalaCompatibility[ T ]( val future: CompletionStage[ T ] ) extends AnyVal {
     @inline def toScala: Future[ T ] = FutureConverters.toScala( future )
   }
 }

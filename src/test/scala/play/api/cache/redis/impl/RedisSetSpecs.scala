@@ -12,6 +12,8 @@ import org.specs2.mutable.Specification
 class RedisSetSpecs extends Specification with Redis {
   outer =>
 
+  import play.api.cache.redis.TestHelpers._
+
   private type Cache = RedisCache[ SynchronousResult ]
 
   private val workingConnector = injector.instanceOf[ RedisConnector ]
@@ -26,8 +28,6 @@ class RedisSetSpecs extends Specification with Redis {
   class RedisSetSuite( suiteName: String, prefix: String, cache: Cache, expectation: Expectation ) {
 
     def set[ T: ClassTag ]( key: String ) = cache.set[ T ]( key )
-
-    implicit class Key( val key: String )
 
     def strings( implicit theKey: Key ) = set[ String ]( theKey.key )
 

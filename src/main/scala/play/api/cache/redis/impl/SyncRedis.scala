@@ -18,6 +18,8 @@ private[ impl ] class SyncRedis @Inject( )( redis: RedisConnector, policy: Recov
 
   // implicit ask timeout and execution context
   import redis.{context, timeout}
+  // helpers for dsl
+  import dsl._
 
   override def getOrElse[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => T ) = {
     // compute or all and try to set it into the cache

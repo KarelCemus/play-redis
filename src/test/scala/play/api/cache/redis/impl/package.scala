@@ -68,7 +68,7 @@ package object impl extends LowPriorityImplicits {
     def apply[ S <: Any ]( value: Expectable[ S ] ): MatchResult[ S ] = result( test = true, value.description + " is Unit", value.description + " is not Unit", value.evaluate )
   }
 
-  implicit class JavaAccumulatorCache( cache: play.cache.CacheApi ) {
+  implicit class JavaAccumulatorCache( val cache: play.cache.CacheApi ) extends AnyVal {
     private type Accumulator = AtomicInteger
 
     /** invokes internal getOrElse but it accumulate invocations of orElse clause in the accumulator */

@@ -10,22 +10,22 @@ import play.api.cache.redis._
   *
   * @author Karel Cemus
   */
-private[ impl ] trait Implicits {
+private[ impl ] object dsl {
 
   /** enriches any ref by toFuture converting a value to Future.successful */
-  protected implicit class RichFuture[ T ]( any: T ) {
-    def toFuture( implicit context: ExecutionContext ) = Future( any )
+  implicit class RichFuture[ T ]( val any: T ) extends AnyVal {
+    @inline def toFuture( implicit context: ExecutionContext ): Future[ T ] = Future( any )
   }
 
   /** helper function enabling us to recover from command execution */
-  implicit class RecoveryFuture[ T ]( future: => Future[ T ] ) {
+  implicit class RecoveryFuture[ T ]( val future: Future[ T ] ) extends AnyVal {
 
     /** Transforms the promise into desired builder results, possibly recovers with provided default value */
-    def recoverWithDefault[ Result[ X ] ]( default: => T )( implicit builder: Builders.ResultBuilder[ Result ], policy: RecoveryPolicy, context: ExecutionContext, timeout: akka.util.Timeout ): Result[ T ] =
+    @inline def recoverWithDefault[ Result[ X ] ]( default: => T )( implicit builder: Builders.ResultBuilder[ Result ], policy: RecoveryPolicy, context: ExecutionContext, timeout: akka.util.Timeout ): Result[ T ] =
       builder.toResult( future, Future.successful( default ) )
 
     /** recovers from the execution but returns future, not Result */
-    def recoverWithFuture( default: => Future[ T ] )( implicit policy: RecoveryPolicy, context: ExecutionContext ): Future[ T ] =
+    @inline def recoverWithFuture( default: => Future[ T ] )( implicit policy: RecoveryPolicy, context: ExecutionContext ): Future[ T ] =
       future recoverWith {
         // recover from known exceptions
         case failure: exception.RedisException => policy.recoverFrom( future, default, failure )
@@ -33,12 +33,12 @@ private[ impl ] trait Implicits {
   }
 
   /** helper function enabling us to recover from command execution */
-  implicit class RecoveryUnitFuture( future: => Future[ Unit ] ) {
+  implicit class RecoveryUnitFuture( val future: Future[ Unit ] ) extends AnyVal {
     /** Transforms the promise into desired builder results, possibly recovers with provided default value */
-    def recoverWithDone[ Result[ X ] ]( implicit builder: Builders.ResultBuilder[ Result ], policy: RecoveryPolicy, context: ExecutionContext, timeout: akka.util.Timeout ): Result[ Done ] =
+    @inline def recoverWithDone[ Result[ X ] ]( implicit builder: Builders.ResultBuilder[ Result ], policy: RecoveryPolicy, context: ExecutionContext, timeout: akka.util.Timeout ): Result[ Done ] =
       builder.toResult( future.map( unitAsDone ), Future.successful( Done ) )
   }
 
   /** maps units into akka.Done */
-  private def unitAsDone( unit: Unit ) = Done
+  @inline private def unitAsDone( unit: Unit ) = Done
 }
