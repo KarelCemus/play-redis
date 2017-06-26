@@ -14,15 +14,9 @@ import org.specs2.mutable.Specification
   */
 class SerializerSpecs extends Specification {
 
-  private val serializer: AkkaSerializer = Redis.injector.instanceOf[ AkkaSerializer ]
+  import play.api.cache.redis.TestHelpers._
 
-  private implicit class ValueEncoder( any: Any ) {
-    def encoded: String = serializer.encode( any ).get
-  }
-
-  private implicit class StringDecoder( string: String ) {
-    def decoded[ T: ClassTag ]: T = serializer.decode[ T ]( string ).get
-  }
+  private implicit val serializer: AkkaSerializer = Redis.injector.instanceOf[ AkkaSerializer ]
 
   "AkkaEncoder" should "encode" >> {
 

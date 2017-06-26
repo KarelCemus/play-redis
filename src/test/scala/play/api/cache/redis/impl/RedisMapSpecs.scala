@@ -12,6 +12,8 @@ import org.specs2.mutable.Specification
 class RedisMapSpecs extends Specification with Redis {
   outer =>
 
+  import play.api.cache.redis.TestHelpers._
+
   private type Cache = RedisCache[ SynchronousResult ]
 
   private val workingConnector = injector.instanceOf[ RedisConnector ]
@@ -26,8 +28,6 @@ class RedisMapSpecs extends Specification with Redis {
   class RedisMapSuite( suiteName: String, prefix: String, cache: Cache, expectation: Expectation ) {
 
     def map[ T: ClassTag ]( key: String ) = cache.map[ T ]( key )
-
-    implicit class Key( val key: String )
 
     def strings( implicit theKey: Key ) = map[ String ]( theKey.key )
 
