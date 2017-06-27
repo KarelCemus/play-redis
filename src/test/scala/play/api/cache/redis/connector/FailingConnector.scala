@@ -5,7 +5,7 @@ import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 
 import play.api.cache.redis.Synchronization
-import play.api.cache.redis.exception.failed
+import play.api.cache.redis.exception.ExecutionFailedException
 
 /**
   * @author Karel Cemus
@@ -16,12 +16,12 @@ object FailingConnector extends RedisConnector with Synchronization {
 
   private def theError = new IllegalStateException( "Redis connector failure reproduction" )
 
-  private def failKeyed( key: String, command: String ) = Future {
-    failed( Some( key ), command, theError )
+  private def failKeyed( key: String, command: String ) = Future.failed {
+    ExecutionFailedException( Some( key ), command, theError )
   }
 
-  private def failCommand( command: String ) = Future {
-    failed( None, command, theError )
+  private def failCommand( command: String ) = Future.failed {
+    ExecutionFailedException( None, command, theError )
   }
 
   def set( key: String, value: Any, expiration: Duration ): Future[ Unit ] =
