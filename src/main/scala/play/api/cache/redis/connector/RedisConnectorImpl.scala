@@ -82,10 +82,10 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
     else encode( key, value ) flatMap ( setEternally( key, _ ) )
 
   /** encodes the object, reports an exception if fails */
-  private def encode( key: String, value: Any ): Future[ String ] = Future {
+  private def encode( key: String, value: Any ): Future[ String ] = Future.fromTry {
     serializer.encode( value ).recover {
       case ex => serializationFailed( key, "Serialization failed", ex )
-    }.get
+    }
   }
 
   /** temporally stores already encoded value into the storage */
@@ -167,7 +167,7 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
         // Some entries were removed
         case removed => log.debug( s"Remove on keys ${ keys.mkString( "'", ",", "'" ) } removed $removed values." )
       }
-    else Future( Unit ) // otherwise return immediately
+    else Future.successful( Unit ) // otherwise return immediately
 
   def ping( ): Future[ Unit ] =
     redis.ping() executing "PING" expects {

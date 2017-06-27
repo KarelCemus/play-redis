@@ -100,7 +100,7 @@ trait LowPriorityImplicits {
 
     /** invokes internal getOrElse but it accumulate invocations of orElse clause in the accumulator */
     def getOrFutureCounting( key: String )( accumulator: Accumulator ) = cache.getOrFuture[ String ]( key ) {
-      Future {
+      Future.successful {
         // increment miss counter
         accumulator.incrementAndGet()
         // return the value to store into the cache

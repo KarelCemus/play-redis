@@ -115,7 +115,7 @@ class MyController @Inject() ( cache: CacheApi ) {
   cache.getOrElse( "key" )( 1.24 )
 
   // same as getOrElse but works for Futures. It returns Future[ T ]
-  cache.getOrFuture( "key" )( Future( 1.24 ) )
+  cache.getOrFuture( "key" )( Future.successful( 1.24 ) )
 
   // returns Unit and removes a key/keys from the storage
   cache.remove( "key" )
