@@ -14,7 +14,7 @@ private[ impl ] object dsl {
 
   /** enriches any ref by toFuture converting a value to Future.successful */
   implicit class RichFuture[ T ]( val any: T ) extends AnyVal {
-    @inline def toFuture( ): Future[ T ] = Future.successful( any )
+    @inline def toFuture: Future[ T ] = Future.successful( any )
   }
 
   /** helper function enabling us to recover from command execution */
