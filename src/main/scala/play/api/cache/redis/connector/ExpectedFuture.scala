@@ -37,7 +37,5 @@ private[ connector ] class ExpectedFuture[ T ]( future: Future[ T ], key: String
   */
 private[ connector ] class ExpectedFutureBuilder[ T ]( future: Future[ T ] ) {
 
-  def executing( key: String, cmd: => String ): ExpectedFuture[ T ] = new ExpectedFuture[ T ]( future, key, cmd )
-
   def executing( key: String ): ExpectedFuture[ T ] = new ExpectedFuture[ T ]( future, key, key )
 }
