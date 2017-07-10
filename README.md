@@ -415,6 +415,11 @@ both implementations along.
 
 ## Changelog
 
+### [:link: 1.5.1](https://github.com/KarelCemus/play-redis/tree/1.5.1)
+
+Fixed [#102](https://github.com/KarelCemus/play-redis/issues/102), preserved original 
+exception if extends `RedisException` and fixed wrong parameters in error messages
+
 ### [:link: 1.5.0](https://github.com/KarelCemus/play-redis/tree/1.5.0)
 
 **[Scredis](https://github.com/scredis/scredis) connector replaced 
@@ -432,6 +437,11 @@ Changed return type `Unit` in `AbstractCacheApi` to `akka.Done` with the same me
 but better signalizing the intention.
 
 Cross-compiled for Scala 2.11 and Scala 2.12.
+
+### [:link: 1.4.2](https://github.com/KarelCemus/play-redis/tree/1.4.2)
+
+Fixed [#102](https://github.com/KarelCemus/play-redis/issues/102), preserved original 
+exception if extends `RedisException` and fixed wrong parameters in error messages
 
 ### [:link: 1.4.1](https://github.com/KarelCemus/play-redis/tree/1.4.1)
 
