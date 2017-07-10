@@ -20,6 +20,8 @@ val connectorVersion = "2.0.8"
 
 val specs2Version = "3.8.6"
 
+parallelExecution in Test := false
+
 libraryDependencies ++= Seq(
   // play framework cache API
   "com.typesafe.play" %% "play-cache" % playVersion % "provided" exclude("net.sf.ehcache", "ehcache-core"),
