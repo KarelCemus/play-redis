@@ -23,6 +23,7 @@ private[ connector ] trait ExpectedFuture[ T ] {
 
   /** execution failed with an exception */
   private def onException: PartialFunction[ Throwable, Nothing ] = {
+    case ex: RedisException => throw ex
     case ex => onFailed( ex )
   }
 
