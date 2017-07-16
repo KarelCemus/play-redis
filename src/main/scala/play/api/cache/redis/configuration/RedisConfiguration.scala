@@ -31,4 +31,10 @@ trait RedisConfiguration {
 
   /** When enabled security, this returns password for the AUTH command */
   def password: Option[ String ]
+
+  /** When enabled security, this returns password for the AUTH command */
+  def cluster: List[ ClusterHost ]
 }
+
+/** Configures a host within a cluster */
+case class ClusterHost( host: String, port: Int, password: Option[ String ], database: Option[ Int ] )

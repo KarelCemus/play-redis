@@ -8,7 +8,6 @@ import scala.reflect.ClassTag
 
 import play.api.Logger
 import play.api.cache.redis._
-import play.api.inject.ApplicationLifecycle
 
 import akka.actor.ActorSystem
 import redis._
@@ -20,11 +19,11 @@ import redis._
   *
   * @param serializer    encodes/decodes objects into/from a string
   * @param configuration connection settings
-  * @param lifecycle     application lifecycle
+  * @param redis: implementation of the commands
   * @author Karel Cemus
   */
 @Singleton
-private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSerializer, configuration: RedisConfiguration, lifecycle: ApplicationLifecycle )( implicit system: ActorSystem ) extends RedisConnector {
+private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSerializer, configuration: RedisConfiguration, redis: RedisCommands )( implicit system: ActorSystem ) extends RedisConnector {
 
   import exception._
 
@@ -36,13 +35,6 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
 
   /** logger instance */
   protected val log = Logger( "play.api.cache.redis" )
-
-  private val redis = RedisClient(
-    host = configuration.host,
-    port = configuration.port,
-    db = Some( configuration.database ),
-    password = configuration.password
-  )
 
   def get[ T: ClassTag ]( key: String ): Future[ Option[ T ] ] =
     redis.get[ String ]( key ) executing "GET" withKey key expects {
@@ -338,21 +330,4 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
     redis.hvals[ String ]( key ) executing "HVALS" withKey key expects {
       case values => log.debug( s"The collection at '$key' contains ${ values.size } values." ); values.map( decode[ T ]( key, _ ) ).toSet
     }
-
-  def start( ) = {
-    import configuration.{database, host, port}
-    log.info( s"Redis cache actor started. It is connected to $host:$port?database=$database" )
-  }
-
-  /** stops the actor */
-  def stop( ): Future[ Unit ] = Future successful {
-    log.info( "Stopping the redis cache actor ..." )
-    redis.stop()
-    log.info( "Redis cache stopped." )
-  }
-
-  // start the connector
-  start()
-  // listen on system stop
-  lifecycle.addStopHook( stop _ )
 }
