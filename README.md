@@ -415,6 +415,8 @@ both implementations along.
 
 ## Changelog
 
+### [:link: 1.6.0](https://github.com/KarelCemus/play-redis/tree/1.6.0)
+
 ### [:link: 1.5.1](https://github.com/KarelCemus/play-redis/tree/1.5.1)
 
 Fixed [#102](https://github.com/KarelCemus/play-redis/issues/102), preserved original 
