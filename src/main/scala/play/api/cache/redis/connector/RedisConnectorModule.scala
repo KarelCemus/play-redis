@@ -3,6 +3,8 @@ package play.api.cache.redis.connector
 import play.api.inject._
 import play.api.{Configuration, Environment}
 
+import redis.RedisCommands
+
 /**
   * Configures low-level classes communicating with the redis server.
   *
@@ -14,7 +16,9 @@ object RedisConnectorModule extends Module {
     // binds akka serializer to its implementation
     bind[ AkkaSerializer ].to[ AkkaSerializerImpl ],
     // redis connector implementing the protocol
-    bind[ RedisConnector ].to[ RedisConnectorImpl ]
+    bind[ RedisConnector ].to[ RedisConnectorImpl ],
+    // bind proper implementation of redis commands
+    bind[ RedisCommands ].toProvider[ RedisCommandsProvider ]
   )
 }
 
@@ -35,5 +39,7 @@ private[ redis ] trait RedisConnectorComponents {
 
   private lazy val akkaSerializer: AkkaSerializer = new AkkaSerializerImpl( actorSystem )
 
-  lazy val redisConnector: RedisConnector = new RedisConnectorImpl( akkaSerializer, redisConfiguration, applicationLifecycle )( actorSystem )
+  private lazy val redisCommandsProvider: RedisCommandsProvider = new RedisCommandsProvider( applicationLifecycle, redisConfiguration )( actorSystem )
+
+  lazy val redisConnector: RedisConnector = new RedisConnectorImpl( akkaSerializer, redisConfiguration, redisCommandsProvider.get() )( actorSystem )
 }

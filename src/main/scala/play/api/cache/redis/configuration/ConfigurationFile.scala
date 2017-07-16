@@ -2,6 +2,7 @@ package play.api.cache.redis.configuration
 
 import javax.inject.Singleton
 
+import scala.collection.JavaConverters._
 import scala.concurrent.duration.FiniteDuration
 
 /**
@@ -34,6 +35,17 @@ private[ redis ] class ConfigurationFile extends RedisConfiguration {
 
   /** Redis database identifier to work with */
   def database = config.getInt( "database" )
+
+  /** When enabled security, this returns password for the AUTH command */
+  def cluster = config.getConfigList( "cluster" ).asScala.map {
+    config =>
+      ClusterHost(
+        host = config.getString( "host" ),
+        port = config.getInt( "port" ),
+        password = if ( config.getIsNull( "password" ) ) None else Some( config.getString( "password" ) ),
+        database = if ( config.getIsNull( "database" ) ) None else Some( config.getInt( "database" ) )
+      )
+  }.toList
 
   /** When enabled security, this returns password for the AUTH command */
   override def password: Option[ String ] = if ( config.getIsNull( "password" ) ) None else Some( config.getString( "password" ) )
