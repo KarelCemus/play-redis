@@ -4,6 +4,7 @@ import javax.inject.Singleton
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.FiniteDuration
+import play.api.cache.redis.util.config._
 
 /**
   * This configuration source reads the static configuration in the `application.conf` file and provides settings
@@ -42,8 +43,8 @@ private[ redis ] class ConfigurationFile extends RedisConfiguration {
       ClusterHost(
         host = config.getString( "host" ),
         port = config.getInt( "port" ),
-        password = if ( config.getIsNull( "password" ) ) None else Some( config.getString( "password" ) ),
-        database = if ( config.getIsNull( "database" ) ) None else Some( config.getInt( "database" ) )
+        password = config.get("password"),
+        database = config.get("database")
       )
   }.toList
 
