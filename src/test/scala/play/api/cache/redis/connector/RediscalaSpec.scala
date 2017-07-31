@@ -2,7 +2,7 @@ package play.api.cache.redis.connector
 
 import scala.concurrent.Future
 
-import play.api.cache.redis.{Redis, RedisInstance}
+import play.api.cache.redis.{Redis, TestRedisInstance}
 
 import org.specs2.matcher.MustExpectable
 import org.specs2.mutable.Specification
@@ -10,7 +10,7 @@ import org.specs2.mutable.Specification
 /**
   * <p>Test of brando to be sure that it works etc.</p>
   */
-class RediscalaSpec extends Specification with Redis with RedisInstance {
+class RediscalaSpec extends Specification with Redis with TestRedisInstance {
 
   sequential
 

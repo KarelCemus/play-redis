@@ -40,7 +40,8 @@ resolvers ++= Seq(
 
 javacOptions ++= Seq( "-source", "1.8", "-target", "1.8", "-Xlint:unchecked", "-encoding", "UTF-8" )
 
-scalacOptions ++= Seq( "-deprecation", "-feature", "-unchecked" )
+// todo change to -deprecation when dropped support of old APIs from Play 2.5.x and older
+scalacOptions ++= Seq( "deprecation", "-feature", "-unchecked" )
 
 homepage := Some( url( "https://github.com/karelcemus/play-redis" ) )
 

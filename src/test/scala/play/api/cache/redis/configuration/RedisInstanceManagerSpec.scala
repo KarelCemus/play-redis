@@ -39,9 +39,9 @@ class RedisInstanceManagerSpec extends Specification {
       val manager = config.get[ RedisInstanceManager ]( "redis" )
       manager.caches mustEqual Set( "play", "data", "users" )
 
-      manager.instanceOf( "play" ).flatMap( _.instanceOption ) must beSome( RedisStandalone( "play", RedisHost( "localhost", 6379 ), defaults ) )
-      manager.instanceOf( "users" ).flatMap( _.instanceOption ) must beSome( RedisStandalone( "users", RedisHost( "localhost", 6380 ), defaults ) )
-      manager.instanceOf( "data" ).flatMap( _.instanceOption ) must beSome( RedisStandalone( "data", RedisHost( "localhost", 6381 ), defaults ) )
+      manager.instanceOf( "play" ).instanceOption must beSome( RedisStandalone( "play", RedisHost( "localhost", 6379 ), defaults ) )
+      manager.instanceOf( "users" ).instanceOption must beSome( RedisStandalone( "users", RedisHost( "localhost", 6380 ), defaults ) )
+      manager.instanceOf( "data" ).instanceOption must beSome( RedisStandalone( "data", RedisHost( "localhost", 6381 ), defaults ) )
     }
   }
 }

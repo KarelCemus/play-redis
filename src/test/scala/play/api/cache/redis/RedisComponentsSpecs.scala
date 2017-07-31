@@ -10,16 +10,18 @@ import org.specs2.mutable.Specification
   */
 class RedisComponentsSpecs extends Specification with Redis {
 
-  val components = new RedisCacheComponents {
+  object components extends RedisCacheComponents {
     def actorSystem = system
     def applicationLifecycle = injector.instanceOf[ ApplicationLifecycle ]
     def environment = injector.instanceOf[ Environment ]
     def configuration = injector.instanceOf[ Configuration ]
+
+    val syncRedis = syncRedisCacheApi( "play" )
   }
 
   private type Cache = CacheApi
 
-  private val Cache = components.syncRedisCacheApi
+  private val Cache = components.syncRedis
 
   val prefix = "components-sync"
 

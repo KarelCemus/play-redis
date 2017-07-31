@@ -23,13 +23,13 @@ class AsynchronousCacheSpec extends Specification with Redis {
   private val workingConnector = injector.instanceOf[ RedisConnector ]
 
   // test proper implementation, no fails
-  new RedisCacheSuite( "implement", "redis-cache-implements", new RedisCache( workingConnector )( Builders.AsynchronousBuilder, FailThrough ), AlwaysSuccess )
+  new RedisCacheSuite( "implement", "redis-cache-implements", new RedisCache( "play", workingConnector )( Builders.AsynchronousBuilder, FailThrough ), AlwaysSuccess )
 
-  new RedisCacheSuite( "recover from with working connector", "redis-cache-implements-and-recovery", new RedisCache( workingConnector )( Builders.AsynchronousBuilder, RecoverWithDefault ), SuccessOrDefault )
+  new RedisCacheSuite( "recover from with working connector", "redis-cache-implements-and-recovery", new RedisCache( "play", workingConnector )( Builders.AsynchronousBuilder, RecoverWithDefault ), SuccessOrDefault )
 
-  new RedisCacheSuite( "recover from", "redis-cache-recovery", new RedisCache( FailingConnector )( Builders.AsynchronousBuilder, RecoverWithDefault ), AlwaysDefault )
+  new RedisCacheSuite( "recover from", "redis-cache-recovery", new RedisCache( "play", FailingConnector )( Builders.AsynchronousBuilder, RecoverWithDefault ), AlwaysDefault )
 
-  new RedisCacheSuite( "fail on", "redis-cache-fail", new RedisCache( FailingConnector )( Builders.AsynchronousBuilder, FailThrough ), AlwaysException )
+  new RedisCacheSuite( "fail on", "redis-cache-fail", new RedisCache( "play", FailingConnector )( Builders.AsynchronousBuilder, FailThrough ), AlwaysException )
 
   class RedisCacheSuite( suiteName: String, prefix: String, cache: Cache, expectation: Expectation ) {
 

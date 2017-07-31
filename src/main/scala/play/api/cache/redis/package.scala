@@ -11,6 +11,7 @@ package object redis extends AnyRef with util.Expiration {
   type SynchronousResult[ A ]  = A
   type AsynchronousResult[ A ] = scala.concurrent.Future[ A ]
 
-  type RedisConfiguration = configuration.RedisConfiguration
-  type RedisConnector = connector.RedisConnector
+  private[ redis ] type RedisInstance = configuration.RedisInstance
+  private[ redis ] type RedisInstanceManager = configuration.RedisInstanceManager
+  private[ redis ] type RedisConnector = connector.RedisConnector
 }

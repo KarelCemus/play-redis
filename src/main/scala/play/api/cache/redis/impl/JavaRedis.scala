@@ -1,7 +1,6 @@
 package play.api.cache.redis.impl
 
 import java.util.concurrent.{Callable, CompletionStage}
-import javax.inject.{Inject, Singleton}
 
 import scala.compat.java8.FutureConverters
 import scala.concurrent.Future
@@ -18,8 +17,7 @@ import play.api.cache.redis._
   *
   * @author Karel Cemus
   */
-@Singleton
-private[ impl ] class JavaRedis @Inject()( internal: CacheAsyncApi, environment: Environment, connector: RedisConnector ) extends play.cache.AsyncCacheApi {
+private[ impl ] class JavaRedis( name: String, internal: CacheAsyncApi, environment: Environment, connector: RedisConnector ) extends play.cache.AsyncCacheApi {
 
   import JavaRedis._
   import connector.context
