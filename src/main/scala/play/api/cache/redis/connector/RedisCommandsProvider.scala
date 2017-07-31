@@ -5,28 +5,30 @@ import javax.inject._
 import scala.concurrent.Future
 
 import play.api.Logger
-import play.api.cache.redis.RedisConfiguration
-import play.api.cache.redis.configuration.ClusterHost
-import play.api.inject.ApplicationLifecycle
+import play.api.cache.redis.configuration._
+import play.api.inject._
 
 import akka.actor.ActorSystem
-import redis._
+import redis.{RedisClient => RedisStandaloneClient, RedisCluster => RedisClusterClient, _}
 
 /**
-  * Dispatches a provider of the redis commands implementation.
+  * Dispatches a provider of the redis commands implementation. Use with Guice
+  * or some other DI container.
   *
   * @author Karel Cemus
   */
-@Singleton
-class RedisCommandsProvider @Inject()( lifecycle: ApplicationLifecycle, configuration: RedisConfiguration )( implicit system: ActorSystem ) extends Provider[ RedisCommands ] {
+private[ connector ] class RedisCommandsProvider( name: String ) extends Provider[ RedisCommands ] {
 
-  val provider = if ( configuration.cluster.isEmpty ) instance else cluster
+  @Inject private var injector: Injector = _
+  @Inject private implicit var system: ActorSystem = _
+  @Inject private implicit var lifecycle: ApplicationLifecycle = _
 
-  private def instance = new RedisCommandsInstance( lifecycle, configuration )
+  private def instance = bind[ RedisInstance ].qualifiedWith( name )
 
-  private def cluster = new RedisCommandsCluster( lifecycle, configuration )
-
-  def get( ) = provider.get()
+  lazy val get = injector instanceOf instance match {
+    case cluster: RedisCluster => new RedisCommandsCluster( cluster ).get
+    case standalone: RedisStandalone => new RedisCommandsStandalone( standalone ).get
+  }
 }
 
 private[ connector ] trait AbstractRedisCommands {
@@ -39,7 +41,7 @@ private[ connector ] trait AbstractRedisCommands {
   /** an implementation of the redis commands */
   def client: RedisCommands
 
-  def get( ) = client
+  lazy val get = client
 
   /** action invoked on the start of the actor */
   def start( ): Unit
@@ -61,17 +63,17 @@ private[ connector ] trait AbstractRedisCommands {
   * @param configuration configures clusters
   * @param system        actor system
   */
-private[ connector ] class RedisCommandsInstance( val lifecycle: ApplicationLifecycle, configuration: RedisConfiguration )( implicit system: ActorSystem ) extends Provider[ RedisCommands ] with AbstractRedisCommands {
+private[ connector ] class RedisCommandsStandalone( configuration: RedisStandalone )( implicit system: ActorSystem, val lifecycle: ApplicationLifecycle ) extends Provider[ RedisCommands ] with AbstractRedisCommands {
+  import configuration._
 
-  val client = RedisClient(
-    host = configuration.host,
-    port = configuration.port,
-    db = Some( configuration.database ),
-    password = configuration.password
+  val client = RedisStandaloneClient(
+    host = host,
+    port = port,
+    db = database,
+    password = password
   )
 
   def start( ) = {
-    import configuration.{database, host, port}
     log.info( s"Redis cache actor started. It is connected to $host:$port?database=$database" )
   }
 
@@ -90,17 +92,19 @@ private[ connector ] class RedisCommandsInstance( val lifecycle: ApplicationLife
   * @param configuration configures clusters
   * @param system        actor system
   */
-private[ connector ] class RedisCommandsCluster( val lifecycle: ApplicationLifecycle, configuration: RedisConfiguration )( implicit system: ActorSystem ) extends Provider[ RedisCommands ] with AbstractRedisCommands {
+private[ connector ] class RedisCommandsCluster( configuration: RedisCluster )( implicit system: ActorSystem, val lifecycle: ApplicationLifecycle ) extends Provider[ RedisCommands ] with AbstractRedisCommands {
+  import configuration._
 
-  val client = RedisCluster(
-    configuration.cluster.map {
-      case ClusterHost( host, port, password) => RedisServer( host, port, password )
+  val client = RedisClusterClient(
+    nodes.map {
+      case RedisHost( host, port, database, password ) => RedisServer( host, port, password, database )
     }
   )
 
   def start( ) = {
-    def servers = configuration.cluster.collect {
-      case ClusterHost( host, port, _ ) => s" $host:$port"
+    def servers = nodes.map {
+      case RedisHost( host, port, Some( database ), _ ) => s" $host:$port?database=$database"
+      case RedisHost( host, port, None, _ ) => s" $host:$port"
     }
 
     log.info( s"Redis cluster cache actor started. It is connected to ${ servers mkString ", " }" )

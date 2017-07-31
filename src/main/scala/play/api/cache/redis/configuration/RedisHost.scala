@@ -71,6 +71,9 @@ object RedisHost extends ConfigLoader[ RedisHost ] {
     val database = _database
     val password = _password
   }
+
+  def unapply( host: RedisHost ): Option[ (String, Int, Option[ Int ], Option[ String ]) ] =
+    Some( (host.host, host.port, host.database, host.password) )
 }
 
 /**

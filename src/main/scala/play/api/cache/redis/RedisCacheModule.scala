@@ -13,18 +13,13 @@ import play.api.inject.Module
 @Singleton
 class RedisCacheModule extends Module {
 
-  /** play-redis consists of several layers and sub-modules, each defining it's own bindings */
-  private def layers = Seq(
-    // the lowest layer, the connector
-    connector.RedisConnectorModule,
-    // the implementation
-    impl.ImplementationModule,
-    // the configuration provider
-    configuration.ConfigurationModule
-  )
-
-  override def bindings( environment: Environment, configuration: play.api.Configuration ) =
-    layers.flatMap( _.bindings( environment, configuration ) )
+  override def bindings( environment: Environment, config: play.api.Configuration ) = {
+    // play-redis consists of several layers and sub-modules, each defining it's own bindings
+    val module = new connector.RedisConnectorModule with configuration.RedisConfigurationModule with impl.ImplementationModule {
+      def configuration = config
+    }
+    module.connectorBindings ++ module.configurationBindings ++ module.implementationBindings
+  }
 }
 
 /**
@@ -33,6 +28,6 @@ class RedisCacheModule extends Module {
   * @author Karel Cemus
   */
 trait RedisCacheComponents
- extends configuration.ConfigurationComponents
- with connector.RedisConnectorComponents
- with impl.ImplementationComponents
+  extends configuration.ConfigurationComponents
+  with connector.RedisConnectorComponents
+  with impl.ImplementationComponents

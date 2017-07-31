@@ -24,7 +24,12 @@ class RedisInstanceManager( val all: Map[ String, RedisInstanceBinder ] ) extend
   def caches: Set[ String ] = all.keySet
 
   /** returns a configuration of a single named redis instance */
-  def instanceOf( name: String ): Option[ RedisInstanceBinder ] = all get name
+  def instanceOfOption( name: String ): Option[ RedisInstanceBinder ] = all get name
+
+  /** returns a configuration of a single named redis instance */
+  def instanceOf( name: String ): RedisInstanceBinder = instanceOfOption( name ) getOrElse {
+    throw new IllegalArgumentException( s"There is no cache named '$name'." )
+  }
 
   /** traverse all binders */
   def foreach[ U ]( f: RedisInstanceBinder => U ) = all.values.foreach( f )

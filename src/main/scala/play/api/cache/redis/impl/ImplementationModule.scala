@@ -1,46 +1,21 @@
 package play.api.cache.redis.impl
 
-import play.api.cache.redis.exception._
-import play.api.cache.redis.{CacheApi, CacheAsyncApi}
-import play.api.inject.{Binding, Module}
-import play.api.{Configuration, Environment}
+import javax.inject._
 
-/**
-  * Dispatches policy configuration and declares methods
-  * to initialize proper policy. This is reusable implementation
-  * encapsulating all supported values in configuration and
-  * to ensure consistency if the keys are added or changed.
-  *
-  * @author Karel Cemus
-  */
-private[ impl ] trait PolicyResolver[ T ] {
+import scala.language.implicitConversions
 
-  /** reads the configuration and provides proper recovery policy binding */
-  def resolve( configuration: Configuration ) = {
-    configuration.get[ String ]( "play.cache.redis.recovery" ) match {
-      case "log-and-fail" => logAndFail
-      case "log-and-default" => logAndDefault
-      case "log-condensed-and-fail" => logCondensedAndFail
-      case "log-condensed-and-default" => logCondensedAndDefault
-      case "custom" => custom
-      case _ => invalidConfiguration( "Invalid value in 'play.cache.redis.recovery'. Accepted values are 'log-and-fail', 'log-and-default', and 'custom'." )
-    }
-  }
+import play.api.Environment
+import play.api.cache.redis._
+import play.api.inject._
 
-  /** creates the policy based on the PolicyResolver implementation */
-  protected def logAndFail: T
+private[ impl ] object RedisRecoveryPolicyResolver {
 
-  /** creates the policy based on the PolicyResolver implementation */
-  protected def logAndDefault: T
-
-  /** creates the policy based on the PolicyResolver implementation */
-  protected def logCondensedAndFail: T
-
-  /** creates the policy based on the PolicyResolver implementation */
-  protected def logCondensedAndDefault: T
-
-  /** creates the policy based on the PolicyResolver implementation */
-  protected def custom: T
+  def bindings = Seq(
+    bind[ RecoveryPolicy ].qualifiedWith( "log-and-fail" ).to[ LogAndFailPolicy ],
+    bind[ RecoveryPolicy ].qualifiedWith( "log-and-default" ).to[ LogAndDefaultPolicy ],
+    bind[ RecoveryPolicy ].qualifiedWith( "log-condensed-and-fail" ).to[ LogCondensedAndFailPolicy ],
+    bind[ RecoveryPolicy ].qualifiedWith( "log-condensed-and-default" ).to[ LogCondensedAndDefaultPolicy ]
+  )
 }
 
 /**
@@ -48,31 +23,92 @@ private[ impl ] trait PolicyResolver[ T ] {
   *
   * @author Karel Cemus
   */
-object ImplementationModule extends Module {
+trait ImplementationModule {
+  import ImplementationModule._
 
-  private object RedisRecoveryPolicyResolver extends PolicyResolver[ Option[ Binding[ RecoveryPolicy ] ] ] {
-    protected def logAndFail = Some( bind[ RecoveryPolicy ].to[ LogAndFailPolicy ] )
-    protected def logAndDefault = Some( bind[ RecoveryPolicy ].to[ LogAndDefaultPolicy ] )
-    protected def logCondensedAndFail = Some( bind[ RecoveryPolicy ].to[ LogCondensedAndFailPolicy ] )
-    protected def logCondensedAndDefault = Some( bind[ RecoveryPolicy ].to[ LogCondensedAndDefaultPolicy ] )
-    protected def custom = None // do nothing, user provides own implementation binding
-  }
+  def manager: RedisInstanceManager
 
-  override def bindings( environment: Environment, configuration: Configuration ) = Seq(
+  private def bindCache( implicit name: String ) = Seq[ Binding[ _ ] ](
     // play-redis APIs
-    bind[ CacheApi ].to[ SyncRedis ],
-    bind[ CacheAsyncApi ].to[ AsyncRedis ],
+    bind[ CacheApi ].qualified.to( new NamedSyncRedisProvider( name ) ),
+    bind[ CacheAsyncApi ].qualified.to( new NamedAsyncRedisProvider( name ) ),
     // scala api defined by Play
-    bind[ play.api.cache.CacheApi ].to[ play.api.cache.DefaultSyncCacheApi ],
-    bind[ play.api.cache.SyncCacheApi ].to[ play.api.cache.DefaultSyncCacheApi ],
-    bind[ play.api.cache.AsyncCacheApi ].to[ AsyncRedis ],
+    bind[ play.api.cache.CacheApi ].qualified.to( new NamedScalaSyncCacheProvider( name ) ),
+    bind[ play.api.cache.SyncCacheApi ].qualified.to( new NamedScalaSyncCacheProvider( name ) ),
+    bind[ play.api.cache.AsyncCacheApi ].qualified.to( new NamedAsyncRedisProvider( name ) ),
     // java api defined by Play
-    bind[ play.cache.CacheApi ].to[ play.cache.DefaultSyncCacheApi ],
-    bind[ play.cache.SyncCacheApi ].to[ play.cache.DefaultSyncCacheApi ],
-    bind[ play.cache.AsyncCacheApi ].to[ JavaRedis ]
+    bind[ play.cache.CacheApi ].qualified.to( new NamedJavaSyncCacheProvider( name ) ),
+    bind[ play.cache.SyncCacheApi ].qualified.to( new NamedJavaSyncCacheProvider( name ) ),
+    bind[ play.cache.AsyncCacheApi ].qualified.to( new NamedJavaRedisProvider( name ) ),
+  )
 
-  ) ++ RedisRecoveryPolicyResolver.resolve( configuration )
+  private def bindDefault( implicit name: String ) = Seq[ Binding[ _ ] ](
+    // play-redis APIs
+    bind[ CacheApi ].to( bind[ CacheApi ].qualified ),
+    bind[ CacheAsyncApi ].to( bind[ CacheAsyncApi ].qualified ),
+    // scala api defined by Play
+    bind[ play.api.cache.CacheApi ].to( bind[ play.api.cache.CacheApi ].qualified ),
+    bind[ play.api.cache.SyncCacheApi ].to( bind[ play.api.cache.SyncCacheApi ].qualified ),
+    bind[ play.api.cache.AsyncCacheApi ].to( bind[ play.api.cache.AsyncCacheApi ].qualified ),
+    // java api defined by Play
+    bind[ play.cache.CacheApi ].to( bind[ play.cache.CacheApi ].qualified ),
+    bind[ play.cache.SyncCacheApi ].to( bind[ play.cache.SyncCacheApi ].qualified ),
+    bind[ play.cache.AsyncCacheApi ].to( bind[ play.cache.AsyncCacheApi ].qualified ),
+  )
+
+  def implementationBindings = {
+    manager.flatMap {
+      cache => bindCache( cache.name )
+    }.toSeq ++ bindDefault( "play" ) ++ RedisRecoveryPolicyResolver.bindings
+  }
 }
+
+object ImplementationModule {
+  implicit class QualifiedBinding[ T ]( val binding: BindingKey[ T ] ) extends AnyVal {
+    def qualified( implicit name: String ) = binding.qualifiedWith( name )
+  }
+}
+
+abstract class NamedCacheProvider[ T ]( name: String )( f: Injector => T ) extends Provider[ T ] {
+  @Inject var injector: Injector = _
+  def get = f( injector )
+}
+
+class NamedAsyncRedisProvider( name: String ) extends NamedCacheProvider( name )( { injector: Injector =>
+  def connector = bind[ RedisConnector ].qualifiedWith( name )
+  def instance = injector instanceOf bind[ RedisInstance ].qualifiedWith( name )
+  def policy = bind[ RecoveryPolicy ].qualifiedWith( instance.recovery )
+
+  new AsyncRedis( name, injector instanceOf connector, injector instanceOf policy )
+} )
+
+class NamedSyncRedisProvider( name: String ) extends NamedCacheProvider( name )( { injector: Injector =>
+  def connector = bind[ RedisConnector ].qualifiedWith( name )
+  def instance = injector instanceOf bind[ RedisInstance ].qualifiedWith( name )
+  def policy = bind[ RecoveryPolicy ].qualifiedWith( instance.recovery )
+
+  new SyncRedis( name, injector instanceOf connector, injector instanceOf policy )
+} )
+
+class NamedJavaRedisProvider( name: String ) extends NamedCacheProvider( name )( { injector =>
+  def connector = injector instanceOf bind[ RedisConnector ].qualifiedWith( name )
+  def internal = injector instanceOf bind[ CacheAsyncApi ].qualifiedWith( name )
+  def environment = injector instanceOf bind[ Environment ]
+
+  new JavaRedis( name, internal, environment, connector )
+} )
+
+class NamedJavaSyncCacheProvider( name: String ) extends NamedCacheProvider( name )( { injector =>
+  def internal = injector instanceOf bind[ play.cache.AsyncCacheApi ].qualifiedWith( name )
+
+  new play.cache.DefaultSyncCacheApi( internal )
+} )
+
+class NamedScalaSyncCacheProvider( name: String ) extends NamedCacheProvider( name )( { injector =>
+  def internal = injector instanceOf bind[ play.api.cache.AsyncCacheApi ].qualifiedWith( name )
+
+  new play.api.cache.DefaultSyncCacheApi( internal )
+} )
 
 /**
   * Components for compile-time dependency injection.
@@ -82,43 +118,38 @@ object ImplementationModule extends Module {
   */
 private[ redis ] trait ImplementationComponents {
 
-  import play.api.cache.redis._
-
-  def configuration: Configuration
-
   def environment: Environment
 
-  def redisConnector: RedisConnector
-
-  private object RecoveryPolicyResolver extends PolicyResolver[ RecoveryPolicy ] {
-    protected def logAndFail = new LogAndFailPolicy
-    protected def logAndDefault = new LogAndDefaultPolicy
-    protected def logCondensedAndFail = new LogCondensedAndFailPolicy
-    protected def logCondensedAndDefault = new LogCondensedAndDefaultPolicy
-    protected def custom = customRedisRecoveryPolicy // enable escape and overriding
+  /** overwrite to provide custom recovery policy */
+  def recoveryPolicy: PartialFunction[ String, RecoveryPolicy ] = {
+    case "log-and-fail" => new LogAndFailPolicy
+    case "log-and-default" => new LogAndDefaultPolicy
+    case "log-condensed-and-fail" => new LogCondensedAndFailPolicy
+    case "log-condensed-and-default" => new LogCondensedAndDefaultPolicy
   }
 
-  private lazy val policy: RecoveryPolicy = RecoveryPolicyResolver.resolve( configuration )
+  private[ redis ] def redisConnectorFor( instance: RedisInstance ): RedisConnector
+
+  private implicit def instance2connector( instance: RedisInstance ): RedisConnector = redisConnectorFor( instance )
+  private implicit def instance2policy( instance: RedisInstance ): RecoveryPolicy = recoveryPolicy( instance.recovery )
 
   // play-redis APIs
-  private lazy val asyncRedis = new AsyncRedis( redisConnector, policy )
-  lazy val syncRedisCacheApi: CacheApi = new SyncRedis( redisConnector, policy )
-  lazy val asyncRedisCacheApi: CacheAsyncApi = asyncRedis
+  private def asyncRedis( instance: RedisInstance ) = new AsyncRedis( instance.name, redis = instance, policy = instance )
+
+  def syncRedisCacheApi( instance: RedisInstance ): CacheApi = new SyncRedis( instance.name, redis = instance, policy = instance )
+  def asyncRedisCacheApi( instance: RedisInstance ): CacheAsyncApi = asyncRedis( instance )
 
   // scala api defined by Play
-  lazy val asyncCacheApi: play.api.cache.AsyncCacheApi = asyncRedis
-  private lazy val defaultSyncCache = new play.api.cache.DefaultSyncCacheApi( asyncCacheApi )
+  def asyncCacheApi( instance: RedisInstance ): play.api.cache.AsyncCacheApi = asyncRedis( instance )
+  private def defaultSyncCache( instance: RedisInstance ) = new play.api.cache.DefaultSyncCacheApi( asyncCacheApi( instance ) )
   @deprecated( message = "Use syncCacheApi or asyncCacheApi.", since = "Play 2.6.0." )
-  lazy val defaultCacheApi: play.api.cache.CacheApi = defaultSyncCache
-  lazy val syncCacheApi: play.api.cache.SyncCacheApi = defaultSyncCache
+  def defaultCacheApi( instance: RedisInstance ): play.api.cache.CacheApi = defaultSyncCache( instance )
+  def syncCacheApi( instance: RedisInstance ): play.api.cache.SyncCacheApi = defaultSyncCache( instance )
 
   // java api defined by Play
-  lazy val javaAsyncCacheApi: play.cache.AsyncCacheApi = new JavaRedis( asyncRedis, environment, redisConnector )
-  private lazy val javaDefaultSyncCache = new play.cache.DefaultSyncCacheApi( javaAsyncCacheApi )
+  def javaAsyncCacheApi( instance: RedisInstance ): play.cache.AsyncCacheApi = new JavaRedis( instance.name, asyncRedis( instance ), environment = environment, connector = instance )
+  private def javaDefaultSyncCache( instance: RedisInstance ) = new play.cache.DefaultSyncCacheApi( javaAsyncCacheApi( instance ) )
   @deprecated( message = "Use javaSyncCacheApi or javaAsyncCacheApi.", since = "Play 2.6.0." )
-  lazy val javaCacheApi: play.cache.CacheApi = javaDefaultSyncCache
-  lazy val javaSyncCacheApi: play.cache.SyncCacheApi = javaDefaultSyncCache
-
-  protected def customRedisRecoveryPolicy: RecoveryPolicy =
-    shouldBeOverwritten( "In order to use custom RecoveryPolicy overwrite this method." )
+  def javaCacheApi( instance: RedisInstance ): play.cache.CacheApi = javaDefaultSyncCache( instance )
+  def javaSyncCacheApi( instance: RedisInstance ): play.cache.SyncCacheApi = javaDefaultSyncCache( instance )
 }
