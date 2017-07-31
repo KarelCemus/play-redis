@@ -1,7 +1,5 @@
 package play.api.cache.redis.impl
 
-import javax.inject.{Inject, Singleton}
-
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 
@@ -12,9 +10,8 @@ import play.api.cache.redis._
   *
   * @author Karel Cemus
   */
-@Singleton
-private[ impl ] class SyncRedis @Inject( )( redis: RedisConnector, policy: RecoveryPolicy )
-  extends RedisCache( redis )( Builders.SynchronousBuilder, policy ) with CacheApi {
+private[ impl ] class SyncRedis( name: String, redis: RedisConnector, policy: RecoveryPolicy )
+  extends RedisCache( name: String, redis )( Builders.SynchronousBuilder, policy ) with CacheApi {
 
   // implicit ask timeout and execution context
   import redis.{context, timeout}

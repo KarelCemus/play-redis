@@ -62,7 +62,7 @@ trait RedisSettings {
   *
   * @author Karel Cemus
   */
-trait RedisInstance extends RedisSettings with Synchronization {
+trait TestRedisInstance extends RedisSettings with Synchronization {
 
   private var _redis: RedisClient = _
 
@@ -89,7 +89,7 @@ trait EmptyRedis extends BeforeAll {
   override def beforeAll( ): Unit = EmptyRedis.empty
 }
 
-object EmptyRedis extends RedisInstance {
+object EmptyRedis extends TestRedisInstance {
 
   /** already executed */
   private var executed = false
@@ -114,7 +114,10 @@ object Redis {
   private val stopped = new AtomicInteger( 0 )
 
   val allSpecs = List(
-    classOf[ configuration.ConfigurationSpec ],
+    classOf[ configuration.RedisHostSpec ],
+    classOf[ configuration.RedisInstanceSpec ],
+    classOf[ configuration.RedisSettingsSpec ],
+    classOf[ configuration.RedisInstanceManagerSpec ],
     classOf[ connector.RediscalaSpec ],
     classOf[ connector.RedisConnectorSpec ],
     classOf[ impl.AsynchronousCacheSpec ],

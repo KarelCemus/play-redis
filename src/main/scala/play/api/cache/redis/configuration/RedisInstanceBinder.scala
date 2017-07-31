@@ -10,20 +10,21 @@ import com.typesafe.config.{Config, ConfigOrigin}
   * @author Karel Cemus
   */
 private[ configuration ] trait RedisInstanceBinder {
-  protected def name: String
-  protected def self = bind[ RedisInstance ].qualifiedWith( name )
+  def name: String
+  protected def self = asBindingKey
   def toBinding: List[ Binding[ RedisInstance ] ]
+  def asBindingKey: BindingKey[ RedisInstance ] = bind[ RedisInstance ].qualifiedWith( name )
   def toDefaultBinding = List( bind[ RedisInstance ].to( self ) )
   def instanceOption: Option[ RedisInstance ]
 }
 
-private[ configuration ] class RedisInstanceSelfBinder( instance: RedisInstance ) extends RedisInstanceBinder {
-  protected def name = instance.name
+private[ configuration ] class RedisInstanceSelfBinder( val instance: RedisInstance ) extends RedisInstanceBinder {
+  val name = instance.name
   def instanceOption = Some( instance )
-  def toBinding = List( self.toInstance( instance ) )
+  def toBinding = List( self toInstance instance )
 }
 
-private[ configuration ] class RedisInstanceCustomBinder( protected val name: String ) extends RedisInstanceBinder {
+private[ configuration ] class RedisInstanceCustomBinder( val name: String ) extends RedisInstanceBinder {
   def toBinding = List.empty
   def instanceOption = None
 }

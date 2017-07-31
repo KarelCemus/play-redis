@@ -1,7 +1,9 @@
 package play.api.cache.redis.connector
 
+import play.api.Configuration
+import play.api.cache.redis._
+import play.api.cache.redis.configuration.{RedisCluster, RedisStandalone}
 import play.api.inject._
-import play.api.{Configuration, Environment}
 
 import redis.RedisCommands
 
@@ -10,16 +12,30 @@ import redis.RedisCommands
   *
   * @author Karel Cemus
   */
-object RedisConnectorModule extends Module {
+trait RedisConnectorModule {
 
-  override def bindings( environment: Environment, configuration: Configuration ): Seq[ Binding[ _ ] ] = Seq(
+  def configuration: Configuration
+
+  def manager: RedisInstanceManager
+
+  private def bindings: Seq[ Binding[ _ ] ] = manager.flatMap( cache =>
+    Seq(
+      bind[ RedisCommands ].qualifiedWith( cache.name ).to( new RedisCommandsProvider( cache.name ) ),
+      bind[ RedisConnector ].qualifiedWith( cache.name ).to( new RedisConnectorProvider( cache.name ) )
+    )
+  ).toSeq
+
+  private def defaultBindings( name: String ): Seq[ Binding[ _ ] ] = manager.flatMap( cache =>
+    Seq(
+      bind[ RedisCommands ].to( bind[ RedisCommands ].qualifiedWith( name ) ),
+      bind[ RedisConnector ].to( bind[ RedisConnector ].qualifiedWith( name ) )
+    )
+  ).toSeq
+
+  private[ redis ] def connectorBindings = Seq(
     // binds akka serializer to its implementation
-    bind[ AkkaSerializer ].to[ AkkaSerializerImpl ],
-    // redis connector implementing the protocol
-    bind[ RedisConnector ].to[ RedisConnectorImpl ],
-    // bind proper implementation of redis commands
-    bind[ RedisCommands ].toProvider[ RedisCommandsProvider ]
-  )
+    bind[ AkkaSerializer ].to[ AkkaSerializerImpl ]
+  ) ++ bindings ++ defaultBindings( "play" )
 }
 
 /**
@@ -29,17 +45,18 @@ object RedisConnectorModule extends Module {
   * @author Karel Cemus
   */
 private[ redis ] trait RedisConnectorComponents {
-
-  import play.api.cache.redis._
   import akka.actor.ActorSystem
 
   def actorSystem: ActorSystem
   def applicationLifecycle: ApplicationLifecycle
-  def redisConfiguration: RedisConfiguration
 
   private lazy val akkaSerializer: AkkaSerializer = new AkkaSerializerImpl( actorSystem )
 
-  private lazy val redisCommandsProvider: RedisCommandsProvider = new RedisCommandsProvider( applicationLifecycle, redisConfiguration )( actorSystem )
+  private[ redis ] def redisCommandsFor( instance: RedisInstance ): RedisCommands = instance match {
+    case standalone: RedisStandalone => new RedisCommandsStandalone( standalone )( actorSystem, applicationLifecycle ).get
+    case cluster: RedisCluster => new RedisCommandsCluster( cluster )( actorSystem, applicationLifecycle ).get
+  }
 
-  lazy val redisConnector: RedisConnector = new RedisConnectorImpl( akkaSerializer, redisConfiguration, redisCommandsProvider.get() )( actorSystem )
+  private[ redis ] def redisConnectorFor( instance: RedisInstance ) =
+    new RedisConnectorImpl( akkaSerializer, instance, redisCommandsFor( instance ) )( actorSystem )
 }
