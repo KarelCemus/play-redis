@@ -94,14 +94,13 @@ private[ connector ] class RedisCommandsCluster( val lifecycle: ApplicationLifec
 
   val client = RedisCluster(
     configuration.cluster.map {
-      case ClusterHost( host, port, password, database ) => RedisServer( host, port, password, database )
+      case ClusterHost( host, port, password) => RedisServer( host, port, password )
     }
   )
 
   def start( ) = {
-    def servers = configuration.cluster.map {
-      case ClusterHost( host, port, _, Some( database ) ) => s" $host:$port?database=$database"
-      case ClusterHost( host, port, _, None ) => s" $host:$port"
+    def servers = configuration.cluster.collect {
+      case ClusterHost( host, port, _ ) => s" $host:$port"
     }
 
     log.info( s"Redis cluster cache actor started. It is connected to ${ servers mkString ", " }" )
