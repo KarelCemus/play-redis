@@ -328,7 +328,7 @@ If there exists non-empty `play.cache.redis.cluster` variable, i.e., there are a
 | play.cache.redis.dispatcher         | String   | `akka.actor.default-dispatcher` | Akka actor                          |
 | play.cache.redis.configuration      | String   | `static`                        | Defines which configuration source enable. Accepted values are `static`, `env`, `custom` |
 | play.cache.redis.password           | String   | `null`                          | When authentication is required, this is the password. Value is optional. |
-| play.cache.redis.cluster            | Array    | `[]`                            | Defines servers in the cluster in properties `host` and `port`, optionally `database` and `password` |
+| play.cache.redis.cluster            | Array    | `[]`                            | Defines servers in the cluster in properties `host` and `port`, optionally `password` |
 | play.cache.redis.connection-string-variable | String   | `REDIS_URL`             | Name of the environment variable with the connection string. This is used in combination with the `env` configuration. This allows customization of the variable name in PaaS environment. Value is optional. |
 | play.cache.redis.recovery           | String   | `log-and-default`               | Defines behavior when command execution fails. Accepted values are `log-and-fail` to log the error and rethrow the exception, `log-and-default` to log the failure and return default value neutral to the operation, `log-condensed-and-default` `log-condensed-and-fail` produce shorter but less informative error logs, and `custom` indicates the user binds his own implementation of `RecoveryPolicy`.        |
 
