@@ -41,9 +41,10 @@ private[ redis ] class ConfigurationFile @Inject()( implicit configuration: Conf
   def cluster = config.get[ Seq[ Configuration ] ]( "cluster" ).map {
     config =>
       ClusterHost(
-        host = config.get[ String ]( "host" ),
-        port = config.get[ Int ]( "port" ),
-        password = if ( config.has( "password" ) ) config.getOptional[ String ]( "password" ).filterNot( _.trim == "" ) else None
+        host = config.getString( "host" ),
+        port = config.getInt( "port" ),
+        password = config.getStringOpt( "password" ),
+        database = config.getIntOpt( "database" )
       )
   }.toList
 

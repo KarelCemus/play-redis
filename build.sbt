@@ -31,9 +31,7 @@ libraryDependencies ++= Seq(
   // test framework
   "org.specs2" %% "specs2-core" % specs2Version % "test",
   // test module for play framework
-  "com.typesafe.play" %% "play-test" % playVersion % "test",
-  // logger for tests
-  "org.slf4j" % "slf4j-simple" % "1.7.25" % "test"
+  "com.typesafe.play" %% "play-specs2" % playVersion % "test"
 )
 
 resolvers ++= Seq(
