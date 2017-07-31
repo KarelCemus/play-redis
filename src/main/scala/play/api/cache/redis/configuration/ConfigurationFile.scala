@@ -43,7 +43,8 @@ private[ redis ] class ConfigurationFile extends RedisConfiguration {
       ClusterHost(
         host = config.getString( "host" ),
         port = config.getInt( "port" ),
-        password = config.getStringOpt("password")
+        password = config.getStringOpt( "password" ),
+        database = config.getIntOpt( "database" )
       )
   }.toList
 
