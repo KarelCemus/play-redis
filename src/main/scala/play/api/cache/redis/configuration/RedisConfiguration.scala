@@ -37,4 +37,4 @@ trait RedisConfiguration {
 }
 
 /** Configures a host within a cluster */
-case class ClusterHost( host: String, port: Int, password: Option[ String ], database: Option[ Int ] )
+case class ClusterHost( host: String, port: Int, password: Option[ String ])
