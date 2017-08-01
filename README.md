@@ -316,6 +316,9 @@ check for errors.
 
 There is already default configuration but it can be overwritten in your `conf/application.conf` file.
 
+If there exists non-empty `play.cache.redis.cluster` variable, i.e., there are actually defined some cluster nodes, then 
+`play-redis` connects to a cluster. Otherwise, it connects to a single redis instance defined in `host` variable.
+
 | Key                                 | Type     | Default                         | Description                         |
 |-------------------------------------|---------:|--------------------------------:|-------------------------------------|
 | play.cache.redis.host               | String   | `localhost`                     | redis-server address                |
@@ -325,6 +328,7 @@ There is already default configuration but it can be overwritten in your `conf/a
 | play.cache.redis.dispatcher         | String   | `akka.actor.default-dispatcher` | Akka actor                          |
 | play.cache.redis.configuration      | String   | `static`                        | Defines which configuration source enable. Accepted values are `static`, `env`, `custom` |
 | play.cache.redis.password           | String   | `null`                          | When authentication is required, this is the password. Value is optional. |
+| play.cache.redis.cluster            | Array    | `[]`                            | Defines servers in the cluster in properties `host` and `port`, optionally `password` |
 | play.cache.redis.connection-string-variable | String   | `REDIS_URL`             | Name of the environment variable with the connection string. This is used in combination with the `env` configuration. This allows customization of the variable name in PaaS environment. Value is optional. |
 | play.cache.redis.recovery           | String   | `log-and-default`               | Defines behavior when command execution fails. Accepted values are `log-and-fail` to log the error and rethrow the exception, `log-and-default` to log the failure and return default value neutral to the operation, `log-condensed-and-default` `log-condensed-and-fail` produce shorter but less informative error logs, and `custom` indicates the user binds his own implementation of `RecoveryPolicy`.        |
 
@@ -414,6 +418,10 @@ both implementations along.
 </center>
 
 ## Changelog
+
+### [:link: 1.6.0](https://github.com/KarelCemus/play-redis/tree/1.6.0)
+
+Introduced support of Redis Cluster in [#84](https://github.com/KarelCemus/play-redis/issues/84).
 
 ### [:link: 1.5.1](https://github.com/KarelCemus/play-redis/tree/1.5.1)
 
