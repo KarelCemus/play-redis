@@ -28,6 +28,10 @@ trait ImplementationModule {
 
   def manager: RedisInstanceManager
 
+  def defaultCache: String
+
+  def bindDefault: Boolean
+
   private def bindCache( implicit name: String ) = Seq[ Binding[ _ ] ](
     // play-redis APIs
     bind[ CacheApi ].qualified.to( new NamedSyncRedisProvider( name ) ),
@@ -39,10 +43,10 @@ trait ImplementationModule {
     // java api defined by Play
     bind[ play.cache.CacheApi ].qualified.to( new NamedJavaSyncCacheProvider( name ) ),
     bind[ play.cache.SyncCacheApi ].qualified.to( new NamedJavaSyncCacheProvider( name ) ),
-    bind[ play.cache.AsyncCacheApi ].qualified.to( new NamedJavaRedisProvider( name ) ),
+    bind[ play.cache.AsyncCacheApi ].qualified.to( new NamedJavaRedisProvider( name ) )
   )
 
-  private def bindDefault( implicit name: String ) = Seq[ Binding[ _ ] ](
+  private def bindDefaults( implicit name: String ) = if( bindDefault ) Seq[ Binding[ _ ] ](
     // play-redis APIs
     bind[ CacheApi ].to( bind[ CacheApi ].qualified ),
     bind[ CacheAsyncApi ].to( bind[ CacheAsyncApi ].qualified ),
@@ -53,13 +57,13 @@ trait ImplementationModule {
     // java api defined by Play
     bind[ play.cache.CacheApi ].to( bind[ play.cache.CacheApi ].qualified ),
     bind[ play.cache.SyncCacheApi ].to( bind[ play.cache.SyncCacheApi ].qualified ),
-    bind[ play.cache.AsyncCacheApi ].to( bind[ play.cache.AsyncCacheApi ].qualified ),
-  )
+    bind[ play.cache.AsyncCacheApi ].to( bind[ play.cache.AsyncCacheApi ].qualified )
+  ) else Seq.empty
 
   def implementationBindings = {
     manager.flatMap {
       cache => bindCache( cache.name )
-    }.toSeq ++ bindDefault( "play" ) ++ RedisRecoveryPolicyResolver.bindings
+    }.toSeq ++ bindDefaults( defaultCache ) ++ RedisRecoveryPolicyResolver.bindings
   }
 }
 
