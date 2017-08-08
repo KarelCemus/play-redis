@@ -17,6 +17,8 @@ class RedisCacheModule extends Module {
     // play-redis consists of several layers and sub-modules, each defining it's own bindings
     val module = new connector.RedisConnectorModule with configuration.RedisConfigurationModule with impl.ImplementationModule {
       def configuration = config
+      def defaultCache = config.get[ String ]( "play.cache.redis.default-cache" )
+      def bindDefault = config.get[ Boolean ]( "play.cache.redis.bind-default" )
     }
     module.connectorBindings ++ module.configurationBindings ++ module.implementationBindings
   }
