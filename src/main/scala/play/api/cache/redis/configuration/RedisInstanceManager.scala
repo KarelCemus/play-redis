@@ -18,13 +18,15 @@ import com.typesafe.config.Config
   *
   * @author Karel Cemus
   */
-class RedisInstanceManager( val all: Map[ String, RedisInstanceBinder ] ) extends Traversable[ RedisInstanceBinder ] {
+class RedisInstanceManager( config: Config, path: String )( implicit defaults: RedisSettings ) extends Traversable[ RedisInstanceBinder ] {
+  import RedisConfigLoader._
 
   /** names of all known redis caches */
-  def caches: Set[ String ] = all.keySet
+  def caches: Set[ String ] = config.getObject( path / "instance" ).keySet.asScala.toSet
 
   /** returns a configuration of a single named redis instance */
-  def instanceOfOption( name: String ): Option[ RedisInstanceBinder ] = all get name
+  def instanceOfOption( name: String ): Option[ RedisInstanceBinder ] =
+    if ( config hasPath ( path / "instance" / name ) ) Some( RedisInstanceBinder.load( config, path / "instance" / name, name ) ) else None
 
   /** returns a configuration of a single named redis instance */
   def instanceOf( name: String ): RedisInstanceBinder = instanceOfOption( name ) getOrElse {
@@ -32,25 +34,15 @@ class RedisInstanceManager( val all: Map[ String, RedisInstanceBinder ] ) extend
   }
 
   /** traverse all binders */
-  def foreach[ U ]( f: RedisInstanceBinder => U ) = all.values.foreach( f )
-
-  /** join with another manager, returns a new instance */
-  def ++( that: RedisInstanceManager ): RedisInstanceManager =
-    new RedisInstanceManager( this.all ++ that.all )
+  def foreach[ U ]( f: RedisInstanceBinder => U ) = caches.view.flatMap( instanceOfOption ).foreach( f )
 }
 
 private[ configuration ] object RedisInstanceManager extends ConfigLoader[ RedisInstanceManager ] {
-  import RedisConfigLoader._
 
   def load( config: Config, path: String ) = {
     // read default settings
     implicit val defaults = RedisSettings.load( config, path )
-
     // construct a manager
-    new RedisInstanceManager(
-      config.getObject( path / "instance" ).keySet.asScala.map {
-        name => name -> RedisInstanceBinder.load( config, path / "instance" / name, name )
-      }.toMap
-    )
+    new RedisInstanceManager( config, path )
   }
 }
