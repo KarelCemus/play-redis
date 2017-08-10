@@ -17,7 +17,7 @@ package configuration {
     def redisInstanceConfiguration: PartialFunction[ String, RedisInstance ] = PartialFunction.empty
 
     implicit def redisInstance( name: String ): RedisInstance =
-      configuration.get( s"play.cache.redis.instance.$name" )( RedisInstanceBinder.loader( name ) ) match {
+      configuration.get( s"play.cache.redis.instances.$name" )( RedisInstanceBinder.loader( name ) ) match {
         case self: RedisInstanceSelfBinder => self.instance
         case _: RedisInstanceCustomBinder => redisInstanceConfiguration( name )
       }
