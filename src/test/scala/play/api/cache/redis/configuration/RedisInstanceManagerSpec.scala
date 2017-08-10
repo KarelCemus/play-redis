@@ -13,7 +13,7 @@ class RedisInstanceManagerSpec extends Specification {
     "multiple caches" in new WithConfiguration(
       """
         |redis {
-        |  instance {
+        |  instances {
         |    play {
         |      host:       localhost
         |      port:       6379

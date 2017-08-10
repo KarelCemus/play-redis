@@ -22,11 +22,11 @@ class RedisInstanceManager( config: Config, path: String )( implicit defaults: R
   import RedisConfigLoader._
 
   /** names of all known redis caches */
-  def caches: Set[ String ] = config.getObject( path / "instance" ).keySet.asScala.toSet
+  def caches: Set[ String ] = config.getObject( path / "instances" ).keySet.asScala.toSet
 
   /** returns a configuration of a single named redis instance */
   def instanceOfOption( name: String ): Option[ RedisInstanceBinder ] =
-    if ( config hasPath ( path / "instance" / name ) ) Some( RedisInstanceBinder.load( config, path / "instance" / name, name ) ) else None
+    if ( config hasPath ( path / "instances" / name ) ) Some( RedisInstanceBinder.load( config, path / "instances" / name, name ) ) else None
 
   /** returns a configuration of a single named redis instance */
   def instanceOf( name: String ): RedisInstanceBinder = instanceOfOption( name ) getOrElse {
