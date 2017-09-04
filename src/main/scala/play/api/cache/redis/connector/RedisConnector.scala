@@ -182,6 +182,16 @@ private[ redis ] trait HashCommands {
   def hashGetAll[ T: ClassTag ]( key: String ): Future[ Map[ String, T ] ]
 
   /**
+    * Increment a value at the given key in the map
+    *
+    * @param key cache storage key
+    * @param field key
+    * @param incrementBy increment by this
+    * @return value after incrementation
+    */
+  def hashIncrement( key: String, field: String, incrementBy: Long ): Future[ Long ]
+
+  /**
     * Returns the number of fields contained in the hash stored at key.
     *
     * Time complexity: O(1)

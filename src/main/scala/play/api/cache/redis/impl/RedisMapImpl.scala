@@ -23,6 +23,8 @@ private[ impl ] class RedisMapImpl[ Elem: ClassTag, Result[ _ ] ]( key: String, 
 
   def remove( fields: String* ) = redis.hashRemove( key, fields: _* ).map( _ => This ).recoverWithDefault( This )
 
+  def increment( field: String, incrementBy: Long ) = redis.hashIncrement( key, field, incrementBy ).recoverWithDefault( incrementBy )
+
   def toMap = redis.hashGetAll[ Elem ]( key ).recoverWithDefault( Map.empty )
 
   def keySet = redis.hashKeys( key ).recoverWithDefault( Set.empty )

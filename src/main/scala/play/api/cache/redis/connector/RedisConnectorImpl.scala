@@ -288,6 +288,11 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
       case removed => log.debug( s"Removed $removed elements from the collection at '$key'." ); removed
     }
 
+  def hashIncrement( key: String, field: String, incrementBy: Long ) =
+    redis.hincrby( key, field, incrementBy ) executing "HINCRBY" withKey key andParameters s"$field $incrementBy" expects {
+      case value => log.debug( s"Field '$field' in '$key' was incremented to $value." ); value
+    }
+
   def hashExists( key: String, field: String ) =
     redis.hexists( key, field ) executing "HEXISTS" withKey key andParameter field expects {
       case true => log.debug( s"Item $field exists in the collection at '$key'." ); true

@@ -29,6 +29,8 @@ class RedisMapSpecs extends Specification with Redis {
 
     def map[ T: ClassTag ]( key: String ) = cache.map[ T ]( key )
 
+    def numbers( implicit theKey: Key ) = map[ Long ]( theKey.key )
+
     def strings( implicit theKey: Key ) = map[ String ]( theKey.key )
 
     def objects( implicit theKey: Key ) = map[ SimpleObject ]( theKey.key )
@@ -55,6 +57,24 @@ class RedisMapSpecs extends Specification with Redis {
           strings.contains( "KB" ) must expectsNow( beTrue, beFalse )
           strings.contains( "KC" ) must expectsNow( beTrue, beFalse )
           strings.contains( "KD" ) must expectsNow( beFalse, beFalse )
+        }
+
+        "increment in the map" in {
+          implicit val key: Key = s"$prefix-map-increment"
+
+          numbers.size must expectsNow( 0 )
+          numbers.isEmpty must expectsNow( beTrue )
+          numbers.nonEmpty must expectsNow( beFalse )
+
+          numbers.add( "A", 0 ).add( "B", 5 ).add( "C", 10 ).size must expectsNow( 3, 0 )
+          numbers.isEmpty must expectsNow( beFalse, beTrue )
+          numbers.nonEmpty must expectsNow( beTrue, beFalse )
+
+          numbers.increment( "A" ) must expectsNow( 1, 1 )
+          numbers.increment( "B", 2 ) must expectsNow( 7, 2 )
+          numbers.increment( "C", -2 ) must expectsNow( 8, -2 )
+          numbers.increment( "D", 10 ) must expectsNow( 10, 10 )
+          numbers.toMap must expectsNow( Map( "A" -> 1, "B" -> 7, "C" -> 8, "D" -> 10 ), Map.empty[ String, Long ] )
         }
 
         "remove from the map" in {
