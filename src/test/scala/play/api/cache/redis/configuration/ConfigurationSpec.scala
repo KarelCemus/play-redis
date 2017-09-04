@@ -2,16 +2,21 @@ package play.api.cache.redis.configuration
 
 import scala.concurrent.duration._
 
+import play.api.Configuration
+import play.api.cache.redis.Redis
+
 import org.specs2.mutable.Specification
 
 /**
   * <p>This test verifies reading of the configuration to deliver proper redis connection settings.</p>
   */
-class ConfigurationSpec extends Specification {
+class ConfigurationSpec extends Specification with Redis {
+
+  implicit val config = injector.instanceOf[ Configuration ]
 
   "Local configuration" should {
 
-    val configuration = new ConfigurationFile( )
+    val configuration = new ConfigurationFile()
 
     "read host" in {
       configuration.host must beEqualTo( "localhost" )
