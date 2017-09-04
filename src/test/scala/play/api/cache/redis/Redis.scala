@@ -125,6 +125,7 @@ object Redis {
     classOf[ impl.RedisMapSpecs ],
     classOf[ impl.RedisSetSpecs ],
     classOf[ impl.SynchronousCacheSpec ],
+    classOf[ util.ExpirationSpec ],
     classOf[ RedisComponentsSpecs ]
   ).size
 

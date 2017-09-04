@@ -2,13 +2,15 @@ package play.api.cache.redis.configuration
 
 import javax.inject.Provider
 
+import play.api.Configuration
+
 /**
  * Reads environment variables for the connection string and returns EnvironmentConfiguration instance.
  * This configuration instance is designed to work in PaaS environments such as Heroku.
  *
  * @param variable name of the variable with the connection string in the environment
  */
-class ConnectionStringProvider( variable: String ) extends Provider[ ConnectionString ] {
+class ConnectionStringProvider( variable: String )( implicit configuration: Configuration ) extends Provider[ ConnectionString ] {
 
   /** expected format of the environment variable */
   private val REDIS_URL = "redis://((?<user>[^:]+):(?<password>[^@]+)@)?(?<host>[^:]+):(?<port>[0-9]+)".r( "auth", "user", "password", "host", "port" )

@@ -79,7 +79,7 @@ private[ configuration ] trait ConfigurationResolver[ T ] {
   */
 object ConfigurationModule extends Module {
 
-  private object RedisConfigurationResolver extends ConfigurationResolver[ Option[ Binding[ RedisConfiguration ] ] ] {
+  private class RedisConfigurationResolver( implicit configuration: Configuration ) extends ConfigurationResolver[ Option[ Binding[ RedisConfiguration ] ] ] {
     protected def static = Some( bind[ RedisConfiguration ].to[ ConfigurationFile ] )
     protected def env( connectionString: String ) = Some( bind[ RedisConfiguration ].to( new ConnectionStringProvider( connectionString ) ) )
     protected def heroku = Some( bind[ RedisConfiguration ].to( new ConnectionStringProvider( "REDIS_URL" ) ) )
@@ -88,7 +88,7 @@ object ConfigurationModule extends Module {
   }
 
   override def bindings( environment: Environment, configuration: Configuration ) =
-    RedisConfigurationResolver.resolve( configuration ).toSeq
+    new RedisConfigurationResolver()( configuration ).resolve( configuration ).toSeq
 }
 
 
@@ -103,7 +103,8 @@ private[ redis ] trait ConfigurationComponents {
   def configuration: Configuration
 
   private object RedisConfigurationResolver extends ConfigurationResolver[ RedisConfiguration ] {
-    protected def static = new ConfigurationFile
+    implicit def config = configuration
+    protected def static = new ConfigurationFile()
     protected def env( connectionString: String ) = new ConnectionStringProvider( connectionString ).get()
     protected def heroku = new ConnectionStringProvider( "REDIS_URL" ).get()
     protected def herokuCloud = new ConnectionStringProvider( "REDISCLOUD_URL" ).get()

@@ -2,6 +2,8 @@ package play.api.cache.redis.configuration
 
 import javax.inject.Singleton
 
+import play.api.Configuration
+
 /**
  * Environment configuration expects the configuration to be injected through environment variable containing
  * the connection string. This configuration is often used by PaaS environments.
@@ -18,4 +20,4 @@ class ConnectionString(
   /** authentication password */
   override val password: Option[ String ]
 
-) extends ConfigurationFile
+)( implicit configuration: Configuration ) extends ConfigurationFile
