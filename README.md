@@ -409,7 +409,7 @@ both implementations along.
 
 | play framework  | play-redis     |
 |-----------------|---------------:|
-| 2.6.x           | 1.5.1          |
+| 2.6.x           | 1.6.0          |
 | 2.5.x           | 1.4.2          |
 | 2.4.x           | 1.0.0          |
 | 2.3.x           | 0.2.1          |
@@ -422,6 +422,8 @@ both implementations along.
 ### [:link: 1.6.0](https://github.com/KarelCemus/play-redis/tree/1.6.0)
 
 Introduced support of Redis Cluster in [#84](https://github.com/KarelCemus/play-redis/issues/84).
+
+Implemented increment in maps [#112](https://github.com/KarelCemus/play-redis/issues/112).
 
 ### [:link: 1.5.1](https://github.com/KarelCemus/play-redis/tree/1.5.1)
 

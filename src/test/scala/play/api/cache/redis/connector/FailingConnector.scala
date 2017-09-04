@@ -120,6 +120,9 @@ object FailingConnector extends RedisConnector with Synchronization {
   def hashGetAll[ T: ClassTag ]( key: String ) =
     failKeyed( key, "HGETALL" )
 
+  def hashIncrement( key: String, field: String, incrementBy: Long ) =
+    failKeyed( key, "HINCRBY" )
+
   def hashSize( key: String ) =
     failKeyed( key, "HLEN" )
 

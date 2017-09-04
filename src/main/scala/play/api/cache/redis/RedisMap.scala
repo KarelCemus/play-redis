@@ -50,6 +50,15 @@ trait RedisMap[ Elem, Result[ _ ] ] extends RedisCollection[ Map[ String, Elem ]
   def remove( field: String* ): Result[ This ]
 
   /**
+    * Increment a value at the given key in the map
+    *
+    * @param field key
+    * @param incrementBy increment by this
+    * @return value after incrementation
+    */
+  def increment( field: String, incrementBy: Long = 1 ): Result[ Long ]
+
+  /**
     * <p>Returns all elements in the map</p>
     *
     * @note <strong>Time complexity:</strong> O(N) where N is the map cardinality.
