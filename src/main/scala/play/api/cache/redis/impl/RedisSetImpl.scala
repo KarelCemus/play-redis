@@ -6,10 +6,9 @@ import scala.reflect.ClassTag
 import play.api.cache.redis._
 
 /** <p>Implementation of Set API using redis-server cache implementation.</p> */
-private[ impl ] class RedisSetImpl[ Elem: ClassTag, Result[ _ ] ]( key: String, redis: RedisConnector )( implicit builder: Builders.ResultBuilder[ Result ], policy: RecoveryPolicy ) extends RedisSet[ Elem, Result ] {
+private[ impl ] class RedisSetImpl[ Elem: ClassTag, Result[ _ ] ]( key: String, redis: RedisConnector )( implicit builder: Builders.ResultBuilder[ Result ], runtime: RedisRuntime ) extends RedisSet[ Elem, Result ] {
 
   // implicit ask timeout and execution context
-  import redis.{context, timeout}
   import dsl._
 
   @inline

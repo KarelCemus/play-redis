@@ -11,8 +11,8 @@ import play.api.cache.redis._
   *
   * @author Karel Cemus
   */
-private[ impl ] class AsyncRedis( name: String, redis: RedisConnector, policy: RecoveryPolicy )
-  extends RedisCache( name, redis )( Builders.AsynchronousBuilder, policy )
+private[ impl ] class AsyncRedis( redis: RedisConnector )( implicit runtime: RedisRuntime )
+  extends RedisCache( redis, Builders.AsynchronousBuilder )
   with play.api.cache.AsyncCacheApi
   with CacheAsyncApi
 {

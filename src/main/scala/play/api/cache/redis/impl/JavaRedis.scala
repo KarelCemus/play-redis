@@ -17,10 +17,9 @@ import play.api.cache.redis._
   *
   * @author Karel Cemus
   */
-private[ impl ] class JavaRedis( name: String, internal: CacheAsyncApi, environment: Environment, connector: RedisConnector ) extends play.cache.AsyncCacheApi {
-
+private[ impl ] class JavaRedis( internal: CacheAsyncApi, environment: Environment )( implicit runtime: RedisRuntime ) extends play.cache.AsyncCacheApi {
+  import dsl._
   import JavaRedis._
-  import connector.context
 
   def set( key: String, value: scala.Any, expiration: Int ): CompletionStage[ Done ] =
     set( key, value, expiration.seconds ).toJava

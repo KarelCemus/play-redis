@@ -454,10 +454,3 @@ trait RedisConnector extends AnyRef
   with ListCommands
   with SetCommands
   with HashCommands
-{
-  /** implicit execution context */
-  implicit def context: ExecutionContext
-
-  /** implicit ask timeout */
-  implicit def timeout: Timeout
-}

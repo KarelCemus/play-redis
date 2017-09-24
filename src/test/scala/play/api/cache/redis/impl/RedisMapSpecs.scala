@@ -1,5 +1,7 @@
 package play.api.cache.redis.impl
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 import scala.reflect.ClassTag
 
 import play.api.cache.redis._
@@ -18,12 +20,14 @@ class RedisMapSpecs extends Specification with Redis {
 
   private val workingConnector = injector.instanceOf[ RedisConnector ]
 
+  implicit def runtime( policy: RecoveryPolicy ) =  RedisRuntime( "play", 3.minutes, ExecutionContext.Implicits.global, policy )
+
   // test proper implementation, no fails
-  new RedisMapSuite( "implement", "redis-cache-implements", new RedisCache( "play", workingConnector )( Builders.SynchronousBuilder, FailThrough ), AlwaysSuccess )
+  new RedisMapSuite( "implement", "redis-cache-implements", new RedisCache( workingConnector, Builders.SynchronousBuilder )( FailThrough ), AlwaysSuccess )
 
-  new RedisMapSuite( "recover from", "redis-cache-recovery", new RedisCache( "play", FailingConnector )( Builders.SynchronousBuilder, RecoverWithDefault ), AlwaysDefault )
+  new RedisMapSuite( "recover from", "redis-cache-recovery", new RedisCache( FailingConnector, Builders.SynchronousBuilder )( RecoverWithDefault ), AlwaysDefault )
 
-  new RedisMapSuite( "fail on", "redis-cache-fail", new RedisCache( "play", FailingConnector )( Builders.SynchronousBuilder, FailThrough ), AlwaysException )
+  new RedisMapSuite( "fail on", "redis-cache-fail", new RedisCache( FailingConnector, Builders.SynchronousBuilder )( FailThrough ), AlwaysException )
 
   class RedisMapSuite( suiteName: String, prefix: String, cache: Cache, expectation: Expectation ) {
 

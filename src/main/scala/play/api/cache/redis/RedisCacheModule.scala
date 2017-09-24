@@ -2,6 +2,8 @@ package play.api.cache.redis
 
 import javax.inject.{Inject, Provider, Singleton}
 
+import scala.language.implicitConversions
+
 import play.api.inject._
 import play.api.{Configuration, Environment}
 
@@ -56,21 +58,20 @@ package impl {
     */
   private[ redis ] trait ImplementationModule {
     import ImplementationModule._
-
-    def bindSharedCache: Seq[ Binding[ _ ] ] = RedisRecoveryPolicyResolver.bindings
+    import NamedCacheProvider._
 
     def bindNamedCache( implicit name: String ) = Seq[ Binding[ _ ] ](
       // play-redis APIs
-      bind[ CacheApi ].qualified.to( new NamedSyncRedisProvider( name ) ),
-      bind[ CacheAsyncApi ].qualified.to( new NamedAsyncRedisProvider( name ) ),
+      bind[ CacheApi ].qualified.to( NamedSyncRedisProvider( name ) ),
+      bind[ CacheAsyncApi ].qualified.to( NamedAsyncRedisProvider( name ) ),
       // scala api defined by Play
-      bind[ play.api.cache.CacheApi ].qualified.to( new NamedScalaSyncCacheProvider( name ) ),
-      bind[ play.api.cache.SyncCacheApi ].qualified.to( new NamedScalaSyncCacheProvider( name ) ),
-      bind[ play.api.cache.AsyncCacheApi ].qualified.to( new NamedAsyncRedisProvider( name ) ),
+      bind[ play.api.cache.CacheApi ].qualified.to( NamedScalaSyncCacheProvider( name ) ),
+      bind[ play.api.cache.SyncCacheApi ].qualified.to( NamedScalaSyncCacheProvider( name ) ),
+      bind[ play.api.cache.AsyncCacheApi ].qualified.to( NamedAsyncRedisProvider( name ) ),
       // java api defined by Play
-      bind[ play.cache.CacheApi ].qualified.to( new NamedJavaSyncCacheProvider( name ) ),
-      bind[ play.cache.SyncCacheApi ].qualified.to( new NamedJavaSyncCacheProvider( name ) ),
-      bind[ play.cache.AsyncCacheApi ].qualified.to( new NamedJavaRedisProvider( name ) )
+      bind[ play.cache.CacheApi ].qualified.to( NamedJavaSyncCacheProvider( name ) ),
+      bind[ play.cache.SyncCacheApi ].qualified.to( NamedJavaSyncCacheProvider( name ) ),
+      bind[ play.cache.AsyncCacheApi ].qualified.to( NamedJavaRedisProvider( name ) )
     )
 
     def bindDefaultCache( implicit name: String ): Seq[ Binding[ _ ] ] = Seq(
@@ -94,58 +95,65 @@ package impl {
     }
   }
 
-  abstract class NamedCacheProvider[ T ]( name: String )( f: Injector => T ) extends Provider[ T ] {
+  class NamedCacheProvider[ T ]( name: String )( f: Injector => T ) extends Provider[ T ] {
     @Inject var injector: Injector = _
     lazy val get = f( injector )
   }
 
-  class NamedAsyncRedisProvider( name: String ) extends NamedCacheProvider( name )( { injector: Injector =>
-    def connector = bind[ RedisConnector ].qualifiedWith( name )
-    def instance = injector instanceOf bind[ RedisInstance ].qualifiedWith( name )
-    def policy = bind[ RecoveryPolicy ].qualifiedWith( instance.recovery )
+  object NamedCacheProvider {
 
-    new AsyncRedis( name, injector instanceOf connector, injector instanceOf policy )
-  } )
+    @inline private implicit def implicitBinding[ T ]( bindingKey: BindingKey[ T ] )( implicit injector: Injector ): T = injector.instanceOf( bindingKey )
 
-  class NamedSyncRedisProvider( name: String ) extends NamedCacheProvider( name )( { injector: Injector =>
-    def connector = bind[ RedisConnector ].qualifiedWith( name )
-    def instance = injector instanceOf bind[ RedisInstance ].qualifiedWith( name )
-    def policy = bind[ RecoveryPolicy ].qualifiedWith( instance.recovery )
+    @inline private implicit def implicitInjection[ T ]( implicit bindingKey: BindingKey[ T ], injector: Injector ): T = implicitBinding( bindingKey )
 
-    new SyncRedis( name, injector instanceOf connector, injector instanceOf policy )
-  } )
+    def NamedAsyncRedisProvider( name: String ) = provider( name ) { implicit injector =>
+      def connector = bind[ RedisConnector ].qualifiedWith( name )
+      implicit def runtime = bind[ RedisRuntime ].qualifiedWith( name )
 
-  class NamedJavaRedisProvider( name: String ) extends NamedCacheProvider( name )( { injector =>
-    def connector = injector instanceOf bind[ RedisConnector ].qualifiedWith( name )
-    def internal = injector instanceOf bind[ CacheAsyncApi ].qualifiedWith( name )
-    def environment = injector instanceOf bind[ Environment ]
+      new AsyncRedis( connector )
+    }
 
-    new JavaRedis( name, internal, environment, connector )
-  } )
+    def NamedSyncRedisProvider( name: String ) = provider( name ) { implicit injector =>
+      def connector = bind[ RedisConnector ].qualifiedWith( name )
+      implicit def runtime = bind[ RedisRuntime ].qualifiedWith( name )
 
-  class NamedJavaSyncCacheProvider( name: String ) extends NamedCacheProvider( name )( { injector =>
-    def internal = injector instanceOf bind[ play.cache.AsyncCacheApi ].qualifiedWith( name )
+      new SyncRedis( connector )
+    }
 
-    new play.cache.DefaultSyncCacheApi( internal )
-  } )
+    def NamedJavaRedisProvider( name: String ) = provider( name ) { implicit injector =>
+      def internal = bind[ CacheAsyncApi ].qualifiedWith( name )
+      def environment = bind[ Environment ]
+      implicit def runtime = bind[ RedisRuntime ].qualifiedWith( name )
 
-  class NamedScalaSyncCacheProvider( name: String ) extends NamedCacheProvider( name )( { injector =>
-    def internal = injector instanceOf bind[ play.api.cache.AsyncCacheApi ].qualifiedWith( name )
+      new JavaRedis( internal, environment )
+    }
 
-    new play.api.cache.DefaultSyncCacheApi( internal )
-  } )
+    def NamedJavaSyncCacheProvider( name: String ) = provider( name ) { implicit injector =>
+      def internal = bind[ play.cache.AsyncCacheApi ].qualifiedWith( name )
 
-  private[ impl ] object RedisRecoveryPolicyResolver {
+      new play.cache.DefaultSyncCacheApi( internal )
+    }
 
-    def bindings = Seq(
-      bind[ RecoveryPolicy ].qualifiedWith( "log-and-fail" ).to[ LogAndFailPolicy ],
-      bind[ RecoveryPolicy ].qualifiedWith( "log-and-default" ).to[ LogAndDefaultPolicy ],
-      bind[ RecoveryPolicy ].qualifiedWith( "log-condensed-and-fail" ).to[ LogCondensedAndFailPolicy ],
-      bind[ RecoveryPolicy ].qualifiedWith( "log-condensed-and-default" ).to[ LogCondensedAndDefaultPolicy ]
-    )
+    def NamedScalaSyncCacheProvider( name: String ) = provider( name ) { implicit injector =>
+      def internal = bind[ play.api.cache.AsyncCacheApi ].qualifiedWith( name )
+
+      new play.api.cache.DefaultSyncCacheApi( internal )
+    }
+
+    @inline private def provider[ T ]( name: String )( f: Injector => T ): NamedCacheProvider[ T ] = new NamedCacheProvider( name )( f )
   }
 }
 
+
+private[ redis ] object RecoveryPolicyBinder {
+
+  def bindings = Seq(
+    bind[ RecoveryPolicy ].qualifiedWith( "log-and-fail" ).to[ LogAndFailPolicy ],
+    bind[ RecoveryPolicy ].qualifiedWith( "log-and-default" ).to[ LogAndDefaultPolicy ],
+    bind[ RecoveryPolicy ].qualifiedWith( "log-condensed-and-fail" ).to[ LogCondensedAndFailPolicy ],
+    bind[ RecoveryPolicy ].qualifiedWith( "log-condensed-and-default" ).to[ LogCondensedAndDefaultPolicy ]
+  )
+}
 
 /** Play framework module implementing play.api.cache.CacheApi for redis-server key/value storage. For more details
   * see README.
@@ -167,12 +175,16 @@ class RedisCacheModule extends Module {
     def bindDefault = config.get[ Boolean ]( "play.cache.redis.bind-default" )
     def caches = module.caches
 
-    def bindShared = module.bindSharedConnector ++ module.bindSharedCache
+    def bindShared = module.bindSharedConnector ++ RecoveryPolicyBinder.bindings
 
-    def bindNamed( name: String ) = module.bindNamedConfiguration( name ) ++ module.bindNamedConnector( name ) ++ module.bindNamedCache( name )
+    def bindNamed( name: String ) = module.bindNamedConfiguration( name ) ++ module.bindNamedConnector( name ) ++ module.bindNamedCache( name ) ++ Seq(
+      bind[ RedisRuntime ].qualifiedWith( name ).to( new NamedRedisRuntimeProvider( name ) )
+    )
     def bindCaches = caches.flatMap( bindNamed )
 
-    def bindDefaults( name: String ) = module.bindDefaultConnector( name ) ++ module.bindDefaultCache( name )
+    def bindDefaults( name: String ) = module.bindDefaultConnector( name ) ++ module.bindDefaultCache( name ) ++ Seq(
+      bind[ RedisRuntime ].to( new NamedRedisRuntimeProvider( name ) )
+    )
     def bindDefaultCache = if ( bindDefault ) bindDefaults( defaultCache ) else Seq.empty[ Binding[ _ ] ]
 
     bindShared ++ bindDefaultCache ++ bindCaches

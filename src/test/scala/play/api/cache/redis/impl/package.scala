@@ -15,11 +15,11 @@ package object impl extends LowPriorityImplicits {
 
   val FailingConnector = connector.FailingConnector
 
-  val FailThrough = new impl.FailThrough {
+  val FailThrough = new FailThrough {
     override def name = "FailThrough"
   }
 
-  val RecoverWithDefault = new impl.RecoverWithDefault {
+  val RecoverWithDefault = new RecoverWithDefault {
     override def name = "RecoverWithDefault"
   }
 

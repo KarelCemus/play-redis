@@ -1,11 +1,10 @@
-package play.api.cache.redis.impl
+package play.api.cache.redis
 
 import javax.inject.Inject
 
 import scala.concurrent.Future
 
 import play.api.Logger
-import play.api.cache.redis._
 
 /** Recovery policy triggers when a request fails. Based on the implementation,
   * it may try it again, recover with a default value or just simply log the
@@ -118,7 +117,7 @@ trait RecoverWithDefault extends RecoveryPolicy {
   *
   * @author Karel Cemus
   */
-private[ impl ] class LogAndFailPolicy @Inject( )( ) extends FailThrough with DetailedReports
+private[ redis ] class LogAndFailPolicy @Inject( )( ) extends FailThrough with DetailedReports
 
 /** When the command fails, it logs the failure and returns default value
   * to prevent application failure. The returned value is neutral to the
@@ -126,7 +125,7 @@ private[ impl ] class LogAndFailPolicy @Inject( )( ) extends FailThrough with De
   *
   * @author Karel Cemus
   */
-private[ impl ] class LogAndDefaultPolicy @Inject( )( ) extends RecoverWithDefault with DetailedReports
+private[ redis ] class LogAndDefaultPolicy @Inject( )( ) extends RecoverWithDefault with DetailedReports
 
 
 /** When the command fails, it logs the failure and returns default value
@@ -138,7 +137,7 @@ private[ impl ] class LogAndDefaultPolicy @Inject( )( ) extends RecoverWithDefau
   *
   * @author Karel Cemus
   */
-private[ impl ] class LogCondensedAndDefaultPolicy @Inject( )( ) extends RecoverWithDefault with CondensedReports
+private[ redis ] class LogCondensedAndDefaultPolicy @Inject( )( ) extends RecoverWithDefault with CondensedReports
 
 
 /** When the command fails, it logs the failure and fails the whole operation.
@@ -148,4 +147,4 @@ private[ impl ] class LogCondensedAndDefaultPolicy @Inject( )( ) extends Recover
   *
   * @author Karel Cemus
   */
-private[ impl ] class LogCondensedAndFailPolicy @Inject( )( ) extends FailThrough with CondensedReports
+private[ redis ] class LogCondensedAndFailPolicy @Inject( )( ) extends FailThrough with CondensedReports

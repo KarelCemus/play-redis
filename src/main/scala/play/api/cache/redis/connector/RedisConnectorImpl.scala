@@ -7,7 +7,6 @@ import scala.reflect.ClassTag
 import play.api.Logger
 import play.api.cache.redis._
 
-import akka.actor.ActorSystem
 import redis._
 
 /**
@@ -15,18 +14,12 @@ import redis._
   * and is supposed to by used internally by another wrappers. The connector does not
   * directly implement [[play.api.cache.redis.CacheApi]] but provides fundamental functionality.
   *
-  * @param serializer    encodes/decodes objects into/from a string
-  * @param configuration connection settings
-  * @param redis: implementation of the commands
+  * @param serializer encodes/decodes objects into/from a string
+  * @param redis      implementation of the commands
   * @author Karel Cemus
   */
-private[ connector ] class RedisConnectorImpl( serializer: AkkaSerializer, configuration: RedisInstance, redis: RedisCommands )( implicit system: ActorSystem ) extends RedisConnector {
-
-  // implicit ask timeout
-  implicit val timeout = akka.util.Timeout( configuration.timeout )
-
-  /** implicit execution context */
-  implicit val context = system.dispatchers.lookup( configuration.invocationContext )
+private[ connector ] class RedisConnectorImpl( serializer: AkkaSerializer, redis: RedisCommands )( implicit runtime: RedisRuntime ) extends RedisConnector {
+  import runtime._
 
   /** logger instance */
   protected val log = Logger( "play.api.cache.redis" )
@@ -331,5 +324,5 @@ private[ connector ] class RedisConnectorImpl( serializer: AkkaSerializer, confi
       case values => log.debug( s"The collection at '$key' contains ${ values.size } values." ); values.map( decode[ T ]( key, _ ) ).toSet
     }
 
-  override def toString = s"RedisConnector(name=${ configuration.name })"
+  override def toString = s"RedisConnector(name=$name)"
 }

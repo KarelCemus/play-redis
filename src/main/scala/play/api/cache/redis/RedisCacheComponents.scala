@@ -50,16 +50,19 @@ package connector {
       case cluster: RedisCluster => new RedisCommandsCluster( cluster )( actorSystem, applicationLifecycle ).get
     }
 
-    private[ redis ] def redisConnectorFor( instance: RedisInstance ) =
-      new RedisConnectorImpl( akkaSerializer, instance, redisCommandsFor( instance ) )( actorSystem )
+    private[ redis ] def redisConnectorFor( instance: RedisInstance )( implicit runtime: RedisRuntime ) =
+      new RedisConnectorImpl( akkaSerializer, redisCommandsFor( instance ) )
   }
 }
 
 package impl {
 
   private[ redis ] trait RedisImplComponents {
+    import akka.actor.ActorSystem
 
     def environment: Environment
+
+    def actorSystem: ActorSystem
 
     /** overwrite to provide custom recovery policy */
     def redisRecoveryPolicy: PartialFunction[ String, RecoveryPolicy ] = {
@@ -69,15 +72,17 @@ package impl {
       case "log-condensed-and-default" => new LogCondensedAndDefaultPolicy
     }
 
-    private[ redis ] def redisConnectorFor( instance: RedisInstance ): RedisConnector
+    private[ redis ] def redisConnectorFor( instance: RedisInstance )( implicit runtime: RedisRuntime ): RedisConnector
 
-    private implicit def instance2connector( instance: RedisInstance ): RedisConnector = redisConnectorFor( instance )
+    private implicit def instance2connector( instance: RedisInstance )( implicit runtime: RedisRuntime ): RedisConnector = redisConnectorFor( instance )
     private implicit def instance2policy( instance: RedisInstance ): RecoveryPolicy = redisRecoveryPolicy( instance.recovery )
 
-    // play-redis APIs
-    private def asyncRedis( instance: RedisInstance ) = new AsyncRedis( instance.name, redis = instance, policy = instance )
+    implicit def runtime( implicit instance: RedisInstance ) = RedisRuntime( instance = instance, recovery = instance )( actorSystem )
 
-    def syncRedisCacheApi( instance: RedisInstance ): CacheApi = new SyncRedis( instance.name, redis = instance, policy = instance )
+    // play-redis APIs
+    private def asyncRedis( implicit instance: RedisInstance ) = new AsyncRedis( redis = instance )
+
+    def syncRedisCacheApi( implicit instance: RedisInstance ): CacheApi = new SyncRedis( redis = instance )
     def asyncRedisCacheApi( instance: RedisInstance ): CacheAsyncApi = asyncRedis( instance )
 
     // scala api defined by Play
@@ -88,7 +93,7 @@ package impl {
     def syncCacheApi( instance: RedisInstance ): play.api.cache.SyncCacheApi = defaultSyncCache( instance )
 
     // java api defined by Play
-    def javaAsyncCacheApi( instance: RedisInstance ): play.cache.AsyncCacheApi = new JavaRedis( instance.name, asyncRedis( instance ), environment = environment, connector = instance )
+    def javaAsyncCacheApi( implicit instance: RedisInstance ): play.cache.AsyncCacheApi = new JavaRedis( asyncRedis( instance ), environment = environment )
     private def javaDefaultSyncCache( instance: RedisInstance ) = new play.cache.DefaultSyncCacheApi( javaAsyncCacheApi( instance ) )
     @deprecated( message = "Use javaSyncCacheApi or javaAsyncCacheApi.", since = "Play 2.6.0." )
     def javaCacheApi( instance: RedisInstance ): play.cache.CacheApi = javaDefaultSyncCache( instance )

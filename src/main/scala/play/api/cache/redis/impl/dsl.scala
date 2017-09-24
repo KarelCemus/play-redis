@@ -12,6 +12,8 @@ import play.api.cache.redis._
   */
 private[ impl ] object dsl {
 
+  @inline implicit def runtime2context( implicit runtime: RedisRuntime ): ExecutionContext = runtime.context
+
   /** enriches any ref by toFuture converting a value to Future.successful */
   implicit class RichFuture[ T ]( val any: T ) extends AnyVal {
     @inline def toFuture: Future[ T ] = Future.successful( any )
@@ -21,21 +23,21 @@ private[ impl ] object dsl {
   implicit class RecoveryFuture[ T ]( val future: Future[ T ] ) extends AnyVal {
 
     /** Transforms the promise into desired builder results, possibly recovers with provided default value */
-    @inline def recoverWithDefault[ Result[ X ] ]( default: => T )( implicit builder: Builders.ResultBuilder[ Result ], policy: RecoveryPolicy, context: ExecutionContext, timeout: akka.util.Timeout ): Result[ T ] =
+    @inline def recoverWithDefault[ Result[ X ] ]( default: => T )( implicit builder: Builders.ResultBuilder[ Result ], runtime: RedisRuntime ): Result[ T ] =
       builder.toResult( future, Future.successful( default ) )
 
     /** recovers from the execution but returns future, not Result */
-    @inline def recoverWithFuture( default: => Future[ T ] )( implicit policy: RecoveryPolicy, context: ExecutionContext ): Future[ T ] =
+    @inline def recoverWithFuture( default: => Future[ T ] )( implicit runtime: RedisRuntime ): Future[ T ] =
       future recoverWith {
         // recover from known exceptions
-        case failure: RedisException => policy.recoverFrom( future, default, failure )
+        case failure: RedisException => runtime.policy.recoverFrom( future, default, failure )
       }
   }
 
   /** helper function enabling us to recover from command execution */
   implicit class RecoveryUnitFuture( val future: Future[ Unit ] ) extends AnyVal {
     /** Transforms the promise into desired builder results, possibly recovers with provided default value */
-    @inline def recoverWithDone[ Result[ X ] ]( implicit builder: Builders.ResultBuilder[ Result ], policy: RecoveryPolicy, context: ExecutionContext, timeout: akka.util.Timeout ): Result[ Done ] =
+    @inline def recoverWithDone[ Result[ X ] ]( implicit builder: Builders.ResultBuilder[ Result ], runtime: RedisRuntime ): Result[ Done ] =
       builder.toResult( future.map( unitAsDone ), Future.successful( Done ) )
   }
 

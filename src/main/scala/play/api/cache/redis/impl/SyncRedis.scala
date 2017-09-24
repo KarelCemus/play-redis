@@ -10,13 +10,8 @@ import play.api.cache.redis._
   *
   * @author Karel Cemus
   */
-private[ impl ] class SyncRedis( name: String, redis: RedisConnector, policy: RecoveryPolicy )
-  extends RedisCache( name: String, redis )( Builders.SynchronousBuilder, policy )
-  with CacheApi
+private[ impl ] class SyncRedis( redis: RedisConnector )( implicit runtime: RedisRuntime ) extends RedisCache( redis, Builders.SynchronousBuilder ) with CacheApi
 {
-
-  // implicit ask timeout and execution context
-  import redis.{context, timeout}
   // helpers for dsl
   import dsl._
 

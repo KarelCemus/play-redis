@@ -8,11 +8,12 @@ import scala.reflect.ClassTag
 import play.api.cache.redis._
 
 /** <p>Implementation of plain API using redis-server cache and Brando connector implementation.</p> */
-private[ impl ] class RedisCache[ Result[ _ ] ]( name: String, redis: RedisConnector )( implicit protected val implicitBuilder: Builders.ResultBuilder[ Result ], protected val implicitPolicy: RecoveryPolicy ) extends AbstractCacheApi[ Result ] {
+private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector, builder: Builders.ResultBuilder[ Result ] )( implicit runtime: RedisRuntime ) extends AbstractCacheApi[ Result ] {
 
   // implicit ask timeout and execution context
-  import redis.{context, timeout}
   import dsl._
+
+  @inline implicit protected def implicitBuilder: Builders.ResultBuilder[ Result ] = builder
 
   def get[ T: ClassTag ]( key: String ) =
     redis.get[ T ]( key ).recoverWithDefault( None )
@@ -92,5 +93,5 @@ private[ impl ] class RedisCache[ Result[ _ ] ]( name: String, redis: RedisConne
   def map[ T: ClassTag ]( key: String ): RedisMap[ T, Result ] =
     new RedisMapImpl( key, redis )
 
-  override def toString = s"RedisCache(name=$name)"
+  override def toString = s"RedisCache(name=${ runtime.name })"
 }
