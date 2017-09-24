@@ -73,8 +73,10 @@ private[ connector ] class RedisCommandsStandalone( configuration: RedisStandalo
     password = password
   )
 
-  def start( ) = {
-    log.info( s"Redis cache actor started. It is connected to $host:$port?database=$database" )
+  def start( ) = database.fold {
+    log.info( s"Redis cache actor started. It is connected to $host:$port" )
+  } {
+    database => log.info( s"Redis cache actor started. It is connected to $host:$port?database=$database" )
   }
 
   def stop( ): Future[ Unit ] = Future successful {

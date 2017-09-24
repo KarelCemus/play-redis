@@ -16,11 +16,18 @@ package configuration {
     /** override this method to provide custom configuration for some instances */
     def redisInstanceConfiguration: PartialFunction[ String, RedisInstance ] = PartialFunction.empty
 
-    implicit def redisInstance( name: String ): RedisInstance =
-      configuration.get( s"play.cache.redis.instances.$name" )( RedisInstanceBinder.loader( name ) ) match {
-        case self: RedisInstanceSelfBinder => self.instance
-        case _: RedisInstanceCustomBinder => redisInstanceConfiguration( name )
-      }
+    private def hasInstances = configuration.underlying.hasPath( "play.cache.redis.instances" )
+
+    private def defaultCache = configuration.underlying.getString( "play.cache.redis.default-cache" )
+
+    implicit def redisInstance( name: String ): RedisInstance = configuration.get {
+      if ( hasInstances ) s"play.cache.redis.instances.$name"
+      else if ( !hasInstances && name == defaultCache ) s"play.cache.redis"
+      else throw new IllegalArgumentException( s"Redis cache '$name' is not defined." )
+    }( RedisInstanceBinder.loader( name ) ) match {
+      case self: RedisInstanceSelfBinder => self.instance
+      case _: RedisInstanceCustomBinder => redisInstanceConfiguration( name )
+    }
   }
 }
 

@@ -25,13 +25,13 @@ parallelExecution in Test := false
 
 libraryDependencies ++= Seq(
   // play framework cache API
-  "com.typesafe.play" %% "play-cache" % playVersion % "provided",
+  "com.typesafe.play" %% "play-cache" % playVersion % Provided,
   // redis connector
   "com.github.etaty" %% "rediscala" % connectorVersion,
   // test framework
-  "org.specs2" %% "specs2-core" % specs2Version % "test",
+  "org.specs2" %% "specs2-core" % specs2Version % Test,
   // test module for play framework
-  "com.typesafe.play" %% "play-specs2" % playVersion % "test"
+  "com.typesafe.play" %% "play-specs2" % playVersion % Test
 )
 
 resolvers ++= Seq(
