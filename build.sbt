@@ -15,7 +15,7 @@ scalaVersion := "2.12.3"
 
 crossScalaVersions := Seq( "2.11.11", scalaVersion.value )
 
-val playVersion = "2.6.3"
+val playVersion = "2.6.5"
 
 val connectorVersion = "1.8.0"
 
@@ -25,15 +25,13 @@ parallelExecution in Test := false
 
 libraryDependencies ++= Seq(
   // play framework cache API
-  "com.typesafe.play" %% "play-cache" % playVersion % "provided",
+  "com.typesafe.play" %% "play-cache" % playVersion % Provided,
   // redis connector
   "com.github.etaty" %% "rediscala" % connectorVersion,
   // test framework
-  "org.specs2" %% "specs2-core" % specs2Version % "test",
+  "org.specs2" %% "specs2-core" % specs2Version % Test,
   // test module for play framework
-  "com.typesafe.play" %% "play-test" % playVersion % "test",
-  // logger for tests
-  "org.slf4j" % "slf4j-simple" % "1.7.25" % "test"
+  "com.typesafe.play" %% "play-specs2" % playVersion % Test
 )
 
 resolvers ++= Seq(

@@ -19,11 +19,11 @@ class RedisSetSpecs extends Specification with Redis {
   private val workingConnector = injector.instanceOf[ RedisConnector ]
 
   // test proper implementation, no fails
-  new RedisSetSuite( "implement", "redis-cache-implements", new RedisCache( workingConnector )( Builders.SynchronousBuilder, FailThrough ), AlwaysSuccess )
+  new RedisSetSuite( "implement", "redis-cache-implements", new RedisCache( "play", workingConnector )( Builders.SynchronousBuilder, FailThrough ), AlwaysSuccess )
 
-  new RedisSetSuite( "recover from", "redis-cache-recovery", new RedisCache( FailingConnector )( Builders.SynchronousBuilder, RecoverWithDefault ), AlwaysDefault )
+  new RedisSetSuite( "recover from", "redis-cache-recovery", new RedisCache( "play", FailingConnector )( Builders.SynchronousBuilder, RecoverWithDefault ), AlwaysDefault )
 
-  new RedisSetSuite( "fail on", "redis-cache-fail", new RedisCache( FailingConnector )( Builders.SynchronousBuilder, FailThrough ), AlwaysException )
+  new RedisSetSuite( "fail on", "redis-cache-fail", new RedisCache( "play", FailingConnector )( Builders.SynchronousBuilder, FailThrough ), AlwaysException )
 
   class RedisSetSuite( suiteName: String, prefix: String, cache: Cache, expectation: Expectation ) {
 

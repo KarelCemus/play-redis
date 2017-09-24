@@ -1,7 +1,5 @@
 package play.api.cache.redis.connector
 
-import javax.inject.{Inject, Singleton}
-
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
@@ -22,8 +20,7 @@ import redis._
   * @param redis: implementation of the commands
   * @author Karel Cemus
   */
-@Singleton
-private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSerializer, configuration: RedisConfiguration, redis: RedisCommands )( implicit system: ActorSystem ) extends RedisConnector {
+private[ connector ] class RedisConnectorImpl( serializer: AkkaSerializer, configuration: RedisInstance, redis: RedisCommands )( implicit system: ActorSystem ) extends RedisConnector {
 
   import exception._
 
@@ -335,4 +332,6 @@ private[ connector ] class RedisConnectorImpl @Inject()( serializer: AkkaSeriali
     redis.hvals[ String ]( key ) executing "HVALS" withKey key expects {
       case values => log.debug( s"The collection at '$key' contains ${ values.size } values." ); values.map( decode[ T ]( key, _ ) ).toSet
     }
+
+  override def toString = s"RedisConnector(name=${ configuration.name })"
 }
