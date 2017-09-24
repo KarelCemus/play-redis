@@ -1,26 +1,20 @@
 package play.api.cache.redis.connector
 
-import javax.inject.{Inject, Provider}
+import javax.inject.Provider
 
 import play.api.cache.redis._
-import play.api.inject.{Injector, bind}
+import play.api.inject.ApplicationLifecycle
 
 import akka.actor.ActorSystem
-import redis.RedisCommands
 
 /**
   * Provides an instance of named redis connector
   *
   * @author Karel Cemus
   */
-class RedisConnectorProvider( name: String ) extends Provider[ RedisConnector ] {
+private[ redis ] class RedisConnectorProvider( instance: RedisInstance, serializer: AkkaSerializer )( implicit system: ActorSystem, lifecycle: ApplicationLifecycle, runtime: RedisRuntime ) extends Provider[ RedisConnector ] {
 
-  @Inject private var injector: Injector = _
-  @Inject private var serializer: AkkaSerializer = _
-  @Inject private implicit var system: ActorSystem = _
+  private lazy val commands = new RedisCommandsProvider( instance ).get
 
-  private def instance = bind[ RedisRuntime ].qualifiedWith( name )
-  private def commands = bind[ RedisCommands ].qualifiedWith( name )
-
-  lazy val get = new RedisConnectorImpl( serializer, injector instanceOf commands )( injector instanceOf instance )
+  lazy val get = new RedisConnectorImpl( serializer, commands )
 }

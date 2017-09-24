@@ -5,6 +5,7 @@ import javax.inject.Inject
 import scala.concurrent.Future
 
 import play.api.Logger
+import play.api.inject._
 
 /** Recovery policy triggers when a request fails. Based on the implementation,
   * it may try it again, recover with a default value or just simply log the
@@ -148,3 +149,30 @@ private[ redis ] class LogCondensedAndDefaultPolicy @Inject( )( ) extends Recove
   * @author Karel Cemus
   */
 private[ redis ] class LogCondensedAndFailPolicy @Inject( )( ) extends FailThrough with CondensedReports
+
+/**
+  * This resolver represents an abstraction over translation
+  * of the policy name into the instance. It has two subclasses,
+  * one for guice and the other for compile-time injection.
+  */
+trait RecoveryPolicyResolver {
+  def resolve( name: String ): RecoveryPolicy
+}
+
+object RecoveryPolicyResolver {
+
+  def bindings = Seq(
+    bind[ RecoveryPolicy ].qualifiedWith( "log-and-fail" ).to[ LogAndFailPolicy ],
+    bind[ RecoveryPolicy ].qualifiedWith( "log-and-default" ).to[ LogAndDefaultPolicy ],
+    bind[ RecoveryPolicy ].qualifiedWith( "log-condensed-and-fail" ).to[ LogCondensedAndFailPolicy ],
+    bind[ RecoveryPolicy ].qualifiedWith( "log-condensed-and-default" ).to[ LogCondensedAndDefaultPolicy ],
+    // finally bind the resolver
+    bind[ RecoveryPolicyResolver ].to[ RecoveryPolicyResolverGuice ]
+  )
+}
+
+/** resolves a policies with guice enabled */
+class RecoveryPolicyResolverGuice @Inject( )( injector: Injector ) extends RecoveryPolicyResolver {
+
+  def resolve( name: String ) = injector instanceOf bind[ RecoveryPolicy ].qualifiedWith( name )
+}

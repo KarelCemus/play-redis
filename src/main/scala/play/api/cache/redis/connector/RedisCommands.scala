@@ -17,15 +17,9 @@ import redis.{RedisClient => RedisStandaloneClient, RedisCluster => RedisCluster
   *
   * @author Karel Cemus
   */
-private[ connector ] class RedisCommandsProvider( name: String ) extends Provider[ RedisCommands ] {
+private[ connector ] class RedisCommandsProvider( instance: RedisInstance )( implicit system: ActorSystem, lifecycle: ApplicationLifecycle ) extends Provider[ RedisCommands ] {
 
-  @Inject private var injector: Injector = _
-  @Inject private implicit var system: ActorSystem = _
-  @Inject private implicit var lifecycle: ApplicationLifecycle = _
-
-  private def instance = bind[ RedisInstance ].qualifiedWith( name )
-
-  lazy val get = injector instanceOf instance match {
+  lazy val get = instance match {
     case cluster: RedisCluster => new RedisCommandsCluster( cluster ).get
     case standalone: RedisStandalone => new RedisCommandsStandalone( standalone ).get
   }
