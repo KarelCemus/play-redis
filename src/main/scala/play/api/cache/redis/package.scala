@@ -3,10 +3,10 @@ package play.api.cache
 /**
   * @author Karel Cemus
   */
-package object redis extends AnyRef with util.Expiration {
+package object redis extends AnyRef with ExpirationImplicits with ExceptionImplicits {
 
-  type Done = akka.Done
-  private[ redis ] val Done: Done = akka.Done
+  @inline type Done = akka.Done
+  @inline private[ redis ] val Done: Done = akka.Done
 
   type SynchronousResult[ A ]  = A
   type AsynchronousResult[ A ] = scala.concurrent.Future[ A ]

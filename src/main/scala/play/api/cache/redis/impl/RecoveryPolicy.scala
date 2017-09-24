@@ -5,7 +5,7 @@ import javax.inject.Inject
 import scala.concurrent.Future
 
 import play.api.Logger
-import play.api.cache.redis.exception._
+import play.api.cache.redis._
 
 /** Recovery policy triggers when a request fails. Based on the implementation,
   * it may try it again, recover with a default value or just simply log the

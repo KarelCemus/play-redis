@@ -11,7 +11,9 @@ import play.api.cache.redis._
   * @author Karel Cemus
   */
 private[ impl ] class SyncRedis( name: String, redis: RedisConnector, policy: RecoveryPolicy )
-  extends RedisCache( name: String, redis )( Builders.SynchronousBuilder, policy ) with CacheApi {
+  extends RedisCache( name: String, redis )( Builders.SynchronousBuilder, policy )
+  with CacheApi
+{
 
   // implicit ask timeout and execution context
   import redis.{context, timeout}

@@ -28,7 +28,7 @@ private[ impl ] object dsl {
     @inline def recoverWithFuture( default: => Future[ T ] )( implicit policy: RecoveryPolicy, context: ExecutionContext ): Future[ T ] =
       future recoverWith {
         // recover from known exceptions
-        case failure: exception.RedisException => policy.recoverFrom( future, default, failure )
+        case failure: RedisException => policy.recoverFrom( future, default, failure )
       }
   }
 

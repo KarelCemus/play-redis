@@ -2,7 +2,7 @@ package play.api.cache.redis.connector
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import play.api.cache.redis.exception._
+import play.api.cache.redis._
 
 /**
   * The extended future implements advanced response handling.

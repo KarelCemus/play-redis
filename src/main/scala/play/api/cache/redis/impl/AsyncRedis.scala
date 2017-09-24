@@ -11,7 +11,11 @@ import play.api.cache.redis._
   *
   * @author Karel Cemus
   */
-private[ impl ] class AsyncRedis( name: String, redis: RedisConnector, policy: RecoveryPolicy ) extends RedisCache( name, redis )( Builders.AsynchronousBuilder, policy ) with CacheAsyncApi with play.api.cache.AsyncCacheApi {
+private[ impl ] class AsyncRedis( name: String, redis: RedisConnector, policy: RecoveryPolicy )
+  extends RedisCache( name, redis )( Builders.AsynchronousBuilder, policy )
+  with play.api.cache.AsyncCacheApi
+  with CacheAsyncApi
+{
 
   def getOrElseUpdate[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => Future[ T ] ) = getOrFuture[ T ]( key, expiration )( orElse )
 

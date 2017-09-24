@@ -22,8 +22,6 @@ import redis._
   */
 private[ connector ] class RedisConnectorImpl( serializer: AkkaSerializer, configuration: RedisInstance, redis: RedisCommands )( implicit system: ActorSystem ) extends RedisConnector {
 
-  import exception._
-
   // implicit ask timeout
   implicit val timeout = akka.util.Timeout( configuration.timeout )
 

@@ -8,7 +8,6 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import play.api.cache.redis._
-import play.api.cache.redis.exception._
 
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification

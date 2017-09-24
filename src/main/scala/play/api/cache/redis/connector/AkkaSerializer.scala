@@ -6,7 +6,7 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util._
 
-import play.api.cache.redis.exception._
+import play.api.cache.redis._
 
 import akka.actor.ActorSystem
 import akka.serialization._

@@ -69,8 +69,8 @@ private[ impl ] class JavaRedis( name: String, internal: CacheAsyncApi, environm
     getValue.flatMap {
       case Some( value ) => Future.successful( Some( value ) )
       case None => callable.fold[ Future[ Option[ T ] ] ]( Future successful None )( savedOrElse )
-    }.map {
-      play.libs.Scala.orNull( _ )
+    }.map[ T ] {
+      play.libs.Scala.orNull
     }.toJava
   }
 

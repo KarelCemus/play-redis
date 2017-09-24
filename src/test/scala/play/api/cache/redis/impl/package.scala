@@ -3,11 +3,8 @@ package play.api.cache.redis
 import java.util.concurrent.Callable
 import java.util.concurrent.atomic.AtomicInteger
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.{higherKinds, implicitConversions}
-
-import play.api.cache.redis.exception.ExecutionFailedException
 
 import org.specs2.matcher._
 

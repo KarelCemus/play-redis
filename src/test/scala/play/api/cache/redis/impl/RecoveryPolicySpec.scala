@@ -3,7 +3,7 @@ package play.api.cache.redis.impl
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 
-import play.api.cache.redis.exception._
+import play.api.cache.redis._
 
 import akka.pattern.AskTimeoutException
 import org.specs2.matcher.Matcher

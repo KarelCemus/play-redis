@@ -11,7 +11,6 @@ import scala.language.higherKinds
 object Builders {
 
   import play.api.cache.redis._
-  import play.api.cache.redis.exception._
 
   import akka.pattern.AskTimeoutException
 
