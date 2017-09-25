@@ -13,4 +13,6 @@ package object redis extends AnyRef with ExpirationImplicits with ExceptionImpli
 
   private[ redis ] type RedisInstance = configuration.RedisInstance
   private[ redis ] type RedisConnector = connector.RedisConnector
+  private[ redis ] type RedisInstanceProvider = configuration.RedisInstanceProvider
+  private[ redis ] type RedisCaches = impl.RedisCaches
 }

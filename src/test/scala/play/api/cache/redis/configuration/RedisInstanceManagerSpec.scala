@@ -8,6 +8,11 @@ class RedisInstanceManagerSpec extends Specification {
 
   implicit val loader = RedisInstanceManager
 
+  implicit val resolver = new RedisInstanceResolver {
+    def isDefinedAt( name: String ) = true
+    def apply( name: String ) = ???
+  }
+
   "Advanced RedisInstanceManager" should "read" >> {
 
     "multiple caches" in new WithConfiguration(
@@ -39,9 +44,9 @@ class RedisInstanceManagerSpec extends Specification {
       val manager = config.get[ RedisInstanceManager ]( "redis" )
       manager.caches mustEqual Set( "play", "data", "users" )
 
-      manager.instanceOf( "play" ).instanceOption must beSome( RedisStandalone( "play", RedisHost( "localhost", 6379 ), defaults ) )
-      manager.instanceOf( "users" ).instanceOption must beSome( RedisStandalone( "users", RedisHost( "localhost", 6380 ), defaults ) )
-      manager.instanceOf( "data" ).instanceOption must beSome( RedisStandalone( "data", RedisHost( "localhost", 6381 ), defaults ) )
+      manager.instanceOf( "play" ).resolved must beEqualTo( RedisStandalone( "play", RedisHost( "localhost", 6379 ), defaults ) )
+      manager.instanceOf( "users" ).resolved must beEqualTo( RedisStandalone( "users", RedisHost( "localhost", 6380 ), defaults ) )
+      manager.instanceOf( "data" ).resolved must beEqualTo( RedisStandalone( "data", RedisHost( "localhost", 6381 ), defaults ) )
     }
   }
 
@@ -65,7 +70,7 @@ class RedisInstanceManagerSpec extends Specification {
       val manager = config.get[ RedisInstanceManager ]( "redis" )
       manager.caches mustEqual Set( "play" )
 
-      manager.instanceOf( "play" ).instanceOption must beSome( RedisStandalone( "play", RedisHost( "localhost", 6380 ), defaults ) )
+      manager.instanceOf( "play" ).resolved must beEqualTo( RedisStandalone( "play", RedisHost( "localhost", 6380 ), defaults ) )
     }
   }
 }

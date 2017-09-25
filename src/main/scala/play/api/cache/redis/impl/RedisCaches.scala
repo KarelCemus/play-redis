@@ -23,9 +23,9 @@ trait RedisCaches {
 }
 
 class RedisCachesProvider( instance: RedisInstance, serializer: connector.AkkaSerializer, environment: Environment, recovery: RecoveryPolicyResolver )( implicit system: ActorSystem, lifecycle: ApplicationLifecycle ) extends Provider[ RedisCaches ] {
-  implicit lazy val runtime: RedisRuntime = RedisRuntime( instance, recovery.resolve( instance.recovery ) )( system )
+  private implicit lazy val runtime: RedisRuntime = RedisRuntime( instance, recovery( instance.recovery ) )( system )
 
-  lazy val redisConnector = new connector.RedisConnectorProvider( instance, serializer ).get
+  private lazy val redisConnector = new connector.RedisConnectorProvider( instance, serializer ).get
 
   lazy val get = new RedisCaches {
     lazy val async =  new AsyncRedis( redisConnector )
