@@ -2,34 +2,28 @@ package play.api.cache.redis.configuration
 
 import scala.collection.JavaConverters._
 
-import play.api.inject._
-
 import com.typesafe.config.{Config, ConfigOrigin}
 
 /**
   * @author Karel Cemus
   */
-private[ configuration ] trait RedisInstanceBinder {
+trait RedisInstanceResolver extends PartialFunction[ String, RedisInstance ]
+
+sealed trait RedisInstanceProvider extends Any {
   def name: String
-  protected def self = asBindingKey
-  def toBinding: List[ Binding[ RedisInstance ] ]
-  def asBindingKey: BindingKey[ RedisInstance ] = bind[ RedisInstance ].qualifiedWith( name )
-  def toDefaultBinding = List( bind[ RedisInstance ].to( self ) )
-  def instanceOption: Option[ RedisInstance ]
+  def resolved( implicit resolver: RedisInstanceResolver ): RedisInstance
 }
 
-private[ configuration ] class RedisInstanceSelfBinder( val instance: RedisInstance ) extends RedisInstanceBinder {
-  val name = instance.name
-  def instanceOption = Some( instance )
-  def toBinding = List( self toInstance instance )
+class ResolvedRedisInstance( val instance: RedisInstance ) extends AnyVal with RedisInstanceProvider {
+  def name: String = instance.name
+  def resolved( implicit resolver: RedisInstanceResolver ) = instance
 }
 
-private[ configuration ] class RedisInstanceCustomBinder( val name: String ) extends RedisInstanceBinder {
-  def toBinding = List.empty
-  def instanceOption = None
+class UnresolvedRedisInstance( val name: String ) extends AnyVal with RedisInstanceProvider {
+  def resolved( implicit resolver: RedisInstanceResolver ) = resolver apply name
 }
 
-private[ configuration ] object RedisInstanceBinder extends RedisConfigInstanceLoader[ RedisInstanceBinder ] {
+private[ configuration ] object RedisInstanceProvider extends RedisConfigInstanceLoader[ RedisInstanceProvider ] {
   import RedisConfigLoader._
 
   def load( config: Config, path: String, name: String )( implicit defaults: RedisSettings ) = {
@@ -60,8 +54,8 @@ private[ configuration ] object RedisInstanceBinder extends RedisConfigInstanceL
 /**
   * Statically configured single standalone redis instance
   */
-private[ configuration ] object RedisInstanceStandalone extends RedisConfigInstanceLoader[ RedisInstanceBinder ] {
-  def load( config: Config, path: String, instanceName: String )( implicit defaults: RedisSettings ) = new RedisInstanceSelfBinder (
+private[ configuration ] object RedisInstanceStandalone extends RedisConfigInstanceLoader[ RedisInstanceProvider ] {
+  def load( config: Config, path: String, instanceName: String )( implicit defaults: RedisSettings ) = new ResolvedRedisInstance (
     RedisStandalone.apply(
       name = instanceName,
       host = RedisHost.load( config, path ),
@@ -73,10 +67,10 @@ private[ configuration ] object RedisInstanceStandalone extends RedisConfigInsta
 /**
   * Statically configured redis cluster
   */
-private[ configuration ] object RedisInstanceCluster extends RedisConfigInstanceLoader[ RedisInstanceBinder ] {
+private[ configuration ] object RedisInstanceCluster extends RedisConfigInstanceLoader[ RedisInstanceProvider ] {
   import RedisConfigLoader._
 
-  def load( config: Config, path: String, instanceName: String )( implicit defaults: RedisSettings ) = new RedisInstanceSelfBinder(
+  def load( config: Config, path: String, instanceName: String )( implicit defaults: RedisSettings ) = new ResolvedRedisInstance(
     RedisCluster.apply(
       name = instanceName,
       nodes = config.getConfigList( path / "cluster" ).asScala.map( config => RedisHost.load( config ) ).toList,
@@ -89,10 +83,10 @@ private[ configuration ] object RedisInstanceCluster extends RedisConfigInstance
   * Reads a configuration from the connection string, possibly from an environmental variable.
   * This instance configuration is designed to work in PaaS environments such as Heroku.
   */
-private[ configuration ] object RedisInstanceEnvironmental extends RedisConfigInstanceLoader[ RedisInstanceBinder ] {
+private[ configuration ] object RedisInstanceEnvironmental extends RedisConfigInstanceLoader[ RedisInstanceProvider ] {
   import RedisConfigLoader._
 
-  def load( config: Config, path: String, instanceName: String )( implicit defaults: RedisSettings ) = new RedisInstanceSelfBinder(
+  def load( config: Config, path: String, instanceName: String )( implicit defaults: RedisSettings ) = new ResolvedRedisInstance(
     RedisStandalone.apply(
       name = instanceName,
       host = RedisHost.fromConnectionString( config getString path./( "connection-string" ) ),
@@ -104,8 +98,8 @@ private[ configuration ] object RedisInstanceEnvironmental extends RedisConfigIn
 /**
   * This binder indicates that the user provides his own configuration of this named cache.
   */
-private[ configuration ] object RedisInstanceCustom extends RedisConfigInstanceLoader[ RedisInstanceBinder ] {
-  def load( config: Config, path: String, instanceName: String )( implicit defaults: RedisSettings ) = new RedisInstanceCustomBinder(
+private[ configuration ] object RedisInstanceCustom extends RedisConfigInstanceLoader[ RedisInstanceProvider ] {
+  def load( config: Config, path: String, instanceName: String )( implicit defaults: RedisSettings ) = new UnresolvedRedisInstance(
     name = instanceName
   )
 }

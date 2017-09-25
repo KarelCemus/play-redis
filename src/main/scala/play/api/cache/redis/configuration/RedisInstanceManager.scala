@@ -18,24 +18,24 @@ import com.typesafe.config.Config
   *
   * @author Karel Cemus
   */
-trait RedisInstanceManager extends Traversable[ RedisInstanceBinder ] {
+trait RedisInstanceManager extends Traversable[ RedisInstanceProvider ] {
 
   /** names of all known redis caches */
   def caches: Set[ String ]
 
   /** returns a configuration of a single named redis instance */
-  def instanceOfOption( name: String ): Option[ RedisInstanceBinder ]
+  def instanceOfOption( name: String ): Option[ RedisInstanceProvider ]
 
   /** returns a configuration of a single named redis instance */
-  def instanceOf( name: String ): RedisInstanceBinder = instanceOfOption( name ) getOrElse {
+  def instanceOf( name: String ): RedisInstanceProvider = instanceOfOption( name ) getOrElse {
     throw new IllegalArgumentException( s"There is no cache named '$name'." )
   }
 
   /** traverse all binders */
-  def foreach[ U ]( f: RedisInstanceBinder => U ) = caches.view.flatMap( instanceOfOption ).foreach( f )
+  def foreach[ U ]( f: RedisInstanceProvider => U ) = caches.view.flatMap( instanceOfOption ).foreach( f )
 }
 
-private[ configuration ] object RedisInstanceManager extends ConfigLoader[ RedisInstanceManager ] {
+private[ redis ] object RedisInstanceManager extends ConfigLoader[ RedisInstanceManager ] {
   import RedisConfigLoader._
 
   def load( config: Config, path: String ) = {
@@ -59,8 +59,8 @@ class RedisInstanceManagerImpl( config: Config, path: String )( implicit default
   def caches: Set[ String ] = config.getObject( path / "instances" ).keySet.asScala.toSet
 
   /** returns a configuration of a single named redis instance */
-  def instanceOfOption( name: String ): Option[ RedisInstanceBinder ] =
-    if ( config hasPath ( path / "instances" / name ) ) Some( RedisInstanceBinder.load( config, path / "instances" / name, name ) ) else None
+  def instanceOfOption( name: String ): Option[ RedisInstanceProvider ] =
+    if ( config hasPath ( path / "instances" / name ) ) Some( RedisInstanceProvider.load( config, path / "instances" / name, name ) ) else None
 }
 
 /**
@@ -75,6 +75,6 @@ class RedisInstanceManagerFallback( config: Config, path: String )( implicit def
   def caches: Set[ String ] = Set( name )
 
   /** returns a configuration of a single named redis instance */
-  def instanceOfOption( name: String ): Option[ RedisInstanceBinder ] =
-    if ( name == this.name ) Some( RedisInstanceBinder.load( config, path, name ) ) else None
+  def instanceOfOption( name: String ): Option[ RedisInstanceProvider ] =
+    if ( name == this.name ) Some( RedisInstanceProvider.load( config, path, name ) ) else None
 }
