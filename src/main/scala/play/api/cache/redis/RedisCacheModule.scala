@@ -40,8 +40,8 @@ class RedisCacheModule extends Module {
   }
 }
 
-trait GuiceProvider {
-  @Inject() var injector: Injector = _
+trait GuiceProviderImplicits {
+  def injector: Injector
   protected implicit def implicitInjection[ X ]( key: BindingKey[ X ] ): X = injector instanceOf key
 }
 
@@ -81,7 +81,8 @@ object GuiceProvider {
   }
 }
 
-class GuiceRedisCacheProvider( instance: RedisInstanceProvider ) extends Provider[ RedisCaches ] with GuiceProvider {
+class GuiceRedisCacheProvider( instance: RedisInstanceProvider ) extends Provider[ RedisCaches ] with GuiceProviderImplicits {
+  @Inject() var injector: Injector = _
   lazy val get = new impl.RedisCachesProvider(
     instance = instance.resolved( bind[ configuration.RedisInstanceResolver ] ),
     serializer = bind[ connector.AkkaSerializer ],
@@ -93,7 +94,8 @@ class GuiceRedisCacheProvider( instance: RedisInstanceProvider ) extends Provide
   ).get
 }
 
-class NamedCacheInstanceProvider[ T ]( f: RedisCaches => T )( implicit name: CacheName ) extends Provider[ T ] with GuiceProvider {
+class NamedCacheInstanceProvider[ T ]( f: RedisCaches => T )( implicit name: CacheName ) extends Provider[ T ] with GuiceProviderImplicits {
+  @Inject() var injector: Injector = _
   lazy val get = f( bind[ RedisCaches ].qualifiedWith( name ) )
 }
 
@@ -102,7 +104,9 @@ object CacheName {
   implicit def name2string( name: CacheName ): String = name.name
 }
 
-class GuiceRedisInstanceResolver @Inject()( injector: Injector ) extends configuration.RedisInstanceResolver with GuiceProvider {
-  def isDefinedAt( name: String ) = true
-  def apply( name: String ): RedisInstance = bind[ RedisInstance ].qualifiedWith( name )
+@Singleton
+class GuiceRedisInstanceResolver @Inject()( val injector: Injector ) extends configuration.RedisInstanceResolver with GuiceProviderImplicits {
+  def resolve = {
+    case name => bind[ RedisInstance ].qualifiedWith( name )
+  }
 }

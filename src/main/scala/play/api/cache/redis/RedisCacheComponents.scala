@@ -26,8 +26,7 @@ trait RedisCacheComponents
 
   /** default implementation of the empty resolver */
   private lazy val emptyInstanceResolver = new play.api.cache.redis.configuration.RedisInstanceResolver {
-    def isDefinedAt( name: String ) = false
-    def apply( name: String ) = throw new IllegalArgumentException( s"Cannot resolve redis cache instance '$name'." )
+    val resolve = PartialFunction.empty
   }
 
   /** override this for providing a custom redis instance resolver */

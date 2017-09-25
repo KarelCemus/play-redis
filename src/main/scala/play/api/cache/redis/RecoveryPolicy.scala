@@ -155,12 +155,12 @@ private[ redis ] class LogCondensedAndFailPolicy @Inject( )( ) extends FailThrou
   * of the policy name into the instance. It has two subclasses,
   * one for guice and the other for compile-time injection.
   */
-trait RecoveryPolicyResolver extends PartialFunction[ String, RecoveryPolicy ] {
-  def isDefinedAt( name: String ) = lift.apply( name ).nonEmpty
+trait RecoveryPolicyResolver {
+  def resolve: PartialFunction[ String, RecoveryPolicy ]
 }
 
 class RecoveryPolicyResolverImpl extends RecoveryPolicyResolver {
-  def apply( name: String ) = name match {
+  val resolve = {
     case "log-and-fail" => new LogAndFailPolicy
     case "log-and-default" => new LogAndDefaultPolicy
     case "log-condensed-and-fail" => new LogCondensedAndFailPolicy
@@ -183,5 +183,7 @@ object RecoveryPolicyResolver {
 /** resolves a policies with guice enabled */
 class RecoveryPolicyResolverGuice @Inject( )( injector: Injector ) extends RecoveryPolicyResolver {
 
-  def apply( name: String ) = injector instanceOf bind[ RecoveryPolicy ].qualifiedWith( name )
+  def resolve = {
+    case name => injector instanceOf bind[ RecoveryPolicy ].qualifiedWith( name )
+  }
 }

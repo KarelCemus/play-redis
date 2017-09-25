@@ -9,8 +9,7 @@ class RedisInstanceManagerSpec extends Specification {
   implicit val loader = RedisInstanceManager
 
   implicit val resolver = new RedisInstanceResolver {
-    def isDefinedAt( name: String ) = true
-    def apply( name: String ) = ???
+    val resolve = PartialFunction.empty
   }
 
   "Advanced RedisInstanceManager" should "read" >> {

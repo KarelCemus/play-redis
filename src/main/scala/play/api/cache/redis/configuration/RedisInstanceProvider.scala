@@ -7,7 +7,9 @@ import com.typesafe.config.{Config, ConfigOrigin}
 /**
   * @author Karel Cemus
   */
-trait RedisInstanceResolver extends PartialFunction[ String, RedisInstance ]
+trait RedisInstanceResolver {
+  def resolve: PartialFunction[ String, RedisInstance ]
+}
 
 sealed trait RedisInstanceProvider extends Any {
   def name: String
@@ -20,7 +22,7 @@ class ResolvedRedisInstance( val instance: RedisInstance ) extends AnyVal with R
 }
 
 class UnresolvedRedisInstance( val name: String ) extends AnyVal with RedisInstanceProvider {
-  def resolved( implicit resolver: RedisInstanceResolver ) = resolver apply name
+  def resolved( implicit resolver: RedisInstanceResolver ) = resolver resolve name
 }
 
 private[ configuration ] object RedisInstanceProvider extends RedisConfigInstanceLoader[ RedisInstanceProvider ] {
