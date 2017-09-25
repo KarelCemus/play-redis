@@ -1,12 +1,12 @@
 package play.api.cache.redis.connector
 
-import javax.inject.{Inject, Singleton}
+import javax.inject._
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util._
 
-import play.api.cache.redis.exception._
+import play.api.cache.redis._
 
 import akka.actor.ActorSystem
 import akka.serialization._
@@ -87,6 +87,7 @@ private[ connector ] class AkkaEncoder( serializer: Serialization ) {
 private[ connector ] class AkkaDecoder( serializer: Serialization ) {
 
   import scala.reflect.{ClassTag => Scala}
+
   import play.api.cache.redis.connector.{JavaClassTag => Java}
 
   private val Nothing = ClassTag( classOf[ Nothing ] )
@@ -195,4 +196,8 @@ private[ connector ] object JavaClassTag {
   val Double  = ClassTag( classOf[ java.lang.Double ] )
   val Boolean = ClassTag( classOf[ java.lang.Boolean ] )
   val String  = ClassTag( classOf[ String ] )
+}
+
+class AkkaSerializerProvider @Inject()( implicit system: ActorSystem ) extends Provider[ AkkaSerializer ] {
+  lazy val get = new AkkaSerializerImpl( system )
 }

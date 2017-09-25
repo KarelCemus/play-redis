@@ -3,12 +3,11 @@ package play.api.cache.redis.impl
 import java.util.Date
 import java.util.concurrent.atomic.AtomicInteger
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import play.api.cache.redis._
-import play.api.cache.redis.exception._
 
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
@@ -22,14 +21,16 @@ class AsynchronousCacheSpec extends Specification with Redis {
 
   private val workingConnector = injector.instanceOf[ RedisConnector ]
 
+  def runtime( policy: RecoveryPolicy ) =  RedisRuntime( "play", 3.minutes, ExecutionContext.Implicits.global, policy )
+
   // test proper implementation, no fails
-  new RedisCacheSuite( "implement", "redis-cache-implements", new RedisCache( "play", workingConnector )( Builders.AsynchronousBuilder, FailThrough ), AlwaysSuccess )
+  new RedisCacheSuite( "implement", "redis-cache-implements", new RedisCache( workingConnector, Builders.AsynchronousBuilder )( runtime( FailThrough ) ), AlwaysSuccess )
 
-  new RedisCacheSuite( "recover from with working connector", "redis-cache-implements-and-recovery", new RedisCache( "play", workingConnector )( Builders.AsynchronousBuilder, RecoverWithDefault ), SuccessOrDefault )
+  new RedisCacheSuite( "recover from with working connector", "redis-cache-implements-and-recovery", new RedisCache( workingConnector, Builders.AsynchronousBuilder )( runtime( RecoverWithDefault ) ), SuccessOrDefault )
 
-  new RedisCacheSuite( "recover from", "redis-cache-recovery", new RedisCache( "play", FailingConnector )( Builders.AsynchronousBuilder, RecoverWithDefault ), AlwaysDefault )
+  new RedisCacheSuite( "recover from", "redis-cache-recovery", new RedisCache( FailingConnector, Builders.AsynchronousBuilder )( runtime( RecoverWithDefault ) ), AlwaysDefault )
 
-  new RedisCacheSuite( "fail on", "redis-cache-fail", new RedisCache( "play", FailingConnector )( Builders.AsynchronousBuilder, FailThrough ), AlwaysException )
+  new RedisCacheSuite( "fail on", "redis-cache-fail", new RedisCache( FailingConnector, Builders.AsynchronousBuilder )( runtime( FailThrough ) ), AlwaysException )
 
   class RedisCacheSuite( suiteName: String, prefix: String, cache: Cache, expectation: Expectation ) {
 

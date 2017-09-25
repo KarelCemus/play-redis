@@ -63,7 +63,10 @@ trait RedisStandalone extends RedisInstance with RedisHost {
     case _ => false
   }
   /** to string */
-  override def toString = s"Standalone($host:$port?db=${ database getOrElse "" }"
+  override def toString = database match {
+    case Some( database ) => s"Standalone($name@$host:$port?db=$database)"
+    case None => s"Standalone($name@$host:$port)"
+  }
 }
 
 object RedisStandalone {

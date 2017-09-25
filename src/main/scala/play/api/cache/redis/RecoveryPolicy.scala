@@ -1,11 +1,11 @@
-package play.api.cache.redis.impl
+package play.api.cache.redis
 
 import javax.inject.Inject
 
 import scala.concurrent.Future
 
 import play.api.Logger
-import play.api.cache.redis.exception._
+import play.api.inject._
 
 /** Recovery policy triggers when a request fails. Based on the implementation,
   * it may try it again, recover with a default value or just simply log the
@@ -118,7 +118,7 @@ trait RecoverWithDefault extends RecoveryPolicy {
   *
   * @author Karel Cemus
   */
-private[ impl ] class LogAndFailPolicy @Inject( )( ) extends FailThrough with DetailedReports
+private[ redis ] class LogAndFailPolicy @Inject( )( ) extends FailThrough with DetailedReports
 
 /** When the command fails, it logs the failure and returns default value
   * to prevent application failure. The returned value is neutral to the
@@ -126,7 +126,7 @@ private[ impl ] class LogAndFailPolicy @Inject( )( ) extends FailThrough with De
   *
   * @author Karel Cemus
   */
-private[ impl ] class LogAndDefaultPolicy @Inject( )( ) extends RecoverWithDefault with DetailedReports
+private[ redis ] class LogAndDefaultPolicy @Inject( )( ) extends RecoverWithDefault with DetailedReports
 
 
 /** When the command fails, it logs the failure and returns default value
@@ -138,7 +138,7 @@ private[ impl ] class LogAndDefaultPolicy @Inject( )( ) extends RecoverWithDefau
   *
   * @author Karel Cemus
   */
-private[ impl ] class LogCondensedAndDefaultPolicy @Inject( )( ) extends RecoverWithDefault with CondensedReports
+private[ redis ] class LogCondensedAndDefaultPolicy @Inject( )( ) extends RecoverWithDefault with CondensedReports
 
 
 /** When the command fails, it logs the failure and fails the whole operation.
@@ -148,4 +148,42 @@ private[ impl ] class LogCondensedAndDefaultPolicy @Inject( )( ) extends Recover
   *
   * @author Karel Cemus
   */
-private[ impl ] class LogCondensedAndFailPolicy @Inject( )( ) extends FailThrough with CondensedReports
+private[ redis ] class LogCondensedAndFailPolicy @Inject( )( ) extends FailThrough with CondensedReports
+
+/**
+  * This resolver represents an abstraction over translation
+  * of the policy name into the instance. It has two subclasses,
+  * one for guice and the other for compile-time injection.
+  */
+trait RecoveryPolicyResolver {
+  def resolve: PartialFunction[ String, RecoveryPolicy ]
+}
+
+class RecoveryPolicyResolverImpl extends RecoveryPolicyResolver {
+  val resolve: PartialFunction[ String, RecoveryPolicy ] = {
+    case "log-and-fail" => new LogAndFailPolicy
+    case "log-and-default" => new LogAndDefaultPolicy
+    case "log-condensed-and-fail" => new LogCondensedAndFailPolicy
+    case "log-condensed-and-default" => new LogCondensedAndDefaultPolicy
+  }
+}
+
+object RecoveryPolicyResolver {
+
+  def bindings = Seq(
+    bind[ RecoveryPolicy ].qualifiedWith( "log-and-fail" ).to[ LogAndFailPolicy ],
+    bind[ RecoveryPolicy ].qualifiedWith( "log-and-default" ).to[ LogAndDefaultPolicy ],
+    bind[ RecoveryPolicy ].qualifiedWith( "log-condensed-and-fail" ).to[ LogCondensedAndFailPolicy ],
+    bind[ RecoveryPolicy ].qualifiedWith( "log-condensed-and-default" ).to[ LogCondensedAndDefaultPolicy ],
+    // finally bind the resolver
+    bind[ RecoveryPolicyResolver ].to[ RecoveryPolicyResolverGuice ]
+  )
+}
+
+/** resolves a policies with guice enabled */
+class RecoveryPolicyResolverGuice @Inject( )( injector: Injector ) extends RecoveryPolicyResolver {
+
+  def resolve = {
+    case name => injector instanceOf bind[ RecoveryPolicy ].qualifiedWith( name )
+  }
+}

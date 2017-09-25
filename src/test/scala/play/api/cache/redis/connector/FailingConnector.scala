@@ -4,8 +4,7 @@ import scala.concurrent._
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 
-import play.api.cache.redis.Synchronization
-import play.api.cache.redis.exception.ExecutionFailedException
+import play.api.cache.redis.{ExecutionFailedException, Synchronization}
 
 /**
   * @author Karel Cemus

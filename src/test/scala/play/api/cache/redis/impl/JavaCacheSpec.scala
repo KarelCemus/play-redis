@@ -13,9 +13,9 @@ import org.specs2.mutable.Specification
  */
 class JavaCacheSpec extends Specification with Redis {
 
-  private type Cache = play.cache.CacheApi
+  private type Cache = play.cache.SyncCacheApi
 
-  private val Cache = injector.instanceOf[ play.cache.CacheApi ]
+  private val Cache = injector.instanceOf[ play.cache.SyncCacheApi ]
 
   private val prefix = "java"
 

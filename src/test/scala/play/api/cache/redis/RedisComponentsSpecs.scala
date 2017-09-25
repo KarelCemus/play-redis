@@ -16,7 +16,7 @@ class RedisComponentsSpecs extends Specification with Redis {
     def environment = injector.instanceOf[ Environment ]
     def configuration = injector.instanceOf[ Configuration ]
 
-    val syncRedis = syncRedisCacheApi( "play" )
+    val syncRedis = cacheApi( "play" ).sync
   }
 
   private type Cache = CacheApi

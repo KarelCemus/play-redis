@@ -5,7 +5,6 @@ import java.util.Date
 import scala.concurrent.duration._
 
 import play.api.cache.redis._
-import play.api.cache.redis.exception.ExecutionFailedException
 
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification

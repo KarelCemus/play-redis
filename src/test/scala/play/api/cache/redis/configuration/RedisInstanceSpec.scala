@@ -2,9 +2,6 @@ package play.api.cache.redis.configuration
 
 import scala.concurrent.duration._
 
-import play.api.Configuration
-
-import com.typesafe.config.ConfigFactory
 import org.specs2.mutable.Specification
 
 class RedisInstanceSpec extends Specification {
@@ -14,7 +11,13 @@ class RedisInstanceSpec extends Specification {
   // default settings
   implicit val defaults = settings( source = "standalone" )
   // implicitly expose RedisHost config loader
-  implicit val loader = RedisInstanceBinder.loader( "play" )
+  implicit val loader = RedisInstanceProvider.loader( "play" )
+  // instance resolver
+  implicit def resolver = new RedisInstanceResolver {
+    val resolve: PartialFunction[ String, RedisInstance ] = {
+      case name => RedisStandalone( name = s"resolved-$name", host = RedisHost( "localhost", 6380 ), settings = defaults )
+    }
+  }
 
   "RedisInstance" should "read" >> {
 
@@ -26,7 +29,7 @@ class RedisInstanceSpec extends Specification {
         |}
       """
     ) {
-      config.get[ RedisInstanceBinder ]( "redis" ).instanceOption must beSome( RedisStandalone( "play", RedisHost( host = "localhost", port = 6379 ), defaults ) )
+      config.get[ RedisInstanceProvider ]( "redis" ).resolved must beEqualTo( RedisStandalone( "play", RedisHost( host = "localhost", port = 6379 ), defaults ) )
     }
 
     "standalone overriding defaults" in new WithConfiguration(
@@ -41,7 +44,7 @@ class RedisInstanceSpec extends Specification {
         |}
       """
     ) {
-      config.get[ RedisInstanceBinder ]( "redis" ).instanceOption must beSome( RedisStandalone( "play", RedisHost( host = "localhost", port = 6379 ), RedisSettings( "custom-dispatcher", 2.seconds, "custom", "standalone" ) ) )
+      config.get[ RedisInstanceProvider ]( "redis" ).resolved must beEqualTo( RedisStandalone( "play", RedisHost( host = "localhost", port = 6379 ), RedisSettings( "custom-dispatcher", 2.seconds, "custom", "standalone" ) ) )
     }
 
     "cluster" in new WithConfiguration(
@@ -55,7 +58,7 @@ class RedisInstanceSpec extends Specification {
         |}
       """
     ) {
-      config.get[ RedisInstanceBinder ]( "redis" ).instanceOption must beSome( RedisCluster( "play", nodes = List( RedisHost( host = "localhost", port = 6379 ), RedisHost( host = "localhost", port = 6380 ) ), settings( source = "cluster" ) ) )
+      config.get[ RedisInstanceProvider ]( "redis" ).resolved must beEqualTo( RedisCluster( "play", nodes = List( RedisHost( host = "localhost", port = 6379 ), RedisHost( host = "localhost", port = 6380 ) ), settings( source = "cluster" ) ) )
     }
 
     "standalone with connection string" in new WithConfiguration(
@@ -66,7 +69,7 @@ class RedisInstanceSpec extends Specification {
         |}
       """
     ) {
-      config.get[ RedisInstanceBinder ]( "redis" ).instanceOption must beSome( RedisStandalone( "play", RedisHost( host = "localhost", port = 6379 ), settings( source = "connection-string" ) ) )
+      config.get[ RedisInstanceProvider ]( "redis" ).resolved must beEqualTo( RedisStandalone( "play", RedisHost( host = "localhost", port = 6379 ), settings( source = "connection-string" ) ) )
     }
 
     "custom" in new WithConfiguration(
@@ -76,7 +79,7 @@ class RedisInstanceSpec extends Specification {
         |}
       """
     ) {
-      config.get[ RedisInstanceBinder ]( "redis" ).instanceOption must beNone
+      config.get[ RedisInstanceProvider ]( "redis" ).resolved must beEqualTo( RedisStandalone( "resolved-play", RedisHost( host = "localhost", port = 6380 ), defaults ) )
     }
   }
 }
