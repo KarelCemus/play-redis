@@ -11,7 +11,7 @@ import org.specs2.mutable.Specification
  */
 class PlayCacheSpec extends Specification with Redis {
 
-  private type Cache = play.api.cache.CacheApi
+  private type Cache = play.api.cache.SyncCacheApi
 
   private val Cache = injector.instanceOf[ Cache ]
   
@@ -60,7 +60,7 @@ class PlayCacheSpec extends Specification with Redis {
     private type Accumulator = AtomicInteger
 
     /** invokes internal getOrElse but it accumulate invocations of orElse clause in the accumulator */
-    def getOrElseCounting( key: String )( accumulator: Accumulator ) = cache.getOrElse( key ) {
+    def getOrElseCounting( key: String )( accumulator: Accumulator ) = cache.getOrElseUpdate( key ) {
       // increment miss counter
       accumulator.incrementAndGet()
       // return the value to store into the cache

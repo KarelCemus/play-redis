@@ -82,7 +82,7 @@ class RedisInstanceSpec extends Specification {
         |}
       """
     ) {
-      config.get[ RedisInstanceProvider ]( "redis" ).resolved must beEqualTo( RedisStandalone( "resolved-redis", RedisHost( host = "localhost", port = 6380 ), defaults ) )
+      config.get[ RedisInstanceProvider ]( "redis" ).resolved must beEqualTo( RedisStandalone( "resolved-play", RedisHost( host = "localhost", port = 6380 ), defaults ) )
     }
   }
 }

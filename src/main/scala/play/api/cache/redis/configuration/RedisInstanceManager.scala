@@ -31,6 +31,9 @@ trait RedisInstanceManager extends Traversable[ RedisInstanceProvider ] {
     throw new IllegalArgumentException( s"There is no cache named '$name'." )
   }
 
+  /** returns the default instance */
+  def defaultInstance: RedisInstanceProvider
+
   /** traverse all binders */
   def foreach[ U ]( f: RedisInstanceProvider => U ) = caches.view.flatMap( instanceOfOption ).foreach( f )
 }
@@ -58,6 +61,12 @@ class RedisInstanceManagerImpl( config: Config, path: String )( implicit default
   /** names of all known redis caches */
   def caches: Set[ String ] = config.getObject( path / "instances" ).keySet.asScala.toSet
 
+  def defaultCacheName = config.getString( path / "default-cache" )
+
+  def defaultInstance = instanceOfOption( defaultCacheName ) getOrElse {
+    throw new IllegalArgumentException( s"Default cache '$defaultCacheName' is not defined." )
+  }
+
   /** returns a configuration of a single named redis instance */
   def instanceOfOption( name: String ): Option[ RedisInstanceProvider ] =
     if ( config hasPath ( path / "instances" / name ) ) Some( RedisInstanceProvider.load( config, path / "instances" / name, name ) ) else None
@@ -74,7 +83,9 @@ class RedisInstanceManagerFallback( config: Config, path: String )( implicit def
   /** names of all known redis caches */
   def caches: Set[ String ] = Set( name )
 
+  def defaultInstance = RedisInstanceProvider.load( config, path, name )
+
   /** returns a configuration of a single named redis instance */
   def instanceOfOption( name: String ): Option[ RedisInstanceProvider ] =
-    if ( name == this.name ) Some( RedisInstanceProvider.load( config, path, name ) ) else None
+    if ( name == this.name ) Some( defaultInstance ) else None
 }

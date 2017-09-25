@@ -1,11 +1,9 @@
-package play.api.cache.redis
-
-import javax.inject.{Inject, Provider}
+package play.api.cache.redis.impl
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
-import play.api.inject._
+import play.api.cache.redis._
 
 import akka.actor.ActorSystem
 
@@ -15,9 +13,7 @@ import akka.actor.ActorSystem
   *
   * @author Karel Cemus
   */
-private[ redis ] trait RedisRuntime {
-  def name: String
-  implicit def context: ExecutionContext
+private[ redis ] trait RedisRuntime extends connector.RedisRuntime {
   implicit def policy: RecoveryPolicy
   implicit def timeout: akka.util.Timeout
 }
@@ -31,18 +27,4 @@ private[ redis ] object RedisRuntime {
 
   def apply( name: String, timeout: FiniteDuration, context: ExecutionContext, recovery: RecoveryPolicy ): RedisRuntime =
     RedisRuntimeImpl( name, context, recovery, akka.util.Timeout( timeout ) )
-}
-
-class NamedRedisRuntimeProvider( cacheName: String ) extends Provider[ RedisRuntime ] {
-  @Inject() var injector: Injector = _
-  @Inject() implicit var system: ActorSystem = _
-
-  def get( ) = {
-    val instance = injector instanceOf bind[ RedisInstance ].qualifiedWith( cacheName )
-
-    RedisRuntime(
-      instance = instance,
-      recovery = injector instanceOf bind[ RecoveryPolicy ].qualifiedWith( instance.recovery )
-    )
-  }
 }

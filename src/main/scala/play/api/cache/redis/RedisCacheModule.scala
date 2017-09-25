@@ -17,7 +17,6 @@ import play.api.inject._
 class RedisCacheModule extends Module {
 
   override def bindings( environment: Environment, config: play.api.Configuration ) = {
-    def defaultCache = config.get[ String ]( "play.cache.redis.default-cache" )
     def bindDefault = config.get[ Boolean ]( "play.cache.redis.bind-default" )
 
     // read the config and get the configuration of the redis
@@ -34,7 +33,7 @@ class RedisCacheModule extends Module {
     // bind recovery resolver
     val recovery = RecoveryPolicyResolver.bindings
     // default bindings
-    val defaults = if ( bindDefault ) GuiceProvider.defaults( manager.instanceOf( defaultCache ) ) else Seq.empty
+    val defaults = if ( bindDefault ) GuiceProvider.defaults( manager.defaultInstance ) else Seq.empty
 
     // return all bindings
     commons ++ caches ++ recovery ++ defaults
