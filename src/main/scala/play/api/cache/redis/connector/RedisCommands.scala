@@ -6,7 +6,7 @@ import scala.concurrent.Future
 
 import play.api.Logger
 import play.api.cache.redis.configuration._
-import play.api.inject._
+import play.api.inject.ApplicationLifecycle
 
 import akka.actor.ActorSystem
 import redis.{RedisClient => RedisStandaloneClient, RedisCluster => RedisClusterClient, _}

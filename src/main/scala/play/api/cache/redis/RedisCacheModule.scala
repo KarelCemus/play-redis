@@ -47,7 +47,10 @@ trait GuiceProviderImplicits {
 
 object GuiceProvider {
 
-  private def provider[ T ]( f: impl.RedisCaches => T )( implicit name: CacheName ): Provider[ T ] = new NamedCacheInstanceProvider( f )
+  @inline private def provider[ T ]( f: impl.RedisCaches => T )( implicit name: CacheName ): Provider[ T ] = new NamedCacheInstanceProvider( f )
+
+  @inline private def namedBinding[ T: ClassTag ]( f: impl.RedisCaches => T )( implicit name: CacheName ): Binding[ T ] =
+    bind[ T ].qualifiedWith( name ).to( provider( f ) )
 
   def bindings( instance: RedisInstanceProvider ) = {
     implicit val name = new CacheName( instance.name )
@@ -56,27 +59,27 @@ object GuiceProvider {
       // bind implementation of all caches
       bind[ impl.RedisCaches ].qualifiedWith( name ).to( new GuiceRedisCacheProvider( instance ) ),
       // expose a single-implementation providers
-      bind[ CacheApi ].qualifiedWith( name ).to( provider( _.sync ) ),
-      bind[ CacheAsyncApi ].qualifiedWith( name ).to( provider( _.async ) ),
-      bind[ play.api.cache.SyncCacheApi ].qualifiedWith( name ).to( provider( _.scalaSync ) ),
-      bind[ play.cache.SyncCacheApi ].qualifiedWith( name ).to( provider( _.javaSync ) ),
-      bind[ play.cache.AsyncCacheApi ].qualifiedWith( name ).to( provider( _.javaAsync ) ),
+      namedBinding( _.sync ),
+      namedBinding( _.async ),
+      namedBinding( _.scalaSync ),
+      namedBinding( _.javaSync ),
+      namedBinding( _.javaAsync )
     )
   }
 
   def defaults( instance: RedisInstanceProvider ) = {
     implicit val name = new CacheName( instance.name )
-    def namedBinding[ T: ClassTag ]( implicit cacheName: CacheName ): Binding[ T ] = bind[ T ].to( bind[ T ].qualifiedWith( name ) )
+    @inline def defaultBinding[ T: ClassTag ]( implicit cacheName: CacheName ): Binding[ T ] = bind[ T ].to( bind[ T ].qualifiedWith( name ) )
 
     Seq(
       // bind implementation of all caches
-      namedBinding[ impl.RedisCaches ],
+      defaultBinding[ impl.RedisCaches ],
       // expose a single-implementation providers
-      namedBinding[ CacheApi ],
-      namedBinding[ CacheAsyncApi ],
-      namedBinding[ play.api.cache.SyncCacheApi ],
-      namedBinding[ play.cache.SyncCacheApi ],
-      namedBinding[ play.cache.AsyncCacheApi ]
+      defaultBinding[ CacheApi ],
+      defaultBinding[ CacheAsyncApi ],
+      defaultBinding[ play.api.cache.SyncCacheApi ],
+      defaultBinding[ play.cache.SyncCacheApi ],
+      defaultBinding[ play.cache.AsyncCacheApi ]
     )
   }
 }

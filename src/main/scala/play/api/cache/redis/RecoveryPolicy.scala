@@ -160,7 +160,7 @@ trait RecoveryPolicyResolver {
 }
 
 class RecoveryPolicyResolverImpl extends RecoveryPolicyResolver {
-  val resolve = {
+  val resolve: PartialFunction[ String, RecoveryPolicy ] = {
     case "log-and-fail" => new LogAndFailPolicy
     case "log-and-default" => new LogAndDefaultPolicy
     case "log-condensed-and-fail" => new LogCondensedAndFailPolicy

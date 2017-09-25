@@ -14,7 +14,7 @@ class RedisInstanceSpec extends Specification {
   implicit val loader = RedisInstanceProvider.loader( "play" )
   // instance resolver
   implicit def resolver = new RedisInstanceResolver {
-    val resolve = {
+    val resolve: PartialFunction[ String, RedisInstance ] = {
       case name => RedisStandalone( name = s"resolved-$name", host = RedisHost( "localhost", 6380 ), settings = defaults )
     }
   }
