@@ -16,6 +16,13 @@ encapsulating all APIs to a single named cache. [#122](https://github.com/KarelC
 
 Created [Wiki](https://github.com/KarelCemus/play-redis/wiki) with more detailed and structured documentation.
 
+Redesigned configuration as a consequence of named cache integration
+[#114](https://github.com/KarelCemus/play-redis/pull/114). Some
+properties were removed, instance configuration is now more direct,
+named caches are supported. See
+[Migration Guide](https://github.com/KarelCemus/play-redis/wiki/Migration-Guide#migration-from-16x-to-20x)
+for more details.
+
 ### [:link: 1.5.1](https://github.com/KarelCemus/play-redis/tree/1.5.1)
 
 Fixed [#102](https://github.com/KarelCemus/play-redis/issues/102), preserved original
