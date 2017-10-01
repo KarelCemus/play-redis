@@ -13,6 +13,7 @@ import play.api.cache.redis._
 private[ impl ] object dsl {
 
   @inline implicit def runtime2context( implicit runtime: RedisRuntime ): ExecutionContext = runtime.context
+  @inline implicit def runtime2prefix( implicit runtime: RedisRuntime ): RedisPrefix = runtime.prefix
 
   /** enriches any ref by toFuture converting a value to Future.successful */
   implicit class RichFuture[ T ]( val any: T ) extends AnyVal {
@@ -43,4 +44,21 @@ private[ impl ] object dsl {
 
   /** maps units into akka.Done */
   @inline private def unitAsDone( unit: Unit ) = Done
+
+  /** applies prefixer to produce final cache key */
+  implicit class CacheKey( val key: String ) extends AnyVal {
+    def prefixed[ T ]( f: String => T )( implicit prefixer: RedisPrefix ): T = f( prefixer prefixed key )
+  }
+
+  /** applies prefixer to produce final cache key */
+  implicit class CacheKeys( val keys: Seq[ String ] ) extends AnyVal {
+    def prefixed[ T ]( f: Seq[ String ] => T )( implicit prefixer: RedisPrefix ): T = f( prefixer prefixed keys )
+  }
+
+  /** applies prefixer to produce final cache key */
+  implicit class CacheKeyValues[ X ]( val keys: Seq[ (String, X) ] ) extends AnyVal {
+    def prefixed[ T ]( f: Seq[ (String, X) ] => T )( implicit prefixer: RedisPrefix ): T = f {
+      keys.map { case (key, value) => prefixer.prefixed( key ) -> value }
+    }
+  }
 }

@@ -43,5 +43,5 @@ trait RedisCacheComponents
   /** translates the cache name into the configuration  */
   implicit def redisInstance( name: String )( implicit resolver: play.api.cache.redis.configuration.RedisInstanceResolver ): RedisInstance = manager.instanceOf( name ).resolved
 
-  def cacheApi( instance: RedisInstance ): impl.RedisCaches = new impl.RedisCachesProvider( instance, akkaSerializer, environment, recoveryPolicyResolver ).get
+  def cacheApi( instance: RedisInstance ): impl.RedisCaches = new impl.RedisCachesProvider( instance, akkaSerializer, environment ).get
 }

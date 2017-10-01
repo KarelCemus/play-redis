@@ -54,7 +54,7 @@ trait RedisSettings {
 
   def port = 6379
 
-  def database = 1
+  def database = 0
 }
 
 /**
@@ -127,6 +127,7 @@ object Redis {
     classOf[ impl.RedisListSpec ],
     classOf[ impl.RedisMapSpecs ],
     classOf[ impl.RedisSetSpecs ],
+    classOf[ impl.RedisPrefixSpec ],
     classOf[ impl.SynchronousCacheSpec ],
     classOf[ util.ExpirationSpec ],
     classOf[ RedisComponentsSpecs ]
