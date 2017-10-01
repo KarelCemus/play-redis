@@ -351,10 +351,18 @@ class AsynchronousCacheSpec extends Specification with Redis {
           cache.get[ String ]( s"$prefix-test-append-and-not-expire" ) must expects( beSome( "some value" ), beNone )
         }
 
-        "with failing serialization" in {
-          cache.set( s"$prefix-test-with-failing-serialization", UnserializableObject( "some" ), 5.seconds ) must expects( throwA[ SerializationException ], beUnit )
-          cache.getOrElse( s"$prefix-test-with-failing-serialization" )( UnserializableObject( "some" ) ) must expects(
+        "with failing serialization (lazy)" in {
+          cache.set( s"$prefix-test-with-failing-serialization-lazy", UnserializableObject( "some" ), 5.seconds ) must expects( throwA[ SerializationException ], beUnit )
+          cache.getOrElse( s"$prefix-test-with-failing-serialization-lazy" )( UnserializableObject( "some" ) ) must expects(
             throwA[ SerializationException ], beEqualTo( UnserializableObject( "some" ) )
+          )
+        }
+
+        "with failing serialization (eager)" in {
+          implicit val invocation = EagerInvocation
+          cache.set( s"$prefix-test-with-failing-serialization-eager", UnserializableObject( "some" ), 5.seconds ) must expects( throwA[ SerializationException ], beUnit )
+          cache.getOrElse( s"$prefix-test-with-failing-serialization-eager" )( UnserializableObject( "some" ) ) must expects(
+            beEqualTo( UnserializableObject( "some" ) ), beEqualTo( UnserializableObject( "some" ) )
           )
         }
       }

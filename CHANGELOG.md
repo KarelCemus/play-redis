@@ -26,6 +26,10 @@ named caches are supported. See
 [Migration Guide](https://github.com/KarelCemus/play-redis/wiki/Migration-Guide#migration-from-16x-to-20x)
 for more details.
 
+Introduced `InvocationPolicy` implementing `Eager` and `Lazy` invocation mechanism handling waiting
+for the result of the `set` operation. `Lazy` policy (default) does wait for the result, `Eager` does
+not wait and ignores it instead [#98](https://github.com/KarelCemus/play-redis/pull/98). 
+
 ### [:link: 1.6.0](https://github.com/KarelCemus/play-redis/tree/1.6.0)
 
 Introduced support of Redis Cluster in [#84](https://github.com/KarelCemus/play-redis/issues/84).
