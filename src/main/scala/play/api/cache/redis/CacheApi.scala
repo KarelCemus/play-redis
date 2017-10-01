@@ -32,22 +32,36 @@ private[ redis ] trait AbstractCacheApi[ Result[ _ ] ] {
   /** Retrieve a value from the cache. If is missing, set default value with
     * given expiration and return the value.
     *
-    * @param key        cache storage key
-    * @param expiration expiration period in seconds.
-    * @param orElse     The default function to invoke if the value was not found in cache.
-    * @return stored or default record, Some if exists, otherwise None
-    */
-  def getOrElse[ T: ClassTag ]( key: String, expiration: Duration = Duration.Inf )( orElse: => T ): Result[ T ]
-
-  /** Retrieve a value from the cache. If is missing, set default value with
-    * given expiration and return the value.
+    * Lazy invocation (default): The method **does wait** for the result of
+    * `set` and when it fails, it applies the recovery policy.
+    *
+    * Eager invocation: The method **does not wait** for the result of `set`
+    * if the value is not cached and also does not apply recovery policy if
+    * the `set` fails.
     *
     * @param key        cache storage key
     * @param expiration expiration period in seconds.
     * @param orElse     The default function to invoke if the value was not found in cache.
     * @return stored or default record, Some if exists, otherwise None
     */
-  def getOrFuture[ T: ClassTag ]( key: String, expiration: Duration = Duration.Inf )( orElse: => Future[ T ] ): Future[ T ]
+  def getOrElse[ T: ClassTag ]( key: String, expiration: Duration = Duration.Inf )( orElse: => T )( implicit invocation: InvocationPolicy = LazyInvocation ): Result[ T ]
+
+  /** Retrieve a value from the cache. If is missing, set default value with
+    * given expiration and return the value.
+    *
+    * Lazy invocation (default): The method **does wait** for the result of
+    * `set` and when it fails, it applies the recovery policy.
+    *
+    * Eager invocation: The method **does not wait** for the result of `set`
+    * if the value is not cached and also does not apply recovery policy if
+    * the `set` fails.
+    *
+    * @param key        cache storage key
+    * @param expiration expiration period in seconds.
+    * @param orElse     The default function to invoke if the value was not found in cache.
+    * @return stored or default record, Some if exists, otherwise None
+    */
+  def getOrFuture[ T: ClassTag ]( key: String, expiration: Duration = Duration.Inf )( orElse: => Future[ T ] )( implicit invocation: InvocationPolicy = LazyInvocation ): Future[ T ]
 
   /** Determines whether value exists in cache.
     *

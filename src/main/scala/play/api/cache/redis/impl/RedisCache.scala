@@ -58,16 +58,16 @@ private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector, builder:
     redis.matching( pattern ).recoverWithDefault( Seq.empty[ String ] )
   }
 
-  def getOrElse[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => T ) = key.prefixed { key =>
+  def getOrElse[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => T )( implicit invocation: InvocationPolicy ) = key.prefixed { key =>
     getOrFuture( key, expiration )( orElse.toFuture ).recoverWithDefault( orElse )
   }
 
-  def getOrFuture[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => Future[ T ] ): Future[ T ] = key.prefixed { key =>
+  def getOrFuture[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => Future[ T ] )( implicit invocation: InvocationPolicy ): Future[ T ] = key.prefixed { key =>
     redis.get[ T ]( key ).flatMap {
       // cache hit, return the unwrapped value
       case Some( value: T ) => value.toFuture
-      // cache miss, compute the value, store it into cache and return the value
-      case None => orElse flatMap ( value => redis.set( key, value, expiration ) map ( _ => value ) )
+      // cache miss, compute the value, store it into the cache but do not wait for the result and ignore it, directly return the value
+      case None => orElse flatMap { value => invocation.invoke( redis.set( key, value, expiration ), thenReturn = value ) }
     }.recoverWithFuture( orElse )
   }
 
