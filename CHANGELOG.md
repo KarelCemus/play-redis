@@ -9,6 +9,9 @@ Implemented increment in maps [#112](https://github.com/KarelCemus/play-redis/is
 
 Support of named caches [#114](https://github.com/KarelCemus/play-redis/pull/114)
 
+Introduced `prefix` configuration property to apply a namespace on all keys in 
+the cache instance [#118](https://github.com/KarelCemus/play-redis/pull/118).
+
 Simplified `RedisCacheModule` and `RedisCacheComponents`. Internal components are no longer
 published, removed `Binder` class, introduced `RedisInstanceProvider` instead. Introduced `RedisInstanceResolver`
 and `RecoveryPolicyResolver` to provide custom implementations. Introduced `RedisCaches` handler
@@ -16,7 +19,7 @@ encapsulating all APIs to a single named cache. [#122](https://github.com/KarelC
 
 Created [Wiki](https://github.com/KarelCemus/play-redis/wiki) with more detailed and structured documentation.
 
-Redesigned configuration as a consequence of named cache integration
+Revamped configuration as a consequence of named cache integration
 [#114](https://github.com/KarelCemus/play-redis/pull/114). Some
 properties were removed, instance configuration is now more direct,
 named caches are supported. See

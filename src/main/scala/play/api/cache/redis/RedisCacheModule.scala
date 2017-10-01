@@ -89,11 +89,11 @@ class GuiceRedisCacheProvider( instance: RedisInstanceProvider ) extends Provide
   lazy val get = new impl.RedisCachesProvider(
     instance = instance.resolved( bind[ configuration.RedisInstanceResolver ] ),
     serializer = bind[ connector.AkkaSerializer ],
-    environment = bind[ Environment ],
-    recovery = bind[ RecoveryPolicyResolver ]
+    environment = bind[ Environment ]
   )(
     system = bind[ akka.actor.ActorSystem ],
-    lifecycle = bind[ ApplicationLifecycle ]
+    lifecycle = bind[ ApplicationLifecycle ],
+    recovery = bind[ RecoveryPolicyResolver ]
   ).get
 }
 

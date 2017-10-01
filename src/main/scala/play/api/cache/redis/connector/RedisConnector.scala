@@ -1,10 +1,8 @@
 package play.api.cache.redis.connector
 
+import scala.concurrent.Future
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
-
-import akka.util.Timeout
 
 /**
   * Internal non-blocking Redis API implementing REDIS protocol
