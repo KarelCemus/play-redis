@@ -6,6 +6,7 @@
   **For previous versions see older releases.**
 
   [![Travis CI: Status](https://travis-ci.org/KarelCemus/play-redis.svg?branch=master)](https://travis-ci.org/KarelCemus/play-redis)
+  [![Coverage Status](https://coveralls.io/repos/github/KarelCemus/play-redis/badge.svg?branch=master)](https://coveralls.io/github/KarelCemus/play-redis?branch=master)
 
 </div>
 
