@@ -5,6 +5,8 @@ import java.util.concurrent.Callable
 import java.util.concurrent.atomic.AtomicInteger
 
 import play.api.cache.redis.{Redis, SimpleObject}
+import play.mvc.Http
+import play.test.Helpers
 
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
@@ -65,6 +67,19 @@ class JavaCacheSpec extends Specification with Redis {
       val orElse = new Callable[ String ] { def call( ) = "value" }
       Cache.getOrElseUpdate[ String ]( s"$prefix-test-getOrElseUpdate", orElse ) mustEqual "value"
       Cache.get[ String ]( s"$prefix-test-getOrElseUpdate" ) mustEqual "value"
+    }
+
+    "getOrElseUpdate uses HttpContext" in {
+      Cache.get[ String ]( s"$prefix-test-getOrElseUpdate-2" ) must beNull
+      val request = Helpers.fakeRequest().path( "request-path" ).build()
+      val context = Helpers.httpContext( request )
+      Http.Context.current.set( context )
+      val orElse = new Callable[ String ] {
+        def call( ) = Http.Context.current().request().path()
+      }
+      Http.Context.current().request().path() mustEqual "request-path"
+      Cache.getOrElseUpdate[ String ]( s"$prefix-test-getOrElseUpdate-2", orElse ) mustEqual "request-path"
+      Cache.get[ String ]( s"$prefix-test-getOrElseUpdate-2" ) mustEqual "request-path"
     }
 
     "distinct different keys" in {
