@@ -3,7 +3,6 @@ package play.api.cache.redis.impl
 import java.util.concurrent.{Callable, CompletionStage}
 import javax.inject.{Inject, Singleton}
 
-import scala.compat.java8.FutureConverters
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
@@ -22,7 +21,6 @@ import play.api.cache.redis._
 private[ impl ] class JavaRedis @Inject()( internal: CacheAsyncApi, environment: Environment, connector: RedisConnector ) extends play.cache.AsyncCacheApi {
 
   import JavaRedis._
-  import connector.context
 
   def set( key: String, value: scala.Any, expiration: Int ): CompletionStage[ Done ] =
     set( key, value, expiration.seconds ).toJava
@@ -30,7 +28,9 @@ private[ impl ] class JavaRedis @Inject()( internal: CacheAsyncApi, environment:
   def set( key: String, value: scala.Any ): CompletionStage[ Done ] =
     set( key, value, Duration.Inf ).toJava
 
-  def set( key: String, value: scala.Any, duration: Duration ): Future[ Done ] =
+  def set( key: String, value: scala.Any, duration: Duration ): Future[ Done ] = {
+    import connector.context
+
     Future.sequence(
       Seq(
         // set the value
@@ -41,6 +41,7 @@ private[ impl ] class JavaRedis @Inject()( internal: CacheAsyncApi, environment:
     ).map {
       case Seq( done, _ ) => done
     }
+  }
 
   def remove( key: String ): CompletionStage[ Done ] = internal.remove( key ).toJava
 
@@ -54,6 +55,9 @@ private[ impl ] class JavaRedis @Inject()( internal: CacheAsyncApi, environment:
     getOrElse[ T ]( key, Some( block ), duration = expiration.seconds )
 
   def getOrElse[ T ]( key: String, callable: Option[ Callable[ CompletionStage[ T ] ] ], duration: Duration = Duration.Inf ): CompletionStage[ T ] = {
+    import play.core.j.HttpExecutionContext
+    // save the HTTP context if any and restore it later for orElse clause
+    implicit val context = HttpExecutionContext.fromThread( connector.context )
     // get the tag and decode it
     def getClassTag = internal.get[ String ]( s"classTag::$key" )
     def decodeClassTag( name: String ): ClassTag[ T ] = if ( name == null ) ClassTag.Null.asInstanceOf[ ClassTag[ T ] ] else ClassTag( environment.classLoader.loadClass( name ) )
@@ -80,6 +84,7 @@ private[ impl ] class JavaRedis @Inject()( internal: CacheAsyncApi, environment:
 }
 
 private[ impl ] object JavaRedis {
+  import scala.compat.java8.FutureConverters
 
   private implicit class Java8Compatibility[ T ]( val future: Future[ T ] ) extends AnyVal {
     @inline def toJava: CompletionStage[ T ] = FutureConverters.toJava( future )
