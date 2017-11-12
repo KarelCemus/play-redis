@@ -30,6 +30,10 @@ Introduced `InvocationPolicy` implementing `Eager` and `Lazy` invocation mechani
 for the result of the `set` operation. `Lazy` policy (default) does wait for the result, `Eager` does
 not wait and ignores it instead [#98](https://github.com/KarelCemus/play-redis/pull/98). 
 
+### [:link: 1.6.1](https://github.com/KarelCemus/play-redis/tree/1.6.1)
+
+JavaRedis preserves `Http.Context` [#130](https://github.com/KarelCemus/play-redis/issues/130).
+
 ### [:link: 1.6.0](https://github.com/KarelCemus/play-redis/tree/1.6.0)
 
 Introduced support of Redis Cluster in [#84](https://github.com/KarelCemus/play-redis/issues/84).
