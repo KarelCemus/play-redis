@@ -68,11 +68,11 @@ package object impl extends LowPriorityImplicits {
     def apply[ S <: Any ]( value: Expectable[ S ] ): MatchResult[ S ] = result( test = true, value.description + " is Unit", value.description + " is not Unit", value.evaluate )
   }
 
-  implicit class JavaAccumulatorCache( val cache: play.cache.CacheApi ) extends AnyVal {
+  implicit class JavaAccumulatorCache( val cache: play.cache.SyncCacheApi ) extends AnyVal {
     private type Accumulator = AtomicInteger
 
     /** invokes internal getOrElse but it accumulate invocations of orElse clause in the accumulator */
-    def getOrElseCounting( key: String )( accumulator: Accumulator ) = cache.getOrElse[ String ]( key, new Callable[ String ] {
+    def getOrElseCounting( key: String )( accumulator: Accumulator ) = cache.getOrElseUpdate[ String ]( key, new Callable[ String ] {
       override def call( ): String = {
         // increment miss counter
         accumulator.incrementAndGet()

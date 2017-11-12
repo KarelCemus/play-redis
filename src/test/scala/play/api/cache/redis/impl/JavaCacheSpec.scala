@@ -1,6 +1,7 @@
 package play.api.cache.redis.impl
 
 import java.util.Date
+import java.util.concurrent.Callable
 import java.util.concurrent.atomic.AtomicInteger
 
 import play.api.cache.redis.{Redis, SimpleObject}
@@ -13,9 +14,9 @@ import org.specs2.mutable.Specification
  */
 class JavaCacheSpec extends Specification with Redis {
 
-  private type Cache = play.cache.CacheApi
+  private type Cache = play.cache.SyncCacheApi
 
-  private val Cache = injector.instanceOf[ play.cache.CacheApi ]
+  private val Cache = injector.instanceOf[ play.cache.SyncCacheApi ]
 
   private val prefix = "java"
 
@@ -57,6 +58,13 @@ class JavaCacheSpec extends Specification with Redis {
       val counter = new AtomicInteger( 0 )
       for ( index <- 1 to 10 ) Cache.getOrElseCounting( s"$prefix-test-6" )( counter ) mustEqual "value"
       counter.get mustEqual 1
+    }
+
+    "getOrElseUpdate" in {
+      Cache.get[ String ]( s"$prefix-test-getOrElseUpdate" ) must beNull
+      val orElse = new Callable[ String ] { def call( ) = "value" }
+      Cache.getOrElseUpdate[ String ]( s"$prefix-test-getOrElseUpdate", orElse ) mustEqual "value"
+      Cache.get[ String ]( s"$prefix-test-getOrElseUpdate" ) mustEqual "value"
     }
 
     "distinct different keys" in {
