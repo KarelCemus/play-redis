@@ -419,6 +419,10 @@ both implementations along.
 
 ## Changelog
 
+### [:link: 1.6.1](https://github.com/KarelCemus/play-redis/tree/1.6.1)
+
+JavaRedis preserves `Http.Context` [#130](https://github.com/KarelCemus/play-redis/issues/130).
+
 ### [:link: 1.6.0](https://github.com/KarelCemus/play-redis/tree/1.6.0)
 
 Introduced support of Redis Cluster in [#84](https://github.com/KarelCemus/play-redis/issues/84).
