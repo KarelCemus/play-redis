@@ -46,7 +46,7 @@ private[ connector ] trait AbstractRedisCommands {
   // start the connector
   start()
   // listen on system stop
-  lifecycle.addStopHook( stop _ )
+  lifecycle.addStopHook( () => stop() )
 }
 
 
