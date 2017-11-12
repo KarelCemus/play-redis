@@ -11,15 +11,15 @@ description := "Redis cache plugin for the Play framework 2"
 
 organization := "com.github.karelcemus"
 
-scalaVersion := "2.12.3"
+scalaVersion := "2.12.4"
 
-crossScalaVersions := Seq( "2.11.11", scalaVersion.value )
+crossScalaVersions := Seq( "2.11.12", scalaVersion.value )
 
-val playVersion = "2.6.5"
+val playVersion = "2.6.7"
 
 val connectorVersion = "1.8.0"
 
-val specs2Version = "3.9.5"
+val specs2Version = "4.0.1"
 
 parallelExecution in Test := false
 
