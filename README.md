@@ -14,8 +14,10 @@
 ## About the project
 
 This module for Play framework 2 adds support of Redis cache server and provides
-a set of handful APIs. For more details and full documentation please see
-[the wiki](https://github.com/KarelCemus/play-redis/wiki).
+a set of handful APIs. For more details and **full documentation for the version `2.x.x`** and newer please **see
+[the wiki](https://github.com/KarelCemus/play-redis/wiki)**. For the documentation of older versions see
+README at corresponding tag in git history. For example, **documentation for the latest released version 
+`1.6.1` is [here](https://github.com/KarelCemus/play-redis/blob/1.6.1/README.md)**. 
 
 ## How to add the module into the project
 
