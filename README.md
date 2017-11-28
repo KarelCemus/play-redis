@@ -16,8 +16,7 @@
 This module for Play framework 2 adds support of Redis cache server and provides
 a set of handful APIs. For more details and **full documentation for the version `2.x.x`** and newer please **see
 [the wiki](https://github.com/KarelCemus/play-redis/wiki)**. For the documentation of older versions see
-README at corresponding tag in git history. For example, **documentation for the latest released version 
-`1.6.1` is [here](https://github.com/KarelCemus/play-redis/blob/1.6.1/README.md)**. 
+README at corresponding tag in git history.
 
 ## How to add the module into the project
 
@@ -27,14 +26,14 @@ To your SBT `build.sbt` add the following lines:
 // enable Play cache API (based on your Play version)
 libraryDependencies += play.sbt.PlayImport.cacheApi
 // include play-redis library
-libraryDependencies += "com.github.karelcemus" %% "play-redis" % "1.6.1"
+libraryDependencies += "com.github.karelcemus" %% "play-redis" % "2.0.0"
 ```
 
 ## Compatibility matrix
 
 | play framework  | play-redis     |
 |-----------------|---------------:|
-| 2.6.x           | 1.6.1          |
+| 2.6.x           | 2.0.0  ([Migration Guide](https://github.com/KarelCemus/play-redis/wiki/Migration-Guide))        |
 | 2.5.x           | 1.4.2          |
 | 2.4.x           | 1.0.0          |
 | 2.3.x           | 0.2.1          |
