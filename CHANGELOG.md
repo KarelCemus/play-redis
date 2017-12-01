@@ -1,6 +1,10 @@
 
 ## Changelog
 
+### [:link: 2.0.1](https://github.com/KarelCemus/play-redis/tree/2.0.1)
+
+Fixed missing binding of `play.api.cache.AsyncCacheApi` [#135](https://github.com/KarelCemus/play-redis/issues/135).
+
 ### [:link: 2.0.0](https://github.com/KarelCemus/play-redis/tree/2.0.0)
 
 Introduced support of Redis Cluster in [#84](https://github.com/KarelCemus/play-redis/issues/84).

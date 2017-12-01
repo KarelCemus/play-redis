@@ -26,14 +26,14 @@ To your SBT `build.sbt` add the following lines:
 // enable Play cache API (based on your Play version)
 libraryDependencies += play.sbt.PlayImport.cacheApi
 // include play-redis library
-libraryDependencies += "com.github.karelcemus" %% "play-redis" % "2.0.0"
+libraryDependencies += "com.github.karelcemus" %% "play-redis" % "2.0.1"
 ```
 
 ## Compatibility matrix
 
 | play framework  | play-redis     |
 |-----------------|---------------:|
-| 2.6.x           | 2.0.0  ([Migration Guide](https://github.com/KarelCemus/play-redis/wiki/Migration-Guide))        |
+| 2.6.x           | 2.0.1  ([Migration Guide](https://github.com/KarelCemus/play-redis/wiki/Migration-Guide))        |
 | 2.5.x           | 1.4.2          |
 | 2.4.x           | 1.0.0          |
 | 2.3.x           | 0.2.1          |
