@@ -61,6 +61,7 @@ object GuiceProvider {
       // expose a single-implementation providers
       namedBinding( _.sync ),
       namedBinding( _.async ),
+      namedBinding( _.scalaAsync ),
       namedBinding( _.scalaSync ),
       namedBinding( _.javaSync ),
       namedBinding( _.javaAsync )
@@ -78,6 +79,7 @@ object GuiceProvider {
       defaultBinding[ CacheApi ],
       defaultBinding[ CacheAsyncApi ],
       defaultBinding[ play.api.cache.SyncCacheApi ],
+      defaultBinding[ play.api.cache.AsyncCacheApi ],
       defaultBinding[ play.cache.SyncCacheApi ],
       defaultBinding[ play.cache.AsyncCacheApi ]
     )

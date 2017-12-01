@@ -17,6 +17,7 @@ import akka.actor.ActorSystem
 trait RedisCaches {
   def sync: CacheApi
   def async: CacheAsyncApi
+  def scalaAsync: play.api.cache.AsyncCacheApi
   def scalaSync: play.api.cache.SyncCacheApi
   def javaSync: play.cache.SyncCacheApi
   def javaAsync: play.cache.AsyncCacheApi
@@ -33,6 +34,7 @@ private[ redis ] class RedisCachesProvider( instance: RedisInstance, serializer:
     lazy val async =  new AsyncRedis( redisConnector )
     lazy val sync = new SyncRedis( redisConnector )
     lazy val scalaSync = new play.api.cache.DefaultSyncCacheApi( async )
+    lazy val scalaAsync = async
     lazy val java = new JavaRedis( async, environment )
     lazy val javaAsync = new play.cache.DefaultAsyncCacheApi( async )
     lazy val javaSync = new play.cache.DefaultSyncCacheApi( java )
