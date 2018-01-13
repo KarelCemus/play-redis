@@ -15,11 +15,11 @@ scalaVersion := "2.12.4"
 
 crossScalaVersions := Seq( "2.11.12", scalaVersion.value )
 
-val playVersion = "2.6.7"
+val playVersion = "2.6.11"
 
 val connectorVersion = "1.8.0"
 
-val specs2Version = "4.0.1"
+val specs2Version = "4.0.2"
 
 parallelExecution in Test := false
 
