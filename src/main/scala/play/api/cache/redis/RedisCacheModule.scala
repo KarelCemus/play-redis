@@ -1,12 +1,13 @@
 package play.api.cache.redis
 
-import javax.inject.{Inject, Provider, Singleton}
+import javax.inject._
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-import play.api.Environment
+import play.api.{Environment, Logger}
 import play.api.inject._
+import play.cache._
 
 /** Play framework module implementing play.api.cache.CacheApi for redis-server key/value storage. For more details
   * see README.
@@ -40,24 +41,40 @@ class RedisCacheModule extends Module {
   }
 }
 
-trait GuiceProviderImplicits {
+trait ProviderImplicits {
+
+  // Creates a named cache qualifier
+  private def named( name: String ): NamedCache = {
+    new NamedCacheImpl( name )
+  }
+
+  protected def bindNamed[ T: ClassTag ]( name: String ): BindingKey[ T ] =
+    bind[ T ].qualifiedWith( named( name ) )
+}
+
+trait GuiceProviderImplicits extends ProviderImplicits {
   def injector: Injector
   protected implicit def implicitInjection[ X ]( key: BindingKey[ X ] ): X = injector instanceOf key
 }
 
-object GuiceProvider {
+object GuiceProvider extends ProviderImplicits {
 
   @inline private def provider[ T ]( f: impl.RedisCaches => T )( implicit name: CacheName ): Provider[ T ] = new NamedCacheInstanceProvider( f )
 
-  @inline private def namedBinding[ T: ClassTag ]( f: impl.RedisCaches => T )( implicit name: CacheName ): Binding[ T ] =
-    bind[ T ].qualifiedWith( name ).to( provider( f ) )
+  @inline private def deprecatedProvider[ T ]( f: impl.RedisCaches => T )( implicit name: CacheName ): Provider[ T ] = new DeprecatedNamedCacheInstanceProvider( f )
+
+  @inline private def namedBinding[ T: ClassTag ]( f: impl.RedisCaches => T )( implicit name: CacheName ): Seq[ Binding[ T ] ] = Seq(
+    bindNamed[ T ]( name ).to( provider( f ) ),
+    bind[ T ].qualifiedWith( name ).to( deprecatedProvider( f ) )
+  )
 
   def bindings( instance: RedisInstanceProvider ) = {
     implicit val name = new CacheName( instance.name )
 
-    Seq(
+    Seq[ Binding[ _ ] ](
       // bind implementation of all caches
-      bind[ impl.RedisCaches ].qualifiedWith( name ).to( new GuiceRedisCacheProvider( instance ) ),
+      bindNamed[ impl.RedisCaches ]( name ).to( new GuiceRedisCacheProvider( instance ) )
+    ) ++ Seq(
       // expose a single-implementation providers
       namedBinding( _.sync ),
       namedBinding( _.async ),
@@ -65,12 +82,12 @@ object GuiceProvider {
       namedBinding( _.scalaSync ),
       namedBinding( _.javaSync ),
       namedBinding( _.javaAsync )
-    )
+    ).flatten
   }
 
   def defaults( instance: RedisInstanceProvider ) = {
     implicit val name = new CacheName( instance.name )
-    @inline def defaultBinding[ T: ClassTag ]( implicit cacheName: CacheName ): Binding[ T ] = bind[ T ].to( bind[ T ].qualifiedWith( name ) )
+    @inline def defaultBinding[ T: ClassTag ]( implicit cacheName: CacheName ): Binding[ T ] = bind[ T ].to( bindNamed[ T ]( name ) )
 
     Seq(
       // bind implementation of all caches
@@ -101,7 +118,16 @@ class GuiceRedisCacheProvider( instance: RedisInstanceProvider ) extends Provide
 
 class NamedCacheInstanceProvider[ T ]( f: RedisCaches => T )( implicit name: CacheName ) extends Provider[ T ] with GuiceProviderImplicits {
   @Inject() var injector: Injector = _
-  lazy val get = f( bind[ RedisCaches ].qualifiedWith( name ) )
+  lazy val get = f( bindNamed[ RedisCaches ]( name ) )
+}
+
+@deprecated( "Use @NamedCache instead of @Named to inject named caches.", since = "2.1.0" )
+class DeprecatedNamedCacheInstanceProvider[ T ]( f: RedisCaches => T )( implicit name: CacheName ) extends Provider[ T ] with GuiceProviderImplicits {
+  @Inject() var injector: Injector = _
+  lazy val get = {
+    Logger( "play.api.cache.redis.deprecation" ).warn( "Named caches annotated with @Named are deprecated and will be removed in the next release. Use @NamedCache instead. See changelog for more details." )
+    f( bindNamed[ RedisCaches ]( name ) )
+  }
 }
 
 class CacheName( val name: String ) extends AnyVal
@@ -112,6 +138,6 @@ object CacheName {
 @Singleton
 class GuiceRedisInstanceResolver @Inject()( val injector: Injector ) extends configuration.RedisInstanceResolver with GuiceProviderImplicits {
   def resolve = {
-    case name => bind[ RedisInstance ].qualifiedWith( name )
+    case name => bindNamed[ RedisInstance ]( name )
   }
 }

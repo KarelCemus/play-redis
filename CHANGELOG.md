@@ -1,6 +1,23 @@
 
 ## Changelog
 
+### [:link: 2.1.0](https://github.com/KarelCemus/play-redis/tree/2.1.0)
+
+#### Removal of `@Named` and introduction of `@NamedCache`
+
+Named caches now uses `@NamedCache` instead of `@Named` to be consistent with Play's EhCache and 
+enable interchangeability of the implementation. 
+
+**Migration**: Change the annotation where necessary. 
+
+**Backward compatibility**: In simple scenarios, there should
+be no breaking changes. Use of `@Named` was deprecated and should emit warning in logs, but the 
+binding should still work. The warnings can be disabled through the logger configuration, though 
+the support will be fully removed in the `2.2.0`. The complex scenarios with the custom 
+`RedisInstance` or `RedisCaches` have to be migrated right away, there is no fallback binding.
+
+**Note**: `RecoveryPolicy` still uses `@Named` as it neither is nor relates to any particular cache. 
+
 ### [:link: 2.0.1](https://github.com/KarelCemus/play-redis/tree/2.0.1)
 
 Fixed missing binding of `play.api.cache.AsyncCacheApi` [#135](https://github.com/KarelCemus/play-redis/issues/135).
