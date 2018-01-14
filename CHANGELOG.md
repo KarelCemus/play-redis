@@ -3,6 +3,8 @@
 
 ### [:link: 2.1.0](https://github.com/KarelCemus/play-redis/tree/2.1.0)
 
+Published snapshots no longer depends on scoverage runtime [#143](https://github.com/KarelCemus/play-redis/issues/143).
+
 #### Removal of `@Named` and introduction of `@NamedCache`
 
 Named caches now uses `@NamedCache` instead of `@Named` to be consistent with Play's EhCache and 

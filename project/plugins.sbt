@@ -14,3 +14,6 @@ addSbtPlugin( "org.scoverage" % "sbt-scoverage" % "1.5.1" )
 
 // uploads the coverage results into the coveralls.io
 addSbtPlugin( "org.scoverage" % "sbt-coveralls" % "1.2.2" )
+
+// lists project dependencies
+addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.0")
