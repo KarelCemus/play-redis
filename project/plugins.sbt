@@ -7,7 +7,7 @@ addSbtPlugin( "com.github.gseitz" % "sbt-release" % "1.0.6" )
 addSbtPlugin( "com.jsuereth" % "sbt-pgp" % "1.1.0" )
 
 // checks for updates
-addSbtPlugin( "com.timushev.sbt" % "sbt-updates" % "0.3.1" )
+addSbtPlugin( "com.timushev.sbt" % "sbt-updates" % "0.3.3" )
 
 // code coverage
 addSbtPlugin( "org.scoverage" % "sbt-scoverage" % "1.5.1" )
