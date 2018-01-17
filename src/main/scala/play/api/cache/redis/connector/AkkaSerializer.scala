@@ -49,15 +49,13 @@ trait AkkaSerializer {
 private[ connector ] class AkkaEncoder( serializer: Serialization ) {
 
   /** Unsafe method encoding the given value into a string */
-  def encode( value: Any ): String = value match {
-    // null is special case
-    case null => unsupported( "Null is not supported by the redis cache connector." )
+  def encode( value: Any ): String = Option(value) match {
     // AnyVal is not supported by default, have to be implemented manually; also basic types are processed as primitives
-    case primitive if isPrimitive( primitive ) => primitive.toString
+    case Some(primitive) if isPrimitive( primitive ) => primitive.toString
     // AnyRef is supported by Akka serializers, but it does not consider classTag, thus it is done manually
-    case anyRef: AnyRef => anyRefToString( anyRef )
+    case Some(anyRef: AnyRef) => anyRefToString( anyRef )
     // if no of the cases above matches, throw an exception
-    case _ => unsupported( s"Type ${ value.getClass } is not supported by redis cache connector." )
+    case other => unsupported( s"Type ${ other.map(_.getClass).getOrElse("null") } is not supported by redis cache connector." )
   }
 
   /** determines whether the given value is a primitive */

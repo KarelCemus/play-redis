@@ -409,5 +409,5 @@ class RedisConnectorSpec extends Specification with Redis {
       Cache.hashValues[ String ]( key ).sync must beEqualTo( Set( "VA2" ) )
     }
   }
-
 }
+

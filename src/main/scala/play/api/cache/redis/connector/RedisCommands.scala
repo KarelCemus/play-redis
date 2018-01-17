@@ -23,6 +23,7 @@ private[ connector ] class RedisCommandsProvider( instance: RedisInstance )( imp
     case cluster: RedisCluster => new RedisCommandsCluster( cluster ).get
     case standalone: RedisStandalone => new RedisCommandsStandalone( standalone ).get
   }
+
 }
 
 private[ connector ] trait AbstractRedisCommands {

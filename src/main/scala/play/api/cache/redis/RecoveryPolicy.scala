@@ -118,7 +118,8 @@ trait RecoverWithDefault extends RecoveryPolicy {
   *
   * @author Karel Cemus
   */
-private[ redis ] class LogAndFailPolicy @Inject( )( ) extends FailThrough with DetailedReports
+private[ redis ] class LogAndFailPolicy @Inject( )( )
+  extends FailThrough with DetailedReports
 
 /** When the command fails, it logs the failure and returns default value
   * to prevent application failure. The returned value is neutral to the
@@ -126,7 +127,8 @@ private[ redis ] class LogAndFailPolicy @Inject( )( ) extends FailThrough with D
   *
   * @author Karel Cemus
   */
-private[ redis ] class LogAndDefaultPolicy @Inject( )( ) extends RecoverWithDefault with DetailedReports
+private[ redis ] class LogAndDefaultPolicy @Inject( )( )
+  extends RecoverWithDefault with DetailedReports
 
 
 /** When the command fails, it logs the failure and returns default value
@@ -138,7 +140,8 @@ private[ redis ] class LogAndDefaultPolicy @Inject( )( ) extends RecoverWithDefa
   *
   * @author Karel Cemus
   */
-private[ redis ] class LogCondensedAndDefaultPolicy @Inject( )( ) extends RecoverWithDefault with CondensedReports
+private[ redis ] class LogCondensedAndDefaultPolicy @Inject( )( )
+  extends RecoverWithDefault with CondensedReports
 
 
 /** When the command fails, it logs the failure and fails the whole operation.
@@ -148,7 +151,8 @@ private[ redis ] class LogCondensedAndDefaultPolicy @Inject( )( ) extends Recove
   *
   * @author Karel Cemus
   */
-private[ redis ] class LogCondensedAndFailPolicy @Inject( )( ) extends FailThrough with CondensedReports
+private[ redis ] class LogCondensedAndFailPolicy @Inject( )( )
+  extends FailThrough with CondensedReports
 
 /**
   * This resolver represents an abstraction over translation

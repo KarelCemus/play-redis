@@ -22,7 +22,11 @@ trait RedisHost {
   override def equals( obj: scala.Any ) = equalsAsHost( obj )
   /** trait-specific equals, invokable from children */
   protected def equalsAsHost( obj: scala.Any ) = obj match {
-    case that: RedisHost => this.host == that.host && this.port == that.port && this.database == that.database && this.password == that.password
+    case that: RedisHost =>
+        this.host == that.host &&
+        this.port == that.port &&
+        this.database == that.database &&
+        this.password == that.password
     case _ => false
   }
   /** to string */

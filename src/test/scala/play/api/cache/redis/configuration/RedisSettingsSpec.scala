@@ -25,7 +25,7 @@ class RedisSettingsSpec extends Specification {
         | timeout:    1s
         | source:     standalone
         |}
-      """
+      """.stripMargin
     ) {
       config.get[ RedisSettings ]( "redis" ) mustEqual defaults
     }
@@ -34,7 +34,7 @@ class RedisSettingsSpec extends Specification {
       """
         |redis {
         |}
-      """
+      """.stripMargin
     ) {
       config.get( "redis" )( RedisSettings.withFallback( defaults ) ) mustEqual RedisSettings( dispatcher = "default-dispatcher", recovery = "log-and-default", timeout = 1.second, source = "standalone" )
     }
@@ -47,7 +47,7 @@ class RedisSettingsSpec extends Specification {
         | timeout:    2s
         | source:     cluster
         |}
-      """
+      """.stripMargin
     ) {
       config.get( "redis" )( RedisSettings.withFallback( defaults ) ) mustEqual RedisSettings( dispatcher = "custom-dispatcher", recovery = "custom", timeout = 2.second, source = "cluster" )
     }

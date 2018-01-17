@@ -29,7 +29,7 @@ trait RedisSettings {
   override def equals( obj: scala.Any ) = equalsAsSettings( obj )
   /** trait-specific equals, invokable from children */
   protected def equalsAsSettings( obj: scala.Any ) = obj match {
-    case that: RedisSettings => this.invocationContext == that.invocationContext && this.timeout == that.timeout && this.recovery == that.recovery && this.source == that.source
+    case that: RedisSettings if this.invocationContext == that.invocationContext && this.timeout == that.timeout && this.recovery == that.recovery && this.source == that.source => true
     case _ => false
   }
 }
@@ -85,7 +85,6 @@ object RedisSettings extends ConfigLoader[ RedisSettings ] {
       duration => FiniteDuration( duration.getSeconds, TimeUnit.SECONDS )
     } getOrElse default( path / "timeout" )
 }
-
 
 /**
   * A helper trait delegating properties into the inner settings object

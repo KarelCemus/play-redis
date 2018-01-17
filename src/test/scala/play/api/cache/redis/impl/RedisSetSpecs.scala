@@ -125,5 +125,5 @@ class RedisSetSpecs extends Specification with Redis {
       }
     }
   }
-
 }
+

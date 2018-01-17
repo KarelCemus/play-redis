@@ -47,8 +47,12 @@ private[ redis ] object RedisInstanceManager extends ConfigLoader[ RedisInstance
     // check if the list of instances is defined or whether to use
     // a fallback definition directly under the configuration root
     val hasInstances = config.hasPath( path / "instances" )
+
     // construct a manager
-    if ( hasInstances ) new RedisInstanceManagerImpl( config, path ) else new RedisInstanceManagerFallback( config, path )
+    config.hasPath( path / "instances" ) match {
+      case true => new RedisInstanceManagerImpl( config, path )
+      case false => new RedisInstanceManagerFallback( config, path )
+    }
   }
 }
 

@@ -58,7 +58,7 @@ private[ connector ] class ExpectedFutureWithKey[ T ]( protected val future: Fut
 
   def andParameter( param: => Any ): ExpectedFutureWithKey[ T ] = andParameters( param.toString )
 
-  def andParameters( params: Traversable[ Any ] ): ExpectedFutureWithKey[ T ] = andParameters( params mkString " " )
+  def andParameters( params: Traversable[ Any ] ): ExpectedFutureWithKey[ T ] = andParameters( params.mkString(" ") )
 
   def andParameters( params: => String ): ExpectedFutureWithKey[ T ] = new ExpectedFutureWithKey( future, cmd, key, s"$fullCommand $params" )
 

@@ -337,7 +337,8 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
     /**
       * Trim an existing list so that it will contain only the specified range
       * of elements specified. Both start and stop are zero-based indexes, where
-      * 0 is the first element of the list (the head), 1 the next element and so on.
+      * 0 is the first element of the list (the head), 1 the next element and so
+      * on.
       *
       * For example: LTRIM foobar 0 2 will modify the list stored at foobar so
       * that only the first three elements of the list will remain.

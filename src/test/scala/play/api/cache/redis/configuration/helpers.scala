@@ -18,6 +18,7 @@ class WithConfiguration( hocon: String ) extends Around with Scope {
     ConfigFactory.parseString( hocon.stripMargin )
   }
 
+  // INFO name of implicit evidence seems to be generated
   def around[ T ]( t: => T )( implicit evidence$6: AsResult[ T ] ) =
     AsResult.effectively( t )
 }

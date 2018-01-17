@@ -34,7 +34,10 @@ class RedisCacheModule extends Module {
     // bind recovery resolver
     val recovery = RecoveryPolicyResolver.bindings
     // default bindings
-    val defaults = if ( bindDefault ) GuiceProvider.defaults( manager.defaultInstance ) else Seq.empty
+    val defaults = bindDefault match {
+      case false => Seq.empty
+      case _ => GuiceProvider.defaults( manager.defaultInstance )
+    }
 
     // return all bindings
     commons ++ caches ++ recovery ++ defaults
@@ -44,9 +47,8 @@ class RedisCacheModule extends Module {
 trait ProviderImplicits {
 
   // Creates a named cache qualifier
-  private def named( name: String ): NamedCache = {
+  private def named( name: String ): NamedCache =
     new NamedCacheImpl( name )
-  }
 
   protected def bindNamed[ T: ClassTag ]( name: String ): BindingKey[ T ] =
     bind[ T ].qualifiedWith( named( name ) )

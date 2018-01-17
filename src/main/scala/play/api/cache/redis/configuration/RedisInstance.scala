@@ -33,7 +33,7 @@ trait RedisCluster extends RedisInstance {
     case _ => false
   }
   /** to string */
-  override def toString = s"Cluster[${ nodes mkString "," }]"
+  override def toString = s"Cluster[${ nodes.mkString(",") }]"
 }
 
 object RedisCluster {
@@ -59,7 +59,7 @@ object RedisCluster {
 trait RedisStandalone extends RedisInstance with RedisHost {
   /** trait-specific equals */
   override def equals( obj: scala.Any ) = obj match {
-    case that: RedisStandalone => equalsAsInstance( that ) && equalsAsHost( that )
+    case that: RedisStandalone if equalsAsInstance( that ) && equalsAsHost( that ) => true
     case _ => false
   }
   /** to string */

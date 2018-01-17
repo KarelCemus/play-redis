@@ -15,7 +15,7 @@ class RedisHostSpec extends Specification {
         | host: localhost
         | port: 6379
         |}
-      """
+      """.stripMargin
     ) {
       config.get[ RedisHost ]( "instance" ) mustEqual RedisHost( host = "localhost", port = 6379 )
     }
@@ -27,7 +27,7 @@ class RedisHostSpec extends Specification {
         | port: 6379
         | password: "my password"
         |}
-      """
+      """.stripMargin
     ) {
       config.get[ RedisHost ]( "instance" ) mustEqual RedisHost( host = "localhost", port = 6379, password = Some( "my password" ) )
     }
@@ -39,7 +39,7 @@ class RedisHostSpec extends Specification {
         | port: 6379
         | database: 1
         |}
-      """
+      """.stripMargin
     ) {
       config.get[ RedisHost ]( "instance" ) mustEqual RedisHost( host = "localhost", port = 6379, database = Some( 1 ) )
     }

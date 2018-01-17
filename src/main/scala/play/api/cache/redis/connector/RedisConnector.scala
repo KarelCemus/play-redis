@@ -76,7 +76,8 @@ private[ redis ] trait CoreCommands {
     */
   def mSetIfNotExist( keyValues: (String, Any)* ): Future[ Boolean ]
 
-  /** refreshes expiration time on a given key, useful, e.g., when we want to refresh session duration
+  /** refreshes expiration time on a given key, useful, e.g., when we want to
+    * refresh session duration
     *
     * @param key        cache storage key
     * @param expiration new expiration in seconds
@@ -84,7 +85,8 @@ private[ redis ] trait CoreCommands {
     */
   def expire( key: String, expiration: Duration ): Future[ Unit ]
 
-  /** Removes all keys in arguments. The other remove methods are for syntax sugar
+  /** Removes all keys in arguments. The other remove methods are for syntax
+    * sugar
     *
     * @param keys cache storage keys
     * @return promise
@@ -112,9 +114,9 @@ private[ redis ] trait CoreCommands {
     */
   def increment( key: String, by: Long ): Future[ Long ]
 
-  /** If key already exists and is a string, this command appends the value at the
-    * end of the string. If key does not exist it is created and set as an empty string,
-    * so APPEND will be similar to SET in this special case.
+  /** If key already exists and is a string, this command appends the value at
+    * the end of the string. If key does not exist it is created and set as an
+    * empty string, so APPEND will be similar to SET in this special case.
     *
     * @param key   cache storage key
     * @param value value to be appended
@@ -134,8 +136,9 @@ private[ redis ] trait CoreCommands {
 private[ redis ] trait HashCommands {
 
   /**
-    * Removes the specified fields from the hash stored at key. Specified fields that do not exist within this
-    * hash are ignored. If key does not exist, it is treated as an empty hash and this command returns 0.
+    * Removes the specified fields from the hash stored at key. Specified fields
+    * that do not exist within this hash are ignored. If key does not exist, it
+    * is treated as an empty hash and this command returns 0.
     *
     * Time complexity: O(N) where N is the number of fields to be removed.
     *
@@ -168,8 +171,9 @@ private[ redis ] trait HashCommands {
   def hashGet[ T: ClassTag ]( key: String, field: String ): Future[ Option[ T ] ]
 
   /**
-    * Returns all fields and values of the hash stored at key. In the returned value, every field name is followed
-    * by its value, so the length of the reply is twice the size of the hash.
+    * Returns all fields and values of the hash stored at key. In the returned
+    * value, every field name is followed by its value, so the length of the
+    * reply is twice the size of the hash.
     *
     * Time complexity: O(N) where N is the size of the hash.
     *
@@ -210,7 +214,9 @@ private[ redis ] trait HashCommands {
   def hashKeys( key: String ): Future[ Set[ String ] ]
 
   /**
-    * Sets field in the hash stored at key to value. If key does not exist, a new key holding a hash is created. If field already exists in the hash, it is overwritten.
+    * Sets field in the hash stored at key to value. If key does not exist, a
+    * new key holding a hash is created. If field already exists in the hash,
+    * it is overwritten.
     *
     * Time complexity: O(1)
     *
@@ -243,8 +249,9 @@ private[ redis ] trait HashCommands {
 private[ redis ] trait ListCommands {
 
   /**
-    * Insert (LPUSH) all the specified values at the head of the list stored at key.
-    * If key does not exist, it is created as empty list before performing the push operations.
+    * Insert (LPUSH) all the specified values at the head of the list stored at
+    * key. If key does not exist, it is created as empty list before performing
+    * the push operations.
     * When key holds a value that is not a list, an error is returned.
     *
     * Time complexity: O(1)
@@ -256,8 +263,9 @@ private[ redis ] trait ListCommands {
   def listPrepend( key: String, value: Any* ): Future[ Long ]
 
   /**
-    * Insert (RPUSH) all the specified values at the tail of the list stored at key. If key
-    * does not exist, it is created as empty list before performing the push operation.
+    * Insert (RPUSH) all the specified values at the tail of the list stored at
+    * key. If key does not exist, it is created as empty list before performing
+    * the push operation.
     * When key holds a value that is not a list, an error is returned.
     *
     * Time complexity: O(1)
@@ -269,8 +277,9 @@ private[ redis ] trait ListCommands {
   def listAppend( key: String, value: Any* ): Future[ Long ]
 
   /**
-    * Returns the length of the list stored at key (LLEN). If key does not exist, it is interpreted as an empty
-    * list and 0 is returned. An error is returned when the value stored at key is not a list.
+    * Returns the length of the list stored at key (LLEN). If key does not
+    * exist, it is interpreted as an empty list and 0 is returned. An error is
+    * returned when the value stored at key is not a list.
     *
     * Time complexity: O(1)
     *
@@ -280,11 +289,13 @@ private[ redis ] trait ListCommands {
   def listSize( key: String ): Future[ Long ]
 
   /**
-    * Inserts value in the list stored at key either before or after the reference value pivot.
-    * When key does not exist, it is considered an empty list and no operation is performed.
+    * Inserts value in the list stored at key either before or after the
+    * reference value pivot. When key does not exist, it is considered an empty
+    * list and no operation is performed.
     * An error is returned when key exists but does not hold a list value.
     *
-    * Time complexity: O(N) where N is the number of elements to traverse before seeing the value pivot.
+    * Time complexity: O(N) where N is the number of elements to traverse before
+    * seeing the value pivot.
     *
     * @param key   cache storage key
     * @param pivot value used as markup
@@ -427,8 +438,9 @@ private[ redis ] trait SetCommands {
   def setIsMember( key: String, value: Any ): Future[ Boolean ]
 
   /**
-    * Remove the specified members from the set stored at key. Specified members that are not a member of this set
-    * are ignored. If key does not exist, it is treated as an empty set and this command returns 0.
+    * Remove the specified members from the set stored at key. Specified members
+    * that are not a member of this set are ignored. If key does not exist, it
+    * is treated as an empty set and this command returns 0.
     *
     * An error is returned when the value stored at key is not a set.
     *

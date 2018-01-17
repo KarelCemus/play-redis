@@ -4,6 +4,7 @@ import java.util.Date
 
 import play.api.cache.redis.{CacheApi, Expiration, ExpirationImplicits, Redis}
 
+// INFO JodaDateTime is deprecated as for 2018 use ZonedDateTime or LocalDateTime
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
 
@@ -19,7 +20,7 @@ class ExpirationSpec extends Specification with Redis with ExpirationImplicits {
   private def nowInJava = new Date( )
 
   private def in2seconds = nowInJoda.plusSeconds( 2 )
-  
+
   private val prefix = "expiration"
 
   "Expiration" should {
