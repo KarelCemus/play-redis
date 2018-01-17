@@ -1,6 +1,11 @@
 
 ## Changelog
 
+### [:link: 2.0.2](https://github.com/KarelCemus/play-redis/tree/2.0.2)
+
+`play.cache.AsyncCacheApi` is bound to `JavaRedis` instead of `DefaultAsyncCacheApi`
+ to fixed value deserialization and support Java HTTP context [#140](https://github.com/KarelCemus/play-redis/issues/140).
+
 ### [:link: 2.0.1](https://github.com/KarelCemus/play-redis/tree/2.0.1)
 
 Fixed missing binding of `play.api.cache.AsyncCacheApi` [#135](https://github.com/KarelCemus/play-redis/issues/135).
