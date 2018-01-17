@@ -5,6 +5,9 @@
 
 Published snapshots no longer depends on scoverage runtime [#143](https://github.com/KarelCemus/play-redis/issues/143).
 
+`play.cache.AsyncCacheApi` is bound to `JavaRedis` instead of `DefaultAsyncCacheApi`
+ to fixed value deserialization and support Java HTTP context [#140](https://github.com/KarelCemus/play-redis/issues/140).
+
 #### Removal of `@Named` and introduction of `@NamedCache`
 
 Named caches now uses `@NamedCache` instead of `@Named` to be consistent with Play's EhCache and 
@@ -19,6 +22,11 @@ the support will be fully removed in the `2.2.0`. The complex scenarios with the
 `RedisInstance` or `RedisCaches` have to be migrated right away, there is no fallback binding.
 
 **Note**: `RecoveryPolicy` still uses `@Named` as it neither is nor relates to any particular cache. 
+
+### [:link: 2.0.2](https://github.com/KarelCemus/play-redis/tree/2.0.2)
+
+`play.cache.AsyncCacheApi` is bound to `JavaRedis` instead of `DefaultAsyncCacheApi`
+ to fixed value deserialization and support Java HTTP context [#140](https://github.com/KarelCemus/play-redis/issues/140).
 
 ### [:link: 2.0.1](https://github.com/KarelCemus/play-redis/tree/2.0.1)
 
