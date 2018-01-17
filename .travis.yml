@@ -8,6 +8,7 @@ branches:
   only:
   - master
   - 1.5.x
+  - 2.0.x
 cache:
   directories:
   - $HOME/.ivy2/cache
