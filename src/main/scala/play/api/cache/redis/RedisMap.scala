@@ -3,8 +3,8 @@ package play.api.cache.redis
 import scala.language.higherKinds
 
 /**
-  * Redis Hashes are simply hash maps with strings as keys. It is possible to add
-  * elements to a Redis Hashes by adding new elements into the collection.
+  * Redis Hashes are simply hash maps with strings as keys. It is possible to
+  * add elements to a Redis Hashes by adding new elements into the collection.
   *
   * <strong>This simplified wrapper implements only unordered Maps.</strong>
   *
@@ -31,7 +31,8 @@ trait RedisMap[ Elem, Result[ _ ] ] extends RedisCollection[ Map[ String, Elem ]
   def get( field: String ): Result[ Option[ Elem ] ]
 
   /**
-    * <p>Tests if the field is contained in the map. Returns true if exists, otherwise returns false</p>
+    * <p>Tests if the field is contained in the map. Returns true if exists,
+    * otherwise returns false</p>
     *
     * @note <strong>Time complexity:</strong> O(1)
     * @param field tested field
@@ -40,7 +41,8 @@ trait RedisMap[ Elem, Result[ _ ] ] extends RedisCollection[ Map[ String, Elem ]
   def contains( field: String ): Result[ Boolean ]
 
   /**
-    * <p>Removes the specified members from the sorted map stored at key. Non existing members are ignored.
+    * <p>Removes the specified members from the sorted map stored at key. Non
+    * existing members are ignored.
     * An error is returned when key exists and does not hold a sorted map.</p>
     *
     * @note <strong>Time complexity:</strong> O(N) where N is the number of members to be removed.

@@ -15,11 +15,23 @@ private[ configuration ] object RedisConfigLoader {
 
   implicit class ConfigOption( val config: Config ) extends AnyVal {
     def getOption[ T ]( path: String, f: Config => String => T ): Option[ T ] =
-      if ( config hasPath path ) Some( f( config )( path ) ) else None
+      config match {
+        case c if c.hasPath(path) => Some(f( c )( path ))
+        case _ => None
+      }
   }
 
   implicit class ConfigPath( val path: String ) extends AnyVal {
-    def /( suffix: String ): String = if ( path == "" ) suffix else s"$path.$suffix"
+
+    private def eagerDecision(): Function1[String, String] =
+      path.isEmpty match {
+        case true => (suffix: String) => suffix
+        case _ => (suffix: String) => path + "." + suffix
+      }
+
+    private def delegate: Function1[String, String] = eagerDecision()
+
+    def /( suffix: String ): String = delegate(suffix)
   }
 
   implicit class FallbackValue[ T ]( val value: T ) extends AnyVal {
@@ -48,9 +60,9 @@ private[ configuration ] trait RedisConfigLoader[ T ] { outer =>
 
 /**
   * Extended RedisConfig loader to a produce redis instance, it requires
-  * a default settings to be able to actually load the configuration and its name. This default
-  * settings are used as a fallback value when the overloading
-  * settings are missing
+  * a default settings to be able to actually load the configuration and its
+  * name. This default settings are used as a fallback value when th
+  * overloading settings are missing
   *
   * @author Karel Cemus
   */

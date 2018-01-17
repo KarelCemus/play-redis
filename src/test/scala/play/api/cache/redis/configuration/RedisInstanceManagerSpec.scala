@@ -36,7 +36,7 @@ class RedisInstanceManagerSpec extends Specification {
         |  recovery:   log-and-default
         |  timeout:    1s
         |}
-      """
+      """.stripMargin
     ) {
       val defaults = RedisSettings( dispatcher = "default-dispatcher", recovery = "log-and-default", timeout = 1.second, source = "standalone" )
 
@@ -62,7 +62,7 @@ class RedisInstanceManagerSpec extends Specification {
         |  recovery:      log-and-default
         |  timeout:       1s
         |}
-      """
+      """.stripMargin
     ) {
       val defaults = RedisSettings( dispatcher = "default-dispatcher", recovery = "log-and-default", timeout = 1.second, source = "standalone" )
 

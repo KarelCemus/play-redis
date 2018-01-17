@@ -25,7 +25,6 @@ class RecoveryPolicySpec extends Specification {
     }
   )
 
-
   new PolicySpecs(
     "LogAndDefault",
     new LogAndDefaultPolicy,
@@ -35,11 +34,9 @@ class RecoveryPolicySpec extends Specification {
     }
   )
 
-
   trait Expectation {
     def expects[ T <: Throwable : ClassTag ]: Matcher[ Any ]
   }
-
 
   class PolicySpecs( name: String, policy: RecoveryPolicy, default: => Future[ Unit ], expectation: Expectation ) {
 

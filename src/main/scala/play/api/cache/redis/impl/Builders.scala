@@ -37,6 +37,8 @@ object Builders {
   /** converts the future into the value */
   object SynchronousBuilder extends ResultBuilder[ SynchronousResult ] {
 
+    // INFO Await in reality does fiber fork and can result kernel panic if used
+    // recklessly
     import scala.concurrent.Await
     import scala.util._
 

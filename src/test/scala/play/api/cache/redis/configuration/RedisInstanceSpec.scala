@@ -27,7 +27,7 @@ class RedisInstanceSpec extends Specification {
         | host:       localhost
         | port:       6379
         |}
-      """
+      """.stripMargin
     ) {
       config.get[ RedisInstanceProvider ]( "redis" ).resolved must beEqualTo( RedisStandalone( "play", RedisHost( host = "localhost", port = 6379 ), defaults ) )
     }
@@ -42,7 +42,7 @@ class RedisInstanceSpec extends Specification {
         | timeout:    2s
         | source:     standalone
         |}
-      """
+      """.stripMargin
     ) {
       config.get[ RedisInstanceProvider ]( "redis" ).resolved must beEqualTo( RedisStandalone( "play", RedisHost( host = "localhost", port = 6379 ), RedisSettings( "custom-dispatcher", 2.seconds, "custom", "standalone" ) ) )
     }
@@ -56,7 +56,7 @@ class RedisInstanceSpec extends Specification {
         |   { host: localhost, port: 6380 }
         | ]
         |}
-      """
+      """.stripMargin
     ) {
       config.get[ RedisInstanceProvider ]( "redis" ).resolved must beEqualTo( RedisCluster( "play", nodes = List( RedisHost( host = "localhost", port = 6379 ), RedisHost( host = "localhost", port = 6380 ) ), settings( source = "cluster" ) ) )
     }
@@ -67,7 +67,7 @@ class RedisInstanceSpec extends Specification {
         | source:             "connection-string"
         | connection-string:  "redis://localhost:6379"
         |}
-      """
+      """.stripMargin
     ) {
       config.get[ RedisInstanceProvider ]( "redis" ).resolved must beEqualTo( RedisStandalone( "play", RedisHost( host = "localhost", port = 6379 ), settings( source = "connection-string" ) ) )
     }
@@ -77,7 +77,7 @@ class RedisInstanceSpec extends Specification {
         |redis {
         | source:     custom
         |}
-      """
+      """.stripMargin
     ) {
       config.get[ RedisInstanceProvider ]( "redis" ).resolved must beEqualTo( RedisStandalone( "resolved-play", RedisHost( host = "localhost", port = 6380 ), defaults ) )
     }

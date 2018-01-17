@@ -54,12 +54,16 @@ private[ connector ] class RedisConnectorImpl( serializer: AkkaSerializer, redis
     }.get
 
   def set( key: String, value: Any, expiration: Duration ): Future[ Unit ] =
-    // no value to set
-    if ( value == null ) remove( key )
-    // set for finite duration
-    else if ( expiration.isFinite() )  encode( key, value ) flatMap ( setTemporally( key, _, expiration ) )
-    // set for infinite duration
-    else encode( key, value ) flatMap ( setEternally( key, _ ) )
+    if ( value == null ) {
+      // no value to set
+      remove( key )
+    } else if ( expiration.isFinite() ) {
+      // set for finite duration
+      encode( key, value ) flatMap ( setTemporally( key, _, expiration ) )
+    } else {
+      // set for infinite duration
+      encode( key, value ) flatMap ( setEternally( key, _ ) )
+    }
 
   /** encodes the object, reports an exception if fails */
   private def encode( key: String, value: Any ): Future[ String ] = Future.fromTry {
@@ -289,24 +293,42 @@ private[ connector ] class RedisConnectorImpl( serializer: AkkaSerializer, redis
 
   def hashGet[ T: ClassTag ]( key: String, field: String ) =
     redis.hget[ String ]( key, field ) executing "HGET" withKey key andParameter field expects {
-      case Some( encoded ) => log.debug( s"Item $field exists in the collection at '$key'." ); Some( decode[ T ]( key, encoded ) )
-      case None => log.debug( s"Item $field is not in the collection at '$key'." ); None
+      case Some( encoded ) => {
+        log.debug( s"Item $field exists in the collection at '$key'." )
+        Some( decode[ T ]( key, encoded ) )
+      }
+      case None => {
+        log.debug( s"Item $field is not in the collection at '$key'." )
+        None
+      }
     }
 
   def hashGetAll[ T: ClassTag ]( key: String ) =
     redis.hgetall[ String ]( key ) executing "HGETALL" withKey key expects {
-      case empty if empty.isEmpty => log.debug( s"Collection at '$key' is empty." ); Map.empty
-      case encoded => log.debug( s"Collection at '$key' has ${ encoded.size } items." ); encoded.mapValues( decode[ T ]( key, _ ) )
+      case empty if empty.isEmpty => {
+        log.debug( s"Collection at '$key' is empty." )
+        Map.empty
+      }
+      case encoded => {
+        log.debug( s"Collection at '$key' has ${ encoded.size } items." )
+        encoded.mapValues( decode[ T ]( key, _ ) )
+      }
     }
 
   def hashSize( key: String ) =
     redis.hlen( key ) executing "HLEN" withKey key expects {
-      case length => log.debug( s"The collection at '$key' has $length items." ); length
+      case length => {
+        log.debug( s"The collection at '$key' has $length items." )
+        length
+      }
     }
 
   def hashKeys( key: String ) =
     redis.hkeys( key ) executing "HKEYS" withKey key expects {
-      case keys => log.debug( s"The collection at '$key' defines: ${ keys mkString " " }." ); keys.toSet
+      case keys => {
+        log.debug( s"The collection at '$key' defines: ${ keys mkString " " }." )
+        keys.toSet
+      }
     }
 
   def hashSet( key: String, field: String, value: Any ) =
@@ -321,7 +343,10 @@ private[ connector ] class RedisConnectorImpl( serializer: AkkaSerializer, redis
 
   def hashValues[ T: ClassTag ]( key: String ) =
     redis.hvals[ String ]( key ) executing "HVALS" withKey key expects {
-      case values => log.debug( s"The collection at '$key' contains ${ values.size } values." ); values.map( decode[ T ]( key, _ ) ).toSet
+      case values => {
+        log.debug( s"The collection at '$key' contains ${ values.size } values." )
+        values.map( decode[ T ]( key, _ ) ).toSet
+      }
     }
 
   override def toString = s"RedisConnector(name=$name)"
