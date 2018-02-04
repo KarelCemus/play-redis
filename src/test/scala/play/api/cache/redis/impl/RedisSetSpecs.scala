@@ -20,7 +20,7 @@ class RedisSetSpecs extends Specification with Redis {
 
   private val workingConnector = injector.instanceOf[ RedisConnector ]
 
-  implicit def runtime( policy: RecoveryPolicy ) =  RedisRuntime( "play", 3.minutes, ExecutionContext.Implicits.global, policy )
+  implicit def runtime( policy: RecoveryPolicy ) =  RedisRuntime( "play", 3.minutes, ExecutionContext.Implicits.global, policy, invocation = LazyInvocation )
 
   // test proper implementation, no fails
   new RedisSetSuite( "implement", "redis-cache-implements", new RedisCache( workingConnector, Builders.SynchronousBuilder )( FailThrough ), AlwaysSuccess )

@@ -15,14 +15,14 @@ private[ impl ] class SyncRedis( redis: RedisConnector )( implicit runtime: Redi
   // helpers for dsl
   import dsl._
 
-  override def getOrElse[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => T )( implicit invocation: InvocationPolicy ) = {
+  override def getOrElse[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => T ) = {
     // note: this method is overridden so the `orElse` won't be included in the timeout
     // compute orElse and try to set it into the cache
     def computeAndSet = {
       // compute
       val value = orElse
       // set the value and finally return the computed value regardless the result of set
-      invocation.invoke( redis.set( key, value, expiration ), thenReturn = value ) recoverWithDefault value
+      runtime.invocation.invoke( redis.set( key, value, expiration ), thenReturn = value ) recoverWithDefault value
     }
     // try to hit the cache, return on hit, set and return orElse on miss or failure
     redis.get[ T ]( key ).recoverWithDefault( Some( computeAndSet ) ) getOrElse computeAndSet

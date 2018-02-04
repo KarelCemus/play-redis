@@ -17,7 +17,7 @@ class RedisPrefixSpec extends Specification with Redis { outer =>
 
   private val workingConnector = injector.instanceOf[ RedisConnector ]
 
-  def runtime( prefix: Option[ String ] ) =  RedisRuntime( "play", 3.minutes, ExecutionContext.Implicits.global, FailThrough, prefix )
+  def runtime( prefix: Option[ String ] ) =  RedisRuntime( "play", 3.minutes, ExecutionContext.Implicits.global, FailThrough, invocation = LazyInvocation, prefix )
 
   val unprefixed = new RedisCache( workingConnector, Builders.SynchronousBuilder )( runtime( prefix = None ) )
 

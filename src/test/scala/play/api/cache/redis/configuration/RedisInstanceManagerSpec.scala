@@ -34,11 +34,12 @@ class RedisInstanceManagerSpec extends Specification {
         |
         |  dispatcher: default-dispatcher
         |  recovery:   log-and-default
+        |  invocation: lazy
         |  timeout:    1s
         |}
       """
     ) {
-      val defaults = RedisSettings( dispatcher = "default-dispatcher", recovery = "log-and-default", timeout = 1.second, source = "standalone" )
+      val defaults = RedisSettings( dispatcher = "default-dispatcher", recovery = "log-and-default", invocationPolicy = "lazy", timeout = 1.second, source = "standalone" )
 
       val manager = config.get[ RedisInstanceManager ]( "redis" )
       manager.caches mustEqual Set( "play", "data", "users" )
@@ -60,11 +61,12 @@ class RedisInstanceManagerSpec extends Specification {
         |  default-cache: play
         |  dispatcher:    default-dispatcher
         |  recovery:      log-and-default
+        |  invocation: lazy
         |  timeout:       1s
         |}
       """
     ) {
-      val defaults = RedisSettings( dispatcher = "default-dispatcher", recovery = "log-and-default", timeout = 1.second, source = "standalone" )
+      val defaults = RedisSettings( dispatcher = "default-dispatcher", recovery = "log-and-default", invocationPolicy = "lazy", timeout = 1.second, source = "standalone" )
 
       val manager = config.get[ RedisInstanceManager ]( "redis" )
       manager.caches mustEqual Set( "play" )

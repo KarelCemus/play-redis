@@ -16,11 +16,12 @@ import akka.actor.ActorSystem
   */
 private[ redis ] trait RedisRuntime extends connector.RedisRuntime {
   implicit def policy: RecoveryPolicy
+  implicit def invocation: InvocationPolicy
   implicit def prefix: RedisPrefix
   implicit def timeout: akka.util.Timeout
 }
 
-private[ redis ] case class RedisRuntimeImpl( name: String, context: ExecutionContext, policy: RecoveryPolicy, prefix: RedisPrefix, timeout: akka.util.Timeout ) extends RedisRuntime
+private[ redis ] case class RedisRuntimeImpl( name: String, context: ExecutionContext, policy: RecoveryPolicy, invocation: InvocationPolicy, prefix: RedisPrefix, timeout: akka.util.Timeout ) extends RedisRuntime
 
 private[ redis ] object RedisRuntime {
 
@@ -30,9 +31,15 @@ private[ redis ] object RedisRuntime {
   implicit def string2recovery( policy: String )( implicit resolver: RecoveryPolicyResolver ): RecoveryPolicy =
     resolver resolve policy
 
-  def apply( instance: RedisInstance, recovery: RecoveryPolicy, prefix: RedisPrefix )( implicit system: ActorSystem ): RedisRuntime =
-    apply( instance.name, instance.timeout, system.dispatchers.lookup( instance.invocationContext ), recovery, prefix )
+  implicit def string2invocation( invocation: String ): InvocationPolicy = invocation.toLowerCase.trim match {
+    case "lazy" => LazyInvocation
+    case "eager" => EagerInvocation
+    case other => throw new IllegalArgumentException( "Illegal invocation policy. Valid values are 'lazy' and 'eager'. See the documentation for more details." )
+  }
 
-  def apply( name: String, timeout: FiniteDuration, context: ExecutionContext, recovery: RecoveryPolicy, prefix: RedisPrefix = RedisEmptyPrefix ): RedisRuntime =
-    RedisRuntimeImpl( name, context, recovery, prefix, akka.util.Timeout( timeout ) )
+  def apply( instance: RedisInstance, recovery: RecoveryPolicy, invocation: InvocationPolicy, prefix: RedisPrefix )( implicit system: ActorSystem ): RedisRuntime =
+    apply( instance.name, instance.timeout, system.dispatchers.lookup( instance.invocationContext ), recovery, invocation, prefix )
+
+  def apply( name: String, timeout: FiniteDuration, context: ExecutionContext, recovery: RecoveryPolicy, invocation: InvocationPolicy, prefix: RedisPrefix = RedisEmptyPrefix ): RedisRuntime =
+    RedisRuntimeImpl( name, context, recovery, invocation, prefix, akka.util.Timeout( timeout ) )
 }

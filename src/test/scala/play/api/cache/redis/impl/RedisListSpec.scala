@@ -18,7 +18,7 @@ class RedisListSpec extends Specification with Redis {
 
   private val workingConnector = injector.instanceOf[ RedisConnector ]
 
-  def runtime( policy: RecoveryPolicy ) =  RedisRuntime( "play", 3.minutes, ExecutionContext.Implicits.global, policy )
+  def runtime( policy: RecoveryPolicy ) =  RedisRuntime( "play", 3.minutes, ExecutionContext.Implicits.global, policy, invocation = LazyInvocation )
 
   // test proper implementation, no fails
   new RedisListSuite( "implement", "redis-cache-implements", new RedisCache( workingConnector, Builders.SynchronousBuilder )( runtime( FailThrough ) ), AlwaysSuccess )
