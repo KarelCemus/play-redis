@@ -21,7 +21,15 @@ binding should still work. The warnings can be disabled through the logger confi
 the support will be fully removed in the `2.2.0`. The complex scenarios with the custom 
 `RedisInstance` or `RedisCaches` have to be migrated right away, there is no fallback binding.
 
-**Note**: `RecoveryPolicy` still uses `@Named` as it neither is nor relates to any particular cache. 
+**Note**: `RecoveryPolicy` still uses `@Named` as it neither is nor relates to any particular cache.
+
+#### Revamped Invocation Policy
+
+Dropped implicit `InvocationPolicy` from Scala version of the API,
+replaced by the instance configuration through the config file.
+Introduced configuration property `invocation`. It works also with JavaRedis.
+For more details, see [the updated documentation](https://github.com/KarelCemus/play-redis/wiki/Configuration#invocation-policy)
+ [#147](https://github.com/KarelCemus/play-redis/issues/147).
 
 ### [:link: 2.0.2](https://github.com/KarelCemus/play-redis/tree/2.0.2)
 

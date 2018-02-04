@@ -7,7 +7,7 @@ import org.specs2.mutable.Specification
 class RedisInstanceSpec extends Specification {
 
   // settings builder
-  def settings( source: String ) = RedisSettings( dispatcher = "default-dispatcher", recovery = "log-and-default", timeout = 1.second, source = source )
+  def settings( source: String ) = RedisSettings( dispatcher = "default-dispatcher", recovery = "log-and-default", invocationPolicy = "lazy", timeout = 1.second, source = source )
   // default settings
   implicit val defaults = settings( source = "standalone" )
   // implicitly expose RedisHost config loader
@@ -44,7 +44,7 @@ class RedisInstanceSpec extends Specification {
         |}
       """
     ) {
-      config.get[ RedisInstanceProvider ]( "redis" ).resolved must beEqualTo( RedisStandalone( "play", RedisHost( host = "localhost", port = 6379 ), RedisSettings( "custom-dispatcher", 2.seconds, "custom", "standalone" ) ) )
+      config.get[ RedisInstanceProvider ]( "redis" ).resolved must beEqualTo( RedisStandalone( "play", RedisHost( host = "localhost", port = 6379 ), RedisSettings( "custom-dispatcher", invocationPolicy = "lazy", 2.seconds, "custom", "standalone" ) ) )
     }
 
     "cluster" in new WithConfiguration(
