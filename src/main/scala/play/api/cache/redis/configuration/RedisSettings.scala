@@ -17,6 +17,8 @@ import com.typesafe.config.Config
 trait RedisSettings {
   /** the name of the invocation context executing all commands to Redis */
   def invocationContext: String
+  /** the name of the invocation policy used in getOrElse methods */
+  def invocationPolicy: String
   /** timeout of cache commands */
   def timeout: FiniteDuration
   /** recovery policy used with the instance */
@@ -40,6 +42,7 @@ object RedisSettings extends ConfigLoader[ RedisSettings ] {
 
   def load( config: Config, path: String ) = apply(
     dispatcher = loadInvocationContext( config, path )( required ),
+    invocationPolicy = loadInvocationPolicy( config, path )( required ),
     recovery = loadRecovery( config, path )( required ),
     timeout = loadTimeout( config, path )( required ),
     source = loadSource( config, path )( "standalone".asFallback ),
@@ -48,20 +51,22 @@ object RedisSettings extends ConfigLoader[ RedisSettings ] {
 
   def withFallback( fallback: RedisSettings ) = new ConfigLoader[ RedisSettings ] {
     def load( config: Config, path: String ) = apply(
-      dispatcher = RedisSettings.loadInvocationContext( config, path )( fallback.invocationContext.asFallback ),
-      recovery = RedisSettings.loadRecovery( config, path )( fallback.recovery.asFallback ),
-      timeout = RedisSettings.loadTimeout( config, path )( fallback.timeout.asFallback ),
+      dispatcher = loadInvocationContext( config, path )( fallback.invocationContext.asFallback ),
+      invocationPolicy = loadInvocationPolicy( config, path )( fallback.invocationPolicy.asFallback ),
+      recovery = loadRecovery( config, path )( fallback.recovery.asFallback ),
+      timeout = loadTimeout( config, path )( fallback.timeout.asFallback ),
       source = loadSource( config, path )( fallback.source.asFallback ),
-      prefix = RedisSettings.loadPrefix( config, path )( fallback.prefix.asFallback )
+      prefix = loadPrefix( config, path )( fallback.prefix.asFallback )
     )
   }
 
-  def apply( dispatcher: String, timeout: FiniteDuration, recovery: String, source: String, prefix: Option[ String ] = None ): RedisSettings =
-    create( dispatcher, prefix, timeout, recovery, source )
+  def apply( dispatcher: String, invocationPolicy: String, timeout: FiniteDuration, recovery: String, source: String, prefix: Option[ String ] = None ): RedisSettings =
+    create( dispatcher, invocationPolicy, prefix, timeout, recovery, source )
 
   @inline
-  private def create( _dispatcher: String, _prefix: Option[ String ], _timeout: FiniteDuration, _recovery: String, _source: String ) = new RedisSettings {
+  private def create( _dispatcher: String, _invocation: String, _prefix: Option[ String ], _timeout: FiniteDuration, _recovery: String, _source: String ) = new RedisSettings {
     val invocationContext = _dispatcher
+    val invocationPolicy = _invocation
     val prefix = _prefix
     val recovery = _recovery
     val timeout = _timeout
@@ -70,6 +75,9 @@ object RedisSettings extends ConfigLoader[ RedisSettings ] {
 
   private def loadInvocationContext( config: Config, path: String )( default: String => String ): String =
     config.getOption( path / "dispatcher", _.getString ) getOrElse default( path / "dispatcher" )
+
+  private def loadInvocationPolicy( config: Config, path: String )( default: String => String ): String =
+    config.getOption( path / "invocation", _.getString ) getOrElse default( path / "invocation" )
 
   private def loadRecovery( config: Config, path: String )( default: String => String ): String =
     config.getOption( path / "recovery", _.getString ) getOrElse default( path / "recovery" )
@@ -99,4 +107,5 @@ trait RedisDelegatingSettings extends RedisSettings {
   def timeout = settings.timeout
   def recovery = settings.recovery
   def invocationContext = settings.invocationContext
+  def invocationPolicy = settings.invocationPolicy
 }

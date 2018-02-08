@@ -1,4 +1,4 @@
-package play.api.cache.redis
+package play.api.cache.redis.impl
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -13,13 +13,13 @@ import scala.concurrent.{ExecutionContext, Future}
   * @author Karel Cemus
   */
 sealed trait InvocationPolicy {
-  def invoke[ T ]( f: => Future[ Unit ], thenReturn: T )( implicit context: ExecutionContext ): Future[ T ]
+  def invoke[ T ]( f: => Future[ Any ], thenReturn: T )( implicit context: ExecutionContext ): Future[ T ]
 }
 
 object EagerInvocation extends InvocationPolicy {
-  def invoke[ T ]( f: => Future[ Unit ], thenReturn: T )( implicit context: ExecutionContext ) = { f; Future successful thenReturn }
+  def invoke[ T ]( f: => Future[ Any ], thenReturn: T )( implicit context: ExecutionContext ) = { f; Future successful thenReturn }
 }
 
 object LazyInvocation extends InvocationPolicy {
-  def invoke[ T ]( f: => Future[ Unit ], thenReturn: T )( implicit context: ExecutionContext ) = f.map( _ => thenReturn )
+  def invoke[ T ]( f: => Future[ Any ], thenReturn: T )( implicit context: ExecutionContext ) = f.map( _ => thenReturn )
 }

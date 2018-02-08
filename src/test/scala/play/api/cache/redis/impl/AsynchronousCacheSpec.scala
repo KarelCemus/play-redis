@@ -21,7 +21,7 @@ class AsynchronousCacheSpec extends Specification with Redis {
 
   private val workingConnector = injector.instanceOf[ RedisConnector ]
 
-  def runtime( policy: RecoveryPolicy ) =  RedisRuntime( "play", 3.minutes, ExecutionContext.Implicits.global, policy )
+  def runtime( policy: RecoveryPolicy ) =  RedisRuntime( "play", 3.minutes, ExecutionContext.Implicits.global, policy, invocation = LazyInvocation )
 
   // test proper implementation, no fails
   new RedisCacheSuite( "implement", "redis-cache-implements", new RedisCache( workingConnector, Builders.AsynchronousBuilder )( runtime( FailThrough ) ), AlwaysSuccess )
@@ -359,10 +359,22 @@ class AsynchronousCacheSpec extends Specification with Redis {
         }
 
         "with failing serialization (eager)" in {
-          implicit val invocation = EagerInvocation
-          cache.set( s"$prefix-test-with-failing-serialization-eager", UnserializableObject( "some" ), 5.seconds ) must expects( throwA[ SerializationException ], beUnit )
+          val runtime = RedisRuntime( "play", 3.minutes, ExecutionContext.Implicits.global, FailThrough, invocation = EagerInvocation )
+          val cache = new RedisCache( workingConnector, Builders.AsynchronousBuilder )( runtime )
+
+          cache.set( s"$prefix-test-with-failing-serialization-eager", UnserializableObject( "some" ), 5.seconds ) must expects( throwA[ SerializationException ], throwA[ SerializationException ], throwA[ SerializationException ] )
           cache.getOrElse( s"$prefix-test-with-failing-serialization-eager" )( UnserializableObject( "some" ) ) must expects(
-            beEqualTo( UnserializableObject( "some" ) ), beEqualTo( UnserializableObject( "some" ) )
+            beEqualTo( UnserializableObject( "some" ) ), beEqualTo( UnserializableObject( "some" ) ), beEqualTo( UnserializableObject( "some" ) )
+          )
+        }
+
+        "with failing serialization (eager)(failing connector)" in {
+          val runtime = RedisRuntime( "play", 3.minutes, ExecutionContext.Implicits.global, FailThrough, invocation = EagerInvocation )
+          val cache = new RedisCache( FailingConnector, Builders.AsynchronousBuilder )( runtime )
+
+          cache.set( s"$prefix-test-with-failing-serialization-eager", UnserializableObject( "some" ), 5.seconds ) must expects( throwA[ ExecutionFailedException ], throwA[ ExecutionFailedException ], throwA[ ExecutionFailedException ] )
+          cache.getOrElse( s"$prefix-test-with-failing-serialization-eager" )( UnserializableObject( "some" ) ) must expects(
+            throwA[ ExecutionFailedException ], throwA[ ExecutionFailedException ], throwA[ ExecutionFailedException ]
           )
         }
       }
