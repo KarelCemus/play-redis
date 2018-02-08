@@ -67,7 +67,9 @@ private[ impl ] class JavaRedis( internal: CacheAsyncApi, environment: Environme
     // compute or else and save it into cache
     def orElse( callable: Callable[ CompletionStage[ T ] ] ) = callable.call().toScala
     def saveOrElse( value: T ) = set( key, value, duration )
-    def savedOrElse( callable: Callable[ CompletionStage[ T ] ] ) = orElse( callable ).flatMap { value => saveOrElse( value ).map( _ => Some( value ) ) }
+    def savedOrElse( callable: Callable[ CompletionStage[ T ] ] ) = orElse( callable ).flatMap {
+      value => runtime.invocation.invoke( saveOrElse( value ), Some( value ) )
+    }
 
     getValue.flatMap {
       case Some( value ) => Future.successful( Some( value ) )
