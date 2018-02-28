@@ -67,6 +67,8 @@ private[ connector ] class RedisCommandsStandalone( configuration: RedisStandalo
     password = password
   ) with FailEagerly {
 
+    protected val scheduler = system.scheduler
+
     override def send[ T ]( redisCommand: RedisCommand[ _ <: protocol.RedisReply, T ] ) = super.send( redisCommand )
 
     override def onConnectStatus = ( status: Boolean ) => connected = status
