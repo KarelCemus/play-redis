@@ -60,12 +60,19 @@ private[ connector ] trait AbstractRedisCommands {
 private[ connector ] class RedisCommandsStandalone( configuration: RedisStandalone )( implicit system: ActorSystem, val lifecycle: ApplicationLifecycle ) extends Provider[ RedisCommands ] with AbstractRedisCommands {
   import configuration._
 
-  val client = RedisStandaloneClient(
+  val client = new RedisStandaloneClient(
     host = host,
     port = port,
     db = database,
     password = password
-  )
+  ) with FailEagerly {
+
+    protected val scheduler = system.scheduler
+
+    override def send[ T ]( redisCommand: RedisCommand[ _ <: protocol.RedisReply, T ] ) = super.send( redisCommand )
+
+    override def onConnectStatus = ( status: Boolean ) => connected = status
+  }
 
   def start( ) = database.fold {
     log.info( s"Redis cache actor started. It is connected to $host:$port" )

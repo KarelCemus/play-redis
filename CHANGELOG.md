@@ -7,6 +7,10 @@ Published snapshots no longer depends on scoverage runtime [#143](https://github
 
 `play.cache.AsyncCacheApi` is bound to `JavaRedis` instead of `DefaultAsyncCacheApi`
  to fixed value deserialization and support Java HTTP context [#140](https://github.com/KarelCemus/play-redis/issues/140).
+ 
+Standalone client now fails eagerly when the connection to redis is not
+established. This is to avoid long timeout while the rediscala is trying
+to reconnect. [#147](https://github.com/KarelCemus/play-redis/issues/147)
 
 #### Removal of `@Named` and introduction of `@NamedCache`
 
