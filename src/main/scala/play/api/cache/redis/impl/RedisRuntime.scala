@@ -21,7 +21,15 @@ private[ redis ] trait RedisRuntime extends connector.RedisRuntime {
   implicit def timeout: akka.util.Timeout
 }
 
-private[ redis ] case class RedisRuntimeImpl( name: String, context: ExecutionContext, policy: RecoveryPolicy, invocation: InvocationPolicy, prefix: RedisPrefix, timeout: akka.util.Timeout ) extends RedisRuntime
+private[ redis ] case class RedisRuntimeImpl
+(
+  name: String,
+  context: ExecutionContext,
+  policy: RecoveryPolicy,
+  invocation: InvocationPolicy,
+  prefix: RedisPrefix,
+  timeout: akka.util.Timeout
+) extends RedisRuntime
 
 private[ redis ] object RedisRuntime {
 
@@ -38,8 +46,8 @@ private[ redis ] object RedisRuntime {
   }
 
   def apply( instance: RedisInstance, recovery: RecoveryPolicy, invocation: InvocationPolicy, prefix: RedisPrefix )( implicit system: ActorSystem ): RedisRuntime =
-    apply( instance.name, instance.timeout, system.dispatchers.lookup( instance.invocationContext ), recovery, invocation, prefix )
+    apply( instance.name, instance.timeout.sync, system.dispatchers.lookup( instance.invocationContext ), recovery, invocation, prefix )
 
-  def apply( name: String, timeout: FiniteDuration, context: ExecutionContext, recovery: RecoveryPolicy, invocation: InvocationPolicy, prefix: RedisPrefix = RedisEmptyPrefix ): RedisRuntime =
-    RedisRuntimeImpl( name, context, recovery, invocation, prefix, akka.util.Timeout( timeout ) )
+  def apply( name: String, syncTimeout: FiniteDuration, context: ExecutionContext, recovery: RecoveryPolicy, invocation: InvocationPolicy, prefix: RedisPrefix = RedisEmptyPrefix ): RedisRuntime =
+    RedisRuntimeImpl( name, context, recovery, invocation, prefix, akka.util.Timeout( syncTimeout ) )
 }
