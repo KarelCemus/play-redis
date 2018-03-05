@@ -13,7 +13,7 @@ class RedisSettingsSpec extends Specification {
   implicit val loader = RedisSettings
 
   // default settings
-  val defaults = RedisSettings( dispatcher = "default-dispatcher", invocationPolicy = "lazy", recovery = "log-and-default", timeout = 1.second, source = "standalone" )
+  val defaults = RedisSettings( dispatcher = "default-dispatcher", invocationPolicy = "lazy", recovery = "log-and-default", timeout = RedisTimeouts( 1.second ), source = "standalone" )
 
   "RedisSettings" should "read" >> {
 
@@ -37,7 +37,7 @@ class RedisSettingsSpec extends Specification {
         |}
       """
     ) {
-      config.get( "redis" )( RedisSettings.withFallback( defaults ) ) mustEqual RedisSettings( dispatcher = "default-dispatcher", invocationPolicy = "lazy", recovery = "log-and-default", timeout = 1.second, source = "standalone" )
+      config.get( "redis" )( RedisSettings.withFallback( defaults ) ) mustEqual RedisSettings( dispatcher = "default-dispatcher", invocationPolicy = "lazy", recovery = "log-and-default", timeout = RedisTimeouts( 1.second ), source = "standalone" )
     }
 
     "filled with fallback" in new WithConfiguration(
@@ -51,7 +51,7 @@ class RedisSettingsSpec extends Specification {
         |}
       """
     ) {
-      config.get( "redis" )( RedisSettings.withFallback( defaults ) ) mustEqual RedisSettings( dispatcher = "custom-dispatcher", invocationPolicy = "lazy", recovery = "custom", timeout = 2.second, source = "cluster" )
+      config.get( "redis" )( RedisSettings.withFallback( defaults ) ) mustEqual RedisSettings( dispatcher = "custom-dispatcher", invocationPolicy = "lazy", recovery = "custom", timeout = RedisTimeouts( 2.second ), source = "cluster" )
     }
   }
 }
