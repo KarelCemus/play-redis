@@ -43,6 +43,10 @@ Introduced configuration property `invocation`. It works also with JavaRedis.
 For more details, see [the updated documentation](https://github.com/KarelCemus/play-redis/wiki/Configuration#invocation-policy)
  [#147](https://github.com/KarelCemus/play-redis/issues/147).
 
+### [:link: 2.0.3](https://github.com/KarelCemus/play-redis/tree/2.0.3)
+
+Rediscala bumped to 1.8.3 and subsequently Akka bumped to 2.5.6 [#150](https://github.com/KarelCemus/play-redis/issues/150).
+
 ### [:link: 2.0.2](https://github.com/KarelCemus/play-redis/tree/2.0.2)
 
 `play.cache.AsyncCacheApi` is bound to `JavaRedis` instead of `DefaultAsyncCacheApi`
