@@ -65,9 +65,11 @@ private[ connector ] class RedisCommandsStandalone( configuration: RedisStandalo
     port = port,
     db = database,
     password = password
-  ) with FailEagerly {
+  ) with FailEagerly with RedisRequestTimeout {
 
-    protected val scheduler = system.scheduler
+    protected val timeout = configuration.timeout.redis
+
+    protected implicit val scheduler = system.scheduler
 
     override def send[ T ]( redisCommand: RedisCommand[ _ <: protocol.RedisReply, T ] ) = super.send( redisCommand )
 
@@ -98,11 +100,16 @@ private[ connector ] class RedisCommandsStandalone( configuration: RedisStandalo
 private[ connector ] class RedisCommandsCluster( configuration: RedisCluster )( implicit system: ActorSystem, val lifecycle: ApplicationLifecycle ) extends Provider[ RedisCommands ] with AbstractRedisCommands {
   import configuration._
 
-  val client = RedisClusterClient(
+  val client = new RedisClusterClient(
     nodes.map {
       case RedisHost( host, port, database, password ) => RedisServer( host, port, password, database )
     }
-  )
+  ) with RedisRequestTimeout {
+
+    protected val timeout = configuration.timeout.redis
+
+    protected implicit val scheduler = system.scheduler
+  }
 
   def start( ) = {
     def servers = nodes.map {

@@ -12,6 +12,14 @@ Standalone client now fails eagerly when the connection to redis is not
 established. This is to avoid long timeout while the rediscala is trying
 to reconnect. [#147](https://github.com/KarelCemus/play-redis/issues/147)
 
+Deprecated`timeout` property and replaced by `sync-timeout` with the identical
+meaning and use. Will be removed by 2.2.0. [#154](https://github.com/KarelCemus/play-redis/issues/154)
+
+Introduced **optional** `redis-timeout` property indicating timeout on redis queries.
+This is the workaround as the rediscala has no timeout on the requests and they might
+be never completed. However, to avoid performance issues, the timeout is **disabled by default**.
+See [the configuration]() for more details. [#154](https://github.com/KarelCemus/play-redis/issues/154)
+
 #### Removal of `@Named` and introduction of `@NamedCache`
 
 Named caches now uses `@NamedCache` instead of `@Named` to be consistent with Play's EhCache and 
