@@ -31,7 +31,9 @@ libraryDependencies ++= Seq(
   // test framework
   "org.specs2" %% "specs2-core" % specs2Version % Test,
   // test module for play framework
-  "com.typesafe.play" %% "play-specs2" % playVersion % Test
+  "com.typesafe.play" %% "play-specs2" % playVersion % Test,
+  // mockito framework
+  "org.mockito" % "mockito-core" % "2.16.0"
 )
 
 resolvers ++= Seq(
