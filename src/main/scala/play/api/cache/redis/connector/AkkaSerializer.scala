@@ -56,8 +56,10 @@ private[ connector ] class AkkaEncoder( serializer: Serialization ) {
     case primitive if isPrimitive( primitive ) => primitive.toString
     // AnyRef is supported by Akka serializers, but it does not consider classTag, thus it is done manually
     case anyRef: AnyRef => anyRefToString( anyRef )
+    // $COVERAGE-OFF$
     // if no of the cases above matches, throw an exception
     case _ => unsupported( s"Type ${ value.getClass } is not supported by redis cache connector." )
+    // $COVERAGE-ON$
   }
 
   /** determines whether the given value is a primitive */
