@@ -17,7 +17,7 @@ class ExpirationSpec extends Specification {
     def expireAt = DateTime.now().plusMinutes( 5 ).plusSeconds( 30 )
 
     val expiration = 5.minutes + 30.seconds
-    val expirationFrom = expiration - 1.second
+    val expirationFrom = expiration - 2.second
     val expirationTo = expiration + 1.second
 
     "from java.util.Date" in {

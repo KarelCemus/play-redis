@@ -45,6 +45,8 @@ private[ connector ] class ExpectedFutureWithoutKey[ T ]( protected val future: 
   def withKey( key: String ): ExpectedFutureWithKey[ T ] = new ExpectedFutureWithKey[ T ]( future, cmd, key, s"$cmd $key" )
 
   def withKeys( keys: Traversable[ String ] ): ExpectedFutureWithKey[ T ] = withKey( keys mkString " " )
+
+  override def toString = s"ExpectedFuture($cmd)"
 }
 
 private[ connector ] class ExpectedFutureWithKey[ T ]( protected val future: Future[ T ], protected val cmd: String, key: String, fullCommand: => String ) extends ExpectedFuture[ T ] {
@@ -63,6 +65,8 @@ private[ connector ] class ExpectedFutureWithKey[ T ]( protected val future: Fut
   def andParameters( params: => String ): ExpectedFutureWithKey[ T ] = new ExpectedFutureWithKey( future, cmd, key, s"$fullCommand $params" )
 
   def asCommand( commandOverride: => String ) = new ExpectedFutureWithKey( future, cmd, key, s"$cmd $commandOverride" )
+
+  override def toString = s"ExpectedFuture($fullCommand)"
 }
 
 /**
