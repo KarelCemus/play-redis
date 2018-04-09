@@ -73,3 +73,6 @@ publishTo := {
   if (isSnapshot.value) Some(Opts.resolver.sonatypeSnapshots)
   else Some( Opts.resolver.sonatypeStaging )
 }
+
+// exclude from tests coverage
+coverageExcludedFiles := ".*exceptions.*"
