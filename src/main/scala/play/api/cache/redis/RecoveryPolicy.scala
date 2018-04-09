@@ -16,9 +16,6 @@ import play.api.inject._
   */
 trait RecoveryPolicy {
 
-  /** name of the policy used for internal purposes */
-  def name: String = this.getClass.getSimpleName
-
   /** When a failure occurs, this method handles it. It may re-run it, return default value,
     * log it or propagate the exception.
     *
@@ -30,7 +27,12 @@ trait RecoveryPolicy {
     */
   def recoverFrom[ T ]( rerun: => Future[ T ], default: => Future[ T ], failure: RedisException ): Future[ T ]
 
+  // $COVERAGE-OFF$
+  /** name of the policy used for internal purposes */
+  def name: String = this.getClass.getSimpleName
+
   override def toString = s"RecoveryPolicy($name)"
+  // $COVERAGE-ON$
 }
 
 /** Abstract recovery policy provides a general helpers for
@@ -98,7 +100,7 @@ trait FailThrough extends RecoveryPolicy {
 
   override def recoverFrom[ T ]( rerun: => Future[ T ], default: => Future[ T ], failure: RedisException ): Future[ T ] = {
     // fail through
-    throw failure
+    Future.failed( failure )
   }
 }
 
@@ -159,6 +161,8 @@ trait RecoveryPolicyResolver {
   def resolve: PartialFunction[ String, RecoveryPolicy ]
 }
 
+// $COVERAGE-OFF$
+
 class RecoveryPolicyResolverImpl extends RecoveryPolicyResolver {
   val resolve: PartialFunction[ String, RecoveryPolicy ] = {
     case "log-and-fail" => new LogAndFailPolicy
@@ -187,3 +191,5 @@ class RecoveryPolicyResolverGuice @Inject( )( injector: Injector ) extends Recov
     case name => injector instanceOf bind[ RecoveryPolicy ].qualifiedWith( name )
   }
 }
+
+// $COVERAGE-ON$
