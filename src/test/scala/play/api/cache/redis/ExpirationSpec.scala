@@ -14,8 +14,7 @@ class ExpirationSpec extends Specification {
 
   "Expiration" should {
 
-    val now = DateTime.now()
-    val expireAt = now.plusMinutes( 5 ).plusSeconds( 30 )
+    def expireAt = DateTime.now().plusMinutes( 5 ).plusSeconds( 30 )
 
     val expiration = 5.minutes + 30.seconds
     val expirationFrom = expiration - 1.second
