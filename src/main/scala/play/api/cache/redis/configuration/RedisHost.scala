@@ -18,11 +18,12 @@ trait RedisHost {
   def database: Option[ Int ]
   /** when enabled security, this returns password for the AUTH command */
   def password: Option[ String ]
+  // $COVERAGE-OFF$
   /** trait-specific equals */
   override def equals( obj: scala.Any ) = equalsAsHost( obj )
   /** trait-specific equals, invokable from children */
   protected def equalsAsHost( obj: scala.Any ) = obj match {
-    case that: RedisHost => this.host == that.host && this.port == that.port && this.database == that.database && this.password == that.password
+    case that: RedisHost => Equals.check( this, that )( _.host, _.port, _.database, _.password )
     case _ => false
   }
   /** to string */
@@ -32,6 +33,7 @@ trait RedisHost {
     case ( None, Some( database ) ) => s"redis://$host:$port?db=$database"
     case ( None, None ) => s"redis://$host:$port"
   }
+  // $COVERAGE-ON$
 }
 
 
@@ -72,8 +74,11 @@ object RedisHost extends ConfigLoader[ RedisHost ] {
     val password = _password
   }
 
-  def unapply( host: RedisHost ): Option[ (String, Int, Option[ Int ], Option[ String ]) ] =
+  // $COVERAGE-OFF$
+  def unapply( host: RedisHost ): Option[ (String, Int, Option[ Int ], Option[ String ]) ] = {
     Some( (host.host, host.port, host.database, host.password) )
+  }
+  // $COVERAGE-ON$
 }
 
 /**

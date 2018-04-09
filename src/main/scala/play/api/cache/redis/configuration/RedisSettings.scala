@@ -23,13 +23,15 @@ trait RedisSettings {
   def source: String
   /** instance prefix */
   def prefix: Option[ String ]
+  // $COVERAGE-OFF$
   /** trait-specific equals */
   override def equals( obj: scala.Any ) = equalsAsSettings( obj )
   /** trait-specific equals, invokable from children */
   protected def equalsAsSettings( obj: scala.Any ) = obj match {
-    case that: RedisSettings => this.invocationContext == that.invocationContext && this.timeout == that.timeout && this.recovery == that.recovery && this.source == that.source
+    case that: RedisSettings => Equals.check( this, that )( _.invocationContext, _.invocationPolicy, _.timeout, _.recovery, _.source, _.prefix )
     case _ => false
   }
+  // $COVERAGE-ON$
 }
 
 
@@ -37,22 +39,22 @@ object RedisSettings extends ConfigLoader[ RedisSettings ] {
   import RedisConfigLoader._
 
   def load( config: Config, path: String ) = apply(
-    dispatcher = loadInvocationContext( config, path )( required ),
-    invocationPolicy = loadInvocationPolicy( config, path )( required ),
-    recovery = loadRecovery( config, path )( required ),
-    timeout = loadTimeouts( config, path )( RedisTimeouts.requiredDefault( required ).asFallback ),
-    source = loadSource( config, path )( "standalone".asFallback ),
-    prefix = loadPrefix( config, path )( None.asFallback )
+    dispatcher = loadInvocationContext( config, path ).get,
+    invocationPolicy = loadInvocationPolicy( config, path ).get,
+    recovery = loadRecovery( config, path ).get,
+    timeout = loadTimeouts( config, path )( RedisTimeouts.requiredDefault ),
+    source = loadSource( config, path ).get,
+    prefix = loadPrefix( config, path )
   )
 
   def withFallback( fallback: RedisSettings ) = new ConfigLoader[ RedisSettings ] {
     def load( config: Config, path: String ) = apply(
-      dispatcher = loadInvocationContext( config, path )( fallback.invocationContext.asFallback ),
-      invocationPolicy = loadInvocationPolicy( config, path )( fallback.invocationPolicy.asFallback ),
-      recovery = loadRecovery( config, path )( fallback.recovery.asFallback ),
-      timeout = loadTimeouts( config, path )( fallback.timeout.asFallback ),
-      source = loadSource( config, path )( fallback.source.asFallback ),
-      prefix = loadPrefix( config, path )( fallback.prefix.asFallback )
+      dispatcher = loadInvocationContext( config, path ) getOrElse fallback.invocationContext,
+      invocationPolicy = loadInvocationPolicy( config, path ) getOrElse fallback.invocationPolicy,
+      recovery = loadRecovery( config, path ) getOrElse fallback.recovery,
+      timeout = loadTimeouts( config, path )( fallback.timeout ),
+      source = loadSource( config, path ) getOrElse fallback.source,
+      prefix = loadPrefix( config, path ) orElse fallback.prefix
     )
   }
 
@@ -69,23 +71,23 @@ object RedisSettings extends ConfigLoader[ RedisSettings ] {
     val source = _source
   }
 
-  private def loadInvocationContext( config: Config, path: String )( default: String => String ): String =
-    config.getOption( path / "dispatcher", _.getString ) getOrElse default( path / "dispatcher" )
+  private def loadInvocationContext( config: Config, path: String ): Option[ String ] =
+    config.getOption( path / "dispatcher", _.getString )
 
-  private def loadInvocationPolicy( config: Config, path: String )( default: String => String ): String =
-    config.getOption( path / "invocation", _.getString ) getOrElse default( path / "invocation" )
+  private def loadInvocationPolicy( config: Config, path: String ): Option[ String ] =
+    config.getOption( path / "invocation", _.getString )
 
-  private def loadRecovery( config: Config, path: String )( default: String => String ): String =
-    config.getOption( path / "recovery", _.getString ) getOrElse default( path / "recovery" )
+  private def loadRecovery( config: Config, path: String ): Option[ String ] =
+    config.getOption( path / "recovery", _.getString )
 
-  private def loadSource( config: Config, path: String )( default: String => String ): String =
-    config.getOption( path / "source", _.getString ) getOrElse default( path / "source" )
+  private def loadSource( config: Config, path: String ): Option[ String ] =
+    config.getOption( path / "source", _.getString )
 
-  private def loadPrefix( config: Config, path: String )( default: String => Option[ String ] ): Option[ String ] =
-    config.getOption( path / "prefix", _.getString ) orElse default( path / "prefix" )
+  private def loadPrefix( config: Config, path: String ): Option[ String ] =
+    config.getOption( path / "prefix", _.getString )
 
-  private def loadTimeouts( config: Config, path: String )( default: String => RedisTimeouts ): RedisTimeouts =
-    RedisTimeouts.load( config, path )( default )
+  private def loadTimeouts( config: Config, path: String )( defaults: RedisTimeouts ): RedisTimeouts =
+    RedisTimeouts.load( config, path )( defaults )
 }
 
 

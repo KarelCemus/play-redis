@@ -36,6 +36,13 @@ trait RedisInstanceManager extends Traversable[ RedisInstanceProvider ] {
 
   /** traverse all binders */
   def foreach[ U ]( f: RedisInstanceProvider => U ) = caches.view.flatMap( instanceOfOption ).foreach( f )
+
+  // $COVERAGE-OFF$
+  override def equals( obj: scala.Any ) = obj match {
+    case that: RedisInstanceManager => Equals.check( this, that )( _.caches, _.defaultInstance, _.toSet )
+    case _ => false
+  }
+  // $COVERAGE-ON$
 }
 
 private[ redis ] object RedisInstanceManager extends ConfigLoader[ RedisInstanceManager ] {
