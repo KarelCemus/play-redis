@@ -49,8 +49,8 @@ trait Reports extends RecoveryPolicy {
   protected def message( failure: RedisException ): String = failure match {
     case TimeoutException( cause ) => s"Command execution timed out."
     case SerializationException( key, message, cause ) => s"$message for key '$key'."
-    case ExecutionFailedException( Some( key ), command, cause ) => s"Command $command for key '$key' failed."
-    case ExecutionFailedException( None, command, cause ) => s"Command $command failed."
+    case ExecutionFailedException( Some( key ), command, statement, cause ) => s"Command $command for key '$key' failed."
+    case ExecutionFailedException( None, command, statement, cause ) => s"Command $command failed."
     case UnexpectedResponseException( Some( key ), command ) => s"Command $command for key '$key' returned unexpected response."
     case UnexpectedResponseException( None, command ) => s"Command $command returned unexpected response."
   }

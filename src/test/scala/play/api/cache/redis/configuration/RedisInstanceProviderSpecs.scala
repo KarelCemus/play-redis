@@ -6,6 +6,7 @@ import org.specs2.mutable.Specification
   * @author Karel Cemus
   */
 class RedisInstanceProviderSpecs extends Specification {
+  import Implicits._
 
   val defaultCache = RedisStandalone( defaultCacheName, RedisHost( localhost, defaultPort, database = 0 ), defaults )
 
