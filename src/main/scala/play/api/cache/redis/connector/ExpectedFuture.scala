@@ -40,7 +40,7 @@ private[ connector ] class ExpectedFutureWithoutKey[ T ]( protected val future: 
   }
 
   protected def onFailed( ex: Throwable ): Nothing =
-    failed( None, cmd, ex )
+    failed( None, cmd, cmd, ex )
 
   def withKey( key: String ): ExpectedFutureWithKey[ T ] = new ExpectedFutureWithKey[ T ]( future, cmd, key, s"$cmd $key" )
 
@@ -49,24 +49,24 @@ private[ connector ] class ExpectedFutureWithoutKey[ T ]( protected val future: 
   override def toString = s"ExpectedFuture($cmd)"
 }
 
-private[ connector ] class ExpectedFutureWithKey[ T ]( protected val future: Future[ T ], protected val cmd: String, key: String, fullCommand: => String ) extends ExpectedFuture[ T ] {
+private[ connector ] class ExpectedFutureWithKey[ T ]( protected val future: Future[ T ], protected val cmd: String, key: String, statement: => String ) extends ExpectedFuture[ T ] {
 
   protected def onUnexpected: PartialFunction[ Any, Nothing ] = {
     case _ => unexpected( Some( key ), cmd )
   }
 
   protected def onFailed( ex: Throwable ): Nothing =
-    failed( Some( key ), cmd, ex )
+    failed( Some( key ), cmd, statement, ex )
 
   def andParameter( param: => Any ): ExpectedFutureWithKey[ T ] = andParameters( param.toString )
 
   def andParameters( params: Traversable[ Any ] ): ExpectedFutureWithKey[ T ] = andParameters( params mkString " " )
 
-  def andParameters( params: => String ): ExpectedFutureWithKey[ T ] = new ExpectedFutureWithKey( future, cmd, key, s"$fullCommand $params" )
+  def andParameters( params: => String ): ExpectedFutureWithKey[ T ] = new ExpectedFutureWithKey( future, cmd, key, s"$statement $params" )
 
   def asCommand( commandOverride: => String ) = new ExpectedFutureWithKey( future, cmd, key, s"$cmd $commandOverride" )
 
-  override def toString = s"ExpectedFuture($fullCommand)"
+  override def toString = s"ExpectedFuture($statement)"
 }
 
 /**

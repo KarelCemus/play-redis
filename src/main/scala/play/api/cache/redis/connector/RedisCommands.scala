@@ -76,6 +76,7 @@ private[ connector ] class RedisCommandsStandalone( configuration: RedisStandalo
     override def onConnectStatus = ( status: Boolean ) => connected = status
   }
 
+  // $COVERAGE-OFF$
   def start( ) = database.fold {
     log.info( s"Redis cache actor started. It is connected to $host:$port" )
   } {
@@ -87,6 +88,7 @@ private[ connector ] class RedisCommandsStandalone( configuration: RedisStandalo
     client.stop()
     log.info( "Redis cache stopped." )
   }
+  // $COVERAGE-ON$
 }
 
 
@@ -111,6 +113,7 @@ private[ connector ] class RedisCommandsCluster( configuration: RedisCluster )( 
     protected implicit val scheduler = system.scheduler
   }
 
+  // $COVERAGE-OFF$
   def start( ) = {
     def servers = nodes.map {
       case RedisHost( host, port, Some( database ), _ ) => s" $host:$port?database=$database"
@@ -125,4 +128,5 @@ private[ connector ] class RedisCommandsCluster( configuration: RedisCluster )( 
     client.stop()
     log.info( "Redis cluster cache stopped." )
   }
+  // $COVERAGE-ON$
 }
