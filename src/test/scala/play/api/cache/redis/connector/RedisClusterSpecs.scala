@@ -7,7 +7,6 @@ import play.api.cache.redis._
 import play.api.cache.redis.configuration._
 import play.api.cache.redis.impl._
 import play.api.inject.ApplicationLifecycle
-import play.api.inject.guice.GuiceApplicationBuilder
 
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
@@ -16,15 +15,11 @@ import org.specs2.specification.{AfterAll, BeforeAll}
 /**
   * <p>Specification of the low level connector implementing basic commands</p>
   */
-class RedisClusterSpecs( implicit ee: ExecutionEnv ) extends Specification with BeforeAll with AfterAll {
+class RedisClusterSpecs( implicit ee: ExecutionEnv ) extends Specification with BeforeAll with AfterAll with WithApplication {
 
   import Implicits._
 
-  private val application = GuiceApplicationBuilder().build()
-
   implicit private val lifecycle = application.injector.instanceOf[ ApplicationLifecycle ]
-
-  implicit private val system = application.actorSystem
 
   implicit private val runtime = RedisRuntime( "cluster", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation )
 

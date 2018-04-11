@@ -8,7 +8,7 @@ import org.specs2.mutable.Specification
   * @author Karel Cemus
   */
 class RedisInstanceManagerSpecs extends Specification {
-  import Implicits._
+  import play.api.cache.redis.Implicits._
 
   private implicit def implicitlyInstance2resolved( instance: RedisInstance ): RedisInstanceProvider = new ResolvedRedisInstance( instance )
   private implicit def implicitlyString2unresolved( name: String ): RedisInstanceProvider = new UnresolvedRedisInstance( name )

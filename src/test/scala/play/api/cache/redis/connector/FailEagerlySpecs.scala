@@ -3,10 +3,11 @@ package play.api.cache.redis.connector
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
+import play.api.cache.redis._
+
 import akka.actor.ActorSystem
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
-
 /**
   * @author Karel Cemus
   */
