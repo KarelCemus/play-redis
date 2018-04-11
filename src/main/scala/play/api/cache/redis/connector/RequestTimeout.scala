@@ -72,6 +72,8 @@ trait FailEagerly extends RequestTimeout {
 trait RedisRequestTimeout extends RequestTimeout {
   import RequestTimeout._
 
+  private var initialized = false
+
   /** indicates the timeout on the redis request */
   protected def timeout: Option[ FiniteDuration ]
 
@@ -79,6 +81,21 @@ trait RedisRequestTimeout extends RequestTimeout {
     // proceed with the command
     @inline def continue = super.send( redisCommand )
     // based on connection status
-    timeout.fold( continue )( invokeOrFail( continue, _ ) )
+    if ( initialized ) timeout.fold( continue )( invokeOrFail( continue, _ ) ) else continue
   }
+
+  // Note: Cannot RedisCluster invokes the `send` method during
+  // the class initialization. This call uses both timeout and scheduler
+  // properties although they are not initialized yet. Unfortunately,
+  // it seems there is no
+  // way to provide a `val timeout = configuration.timeout.redis`,
+  // which would be resolved before the use of the timeout property.
+  //
+  // As a workaround, the introduced boolean property initialized to false
+  // by JVM to efficintly disable the timeout mechanism while the trait
+  // initialization is not completed. Then the flag is set to true.
+  //
+  // This avoids the issue with the order of traits initialization.
+  //
+  initialized = true
 }
