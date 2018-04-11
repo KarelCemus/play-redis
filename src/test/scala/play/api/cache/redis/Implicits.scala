@@ -30,6 +30,8 @@ object Implicits {
 
   implicit def implicitlyAny2future[ T ]( value: T ): Future[ T ] = Future.successful( value )
 
+  implicit def implicitlyEx2future( ex: Throwable ): Future[ Nothing ] = Future.failed( ex )
+
   implicit def implicitlyAny2success[ T ]( value: T ): Try[ T ] = Success( value )
 
   implicit def implicitlyAny2failure( ex: Throwable ): Try[ Nothing ] = Failure( ex )
