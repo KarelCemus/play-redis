@@ -15,7 +15,7 @@ import redis.RedisCommands
 /**
   * @author Karel Cemus
   */
-abstract class MockedConnector extends WithRuntime with WithApplication {
+abstract class MockedConnector extends Around with Scope with WithRuntime with WithApplication {
   import MockitoImplicits._
 
   protected val serializer = mock[ AkkaSerializer ]
@@ -24,21 +24,17 @@ abstract class MockedConnector extends WithRuntime with WithApplication {
 
   protected val connector: RedisConnector = new RedisConnectorImpl( serializer, commands )
 
-  override def around[ T: AsResult ]( t: => T ): Result = {
+  def around[ T: AsResult ]( t: => T ): Result = {
     AsResult.effectively( t )
   }
 }
 
-trait WithRuntime extends Around with Scope {
+trait WithRuntime {
 
   implicit protected val runtime: RedisRuntime = RedisRuntime( "connector", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation )
-
-  override def around[ T: AsResult ]( t: => T ): Result = {
-    AsResult.effectively( t )
-  }
 }
 
-trait WithApplication extends Around with Scope {
+trait WithApplication {
 
   protected val application = GuiceApplicationBuilder().build()
 

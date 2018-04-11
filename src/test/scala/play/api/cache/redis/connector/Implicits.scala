@@ -2,7 +2,6 @@ package play.api.cache.redis.connector
 
 import scala.concurrent._
 import scala.concurrent.duration._
-import scala.util._
 
 import akka.actor.ActorSystem
 
@@ -17,15 +16,20 @@ object Implicits extends play.api.cache.redis.TestImplicits {
 
   implicit class RichFutureObject( val future: Future.type ) extends AnyVal {
     /** returns a future resolved in given number of seconds */
-    def after( seconds: Int )( implicit system: ActorSystem, ec: ExecutionContext ): Future[ Unit ] = {
-      val promise = Promise[ Unit ]()
+    def after[ T ]( seconds: Int, value: T )( implicit system: ActorSystem, ec: ExecutionContext ): Future[ T ] = {
+      val promise = Promise[ T ]()
       // after a timeout, resolve the promise
       akka.pattern.after( seconds.seconds, system.scheduler ) {
-        promise.success( Unit )
+        promise.success( value )
         promise.future
       }
       // return the promise
       promise.future
     }
+
+    def after( seconds: Int )( implicit system: ActorSystem, ec: ExecutionContext ): Future[ Unit ] = {
+      after( seconds, Unit )
+    }
   }
+
 }
