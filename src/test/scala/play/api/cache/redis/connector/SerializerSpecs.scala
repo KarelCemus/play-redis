@@ -8,12 +8,12 @@ import play.api.inject.guice.GuiceApplicationBuilder
 
 import org.joda.time.{DateTime, DateTimeZone}
 import org.specs2.mock.Mockito
-import org.specs2.mutable.Spec
+import org.specs2.mutable.Specification
 
 /**
   * @author Karel Cemus
   */
-class SerializerSpecs extends Spec with Mockito {
+class SerializerSpecs extends Specification with Mockito {
   import SerializerSpecs._
 
   private val system = GuiceApplicationBuilder().build().actorSystem

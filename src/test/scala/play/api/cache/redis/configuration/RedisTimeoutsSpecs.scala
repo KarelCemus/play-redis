@@ -8,7 +8,7 @@ import org.specs2.mutable.Spec
   * @author Karel Cemus
   */
 class RedisTimeoutsSpecs extends Spec {
-  import Implicits._
+  import play.api.cache.redis.Implicits._
 
   private def orDefault = RedisTimeouts( 1.second, 2.seconds )
 

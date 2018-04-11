@@ -3,12 +3,10 @@ package play.api.cache.redis.connector
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-import play.api.cache.redis.LogAndFailPolicy
+import play.api.cache.redis._
 import play.api.cache.redis.impl._
-import play.api.inject.guice.GuiceApplicationBuilder
 
 import org.specs2.execute.{AsResult, Result}
-import org.specs2.mock.Mockito
 import org.specs2.specification.{Around, Scope}
 import redis.RedisCommands
 
@@ -33,12 +31,3 @@ trait WithRuntime {
 
   implicit protected val runtime: RedisRuntime = RedisRuntime( "connector", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation )
 }
-
-trait WithApplication {
-
-  protected val application = GuiceApplicationBuilder().build()
-
-  implicit protected val system = application.actorSystem
-}
-
-object MockitoImplicits extends Mockito
