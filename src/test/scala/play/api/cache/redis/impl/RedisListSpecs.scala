@@ -231,6 +231,58 @@ class RedisListSpecs( implicit ee: ExecutionEnv ) extends Specification with Red
       list.view.slice( 1, 2 ) must beEqualTo( Seq.empty ).await
     }
 
+    "head (non-empty)" in new MockedList {
+      connector.listSlice[ String ]( anyString, anyInt, anyInt )( anyClassTag ) returns data.headOption.toSeq
+      list.head must beEqualTo( data.head ).await
+      list.headOption must beSome( data.head ).await
+      there were two( connector ).listSlice[ String ]( key, 0, 0 )
+    }
+
+    "head (empty)" in new MockedList {
+      connector.listSlice[ String ]( anyString, anyInt, anyInt )( anyClassTag ) returns Seq.empty[ String ]
+      list.head must throwA[ NoSuchElementException ].await
+      list.headOption must beNone.await
+      there were two( connector ).listSlice[ String ]( key, 0, 0 )
+    }
+
+    "head (failing)" in new MockedList {
+      connector.listSlice[ String ]( anyString, anyInt, anyInt )( anyClassTag ) returns ex
+      list.head must throwA[ NoSuchElementException ].await
+      list.headOption must beNone.await
+    }
+
+    "last (non-empty)" in new MockedList {
+      connector.listSlice[ String ]( anyString, anyInt, anyInt )( anyClassTag ) returns data.headOption.toSeq
+      list.last must beEqualTo( data.head ).await
+      list.lastOption must beSome( data.head ).await
+      there were two( connector ).listSlice[ String ]( key, -1, -1 )
+    }
+
+    "last (empty)" in new MockedList {
+      connector.listSlice[ String ]( anyString, anyInt, anyInt )( anyClassTag ) returns Seq.empty[ String ]
+      list.last must throwA[ NoSuchElementException ].await
+      list.lastOption must beNone.await
+      there were two( connector ).listSlice[ String ]( key, -1, -1 )
+    }
+
+    "last (failing)" in new MockedList {
+      connector.listSlice[ String ]( anyString, anyInt, anyInt )( anyClassTag ) returns ex
+      list.head must throwA[ NoSuchElementException ].await
+      list.headOption must beNone.await
+    }
+
+    "toList" in new MockedList {
+      connector.listSlice[ String ]( anyString, anyInt, anyInt )( anyClassTag ) returns data
+      list.toList must beEqualTo( data ).await
+      there were one( connector ).listSlice[ String ]( key, 0, -1 )
+    }
+
+    "toList (failing)" in new MockedList {
+      connector.listSlice[ String ]( anyString, anyInt, anyInt )( anyClassTag ) returns ex
+      list.toList must beEqualTo( Seq.empty ).await
+      there were one( connector ).listSlice[ String ]( key, 0, -1 )
+    }
+
     "modify collection" in new MockedList {
       list.modify.collection mustEqual list
     }
