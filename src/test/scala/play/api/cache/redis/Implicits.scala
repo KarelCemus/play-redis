@@ -49,7 +49,7 @@ object Implicits {
 
   implicit class RichFutureObject( val future: Future.type ) extends AnyVal {
     /** returns a future resolved in given number of seconds */
-    def after[ T ]( seconds: Int, value: T )( implicit system: ActorSystem, ec: ExecutionContext ): Future[ T ] = {
+    def after[ T ]( seconds: Int, value: => T )( implicit system: ActorSystem, ec: ExecutionContext ): Future[ T ] = {
       val promise = Promise[ T ]()
       // after a timeout, resolve the promise
       akka.pattern.after( seconds.seconds, system.scheduler ) {
