@@ -1,5 +1,7 @@
 package play.api.cache.redis
 
+import java.util.concurrent.Callable
+
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.language.implicitConversions
@@ -9,7 +11,8 @@ import play.api.cache.redis.configuration._
 import play.api.inject.guice.GuiceApplicationBuilder
 
 import akka.actor.ActorSystem
-import org.specs2.mock.Mockito
+import org.specs2.matcher.Expectations
+import org.specs2.mock.mockito._
 
 /**
   * @author Karel Cemus
@@ -40,6 +43,10 @@ object Implicits {
     def await = Await.result( future, 2.minutes )
   }
 
+  implicit def implicitlyAny2Callable[ T ]( f: => T ): Callable[ T ] = new Callable[T] {
+    def call( ) = f
+  }
+
   implicit class RichFutureObject( val future: Future.type ) extends AnyVal {
     /** returns a future resolved in given number of seconds */
     def after[ T ]( seconds: Int, value: T )( implicit system: ActorSystem, ec: ExecutionContext ): Future[ T ] = {
@@ -59,7 +66,16 @@ object Implicits {
   }
 }
 
-object MockitoImplicits extends Mockito
+trait ReducedMockito extends MocksCreation
+  with CalledMatchers
+  with MockitoStubs
+  with CapturedArgument
+  // with MockitoMatchers
+  with ArgThat
+  with Expectations
+  with MockitoFunctions
+
+object MockitoImplicits extends ReducedMockito
 
 trait WithApplication {
 

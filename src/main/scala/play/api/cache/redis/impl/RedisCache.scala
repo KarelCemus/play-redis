@@ -114,5 +114,7 @@ private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector, builder:
     new RedisMapImpl( key, redis )
   }
 
+  // $COVERAGE-OFF$
   override def toString = s"RedisCache(name=${ runtime.name })"
+  // $COVERAGE-ON$
 }
