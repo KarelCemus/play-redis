@@ -22,6 +22,8 @@ See [the configuration]() for more details. [#154](https://github.com/KarelCemus
 
 Rediscala bumped to 1.8.3 and subsequently Akka bumped to 2.5.6 [#150](https://github.com/KarelCemus/play-redis/issues/150).
 
+Revamped tests, reduced their number but increased value and code coverage [#108](https://github.com/KarelCemus/play-redis/issues/108)
+
 #### Removal of `@Named` and introduction of `@NamedCache`
 
 Named caches now uses `@NamedCache` instead of `@Named` to be consistent with Play's EhCache and 
