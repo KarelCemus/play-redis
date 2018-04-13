@@ -8,18 +8,17 @@ import scala.language.implicitConversions
 import scala.util._
 
 import play.api.cache.redis.configuration._
-import play.api.inject.guice.GuiceApplicationBuilder
 
 import akka.actor.ActorSystem
+import org.specs2.execute.{AsResult, Result}
 import org.specs2.matcher.Expectations
 import org.specs2.mock.mockito._
+import org.specs2.specification.{Around, Scope}
 
 /**
   * @author Karel Cemus
   */
 object Implicits {
-
-  type WithApplication = play.api.cache.redis.WithApplication
 
   val defaultCacheName = "play"
   val localhost = "localhost"
@@ -78,8 +77,36 @@ trait ReducedMockito extends MocksCreation
 object MockitoImplicits extends ReducedMockito
 
 trait WithApplication {
+  import play.api.Application
+  import play.api.inject.guice.GuiceApplicationBuilder
 
-  protected val application = GuiceApplicationBuilder().build()
+  protected def builder = new GuiceApplicationBuilder()
 
-  implicit protected val system = application.actorSystem
+  private val theBuilder = builder
+
+  protected val injector = theBuilder.injector
+
+  protected val application: Application = injector.instanceOf[ Application ]
+
+  implicit protected val system = injector.instanceOf[ ActorSystem ]
+}
+
+trait WithHocon {
+  import play.api.Configuration
+
+  import com.typesafe.config.ConfigFactory
+
+  protected def hocon: String
+
+  protected val config = {
+    val reference = ConfigFactory.load()
+    val local = ConfigFactory.parseString( hocon.stripMargin )
+    local.withFallback( reference )
+  }
+
+  protected val configuration = Configuration( config )
+}
+
+abstract class WithConfiguration( val hocon: String ) extends WithHocon with Around with Scope {
+  def around[ T: AsResult ]( t: => T ): Result = AsResult.effectively( t )
 }

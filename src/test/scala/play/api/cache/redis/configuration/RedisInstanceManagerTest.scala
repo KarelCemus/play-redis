@@ -1,5 +1,7 @@
 package play.api.cache.redis.configuration
 
+import play.api.cache.redis._
+
 /**
   * Simple implementation for tests
   */

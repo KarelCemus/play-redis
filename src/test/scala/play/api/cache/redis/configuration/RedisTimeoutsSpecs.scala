@@ -2,13 +2,15 @@ package play.api.cache.redis.configuration
 
 import scala.concurrent.duration._
 
+import play.api.cache.redis._
+
 import org.specs2.mutable.Spec
 
 /**
   * @author Karel Cemus
   */
 class RedisTimeoutsSpecs extends Spec {
-  import play.api.cache.redis.Implicits._
+  import Implicits._
 
   private def orDefault = RedisTimeouts( 1.second, 2.seconds )
 
