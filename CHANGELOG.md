@@ -12,7 +12,7 @@ Standalone client now fails eagerly when the connection to redis is not
 established. This is to avoid long timeout while the rediscala is trying
 to reconnect. [#147](https://github.com/KarelCemus/play-redis/issues/147)
 
-Deprecated`timeout` property and replaced by `sync-timeout` with the identical
+Deprecated `timeout` property and replaced by `sync-timeout` with the identical
 meaning and use. Will be removed by 2.2.0. [#154](https://github.com/KarelCemus/play-redis/issues/154)
 
 Introduced **optional** `redis-timeout` property indicating timeout on redis queries.
