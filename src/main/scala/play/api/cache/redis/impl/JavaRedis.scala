@@ -57,10 +57,11 @@ private[ impl ] class JavaRedis( internal: CacheAsyncApi, environment: Environme
     implicit val context = HttpExecutionContext.fromThread( runtime.context )
     // get the tag and decode it
     def getClassTag = internal.get[ String ]( s"classTag::$key" )
-    def decodeClassTag( name: String ): ClassTag[ T ] = if ( name == null ) ClassTag.Null.asInstanceOf[ ClassTag[ T ] ] else ClassTag( environment.classLoader.loadClass( name ) )
+    def decodeClassTag( name: String ): ClassTag[ T ] = if ( name == "" ) ClassTag.Null.asInstanceOf[ ClassTag[ T ] ] else ClassTag( environment.classLoader.loadClass( name ) )
     def decodedClassTag( tag: Option[ String ] ) = tag.map( decodeClassTag )
     // if tag is defined, get Option[ value ] otherwise None
     def getValue = getClassTag.map( decodedClassTag ).flatMap {
+      case Some( ClassTag.Null ) => Future.successful( Some( null.asInstanceOf[ T ] ) )
       case Some( tag ) => internal.get[ T ]( key )( tag )
       case None => Future.successful( None )
     }
@@ -85,11 +86,11 @@ private[ impl ] class JavaRedis( internal: CacheAsyncApi, environment: Environme
 private[ impl ] object JavaRedis {
   import scala.compat.java8.FutureConverters
 
-  private implicit class Java8Compatibility[ T ]( val future: Future[ T ] ) extends AnyVal {
+  private[ impl ] implicit class Java8Compatibility[ T ]( val future: Future[ T ] ) extends AnyVal {
     @inline def toJava: CompletionStage[ T ] = FutureConverters.toJava( future )
   }
 
-  private implicit class ScalaCompatibility[ T ]( val future: CompletionStage[ T ] ) extends AnyVal {
+  private[ impl ] implicit class ScalaCompatibility[ T ]( val future: CompletionStage[ T ] ) extends AnyVal {
     @inline def toScala: Future[ T ] = FutureConverters.toScala( future )
   }
 }
