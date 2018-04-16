@@ -9,7 +9,7 @@ import org.specs2.specification.AfterAll
 /**
   * @author Karel Cemus
   */
-class RedisCacheComponentsSpecs extends Specification with WithApplication with AfterAll {
+class RedisCacheComponentsSpec extends Specification with WithApplication with AfterAll {
 
   object components extends RedisCacheComponents {
     def actorSystem = system

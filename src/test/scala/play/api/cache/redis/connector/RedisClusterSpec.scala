@@ -15,7 +15,7 @@ import org.specs2.specification.{AfterAll, BeforeAll}
 /**
   * <p>Specification of the low level connector implementing basic commands</p>
   */
-class RedisClusterSpecs( implicit ee: ExecutionEnv ) extends Specification with BeforeAll with AfterAll with WithApplication {
+class RedisClusterSpec( implicit ee: ExecutionEnv ) extends Specification with BeforeAll with AfterAll with WithApplication {
 
   import Implicits._
 
