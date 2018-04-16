@@ -67,25 +67,13 @@ class RedisConnectorFailureSpec( implicit ee: ExecutionEnv ) extends Specificati
 
   "Connector failure" should {
 
-    "failed SETEX" in new MockedConnector {
-      serializer.encode( anyString ) returns "encoded"
-      commands.setex( anyString, anyLong, anyString )( anySerializer ) returns disconnected
-      // run the test
-      connector.set( key, value, 1.minute ) must throwA[ ExecutionFailedException ].await
-    }
-
-    "failed SETNX" in new MockedConnector {
-      serializer.encode( anyString ) returns "encoded"
-      commands.setnx( anyString, anyString )( anySerializer ) returns disconnected
-      // run the test
-      connector.setIfNotExists( key, value ) must throwA[ ExecutionFailedException ].await
-    }
-
     "failed SET" in new MockedConnector {
       serializer.encode( anyString ) returns "encoded"
       commands.set( anyString, anyString, any, any, anyBoolean, anyBoolean )( anySerializer ) returns disconnected
       // run the test
       connector.set( key, value ) must throwA[ ExecutionFailedException ].await
+      connector.set( key, value, 1.minute ) must throwA[ ExecutionFailedException ].await
+      connector.set( key, value, ifNotExists = true ) must throwA[ ExecutionFailedException ].await
     }
 
     "failed MSET" in new MockedConnector {

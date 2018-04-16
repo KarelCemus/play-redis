@@ -46,20 +46,13 @@ private[ redis ] trait CoreCommands {
 
   /** Set a value into the cache. Expiration time in seconds (0 second means eternity).
     *
-    * @param key        cache storage key
-    * @param value      value to store
-    * @param expiration record duration in seconds
+    * @param key         cache storage key
+    * @param value       value to store
+    * @param expiration  record duration in seconds
+    * @param ifNotExists set only if the key does not exist
     * @return promise
     */
-  def set( key: String, value: Any, expiration: Duration = Duration.Inf ): Future[ Unit ]
-
-  /** Set a value into the cache, if the key is not used. Otherwise ignore.
-    *
-    * @param key   cache storage key
-    * @param value value to set
-    * @return true if set was successful, false if key was already defined
-    */
-  def setIfNotExists( key: String, value: Any ): Future[ Boolean ]
+  def set( key: String, value: Any, expiration: Duration = Duration.Inf, ifNotExists: Boolean = false ): Future[ Boolean ]
 
   /** Set a value into the cache. Expiration time is the eternity.
     *

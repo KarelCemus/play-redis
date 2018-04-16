@@ -27,14 +27,14 @@ class SyncRedisSpecs( implicit ee: ExecutionEnv ) extends Specification with Red
 
     "get or else (miss)" in new MockedSyncRedis with OrElse {
       connector.get[ String ]( anyString )( anyClassTag ) returns None
-      connector.set( anyString, anyString, any[ Duration ] ) returns unit
+      connector.set( anyString, anyString, any[ Duration ], anyBoolean ) returns true
       cache.getOrElse( key )( doElse( value ) ) must beEqualTo( value )
       orElse mustEqual 1
     }
 
     "get or else (failure)" in new MockedSyncRedis with OrElse {
       connector.get[ String ]( anyString )( anyClassTag ) returns ex
-      connector.set( anyString, anyString, any[ Duration ] ) returns unit
+      connector.set( anyString, anyString, any[ Duration ], anyBoolean ) returns true
       cache.getOrElse( key )( doElse( value ) ) must beEqualTo( value )
       orElse mustEqual 1
     }
