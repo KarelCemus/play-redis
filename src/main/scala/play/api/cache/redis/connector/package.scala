@@ -16,4 +16,8 @@ package object connector {
     @inline def asString = s"$key $value"
     @inline def isNull = value == null
   }
+
+  implicit class StringWhen( val value: String ) extends AnyVal {
+    def when( condition: Boolean ) = if ( condition ) value else ""
+  }
 }
