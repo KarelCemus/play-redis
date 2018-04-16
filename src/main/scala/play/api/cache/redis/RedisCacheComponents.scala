@@ -34,10 +34,6 @@ trait RedisCacheComponents
 
   private lazy val akkaSerializer: connector.AkkaSerializer = new connector.AkkaSerializerProvider().get
 
-  private def hasInstances = configuration.underlying.hasPath( "play.cache.redis.instances" )
-
-  private def defaultCache = configuration.underlying.getString( "play.cache.redis.default-cache" )
-
   private lazy val manager = configuration.get( "play.cache.redis" )( play.api.cache.redis.configuration.RedisInstanceManager )
 
   /** translates the cache name into the configuration  */

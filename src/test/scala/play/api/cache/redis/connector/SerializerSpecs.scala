@@ -4,19 +4,21 @@ import java.util.Date
 
 import scala.reflect.ClassTag
 
-import play.api.cache.redis.{Redis, SimpleObject}
+import play.api.inject.guice.GuiceApplicationBuilder
 
 import org.joda.time.{DateTime, DateTimeZone}
+import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 
 /**
   * @author Karel Cemus
   */
-class SerializerSpecs extends Specification {
+class SerializerSpecs extends Specification with Mockito {
+  import SerializerSpecs._
 
-  import play.api.cache.redis.TestHelpers._
+  private val system = GuiceApplicationBuilder().build().actorSystem
 
-  private implicit val serializer: AkkaSerializer = Redis.injector.instanceOf[ AkkaSerializer ]
+  private implicit val serializer: AkkaSerializer = new AkkaSerializerImpl( system )
 
   "AkkaEncoder" should "encode" >> {
 
@@ -28,6 +30,10 @@ class SerializerSpecs extends Specification {
       'a'.encoded mustEqual "a"
       'b'.encoded mustEqual "b"
       'š'.encoded mustEqual "š"
+    }
+
+    "boolean" in {
+      true.encoded mustEqual "true"
     }
 
     "short" in {
@@ -69,10 +75,11 @@ class SerializerSpecs extends Specification {
     }
 
     "custom classes" in {
-      SimpleObject( "B", 3 ).encoded mustEqual  """
-        |rO0ABXNyACFwbGF5LmFwaS5jYWNoZS5yZWRpcy5TaW1wbGVPYmplY3Te6Peta/KhNAIAAkkABXZh
-        |bHVlTAADa2V5dAASTGphdmEvbGFuZy9TdHJpbmc7eHAAAAADdAABQg==
-      """.stripMargin.trim
+      SimpleObject( "B", 3 ).encoded mustEqual """
+          |rO0ABXNyADtwbGF5LmFwaS5jYWNoZS5yZWRpcy5jb25uZWN0b3IuU2VyaWFsaXplclNwZWNzJFNp
+          |bXBsZU9iamVjdMm6wvThiaEsAgACSQAFdmFsdWVMAANrZXl0ABJMamF2YS9sYW5nL1N0cmluZzt4
+          |cAAAAAN0AAFC
+        """.stripMargin.trim
     }
 
     "null" in {
@@ -81,10 +88,10 @@ class SerializerSpecs extends Specification {
 
     "list" in {
       List( "A", "B", "C" ).encoded mustEqual """
-        |rO0ABXNyADJzY2FsYS5jb2xsZWN0aW9uLmltbXV0YWJsZS5MaXN0JFNlcmlhbGl6YXRpb25Qcm94
-        |eQAAAAAAAAABAwAAeHB0AAFBdAABQnQAAUNzcgAsc2NhbGEuY29sbGVjdGlvbi5pbW11dGFibGUu
-        |TGlzdFNlcmlhbGl6ZUVuZCSKXGNb91MLbQIAAHhweA==
-      """.stripMargin.trim
+          |rO0ABXNyADJzY2FsYS5jb2xsZWN0aW9uLmltbXV0YWJsZS5MaXN0JFNlcmlhbGl6YXRpb25Qcm94
+          |eQAAAAAAAAABAwAAeHB0AAFBdAABQnQAAUNzcgAsc2NhbGEuY29sbGVjdGlvbi5pbW11dGFibGUu
+          |TGlzdFNlcmlhbGl6ZUVuZCSKXGNb91MLbQIAAHhweA==
+        """.stripMargin.trim
     }
 
   }
@@ -99,6 +106,10 @@ class SerializerSpecs extends Specification {
       "a".decoded[ Char ] mustEqual 'a'
       "b".decoded[ Char ] mustEqual 'b'
       "š".decoded[ Char ] mustEqual 'š'
+    }
+
+    "boolean" in {
+      "true".decoded[ Boolean ] mustEqual true
     }
 
     "short" in {
@@ -125,6 +136,10 @@ class SerializerSpecs extends Specification {
       "some string".decoded[ String ] mustEqual "some string"
     }
 
+    "null" in {
+      "".decoded[ String ] must beNull
+    }
+
     "date" in {
       "rO0ABXNyAA5qYXZhLnV0aWwuRGF0ZWhqgQFLWXQZAwAAeHB3CAAAAAAAAAB7eA==".decoded[ Date ] mustEqual new Date( 123 )
     }
@@ -141,8 +156,9 @@ class SerializerSpecs extends Specification {
 
     "custom classes" in {
       """
-        |rO0ABXNyACFwbGF5LmFwaS5jYWNoZS5yZWRpcy5TaW1wbGVPYmplY3Te6Peta/KhNAIAAkkABXZh
-        |bHVlTAADa2V5dAASTGphdmEvbGFuZy9TdHJpbmc7eHAAAAADdAABQg==
+        |rO0ABXNyADtwbGF5LmFwaS5jYWNoZS5yZWRpcy5jb25uZWN0b3IuU2VyaWFsaXplclNwZWNzJFNp
+        |bXBsZU9iamVjdMm6wvThiaEsAgACSQAFdmFsdWVMAANrZXl0ABJMamF2YS9sYW5nL1N0cmluZzt4
+        |cAAAAAN0AAFC
       """.stripMargin.trim.decoded[ SimpleObject ] mustEqual SimpleObject( "B", 3 )
     }
 
@@ -154,6 +170,23 @@ class SerializerSpecs extends Specification {
       """.stripMargin.trim.decoded[ List[ String ] ] mustEqual List( "A", "B", "C" )
     }
 
+    "forgotten type" in {
+      def decoded: String = "something".decoded
+      decoded must throwA[ IllegalArgumentException ]
+    }
+  }
+}
+
+object SerializerSpecs {
+
+  implicit class ValueEncoder( val any: Any ) extends AnyVal {
+    def encoded( implicit serializer: AkkaSerializer ): String = serializer.encode( any ).get
   }
 
+  implicit class StringDecoder( val string: String ) extends AnyVal {
+    def decoded[ T: ClassTag ]( implicit serializer: AkkaSerializer ): T = serializer.decode[ T ]( string ).get
+  }
+
+  /** Plain test object to be cached */
+  case class SimpleObject( key: String, value: Int )
 }

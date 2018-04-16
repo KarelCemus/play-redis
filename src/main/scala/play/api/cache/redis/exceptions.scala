@@ -21,7 +21,7 @@ case class TimeoutException( cause: Throwable ) extends RedisException( "Command
   *
   * @author Karel Cemus
   */
-case class ExecutionFailedException( key: Option[ String ], command: String, cause: Throwable ) extends RedisException( s"Execution of '$command'${ key.map( key => s" for key '$key'" ) getOrElse "" } failed", cause )
+case class ExecutionFailedException( key: Option[ String ], command: String, statement: String, cause: Throwable ) extends RedisException( s"Execution of '$command'${ key.map( key => s" for key '$key'" ) getOrElse "" } failed", cause )
 
 /**
   * Request succeeded but returned unexpected value
@@ -66,8 +66,8 @@ trait ExceptionImplicits {
 
   /** helper indicating command execution failed with exception */
   @throws[ ExecutionFailedException ]
-  def failed( key: Option[ String ], command: String, cause: Throwable ): Nothing =
-    throw ExecutionFailedException( key, command, cause )
+  def failed( key: Option[ String ], command: String, statement: String, cause: Throwable ): Nothing =
+    throw ExecutionFailedException( key, command, statement, cause )
 
   /** helper indicating invalid configuration */
   @throws[ IllegalStateException ]

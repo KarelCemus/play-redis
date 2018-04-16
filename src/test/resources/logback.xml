@@ -11,6 +11,8 @@
         </encoder>
     </appender>
 
+    <logger name="play.api.cache.redis" level="TRACE" />
+
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
     </root>

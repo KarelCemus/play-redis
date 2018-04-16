@@ -22,10 +22,6 @@ private[ configuration ] object RedisConfigLoader {
     def /( suffix: String ): String = if ( path == "" ) suffix else s"$path.$suffix"
   }
 
-  implicit class FallbackValue[ T ]( val value: T ) extends AnyVal {
-    def asFallback = ( _: String ) => value
-  }
-
   def required( path: String ) = throw new IllegalStateException( s"Configuration key '$path' is missing." )
 }
 
@@ -39,10 +35,6 @@ private[ configuration ] object RedisConfigLoader {
   */
 private[ configuration ] trait RedisConfigLoader[ T ] { outer =>
 
-  implicit final def loader( implicit defaults: RedisSettings ) = new ConfigLoader[ T ] {
-    def load( config: Config, path: String ) = outer.load( config, path )
-  }
-
   def load( config: Config, path: String )( implicit defaults: RedisSettings ): T
 }
 
@@ -55,10 +47,6 @@ private[ configuration ] trait RedisConfigLoader[ T ] { outer =>
   * @author Karel Cemus
   */
 private[ configuration ] trait RedisConfigInstanceLoader[ T ] { outer =>
-
-  final def loader( name: String )( implicit defaults: RedisSettings ) = new ConfigLoader[ T ] {
-    def load( config: Config, path: String ) = outer.load( config, path = path, name = name )
-  }
 
   def load( config: Config, path: String, name: String )( implicit defaults: RedisSettings ): T
 }

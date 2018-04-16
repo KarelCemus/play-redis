@@ -32,10 +32,12 @@ case class RedisTimeoutsImpl
 
 ) extends RedisTimeouts {
 
+  // $COVERAGE-OFF$
   override def equals( obj: scala.Any ) = obj match {
     case that: RedisTimeouts => this.sync == that.sync && this.redis == that.redis
     case _ => false
   }
+  // $COVERAGE-ON$
 }
 
 
@@ -44,7 +46,7 @@ object RedisTimeouts {
 
   private def log = Logger( "play.api.cache.redis" )
 
-  def requiredDefault( required: String => Nothing ) = new RedisTimeouts {
+  def requiredDefault: RedisTimeouts = new RedisTimeouts {
     def sync = required( "sync-timeout" )
     def redis = None
   }
@@ -53,9 +55,9 @@ object RedisTimeouts {
   def apply( sync: FiniteDuration, redis: Option[ FiniteDuration ] = None ): RedisTimeouts =
     RedisTimeoutsImpl( sync, redis )
 
-  def load( config: Config, path: String )( default: String => RedisTimeouts ) = RedisTimeouts(
-    sync = loadSyncTimeout( config, path )( default( _ ).sync ),
-    redis = loadRedisTimeout( config, path )( default( _ ).redis )
+  def load( config: Config, path: String )( default: RedisTimeouts ) = RedisTimeouts(
+    sync = loadSyncTimeout( config, path ) getOrElse default.sync,
+    redis = loadRedisTimeout( config, path ) orElse default.redis
   )
 
   @scala.deprecated( "Property 'timeout' was deprecated in 2.1.0 and was replaced by the 'sync-timeout' with the identical use and meaning.", since = "2.1.0" )
@@ -71,15 +73,13 @@ object RedisTimeouts {
       FiniteDuration( duration.getSeconds, TimeUnit.SECONDS )
     }
 
-  private def loadSyncTimeout( config: Config, path: String )( default: String => FiniteDuration ): FiniteDuration =
-    config.getOption( path / "sync-timeout", _.getDuration ).map {
-      duration => FiniteDuration( duration.getSeconds, TimeUnit.SECONDS )
-    } orElse {
-      loadTimeout( config, path )
-    } getOrElse default( path / "sync-timeout" )
+  private def loadSyncTimeout( config: Config, path: String ): Option[ FiniteDuration ] =
+    loadTimeout( config, path ) orElse {
+      config.getOption( path / "sync-timeout", _.getDuration ).map( duration => FiniteDuration( duration.getSeconds, TimeUnit.SECONDS ) )
+    }
 
-  private def loadRedisTimeout( config: Config, path: String )( default: String => Option[ FiniteDuration ] ): Option[ FiniteDuration ] =
+  private def loadRedisTimeout( config: Config, path: String ): Option[ FiniteDuration ] =
     config.getOption( path / "redis-timeout", _.getDuration ).map {
       duration => FiniteDuration( duration.getSeconds, TimeUnit.SECONDS )
-    } orElse default( path / "redis-timeout" )
+    }
 }

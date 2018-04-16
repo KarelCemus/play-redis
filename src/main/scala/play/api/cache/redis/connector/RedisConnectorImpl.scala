@@ -128,10 +128,15 @@ private[ connector ] class RedisConnectorImpl( serializer: AkkaSerializer, redis
         keys
     }
 
+  // coverage is disabled as testing it would require
+  // either a mock or would clear a redis while
+  // the tests are in progress
+  // $COVERAGE-OFF$
   def invalidate( ): Future[ Unit ] =
     redis.flushdb( ) executing "FLUSHDB" expects {
       case _ => log.info( "Invalidated." ) // cache was invalidated
     }
+  // $COVERAGE-ON$
 
   def exists( key: String ): Future[ Boolean ] =
     redis.exists( key ) executing "EXISTS" withKey key expects {
@@ -168,7 +173,7 @@ private[ connector ] class RedisConnectorImpl( serializer: AkkaSerializer, redis
     Future.sequence( values.map( encode( key, _ ) ) ).flatMap( redis.lpush( key, _: _* ) ) executing "LPUSH" withKey key andParameters values expects {
       case length => log.debug( s"The $length values was prepended to key '$key'." ); length
     } recover {
-      case ExecutionFailedException( _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
+      case ExecutionFailedException( _, _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
         log.warn( s"Value at '$key' is not a list." )
         throw new IllegalArgumentException( s"Value at '$key' is not a list." )
     }
@@ -176,6 +181,10 @@ private[ connector ] class RedisConnectorImpl( serializer: AkkaSerializer, redis
   def listAppend( key: String, values: Any* ) =
     Future.sequence( values.map( encode( key, _ ) ) ).flatMap( redis.rpush( key, _: _* ) ) executing "RPUSH" withKey key andParameters values expects {
       case length => log.debug( s"The $length values was appended to key '$key'." ); length
+    } recover {
+      case ExecutionFailedException( _, _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
+        log.warn( s"Value at '$key' is not a list." )
+        throw new IllegalArgumentException( s"Value at '$key' is not a list." )
     }
 
   def listSize( key: String ) =
@@ -187,7 +196,7 @@ private[ connector ] class RedisConnectorImpl( serializer: AkkaSerializer, redis
     encode( key, value ).flatMap( redis.lset( key, position, _ ) ) executing "LSET" withKey key andParameter value expects {
       case _ => log.debug( s"Updated value at $position in '$key' to $value." )
     } recover {
-      case ExecutionFailedException( _, _, actors.ReplyErrorException( "ERR index out of range" ) ) =>
+      case ExecutionFailedException( _, _, _, actors.ReplyErrorException( "ERR index out of range" ) ) =>
         log.debug( s"Update of the value at $position in '$key' failed due to index out of range." )
         throw new IndexOutOfBoundsException( "Index out of range" )
     }
@@ -226,7 +235,7 @@ private[ connector ] class RedisConnectorImpl( serializer: AkkaSerializer, redis
       case -1L | 0L => log.debug( s"Insert into the list at '$key' failed. Pivot not found." ); None
       case length => log.debug( s"Inserted $value into the list at '$key'. New size is $length." ); Some( length )
     } recover {
-      case ExecutionFailedException( _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
+      case ExecutionFailedException( _, _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
         log.warn( s"Value at '$key' is not a list." )
         throw new IllegalArgumentException( s"Value at '$key' is not a list." )
     }
@@ -238,7 +247,7 @@ private[ connector ] class RedisConnectorImpl( serializer: AkkaSerializer, redis
     Future.sequence( values map toEncoded ).flatMap( redis.sadd( key, _: _* ) ) executing "SADD" withKey key andParameters values expects {
       case inserted => log.debug( s"Inserted $inserted elements into the set at '$key'." ); inserted
     } recover {
-      case ExecutionFailedException( _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
+      case ExecutionFailedException( _, _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
         log.warn( s"Value at '$key' is not a set." )
         throw new IllegalArgumentException( s"Value at '$key' is not a set." )
     }
@@ -314,7 +323,7 @@ private[ connector ] class RedisConnectorImpl( serializer: AkkaSerializer, redis
       case true => log.debug( s"Item $field in the collection at '$key' was inserted." ); true
       case false => log.debug( s"Item $field in the collection at '$key' was updated." ); false
     } recover {
-      case ExecutionFailedException( _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
+      case ExecutionFailedException( _, _, _, ex ) if ex.getMessage startsWith "WRONGTYPE" =>
         log.warn( s"Value at '$key' is not a map." )
         throw new IllegalArgumentException( s"Value at '$key' is not a map." )
     }
@@ -324,5 +333,7 @@ private[ connector ] class RedisConnectorImpl( serializer: AkkaSerializer, redis
       case values => log.debug( s"The collection at '$key' contains ${ values.size } values." ); values.map( decode[ T ]( key, _ ) ).toSet
     }
 
+  // $COVERAGE-OFF$
   override def toString = s"RedisConnector(name=$name)"
+  // $COVERAGE-ON$
 }

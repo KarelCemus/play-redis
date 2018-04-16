@@ -9,6 +9,7 @@ package play.api.cache.redis.configuration
 sealed trait RedisInstance extends RedisSettings {
   /** name of the redis instance */
   def name: String
+  // $COVERAGE-OFF$
   /** trait-specific equals */
   override def equals( obj: scala.Any ) = equalsAsInstance( obj )
   /** trait-specific equals, invokable from children */
@@ -16,6 +17,7 @@ sealed trait RedisInstance extends RedisSettings {
     case that: RedisInstance => this.name == that.name && equalsAsSettings( that )
     case _ => false
   }
+  // $COVERAGE-ON$
 }
 
 /**
@@ -27,6 +29,7 @@ sealed trait RedisInstance extends RedisSettings {
 trait RedisCluster extends RedisInstance {
   /** nodes definition when cluster is defined */
   def nodes: List[ RedisHost ]
+  // $COVERAGE-OFF$
   /** trait-specific equals */
   override def equals( obj: scala.Any ) = obj match {
     case that: RedisCluster => equalsAsInstance( that ) && this.nodes == that.nodes
@@ -34,6 +37,7 @@ trait RedisCluster extends RedisInstance {
   }
   /** to string */
   override def toString = s"Cluster[${ nodes mkString "," }]"
+  // $COVERAGE-ON$
 }
 
 object RedisCluster {
@@ -57,6 +61,7 @@ object RedisCluster {
   * @author Karel Cemus
   */
 trait RedisStandalone extends RedisInstance with RedisHost {
+  // $COVERAGE-OFF$
   /** trait-specific equals */
   override def equals( obj: scala.Any ) = obj match {
     case that: RedisStandalone => equalsAsInstance( that ) && equalsAsHost( that )
@@ -67,6 +72,7 @@ trait RedisStandalone extends RedisInstance with RedisHost {
     case Some( database ) => s"Standalone($name@$host:$port?db=$database)"
     case None => s"Standalone($name@$host:$port)"
   }
+  // $COVERAGE-ON$
 }
 
 object RedisStandalone {

@@ -16,13 +16,35 @@ sealed trait RedisInstanceProvider extends Any {
   def resolved( implicit resolver: RedisInstanceResolver ): RedisInstance
 }
 
-class ResolvedRedisInstance( val instance: RedisInstance ) extends AnyVal with RedisInstanceProvider {
+class ResolvedRedisInstance( val instance: RedisInstance ) extends RedisInstanceProvider {
   def name: String = instance.name
   def resolved( implicit resolver: RedisInstanceResolver ) = instance
+
+  // $COVERAGE-OFF$
+  override def equals( obj: scala.Any ) = obj match {
+    case that: ResolvedRedisInstance => this.name == that.name && this.instance == that.instance
+    case _ => false
+  }
+
+  override def hashCode( ) = name.hashCode
+
+  override def toString = s"ResolvedRedisInstance($name@$instance)"
+  // $COVERAGE-ON$
 }
 
-class UnresolvedRedisInstance( val name: String ) extends AnyVal with RedisInstanceProvider {
+class UnresolvedRedisInstance( val name: String ) extends RedisInstanceProvider {
   def resolved( implicit resolver: RedisInstanceResolver ) = resolver resolve name
+
+  // $COVERAGE-OFF$
+  override def equals( obj: scala.Any ) = obj match {
+    case that: UnresolvedRedisInstance => this.name == that.name
+    case _ => false
+  }
+
+  override def hashCode( ) = name.hashCode
+
+  override def toString = s"UnresolvedRedisInstance($name)"
+  // $COVERAGE-ON$
 }
 
 private[ configuration ] object RedisInstanceProvider extends RedisConfigInstanceLoader[ RedisInstanceProvider ] {
@@ -39,7 +61,7 @@ private[ configuration ] object RedisInstanceProvider extends RedisConfigInstanc
       // supplied custom configuration
       case "custom" => RedisInstanceCustom
       // found but unrecognized
-      case other => invalidConfiguration( config.getConfig( path / "source" ).origin(), other )
+      case other => invalidConfiguration( config.getValue( path / "source" ).origin(), other )
     }
   }.load( config, path, name )
 

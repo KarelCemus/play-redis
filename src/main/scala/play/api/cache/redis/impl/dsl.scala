@@ -21,7 +21,7 @@ private[ impl ] object dsl {
   }
 
   /** helper function enabling us to recover from command execution */
-  implicit class RecoveryFuture[ T ]( val future: Future[ T ] ) extends AnyVal {
+  implicit class RecoveryFuture[ T ]( future: => Future[ T ] ) {
 
     /** Transforms the promise into desired builder results, possibly recovers with provided default value */
     @inline def recoverWithDefault[ Result[ X ] ]( default: => T )( implicit builder: Builders.ResultBuilder[ Result ], runtime: RedisRuntime ): Result[ T ] =
