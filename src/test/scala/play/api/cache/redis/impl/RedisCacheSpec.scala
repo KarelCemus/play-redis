@@ -48,39 +48,39 @@ class RedisCacheSpec( implicit ee: ExecutionEnv ) extends Specification with Red
     }
 
     "set" in new MockedCache {
-      connector.set( anyString, anyString, any[ Duration ] ) returns unit
+      connector.set( anyString, anyString, any[ Duration ], beEq( false ) ) returns true
       cache.set( key, value ) must beDone.await
     }
 
     "set recover with default" in new MockedCache {
-      connector.set( anyString, anyString, any[ Duration ] ) returns ex
+      connector.set( anyString, anyString, any[ Duration ], beEq( false ) ) returns ex
       cache.set( key, value ) must beDone.await
     }
 
     "set if not exists (exists)" in new MockedCache {
-      connector.setIfNotExists( anyString, anyString ) returns false
+      connector.set( anyString, anyString, any[ Duration ], beEq( true ) ) returns false
       cache.setIfNotExists( key, value ) must beFalse.await
     }
 
     "set if not exists (not exists)" in new MockedCache {
-      connector.setIfNotExists( anyString, anyString ) returns true
+      connector.set( anyString, anyString, any[ Duration ], beEq( true ) ) returns true
       cache.setIfNotExists( key, value ) must beTrue.await
     }
 
     "set if not exists (exists) with expiration" in new MockedCache {
-      connector.setIfNotExists( anyString, anyString ) returns false
+      connector.set( anyString, anyString, any[ Duration ], beEq( true ) ) returns false
       connector.expire( anyString, any[ Duration ] ) returns unit
       cache.setIfNotExists( key, value, expiration ) must beFalse.await
     }
 
     "set if not exists (not exists) with expiration" in new MockedCache {
-      connector.setIfNotExists( anyString, anyString ) returns true
+      connector.set( anyString, anyString, any[ Duration ], beEq( true ) ) returns true
       connector.expire( anyString, any[ Duration ] ) returns unit
       cache.setIfNotExists( key, value, expiration ) must beTrue.await
     }
 
     "set if not exists recover with default" in new MockedCache {
-      connector.setIfNotExists( anyString, anyString ) returns ex
+      connector.set( anyString, anyString, any[ Duration ], beEq( true ) ) returns ex
       cache.setIfNotExists( key, value ) must beTrue.await
     }
 
@@ -153,7 +153,7 @@ class RedisCacheSpec( implicit ee: ExecutionEnv ) extends Specification with Red
 
     "get or else (miss)" in new MockedCache with OrElse {
       connector.get[ String ]( anyString )( anyClassTag ) returns None
-      connector.set( anyString, anyString, any[ Duration ] ) returns unit
+      connector.set( anyString, anyString, any[ Duration ], beEq( false ) ) returns true
       cache.getOrElse( key )( doElse( value ) ) must beEqualTo( value ).await
       orElse mustEqual 1
     }
@@ -172,7 +172,7 @@ class RedisCacheSpec( implicit ee: ExecutionEnv ) extends Specification with Red
 
     "get or future (miss)" in new MockedCache with OrElse {
       connector.get[ String ]( anyString )( anyClassTag ) returns None
-      connector.set( anyString, anyString, any[ Duration ] ) returns unit
+      connector.set( anyString, anyString, any[ Duration ], beEq( false ) ) returns true
       cache.getOrFuture( key )( doFuture( value ) ) must beEqualTo( value ).await
       orElse mustEqual 1
     }
@@ -194,7 +194,7 @@ class RedisCacheSpec( implicit ee: ExecutionEnv ) extends Specification with Red
         def recoverFrom[ T ]( rerun: => Future[ T ], default: => Future[ T ], failure: RedisException ) = rerun
       }
       connector.get[ String ]( anyString )( anyClassTag ) returns None
-      connector.set( anyString, anyString, any[ Duration ] ) returns unit
+      connector.set( anyString, anyString, any[ Duration ], beEq( false ) ) returns true
       // run the test
       cache.getOrFuture( key ) { attempts match {
         case 0 => attempt( failedFuture )
@@ -203,7 +203,7 @@ class RedisCacheSpec( implicit ee: ExecutionEnv ) extends Specification with Red
       // verification
       orElse mustEqual 2
       there were two( connector ).get[ String ]( anyString )( anyClassTag )
-      there was one( connector ).set( anyString, anyString, any[ Duration ] )
+      there was one( connector ).set( key, value, Duration.Inf, ifNotExists = false )
     }
 
     "remove" in new MockedCache {

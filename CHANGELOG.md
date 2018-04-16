@@ -12,6 +12,10 @@ Standalone client now fails eagerly when the connection to redis is not
 established. This is to avoid long timeout while the rediscala is trying
 to reconnect. [#147](https://github.com/KarelCemus/play-redis/issues/147)
 
+Replaced `SETNX` and `SETEX` by `SET` operation with `EX` and `NX` parameters to
+implement the set operation atomically. In consequence, slightly changed `RedisConnector` API.
+[#156](https://github.com/KarelCemus/play-redis/issues/156)
+
 Deprecated `timeout` property and replaced by `sync-timeout` with the identical
 meaning and use. Will be removed by 2.2.0. [#154](https://github.com/KarelCemus/play-redis/issues/154)
 

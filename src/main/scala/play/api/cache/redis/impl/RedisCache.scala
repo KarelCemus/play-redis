@@ -24,14 +24,11 @@ private[ impl ] class RedisCache[ Result[ _ ] ]( redis: RedisConnector, builder:
   }
 
   def set( key: String, value: Any, expiration: Duration ) = key.prefixed { key =>
-    redis.set( key, value, expiration ).recoverWithDone
+    redis.set( key, value, expiration ).map( _ => (): Unit ).recoverWithDone
   }
 
   def setIfNotExists( key: String, value: Any, expiration: Duration ) = key.prefixed { key =>
-    redis.setIfNotExists( key, value ).map { result =>
-      if ( result && expiration.isFinite( ) ) redis.expire( key, expiration )
-      result
-    }.recoverWithDefault( true )
+    redis.set( key, value, expiration, ifNotExists = true ).recoverWithDefault( true )
   }
 
   def setAll( keyValues: (String, Any)* ): Result[ Done ] = keyValues.prefixed { keyValues =>
