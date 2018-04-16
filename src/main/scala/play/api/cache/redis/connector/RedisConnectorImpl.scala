@@ -53,13 +53,11 @@ private[ connector ] class RedisConnectorImpl( serializer: AkkaSerializer, redis
       case ex => serializationFailed( key, "Deserialization failed", ex )
     }.get
 
-  def set( key: String, value: Any, expiration: Duration ): Future[ Unit ] =
+  def set( key: String, value: Any, expiration: Duration, ifNotExists: Boolean ): Future[ Boolean ] =
     // no value to set
-    if ( value == null ) remove( key )
-    // set for finite duration
-    else if ( expiration.isFinite() )  encode( key, value ) flatMap ( setTemporally( key, _, expiration ) )
-    // set for infinite duration
-    else encode( key, value ) flatMap ( setEternally( key, _ ) )
+    if ( value == null ) remove( key ).map( _ => true )
+    // set the value
+    else encode( key, value ) flatMap ( doSet( key, _, expiration, ifNotExists ) )
 
   /** encodes the object, reports an exception if fails */
   private def encode( key: String, value: Any ): Future[ String ] = Future.fromTry {
@@ -68,23 +66,17 @@ private[ connector ] class RedisConnectorImpl( serializer: AkkaSerializer, redis
     }
   }
 
-  /** temporally stores already encoded value into the storage */
-  private def setTemporally( key: String, value: String, expiration: Duration ): Future[ Unit ] =
-    redis.setex( key, expiration.toSeconds, value ) executing "SETEX" withKey key andParameters s"$value $expiration" expects {
-      case _ => log.debug( s"Set on key '$key' on $expiration seconds." )
-    }
-
-  /** eternally stores already encoded value into the storage */
-  private def setEternally( key: String, value: String ): Future[ Unit ] =
-    redis.set( key, value ) executing "SET" withKey key andParameter value expects {
-      case true => log.debug( s"Set on key '$key' for infinite seconds." )
-      case false => log.warn( s"Set on key '$key' failed. Condition was not met." )
-    }
-
-  def setIfNotExists( key: String, value: Any ): Future[ Boolean ] =
-    encode( key, value ).flatMap( redis.setnx( key, _ ) ) executing "SETNX" withKey key andParameter s"encoded($value)" expects {
-      case false => log.debug( s"Set if not exists on key '$key' ignored. Value already exists." ); false
-      case true => log.debug( s"Set if not exists on key '$key' succeeded." ); true
+  /** implements the advanced set operation storing already encoded value into the storage */
+  private def doSet( key: String, value: String, expiration: Duration, ifNotExists: Boolean ): Future[ Boolean ] =
+    redis.set(
+      key,
+      value,
+      exSeconds = if ( expiration.isFinite ) Some( expiration.toSeconds ) else None,
+      NX = ifNotExists
+    ) executing "SET" withKey key andParameters s"$value${ s" EX $expiration" when expiration.isFinite }${ " NX" when ifNotExists }" expects {
+      case true if expiration.isFinite => log.debug( s"Set on key '$key' for ${ expiration.toSeconds } seconds." ); true
+      case true => log.debug( s"Set on key '$key' for infinite seconds." ); true
+      case false => log.debug( s"Set on key '$key' ignored. Condition was not met." ); false
     }
 
   def mSet( keyValues: (String, Any)* ): Future[ Unit ] = mSetUsing( mSetEternally, (), keyValues: _* )

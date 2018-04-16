@@ -32,7 +32,7 @@ class AsyncRedisSpecs( implicit ee: ExecutionEnv ) extends Specification with Re
 
     "getOrElseUpdate (miss)" in new MockedAsyncRedis with OrElse {
       connector.get[ String ]( anyString )( anyClassTag ) returns None
-      connector.set( anyString, anyString, any[ Duration ] ) returns unit
+      connector.set( anyString, anyString, any[ Duration ], anyBoolean ) returns true
       cache.getOrElseUpdate( key )( doFuture( value ) ) must beEqualTo( value ).await
       orElse mustEqual 1
     }
@@ -54,7 +54,7 @@ class AsyncRedisSpecs( implicit ee: ExecutionEnv ) extends Specification with Re
         def recoverFrom[ T ]( rerun: => Future[ T ], default: => Future[ T ], failure: RedisException ) = rerun
       }
       connector.get[ String ]( anyString )( anyClassTag ) returns None
-      connector.set( anyString, anyString, any[ Duration ] ) returns unit
+      connector.set( anyString, anyString, any[ Duration ], anyBoolean ) returns true
       // run the test
       cache.getOrElseUpdate( key ) { attempts match {
         case 0 => attempt( failedFuture )
@@ -62,8 +62,8 @@ class AsyncRedisSpecs( implicit ee: ExecutionEnv ) extends Specification with Re
       } } must beEqualTo( value ).await
       // verification
       orElse mustEqual 2
-      MockitoImplicits.there were MockitoImplicits.two( connector ).get[ String ]( anyString )( anyClassTag )
-      MockitoImplicits.there was MockitoImplicits.one( connector ).set( anyString, anyString, any[ Duration ] )
+      there were two( connector ).get[ String ]( anyString )( anyClassTag )
+      there was one( connector ).set( key, value, Duration.Inf, ifNotExists = false )
     }
   }
 }
