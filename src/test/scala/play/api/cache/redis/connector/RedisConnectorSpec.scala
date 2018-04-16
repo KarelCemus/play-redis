@@ -1,413 +1,403 @@
 package play.api.cache.redis.connector
 
-import java.util.Date
-
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.cache.redis._
+import play.api.cache.redis.impl._
+import play.api.inject.ApplicationLifecycle
 
-import org.joda.time.DateTime
+import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
+import org.specs2.specification.{AfterAll, BeforeAll}
 
 /**
   * <p>Specification of the low level connector implementing basic commands</p>
   */
-class RedisConnectorSpec extends Specification with Redis {
+class RedisConnectorSpec( implicit ee: ExecutionEnv ) extends Specification with BeforeAll with AfterAll with WithApplication {
+  import Implicits._
 
-  private type Cache = RedisConnector
+  implicit private val lifecycle = application.injector.instanceOf[ ApplicationLifecycle ]
 
-  private val Cache = injector.instanceOf[ Cache ]
+  implicit private val runtime = RedisRuntime( "connector", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation )
 
-  private val prefix = "connector"
+  private val serializer = new AkkaSerializerImpl( system )
+
+  private val connector: RedisConnector = new RedisConnectorProvider( defaultInstance, serializer ).get
+
+  val prefix = "connector-test"
 
   "RedisConnector" should {
 
-    "miss on get" in {
-      Cache.get[ String ]( s"$prefix-test-1" ) must beNone
+    "pong on ping" in new TestCase {
+      connector.ping( ) must not( throwA[ Throwable ] ).await
     }
 
-    "hit after set" in {
-      Cache.set( s"$prefix-test-2", "value" ).sync
-      Cache.get[ String ]( s"$prefix-test-2" ) must beSome[ Any ]
-      Cache.get[ String ]( s"$prefix-test-2" ) must beSome( "value" )
+    "miss on get" in new TestCase {
+      connector.get[ String ]( s"$prefix-$idx" ) must beNone.await
     }
 
-    "ignore set if not exists when already defined" in {
-      Cache.set( s"$prefix-test-if-not-exists-when-exists", "previous" ).sync
-      Cache.setIfNotExists( s"$prefix-test-if-not-exists-when-exists", "value" ) must beFalse
-      Cache.get[ String ]( s"$prefix-test-if-not-exists-when-exists" ) must beSome[ Any ]
-      Cache.get[ String ]( s"$prefix-test-if-not-exists-when-exists" ) must beSome( "previous" )
+    "hit after set" in new TestCase {
+      connector.set( s"$prefix-$idx", "value" ).await
+      connector.get[ String ]( s"$prefix-$idx" ) must beSome[ Any ].await
+      connector.get[ String ]( s"$prefix-$idx" ) must beSome( "value" ).await
     }
 
-    "perform set if not exists when undefined" in {
-      Cache.setIfNotExists( s"$prefix-test-if-not-exists", "value" ) must beTrue
-      Cache.get[ String ]( s"$prefix-test-if-not-exists" ) must beSome[ Any ]
-      Cache.get[ String ]( s"$prefix-test-if-not-exists" ) must beSome( "value" )
+    "ignore set if not exists when already defined" in new TestCase {
+      connector.set( s"$prefix-if-not-exists-when-exists", "previous" ).await
+      connector.setIfNotExists( s"$prefix-if-not-exists-when-exists", "value" ) must beFalse.await
+      connector.get[ String ]( s"$prefix-if-not-exists-when-exists" ) must beSome[ Any ].await
+      connector.get[ String ]( s"$prefix-if-not-exists-when-exists" ) must beSome( "previous" ).await
     }
 
-    "hit after mset" in {
-      Cache.mSet( s"$prefix-test-mset-1" -> "value-1", s"$prefix-test-mset-2" -> "value-2" ).sync
-      Cache.mGet[ String ]( s"$prefix-test-mset-1", s"$prefix-test-mset-2" ).sync must beEqualTo( List( Some( "value-1" ), Some( "value-2" ) ) )
+    "perform set if not exists when undefined" in new TestCase {
+      connector.setIfNotExists( s"$prefix-if-not-exists", "value" ) must beTrue.await
+      connector.get[ String ]( s"$prefix-if-not-exists" ) must beSome[ Any ].await
+      connector.get[ String ]( s"$prefix-if-not-exists" ) must beSome( "value" ).await
     }
 
-    "ignore msetnx if already defined" in {
-      Cache.mSetIfNotExist( s"$prefix-test-msetnx-1" -> "value-1", s"$prefix-test-msetnx-2" -> "value-2" ) must beTrue
-      Cache.mGet[ String ]( s"$prefix-test-msetnx-1", s"$prefix-test-msetnx-2" ).sync must beEqualTo( List( Some( "value-1" ), Some( "value-2" ) ) )
-      Cache.mSetIfNotExist( s"$prefix-test-msetnx-3" -> "value-3", s"$prefix-test-msetnx-2" -> "value-2" ) must beFalse
+    "hit after mset" in new TestCase {
+      connector.mSet( s"$prefix-mset-$idx-1" -> "value-1", s"$prefix-mset-$idx-2" -> "value-2" ).await
+      connector.mGet[ String ]( s"$prefix-mset-$idx-1", s"$prefix-mset-$idx-2", s"$prefix-mset-$idx-3" ) must beEqualTo( List( Some( "value-1" ), Some( "value-2" ), None ) ).await
+      connector.mSet( s"$prefix-mset-$idx-3" -> "value-3", s"$prefix-mset-$idx-2" -> null ).await
+      connector.mGet[ String ]( s"$prefix-mset-$idx-1", s"$prefix-mset-$idx-2", s"$prefix-mset-$idx-3" ) must beEqualTo( List( Some( "value-1" ), None, Some( "value-3" ) ) ).await
+      connector.mSet( s"$prefix-mset-$idx-3" -> null ).await
+      connector.mGet[ String ]( s"$prefix-mset-$idx-1", s"$prefix-mset-$idx-2", s"$prefix-mset-$idx-3" ) must beEqualTo( List( Some( "value-1" ), None, None ) ).await
     }
 
-    "expire refreshes expiration" in {
-      Cache.set( s"$prefix-test-10", "value", 2.second ).sync
-      Cache.get[ String ]( s"$prefix-test-10" ) must beSome( "value" )
-      Cache.expire( s"$prefix-test-10", 1.minute ).sync
+    "ignore msetnx if already defined" in new TestCase {
+      connector.mSetIfNotExist( s"$prefix-msetnx-$idx-1" -> "value-1", s"$prefix-msetnx-$idx-2" -> "value-2" ) must beTrue.await
+      connector.mGet[ String ]( s"$prefix-msetnx-$idx-1", s"$prefix-msetnx-$idx-2" ) must beEqualTo( List( Some( "value-1" ), Some( "value-2" ) ) ).await
+      connector.mSetIfNotExist( s"$prefix-msetnx-$idx-3" -> "value-3", s"$prefix-msetnx-$idx-2" -> "value-2" ) must beFalse.await
+    }
+
+    "expire refreshes expiration" in new TestCase {
+      connector.set( s"$prefix-$idx", "value", 2.second ).await
+      connector.get[ String ]( s"$prefix-$idx" ) must beSome( "value" ).await
+      connector.expire( s"$prefix-$idx", 1.minute ).await
       // wait until the first duration expires
-      Thread.sleep( 3000 )
-      Cache.get[ String ]( s"$prefix-test-10" ) must beSome( "value" )
+      Future.after( 3 ) must not( throwA[ Throwable ] ).awaitFor( 4.seconds )
+      connector.get[ String ]( s"$prefix-$idx" ) must beSome( "value" ).await
     }
 
-    "positive exists on existing keys" in {
-      Cache.set( s"$prefix-test-11", "value" ).sync
-      Cache.exists( s"$prefix-test-11" ) must beTrue
+    "positive exists on existing keys" in new TestCase {
+      connector.set( s"$prefix-$idx", "value" ).await
+      connector.exists( s"$prefix-$idx" ) must beTrue.await
     }
 
-    "negative exists on expired and missing keys" in {
-      Cache.set( s"$prefix-test-12A", "value", 1.second ).sync
+    "negative exists on expired and missing keys" in new TestCase {
+      connector.set( s"$prefix-$idx-1", "value", 1.second ).await
       // wait until the duration expires
-      Thread.sleep( 2000 )
-      Cache.exists( s"$prefix-test-12A" ) must beFalse
-      Cache.exists( s"$prefix-test-12B" ) must beFalse
+      Future.after( 2 ) must not( throwA[ Throwable ] ).awaitFor( 3.seconds )
+      connector.exists( s"$prefix-$idx-1" ) must beFalse.await
+      connector.exists( s"$prefix-$idx-2" ) must beFalse.await
     }
 
-    "miss after remove" in {
-      Cache.set( s"$prefix-test-3", "value" ).sync
-      Cache.get[ String ]( s"$prefix-test-3" ) must beSome[ Any ]
-      Cache.remove( s"$prefix-test-3" ).sync
-      Cache.get[ String ]( s"$prefix-test-3" ) must beNone
+    "miss after remove" in new TestCase {
+      connector.set( s"$prefix-$idx", "value" ).await
+      connector.get[ String ]( s"$prefix-$idx" ) must beSome[ Any ].await
+      connector.remove( s"$prefix-$idx" ) must not( throwA[ Throwable ] ).await
+      connector.get[ String ]( s"$prefix-$idx" ) must beNone.await
     }
 
-    "miss after timeout" in {
+    "remove on empty key" in new TestCase {
+      connector.get[ String ]( s"$prefix-$idx-A" ) must beNone.await
+      connector.remove( s"$prefix-$idx-A" ) must not( throwA[ Throwable ] ).await
+      connector.get[ String ]( s"$prefix-$idx-A" ) must beNone.await
+    }
+
+    "remove with empty args" in new TestCase {
+      val toBeRemoved = List.empty
+      connector.remove( toBeRemoved: _* ) must not( throwA[ Throwable ] ).await
+    }
+
+    "clear with setting null" in new TestCase {
+      connector.set( s"$prefix-$idx", "value" ).await
+      connector.get[ String ]( s"$prefix-$idx" ) must beSome[ Any ].await
+      connector.set( s"$prefix-$idx", null ).await
+      connector.get[ String ]( s"$prefix-$idx" ) must beNone.await
+    }
+
+    "miss after timeout" in new TestCase {
       // set
-      Cache.set( s"$prefix-test-4", "value", 1.second ).sync
-      Cache.get[ String ]( s"$prefix-test-4" ) must beSome[ Any ]
+      connector.set( s"$prefix-$idx", "value", 1.second ).await
+      connector.get[ String ]( s"$prefix-$idx" ) must beSome[ Any ].await
       // wait until it expires
-      Thread.sleep( 1500 )
+      Future.after( 2 ) must not( throwA[ Throwable ] ).awaitFor( 3.seconds )
       // miss
-      Cache.get[ String ]( s"$prefix-test-4" ) must beNone
+      connector.get[ String ]( s"$prefix-$idx" ) must beNone.await
     }
 
-    "find all matching keys" in {
-      Cache.set( s"$prefix-test-13-key-A", "value", 3.second ).sync
-      Cache.set( s"$prefix-test-13-note-A", "value", 3.second ).sync
-      Cache.set( s"$prefix-test-13-key-B", "value", 3.second ).sync
-      Cache.matching( s"$prefix-test-13*" ).sync.sorted mustEqual Seq( s"$prefix-test-13-key-A", s"$prefix-test-13-note-A", s"$prefix-test-13-key-B" ).sorted
-      Cache.matching( s"$prefix-test-13*A" ).sync.sorted mustEqual Seq( s"$prefix-test-13-key-A", s"$prefix-test-13-note-A" ).sorted
-      Cache.matching( s"$prefix-test-13-key-*" ).sync.sorted mustEqual Seq( s"$prefix-test-13-key-A", s"$prefix-test-13-key-B" ).sorted
-      Cache.matching( s"$prefix-test-13A*" ).sync mustEqual Seq.empty
+    "find all matching keys" in new TestCase {
+      connector.set( s"$prefix-$idx-key-A", "value", 3.second ).await
+      connector.set( s"$prefix-$idx-note-A", "value", 3.second ).await
+      connector.set( s"$prefix-$idx-key-B", "value", 3.second ).await
+      connector.matching( s"$prefix-$idx*" ).map( _.toSet ) must beEqualTo( Set( s"$prefix-$idx-key-A", s"$prefix-$idx-note-A", s"$prefix-$idx-key-B" ) ).await
+      connector.matching( s"$prefix-$idx*A" ).map( _.toSet ) must beEqualTo( Set( s"$prefix-$idx-key-A", s"$prefix-$idx-note-A" ) ).await
+      connector.matching( s"$prefix-$idx-key-*" ).map( _.toSet ) must beEqualTo( Set( s"$prefix-$idx-key-A", s"$prefix-$idx-key-B" ) ).await
+      connector.matching( s"$prefix-${idx}A*" ) must beEqualTo( Seq.empty ).await
     }
 
-    "support list" in {
-      // store value
-      Cache.set( s"$prefix-list", List( "A", "B", "C" ) ).sync
-      // recall
-      Cache.get[ List[ String ] ]( s"$prefix-list" ) must beSome[ List[ String ] ]( List( "A", "B", "C" ) )
+    "remove multiple keys at once" in new TestCase {
+      connector.set( s"$prefix-remove-multiple-1", "value" ).await
+      connector.get[ String ]( s"$prefix-remove-multiple-1" ) must beSome[ Any ].await
+      connector.set( s"$prefix-remove-multiple-2", "value" ).await
+      connector.get[ String ]( s"$prefix-remove-multiple-2" ) must beSome[ Any ].await
+      connector.set( s"$prefix-remove-multiple-3", "value" ).await
+      connector.get[ String ]( s"$prefix-remove-multiple-3" ) must beSome[ Any ].await
+      connector.remove( s"$prefix-remove-multiple-1", s"$prefix-remove-multiple-2", s"$prefix-remove-multiple-3" ).await
+      connector.get[ String ]( s"$prefix-remove-multiple-1" ) must beNone.await
+      connector.get[ String ]( s"$prefix-remove-multiple-2" ) must beNone.await
+      connector.get[ String ]( s"$prefix-remove-multiple-3" ) must beNone.await
     }
 
-    "support a byte" in {
-      Cache.set( s"$prefix-type.byte", 0xAB.toByte ).sync
-      Cache.get[ Byte ]( s"$prefix-type.byte" ) must beSome[ Byte ]
-      Cache.get[ Byte ]( s"$prefix-type.byte" ) must beSome( 0xAB.toByte )
+    "remove in batch" in new TestCase {
+      connector.set( s"$prefix-remove-batch-1", "value" ).await
+      connector.get[ String ]( s"$prefix-remove-batch-1" ) must beSome[ Any ].await
+      connector.set( s"$prefix-remove-batch-2", "value" ).await
+      connector.get[ String ]( s"$prefix-remove-batch-2" ) must beSome[ Any ].await
+      connector.set( s"$prefix-remove-batch-3", "value" ).await
+      connector.get[ String ]( s"$prefix-remove-batch-3" ) must beSome[ Any ].await
+      connector.remove( s"$prefix-remove-batch-1", s"$prefix-remove-batch-2", s"$prefix-remove-batch-3" ).await
+      connector.get[ String ]( s"$prefix-remove-batch-1" ) must beNone.await
+      connector.get[ String ]( s"$prefix-remove-batch-2" ) must beNone.await
+      connector.get[ String ]( s"$prefix-remove-batch-3" ) must beNone.await
     }
 
-    "support a char" in {
-      Cache.set( s"$prefix-type.char.1", 'a' ).sync
-      Cache.get[ Char ]( s"$prefix-type.char.1" ) must beSome[ Char ]
-      Cache.get[ Char ]( s"$prefix-type.char.1" ) must beSome( 'a' )
-      Cache.set( s"$prefix-type.char.2", 'b' ).sync
-      Cache.get[ Char ]( s"$prefix-type.char.2" ) must beSome( 'b' )
-      Cache.set( s"$prefix-type.char.3", 'č' ).sync
-      Cache.get[ Char ]( s"$prefix-type.char.3" ) must beSome( 'č' )
+    "set a zero when not exists and then increment" in new TestCase {
+      connector.increment( s"$prefix-incr-null", 1 ) must beEqualTo( 1 ).await
     }
 
-    "support a short" in {
-      Cache.set( s"$prefix-type.short", 12.toShort ).sync
-      Cache.get[ Short ]( s"$prefix-type.short" ) must beSome[ Short ]
-      Cache.get[ Short ]( s"$prefix-type.short" ) must beSome( 12.toShort )
+    "throw an exception when not integer" in new TestCase {
+      connector.set( s"$prefix-incr-string", "value" ).await
+      connector.increment( s"$prefix-incr-string", 1 ) must throwA[ ExecutionFailedException ].await
     }
 
-    "support an int" in {
-      Cache.set( s"$prefix-type.int", 15 ).sync
-      Cache.get[ Int ]( s"$prefix-type.int" ) must beSome( 15 )
+    "increment by one" in new TestCase {
+      connector.set( s"$prefix-incr-by-one", 5 ).await
+      connector.increment( s"$prefix-incr-by-one", 1 ) must beEqualTo( 6 ).await
+      connector.increment( s"$prefix-incr-by-one", 1 ) must beEqualTo( 7 ).await
+      connector.increment( s"$prefix-incr-by-one", 1 ) must beEqualTo( 8 ).await
     }
 
-    "support a long" in {
-      Cache.set( s"$prefix-type.long", 144L ).sync
-      Cache.get[ Long ]( s"$prefix-type.long" ) must beSome[ Long ]
-      Cache.get[ Long ]( s"$prefix-type.long" ) must beSome( 144L )
+    "increment by some" in new TestCase {
+      connector.set( s"$prefix-incr-by-some", 5 ).await
+      connector.increment( s"$prefix-incr-by-some", 1 ) must beEqualTo( 6 ).await
+      connector.increment( s"$prefix-incr-by-some", 2 ) must beEqualTo( 8 ).await
+      connector.increment( s"$prefix-incr-by-some", 3 ) must beEqualTo( 11 ).await
     }
 
-    "support a float" in {
-      Cache.set( s"$prefix-type.float", 1.23f ).sync
-      Cache.get[ Float ]( s"$prefix-type.float" ) must beSome[ Float ]
-      Cache.get[ Float ]( s"$prefix-type.float" ) must beSome( 1.23f )
+    "decrement by one" in new TestCase {
+      connector.set( s"$prefix-decr-by-one", 5 ).await
+      connector.increment( s"$prefix-decr-by-one", -1 ) must beEqualTo( 4 ).await
+      connector.increment( s"$prefix-decr-by-one", -1 ) must beEqualTo( 3 ).await
+      connector.increment( s"$prefix-decr-by-one", -1 ) must beEqualTo( 2 ).await
+      connector.increment( s"$prefix-decr-by-one", -1 ) must beEqualTo( 1 ).await
+      connector.increment( s"$prefix-decr-by-one", -1 ) must beEqualTo( 0 ).await
+      connector.increment( s"$prefix-decr-by-one", -1 ) must beEqualTo( -1 ).await
     }
 
-    "support a double" in {
-      Cache.set( s"$prefix-type.double", 3.14 ).sync
-      Cache.get[ Double ]( s"$prefix-type.double" ) must beSome[ Double ]
-      Cache.get[ Double ]( s"$prefix-type.double" ) must beSome( 3.14 )
+    "decrement by some" in new TestCase {
+      connector.set( s"$prefix-decr-by-some", 5 ).await
+      connector.increment( s"$prefix-decr-by-some", -1 ) must beEqualTo( 4 ).await
+      connector.increment( s"$prefix-decr-by-some", -2 ) must beEqualTo( 2 ).await
+      connector.increment( s"$prefix-decr-by-some", -3 ) must beEqualTo( -1 ).await
     }
 
-    "support a date" in {
-      Cache.set( s"$prefix-type.date", new Date( 123 ) ).sync
-      Cache.get[ Date ]( s"$prefix-type.date" ) must beSome( new Date( 123 ) )
+    "append like set when value is undefined" in new TestCase {
+      connector.get[ String ]( s"$prefix-append-to-null" ) must beNone.await
+      connector.append( s"$prefix-append-to-null", "value" ).await
+      connector.get[ String ]( s"$prefix-append-to-null" ) must beSome( "value" ).await
     }
 
-    "support a datetime" in {
-      Cache.set( s"$prefix-type.datetime", new DateTime( 123456 ) ).sync
-      Cache.get[ DateTime ]( s"$prefix-type.datetime" ) must beSome( new DateTime( 123456 ) )
+    "append to existing string" in new TestCase {
+      connector.set( s"$prefix-append-to-some", "some" ).await
+      connector.get[ String ]( s"$prefix-append-to-some" ) must beSome( "some" ).await
+      connector.append( s"$prefix-append-to-some", " value" ).await
+      connector.get[ String ]( s"$prefix-append-to-some" ) must beSome( "some value" ).await
     }
 
-    "support a custom classes" in {
-      Cache.set( s"$prefix-type.object", SimpleObject( "B", 3 ) ).sync
-      Cache.get[ SimpleObject ]( s"$prefix-type.object" ) must beSome( SimpleObject( "B", 3 ) )
+    "list push left" in new TestCase {
+      connector.listPrepend( s"$prefix-list-prepend", "A", "B", "C" ) must beEqualTo( 3 ).await
+      connector.listPrepend( s"$prefix-list-prepend", "D", "E", "F" ) must beEqualTo( 6 ).await
+      connector.listSlice[ String ]( s"$prefix-list-prepend", 0, -1 ) must beEqualTo( List( "F", "E", "D", "C", "B", "A" ) ).await
     }
 
-    "support a null" in {
-      Cache.set( s"$prefix-type.null", null ).sync
-      Cache.get[ SimpleObject ]( s"$prefix-type.null" ) must beNone
+    "list push right" in new TestCase {
+      connector.listAppend( s"$prefix-list-append", "A", "B", "C" ) must beEqualTo( 3 ).await
+      connector.listAppend( s"$prefix-list-append", "D", "E", "A" ) must beEqualTo( 6 ).await
+      connector.listSlice[ String ]( s"$prefix-list-append", 0, -1 ) must beEqualTo( List( "A", "B", "C", "D", "E", "A" ) ).await
     }
 
-    "remove multiple keys at once" in {
-      Cache.set( s"$prefix-test-remove-multiple-1", "value" ).sync
-      Cache.get[ String ]( s"$prefix-test-remove-multiple-1" ) must beSome[ Any ]
-      Cache.set( s"$prefix-test-remove-multiple-2", "value" ).sync
-      Cache.get[ String ]( s"$prefix-test-remove-multiple-2" ) must beSome[ Any ]
-      Cache.set( s"$prefix-test-remove-multiple-3", "value" ).sync
-      Cache.get[ String ]( s"$prefix-test-remove-multiple-3" ) must beSome[ Any ]
-      Cache.remove( s"$prefix-test-remove-multiple-1", s"$prefix-test-remove-multiple-2", s"$prefix-test-remove-multiple-3" ).sync
-      Cache.get[ String ]( s"$prefix-test-remove-multiple-1" ) must beNone
-      Cache.get[ String ]( s"$prefix-test-remove-multiple-2" ) must beNone
-      Cache.get[ String ]( s"$prefix-test-remove-multiple-3" ) must beNone
+    "list size" in new TestCase {
+      connector.listSize( s"$prefix-list-size" ) must beEqualTo( 0 ).await
+      connector.listPrepend( s"$prefix-list-size", "A", "B", "C" ) must beEqualTo( 3 ).await
+      connector.listSize( s"$prefix-list-size" ) must beEqualTo( 3 ).await
     }
 
-    "remove in batch" in {
-      Cache.set( s"$prefix-test-remove-batch-1", "value" ).sync
-      Cache.get[ String ]( s"$prefix-test-remove-batch-1" ) must beSome[ Any ]
-      Cache.set( s"$prefix-test-remove-batch-2", "value" ).sync
-      Cache.get[ String ]( s"$prefix-test-remove-batch-2" ) must beSome[ Any ]
-      Cache.set( s"$prefix-test-remove-batch-3", "value" ).sync
-      Cache.get[ String ]( s"$prefix-test-remove-batch-3" ) must beSome[ Any ]
-      Cache.remove( s"$prefix-test-remove-batch-1", s"$prefix-test-remove-batch-2", s"$prefix-test-remove-batch-3" ).sync
-      Cache.get[ String ]( s"$prefix-test-remove-batch-1" ) must beNone
-      Cache.get[ String ]( s"$prefix-test-remove-batch-2" ) must beNone
-      Cache.get[ String ]( s"$prefix-test-remove-batch-3" ) must beNone
+    "list overwrite at index" in new TestCase {
+      connector.listPrepend( s"$prefix-list-set", "C", "B", "A" ) must beEqualTo( 3 ).await
+      connector.listSetAt( s"$prefix-list-set", 1, "D" ).await
+      connector.listSlice[ String ]( s"$prefix-list-set", 0, -1 ) must beEqualTo( List( "A", "D", "C" ) ).await
+      connector.listSetAt( s"$prefix-list-set", 3, "D" ) must throwA[ IndexOutOfBoundsException ].await
     }
 
-    "set a zero when not exists and then increment" in {
-      Cache.increment( s"$prefix-test-incr-null", 1 ).sync must beEqualTo( 1 )
+    "list pop head" in new TestCase {
+      connector.listHeadPop[ String ]( s"$prefix-list-pop" ) must beNone.await
+      connector.listPrepend( s"$prefix-list-pop", "C", "B", "A" ) must beEqualTo( 3 ).await
+      connector.listHeadPop[ String ]( s"$prefix-list-pop" ) must beSome( "A" ).await
+      connector.listHeadPop[ String ]( s"$prefix-list-pop" ) must beSome( "B" ).await
+      connector.listHeadPop[ String ]( s"$prefix-list-pop" ) must beSome( "C" ).await
+      connector.listHeadPop[ String ]( s"$prefix-list-pop" ) must beNone.await
     }
 
-    "throw an exception when not integer" in {
-      Cache.set( s"$prefix-test-incr-string", "value" ).sync
-      Cache.increment( s"$prefix-test-incr-string", 1 ).sync must throwA[ ExecutionFailedException ]
+    "list slice view" in new TestCase {
+      connector.listSlice[ String ]( s"$prefix-list-slice", 0, -1 ) must beEqualTo( List.empty ).await
+      connector.listPrepend( s"$prefix-list-slice", "C", "B", "A" ) must beEqualTo( 3 ).await
+      connector.listSlice[ String ]( s"$prefix-list-slice", 0, -1 ) must beEqualTo( List( "A", "B", "C" ) ).await
+      connector.listSlice[ String ]( s"$prefix-list-slice", 0, 0 ) must beEqualTo( List( "A" ) ).await
+      connector.listSlice[ String ]( s"$prefix-list-slice", -2, -1 ) must beEqualTo( List( "B", "C" ) ).await
     }
 
-    "increment by one" in {
-      Cache.set( s"$prefix-test-incr-by-one", 5 ).sync
-      Cache.increment( s"$prefix-test-incr-by-one", 1 ).sync must beEqualTo( 6 )
-      Cache.increment( s"$prefix-test-incr-by-one", 1 ).sync must beEqualTo( 7 )
-      Cache.increment( s"$prefix-test-incr-by-one", 1 ).sync must beEqualTo( 8 )
+    "list remove by value" in new TestCase {
+      connector.listRemove( s"$prefix-list-remove", "A", count = 1 ) must beEqualTo( 0 ).await
+      connector.listPrepend( s"$prefix-list-remove", "A", "B", "C" ) must beEqualTo( 3 ).await
+      connector.listRemove( s"$prefix-list-remove", "A", count = 1 ) must beEqualTo( 1 ).await
+      connector.listSize( s"$prefix-list-remove" ) must beEqualTo( 2 ).await
     }
 
-    "increment by some" in {
-      Cache.set( s"$prefix-test-incr-by-some", 5 ).sync
-      Cache.increment( s"$prefix-test-incr-by-some", 1 ).sync must beEqualTo( 6 )
-      Cache.increment( s"$prefix-test-incr-by-some", 2 ).sync must beEqualTo( 8 )
-      Cache.increment( s"$prefix-test-incr-by-some", 3 ).sync must beEqualTo( 11 )
+    "list trim" in new TestCase {
+      connector.listPrepend( s"$prefix-list-trim", "C", "B", "A" ) must beEqualTo( 3 ).await
+      connector.listTrim( s"$prefix-list-trim", 1, 2 ).await
+      connector.listSize( s"$prefix-list-trim" ) must beEqualTo( 2 ).await
+      connector.listSlice[ String ]( s"$prefix-list-trim", 0, -1 ) must beEqualTo( List( "B", "C" ) ).await
     }
 
-    "decrement by one" in {
-      Cache.set( s"$prefix-test-decr-by-one", 5 ).sync
-      Cache.increment( s"$prefix-test-decr-by-one", -1 ).sync must beEqualTo( 4 )
-      Cache.increment( s"$prefix-test-decr-by-one", -1 ).sync must beEqualTo( 3 )
-      Cache.increment( s"$prefix-test-decr-by-one", -1 ).sync must beEqualTo( 2 )
-      Cache.increment( s"$prefix-test-decr-by-one", -1 ).sync must beEqualTo( 1 )
-      Cache.increment( s"$prefix-test-decr-by-one", -1 ).sync must beEqualTo( 0 )
-      Cache.increment( s"$prefix-test-decr-by-one", -1 ).sync must beEqualTo( -1 )
+    "list insert" in new TestCase {
+      connector.listSize( s"$prefix-list-insert-1" ) must beEqualTo( 0 ).await
+      connector.listInsert( s"$prefix-list-insert-1", "C", "B" ) must beNone.await
+      connector.listPrepend( s"$prefix-list-insert-1", "C", "A" ) must beEqualTo( 2 ).await
+      connector.listInsert( s"$prefix-list-insert-1", "C", "B" ) must beSome( 3L ).await
+      connector.listInsert( s"$prefix-list-insert-1", "E", "D" ) must beNone.await
+      connector.listSlice[ String ]( s"$prefix-list-insert-1", 0, -1 ) must beEqualTo( List( "A", "B", "C" ) ).await
     }
 
-    "decrement by some" in {
-      Cache.set( s"$prefix-test-decr-by-some", 5 ).sync
-      Cache.increment( s"$prefix-test-decr-by-some", -1 ).sync must beEqualTo( 4 )
-      Cache.increment( s"$prefix-test-decr-by-some", -2 ).sync must beEqualTo( 2 )
-      Cache.increment( s"$prefix-test-decr-by-some", -3 ).sync must beEqualTo( -1 )
+    "list set to invalid type" in new TestCase {
+      connector.set( s"$prefix-list-invalid-$idx", "value" ) must not( throwA[ Throwable ] ).await
+      connector.get[ String ]( s"$prefix-list-invalid-$idx" ) must beSome( "value" ).await
+      connector.listPrepend( s"$prefix-list-invalid-$idx", "A" ) must throwA[ IllegalArgumentException ].await
+      connector.listAppend( s"$prefix-list-invalid-$idx", "C", "B" ) must throwA[ IllegalArgumentException ].await
+      connector.listInsert( s"$prefix-list-invalid-$idx", "C", "B" ) must throwA[ IllegalArgumentException ].await
     }
 
-    "append like set when value is undefined" in {
-      Cache.get[ String ]( s"$prefix-test-append-to-null" ) must beNone
-      Cache.append( s"$prefix-test-append-to-null", "value" ).sync
-      Cache.get[ String ]( s"$prefix-test-append-to-null" ) must beSome( "value" )
+    "set add" in new TestCase {
+      connector.setSize( s"$prefix-set-add" ) must beEqualTo( 0 ).await
+      connector.setAdd( s"$prefix-set-add", "A", "B" ) must beEqualTo( 2 ).await
+      connector.setSize( s"$prefix-set-add" ) must beEqualTo( 2 ).await
+      connector.setAdd( s"$prefix-set-add", "C", "B" ) must beEqualTo( 1 ).await
+      connector.setSize( s"$prefix-set-add" ) must beEqualTo( 3 ).await
     }
 
-    "append to existing string" in {
-      Cache.set( s"$prefix-test-append-to-some", "some" ).sync
-      Cache.get[ String ]( s"$prefix-test-append-to-some" ) must beSome( "some" )
-      Cache.append( s"$prefix-test-append-to-some", " value" ).sync
-      Cache.get[ String ]( s"$prefix-test-append-to-some" ) must beSome( "some value" )
+    "set add into invalid type" in new TestCase {
+      connector.set( s"$prefix-set-invalid-$idx", "value" ) must not( throwA[ Throwable ] ).await
+      connector.get[ String ]( s"$prefix-set-invalid-$idx" ) must beSome( "value" ).await
+      connector.setAdd( s"$prefix-set-invalid-$idx", "A", "B" ) must throwA[ IllegalArgumentException ].await
     }
 
-    "list push left" in {
-      Cache.listPrepend( s"$prefix-test-list-prepend", "A", "B", "C" ).sync must beEqualTo( 3 )
-      Cache.listPrepend( s"$prefix-test-list-prepend", "D", "E", "F" ).sync must beEqualTo( 6 )
-      Cache.listSlice[ String ]( s"$prefix-test-list-prepend", 0, -1 ).sync must beEqualTo( List( "F", "E", "D", "C", "B", "A" ) )
+    "set rank" in new TestCase {
+      connector.setSize( s"$prefix-set-rank" ) must beEqualTo( 0 ).await
+      connector.setAdd( s"$prefix-set-rank", "A", "B" ) must beEqualTo( 2 ).await
+      connector.setSize( s"$prefix-set-rank" ) must beEqualTo( 2 ).await
+
+      connector.setIsMember( s"$prefix-set-rank", "A" ) must beTrue.await
+      connector.setIsMember( s"$prefix-set-rank", "B" ) must beTrue.await
+      connector.setIsMember( s"$prefix-set-rank", "C" ) must beFalse.await
+
+      connector.setAdd( s"$prefix-set-rank", "C", "B" ) must beEqualTo( 1 ).await
+
+      connector.setIsMember( s"$prefix-set-rank", "A" ) must beTrue.await
+      connector.setIsMember( s"$prefix-set-rank", "B" ) must beTrue.await
+      connector.setIsMember( s"$prefix-set-rank", "C" ) must beTrue.await
     }
 
-    "list push right" in {
-      Cache.listAppend( s"$prefix-test-list-append", "A", "B", "C" ).sync must beEqualTo( 3 )
-      Cache.listAppend( s"$prefix-test-list-append", "D", "E", "A" ).sync must beEqualTo( 6 )
-      Cache.listSlice[ String ]( s"$prefix-test-list-append", 0, -1 ).sync must beEqualTo( List( "A", "B", "C", "D", "E", "A" ) )
+    "set size" in new TestCase {
+      connector.setSize( s"$prefix-set-size" ) must beEqualTo( 0 ).await
+      connector.setAdd( s"$prefix-set-size", "A", "B" ) must beEqualTo( 2 ).await
+      connector.setSize( s"$prefix-set-size" ) must beEqualTo( 2 ).await
     }
 
-    "list size" in {
-      Cache.listSize( s"$prefix-test-list-size" ).sync must beEqualTo( 0 )
-      Cache.listPrepend( s"$prefix-test-list-size", "A", "B", "C" ).sync must beEqualTo( 3 )
-      Cache.listSize( s"$prefix-test-list-size" ).sync must beEqualTo( 3 )
+    "set rem" in new TestCase {
+      connector.setSize( s"$prefix-set-rem" ) must beEqualTo( 0 ).await
+      connector.setAdd( s"$prefix-set-rem", "A", "B", "C" ) must beEqualTo( 3 ).await
+      connector.setSize( s"$prefix-set-rem" ) must beEqualTo( 3 ).await
+
+      connector.setRemove( s"$prefix-set-rem", "A" ) must beEqualTo( 1 ).await
+      connector.setSize( s"$prefix-set-rem" ) must beEqualTo( 2 ).await
+      connector.setRemove( s"$prefix-set-rem", "B", "C", "D" ) must beEqualTo( 2 ).await
+      connector.setSize( s"$prefix-set-rem" ) must beEqualTo( 0 ).await
     }
 
-    "list overwrite at index" in {
-      Cache.listPrepend( s"$prefix-test-list-set", "C", "B", "A" ).sync must beEqualTo( 3 )
-      Cache.listSetAt( s"$prefix-test-list-set", 1, "D" ).sync
-      Cache.listSlice[ String ]( s"$prefix-test-list-set", 0, -1 ).sync must beEqualTo( List( "A", "D", "C" ) )
-      Cache.listSetAt( s"$prefix-test-list-set", 3, "D" ).sync must throwA[ IndexOutOfBoundsException ]
+    "set slice" in new TestCase {
+      connector.setSize( s"$prefix-set-slice" ) must beEqualTo( 0 ).await
+      connector.setAdd( s"$prefix-set-slice", "A", "B", "C" ) must beEqualTo( 3 ).await
+      connector.setSize( s"$prefix-set-slice" ) must beEqualTo( 3 ).await
+
+      connector.setMembers[ String ]( s"$prefix-set-slice" ) must beEqualTo( Set( "A", "B", "C" ) ).await
+
+      connector.setSize( s"$prefix-set-slice" ) must beEqualTo( 3 ).await
     }
 
-    "list pop head" in {
-      Cache.listHeadPop[ String ]( s"$prefix-test-list-pop" ).sync must beNone
-      Cache.listPrepend( s"$prefix-test-list-pop", "C", "B", "A" ).sync must beEqualTo( 3 )
-      Cache.listHeadPop[ String ]( s"$prefix-test-list-pop" ).sync must beSome( "A" )
-      Cache.listHeadPop[ String ]( s"$prefix-test-list-pop" ).sync must beSome( "B" )
-      Cache.listHeadPop[ String ]( s"$prefix-test-list-pop" ).sync must beSome( "C" )
-      Cache.listHeadPop[ String ]( s"$prefix-test-list-pop" ).sync must beNone
+    "hash set values" in new TestCase {
+      val key = s"$prefix-hash-set"
+
+      connector.hashSize( key ) must beEqualTo( 0 ).await
+      connector.hashGetAll( key ) must beEqualTo( Map.empty ).await
+      connector.hashKeys( key ) must beEqualTo( Set.empty ).await
+      connector.hashValues[ String ]( key ) must beEqualTo( Set.empty ).await
+
+      connector.hashGet[ String ]( key, "KA" ) must beNone.await
+      connector.hashSet( key, "KA", "VA1" ) must beTrue.await
+      connector.hashGet[ String ]( key, "KA" ) must beSome( "VA1" ).await
+      connector.hashSet( key, "KA", "VA2" ) must beFalse.await
+      connector.hashGet[ String ]( key, "KA" ) must beSome( "VA2" ).await
+      connector.hashSet( key, "KB", "VB" ) must beTrue.await
+
+      connector.hashExists( key, "KB" ) must beTrue.await
+      connector.hashExists( key, "KC" ) must beFalse.await
+
+      connector.hashSize( key ) must beEqualTo( 2 ).await
+      connector.hashGetAll[ String ]( key ) must beEqualTo( Map( "KA" -> "VA2", "KB" -> "VB" ) ).await
+      connector.hashKeys( key ) must beEqualTo( Set( "KA", "KB" ) ).await
+      connector.hashValues[ String ]( key ) must beEqualTo( Set( "VA2", "VB" ) ).await
+
+      connector.hashRemove( key, "KB" ) must beEqualTo( 1 ).await
+      connector.hashRemove( key, "KC" ) must beEqualTo( 0 ).await
+      connector.hashExists( key, "KB" ) must beFalse.await
+      connector.hashExists( key, "KA" ) must beTrue.await
+
+      connector.hashSize( key ) must beEqualTo( 1 ).await
+      connector.hashGetAll[ String ]( key ) must beEqualTo( Map( "KA" -> "VA2" ) ).await
+      connector.hashKeys( key ) must beEqualTo( Set( "KA" ) ).await
+      connector.hashValues[ String ]( key ) must beEqualTo( Set( "VA2" ) ).await
+
+      connector.hashSet( key, "KD", 5 ) must beTrue.await
+      connector.hashIncrement( key, "KD", 2 ) must beEqualTo( 7 ).await
+      connector.hashGet[ Int ]( key, "KD" ) must beSome( 7 ).await
     }
 
-    "list slice view" in {
-      Cache.listSlice[ String ]( s"$prefix-test-list-slice", 0, -1 ).sync must beEqualTo( List.empty )
-      Cache.listPrepend( s"$prefix-test-list-slice", "C", "B", "A" ).sync must beEqualTo( 3 )
-      Cache.listSlice[ String ]( s"$prefix-test-list-slice", 0, -1 ).sync must beEqualTo( List( "A", "B", "C" ) )
-      Cache.listSlice[ String ]( s"$prefix-test-list-slice", 0, 0 ).sync must beEqualTo( List( "A" ) )
-      Cache.listSlice[ String ]( s"$prefix-test-list-slice", -2, -1 ).sync must beEqualTo( List( "B", "C" ) )
-    }
-
-    "list remove by value" in {
-      Cache.listRemove( s"$prefix-test-list-remove", "A", count = 1 ).sync must beEqualTo( 0 )
-      Cache.listPrepend( s"$prefix-test-list-remove", "A", "B", "C" ).sync must beEqualTo( 3 )
-      Cache.listRemove( s"$prefix-test-list-remove", "A", count = 1 ).sync must beEqualTo( 1 )
-      Cache.listSize( s"$prefix-test-list-remove" ).sync must beEqualTo( 2 )
-    }
-
-    "list trim" in {
-      Cache.listPrepend( s"$prefix-test-list-trim", "C", "B", "A" ).sync must beEqualTo( 3 )
-      Cache.listTrim( s"$prefix-test-list-trim", 1, 2 ).sync
-      Cache.listSize( s"$prefix-test-list-trim" ).sync must beEqualTo( 2 )
-      Cache.listSlice[ String ]( s"$prefix-test-list-trim", 0, -1 ).sync must beEqualTo( List( "B", "C" ) )
-    }
-
-    "list insert" in {
-      Cache.listSize( s"$prefix-test-list-insert-1" ).sync must beEqualTo( 0 )
-      Cache.listInsert( s"$prefix-test-list-insert-1", "C", "B" ).sync must beNone
-      Cache.listPrepend( s"$prefix-test-list-insert-1", "C", "A" ).sync must beEqualTo( 2 )
-      Cache.listInsert( s"$prefix-test-list-insert-1", "C", "B" ).sync must beSome( 3 )
-      Cache.listInsert( s"$prefix-test-list-insert-1", "E", "D" ).sync must beNone
-      Cache.listSlice[ String ]( s"$prefix-test-list-insert-1", 0, -1 ).sync must beEqualTo( List( "A", "B", "C" ) )
-
-      Cache.set( s"$prefix-test-list-insert-2", "string value" ).sync
-      Cache.listInsert( s"$prefix-test-list-insert-2", "C", "B" ).sync must throwA[ IllegalArgumentException ]
-    }
-
-    "set add" in {
-      Cache.setSize( s"$prefix-test-set-add" ).sync must beEqualTo( 0 )
-      Cache.setAdd( s"$prefix-test-set-add", "A", "B" ).sync must beEqualTo( 2 )
-      Cache.setSize( s"$prefix-test-set-add" ).sync must beEqualTo( 2 )
-      Cache.setAdd( s"$prefix-test-set-add", "C", "B" ).sync must beEqualTo( 1 )
-      Cache.setSize( s"$prefix-test-set-add" ).sync must beEqualTo( 3 )
-    }
-
-    "set rank" in {
-      Cache.setSize( s"$prefix-test-set-rank" ).sync must beEqualTo( 0 )
-      Cache.setAdd( s"$prefix-test-set-rank", "A", "B" ).sync must beEqualTo( 2 )
-      Cache.setSize( s"$prefix-test-set-rank" ).sync must beEqualTo( 2 )
-
-      Cache.setIsMember( s"$prefix-test-set-rank", "A" ).sync must beTrue
-      Cache.setIsMember( s"$prefix-test-set-rank", "B" ).sync must beTrue
-      Cache.setIsMember( s"$prefix-test-set-rank", "C" ).sync must beFalse
-
-      Cache.setAdd( s"$prefix-test-set-rank", "C", "B" ).sync must beEqualTo( 1 )
-
-      Cache.setIsMember( s"$prefix-test-set-rank", "A" ).sync must beTrue
-      Cache.setIsMember( s"$prefix-test-set-rank", "B" ).sync must beTrue
-      Cache.setIsMember( s"$prefix-test-set-rank", "C" ).sync must beTrue
-    }
-
-    "set size" in {
-      Cache.setSize( s"$prefix-test-set-size" ).sync must beEqualTo( 0 )
-      Cache.setAdd( s"$prefix-test-set-size", "A", "B" ).sync must beEqualTo( 2 )
-      Cache.setSize( s"$prefix-test-set-size" ).sync must beEqualTo( 2 )
-    }
-
-    "set rem" in {
-      Cache.setSize( s"$prefix-test-set-rem" ).sync must beEqualTo( 0 )
-      Cache.setAdd( s"$prefix-test-set-rem", "A", "B", "C" ).sync must beEqualTo( 3 )
-      Cache.setSize( s"$prefix-test-set-rem" ).sync must beEqualTo( 3 )
-
-      Cache.setRemove( s"$prefix-test-set-rem", "A" ).sync must beEqualTo( 1 )
-      Cache.setSize( s"$prefix-test-set-rem" ).sync must beEqualTo( 2 )
-      Cache.setRemove( s"$prefix-test-set-rem", "B", "C", "D" ).sync must beEqualTo( 2 )
-      Cache.setSize( s"$prefix-test-set-rem" ).sync must beEqualTo( 0 )
-    }
-
-    "set slice" in {
-      Cache.setSize( s"$prefix-test-set-slice" ).sync must beEqualTo( 0 )
-      Cache.setAdd( s"$prefix-test-set-slice", "A", "B", "C" ).sync must beEqualTo( 3 )
-      Cache.setSize( s"$prefix-test-set-slice" ).sync must beEqualTo( 3 )
-
-      Cache.setMembers[ String ]( s"$prefix-test-set-slice" ).sync must beEqualTo( Set( "A", "B", "C" ) )
-
-      Cache.setSize( s"$prefix-test-set-slice" ).sync must beEqualTo( 3 )
-    }
-
-    "hash set values" in {
-      val key = s"$prefix-test-hash-set"
-
-      Cache.hashSize( key ).sync must beEqualTo( 0 )
-      Cache.hashGetAll( key ).sync must beEqualTo( Map.empty )
-      Cache.hashKeys( key ).sync must beEqualTo( Set.empty )
-      Cache.hashValues[ String ]( key ).sync must beEqualTo( Set.empty )
-
-      Cache.hashGet[ String ]( key, "KA" ).sync must beNone
-      Cache.hashSet( key, "KA", "VA1" ).sync must beTrue
-      Cache.hashGet[ String ]( key, "KA" ).sync must beSome( "VA1" )
-      Cache.hashSet( key, "KA", "VA2" ).sync must beFalse
-      Cache.hashGet[ String ]( key, "KA" ).sync must beSome( "VA2" )
-      Cache.hashSet( key, "KB", "VB" ).sync must beTrue
-
-      Cache.hashExists( key, "KB" ).sync must beTrue
-      Cache.hashExists( key, "KC" ).sync must beFalse
-
-      Cache.hashSize( key ).sync must beEqualTo( 2 )
-      Cache.hashGetAll[ String ]( key ).sync must beEqualTo( Map( "KA" -> "VA2", "KB" -> "VB" ) )
-      Cache.hashKeys( key ).sync must beEqualTo( Set( "KA", "KB" ) )
-      Cache.hashValues[ String ]( key ).sync must beEqualTo( Set( "VA2", "VB" ) )
-
-      Cache.hashRemove( key, "KB" ).sync must beEqualTo( 1 )
-      Cache.hashRemove( key, "KC" ).sync must beEqualTo( 0 )
-      Cache.hashExists( key, "KB" ).sync must beFalse
-      Cache.hashExists( key, "KA" ).sync must beTrue
-
-      Cache.hashSize( key ).sync must beEqualTo( 1 )
-      Cache.hashGetAll[ String ]( key ).sync must beEqualTo( Map( "KA" -> "VA2" ) )
-      Cache.hashKeys( key ).sync must beEqualTo( Set( "KA" ) )
-      Cache.hashValues[ String ]( key ).sync must beEqualTo( Set( "VA2" ) )
+    "hash set into invalid type" in new TestCase {
+      connector.set( s"$prefix-hash-invalid-$idx", "value" ) must not( throwA[ Throwable ] ).await
+      connector.get[ String ]( s"$prefix-hash-invalid-$idx" ) must beSome( "value" ).await
+      connector.hashSet( s"$prefix-hash-invalid-$idx", "KA", "VA1" ) must throwA[ IllegalArgumentException ].await
     }
   }
 
+  def beforeAll( ) = {
+    // initialize the connector by flushing the database
+    connector.matching( s"$prefix-*" ).flatMap( connector.remove ).await
+  }
+
+  def afterAll( ) = {
+    lifecycle.stop()
+  }
 }

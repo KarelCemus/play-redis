@@ -17,7 +17,8 @@ private[ impl ] class AsyncRedis( redis: RedisConnector )( implicit runtime: Red
   with CacheAsyncApi
 {
 
-  def getOrElseUpdate[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => Future[ T ] ) = getOrFuture[ T ]( key, expiration )( orElse )
+  def getOrElseUpdate[ T: ClassTag ]( key: String, expiration: Duration )( orElse: => Future[ T ] ) =
+    getOrFuture[ T ]( key, expiration )( orElse )
 
   def removeAll( ): Future[ Done ] = invalidate()
 }

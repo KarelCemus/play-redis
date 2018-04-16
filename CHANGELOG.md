@@ -12,7 +12,7 @@ Standalone client now fails eagerly when the connection to redis is not
 established. This is to avoid long timeout while the rediscala is trying
 to reconnect. [#147](https://github.com/KarelCemus/play-redis/issues/147)
 
-Deprecated`timeout` property and replaced by `sync-timeout` with the identical
+Deprecated `timeout` property and replaced by `sync-timeout` with the identical
 meaning and use. Will be removed by 2.2.0. [#154](https://github.com/KarelCemus/play-redis/issues/154)
 
 Introduced **optional** `redis-timeout` property indicating timeout on redis queries.
@@ -21,6 +21,8 @@ be never completed. However, to avoid performance issues, the timeout is **disab
 See [the configuration]() for more details. [#154](https://github.com/KarelCemus/play-redis/issues/154)
 
 Rediscala bumped to 1.8.3 and subsequently Akka bumped to 2.5.6 [#150](https://github.com/KarelCemus/play-redis/issues/150).
+
+Revamped tests, reduced their number but increased value and code coverage [#108](https://github.com/KarelCemus/play-redis/issues/108)
 
 #### Removal of `@Named` and introduction of `@NamedCache`
 

@@ -1,129 +1,98 @@
 package play.api.cache.redis.impl
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
-import scala.reflect.ClassTag
-
 import play.api.cache.redis._
 
+import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
 
 /**
-  * <p>Test of cache to be sure that keys are differentiated, expires etc.</p>
+  * @author Karel Cemus
   */
-class RedisSetSpecs extends Specification with Redis {
-  outer =>
+class RedisSetSpecs( implicit ee: ExecutionEnv ) extends Specification with ReducedMockito {
+  import Implicits._
+  import RedisCacheImplicits._
 
-  import play.api.cache.redis.TestHelpers._
+  import org.mockito.ArgumentMatchers._
 
-  private type Cache = RedisCache[ SynchronousResult ]
+  "Redis Set" should {
 
-  private val workingConnector = injector.instanceOf[ RedisConnector ]
+    "add" in new MockedSet {
+      connector.setAdd( anyString, anyVarArgs ) returns 5L
+      set.add( value ) must beEqualTo( set ).await
+      set.add( value, other ) must beEqualTo( set ).await
+      there were one( connector ).setAdd( key, value )
+      there were one( connector ).setAdd( key, value, other )
+    }
 
-  implicit def runtime( policy: RecoveryPolicy ) =  RedisRuntime( "play", 3.minutes, ExecutionContext.Implicits.global, policy, invocation = LazyInvocation )
+    "add (failing)" in new MockedSet {
+      connector.setAdd( anyString, anyVarArgs ) returns ex
+      set.add( value ) must beEqualTo( set ).await
+      there were one( connector ).setAdd( key, value )
+    }
 
-  // test proper implementation, no fails
-  new RedisSetSuite( "implement", "redis-cache-implements", new RedisCache( workingConnector, Builders.SynchronousBuilder )( FailThrough ), AlwaysSuccess )
+    "contains" in new MockedSet {
+      connector.setIsMember( anyString, beEq( value ) ) returns true
+      connector.setIsMember( anyString, beEq( other ) ) returns false
+      set.contains( value ) must beTrue.await
+      set.contains( other ) must beFalse.await
+    }
 
-  new RedisSetSuite( "recover from", "redis-cache-recovery", new RedisCache( FailingConnector, Builders.SynchronousBuilder )( RecoverWithDefault ), AlwaysDefault )
+    "contains (failing)" in new MockedSet {
+      connector.setIsMember( anyString, anyString ) returns ex
+      set.contains( value ) must beFalse.await
+      there were one( connector ).setIsMember( key, value )
+    }
 
-  new RedisSetSuite( "fail on", "redis-cache-fail", new RedisCache( FailingConnector, Builders.SynchronousBuilder )( FailThrough ), AlwaysException )
+    "remove" in new MockedSet {
+      connector.setRemove( anyString, anyVarArgs ) returns 1L
+      set.remove( value ) must beEqualTo( set ).await
+      set.remove( other, value ) must beEqualTo( set ).await
+      there were one( connector ).setRemove( key, value )
+      there were one( connector ).setRemove( key, other, value )
+    }
 
-  class RedisSetSuite( suiteName: String, prefix: String, cache: Cache, expectation: Expectation ) {
+    "remove (failing)" in new MockedSet {
+      connector.setRemove( anyString, anyVarArgs ) returns ex
+      set.remove( value ) must beEqualTo( set ).await
+      there were one( connector ).setRemove( key, value )
+    }
 
-    def set[ T: ClassTag ]( key: String ) = cache.set[ T ]( key )
+    "toSet" in new MockedSet {
+      connector.setMembers[ String ]( anyString )( anyClassTag ) returns ( data.toSet: Set[ String ] )
+      set.toSet must beEqualTo( data ).await
+    }
 
-    def strings( implicit theKey: Key ) = set[ String ]( theKey.key )
+    "toSet (failing)" in new MockedSet {
+      connector.setMembers[ String ]( anyString )( anyClassTag ) returns ex
+      set.toSet must beEqualTo( Set.empty ).await
+    }
 
-    def objects( implicit theKey: Key ) = set[ SimpleObject ]( theKey.key )
+    "size" in new MockedSet {
+      connector.setSize( key ) returns 2L
+      set.size must beEqualTo( 2L ).await
+    }
 
-    "SynchronousRedisSet" should {
+    "size (failing)" in new MockedSet {
+      connector.setSize( key ) returns ex
+      set.size must beEqualTo( 0L ).await
+    }
 
-      import expectation._
+    "empty set" in new MockedSet {
+      connector.setSize( beEq( key ) ) returns 0L
+      set.isEmpty must beTrue.await
+      set.nonEmpty must beFalse.await
+    }
 
-      suiteName >> {
+    "non-empty set" in new MockedSet {
+      connector.setSize( beEq( key ) ) returns 1L
+      set.isEmpty must beFalse.await
+      set.nonEmpty must beTrue.await
+    }
 
-        "add into the set" in {
-          implicit val key: Key = s"$prefix-set-add"
-
-          strings.size must expectsNow( 0 )
-          strings.isEmpty must expectsNow( beTrue )
-          strings.nonEmpty must expectsNow( beFalse )
-
-          strings.add( "A", "B", "D" ).add( "C" ).add( "A" ).size must expectsNow( 4, 0 )
-          strings.isEmpty must expectsNow( beFalse, beTrue )
-          strings.nonEmpty must expectsNow( beTrue, beFalse )
-
-          strings.toSet must expectsNow( Set( "A", "B", "C", "D" ), Set.empty )
-          strings.contains( "A" ) must expectsNow( beTrue, beFalse )
-          strings.contains( "B" ) must expectsNow( beTrue, beFalse )
-          strings.contains( "C" ) must expectsNow( beTrue, beFalse )
-          strings.contains( "D" ) must expectsNow( beTrue, beFalse )
-          strings.contains( "E" ) must expectsNow( beFalse, beFalse )
-        }
-
-        "remove from the set" in {
-          implicit val key: Key = s"$prefix-set-remove"
-
-          strings.size must expectsNow( 0 )
-          strings.add( "A", "B", "D" ).size must expectsNow( 3, 0 )
-
-          strings.contains( "A" ) must expectsNow( beTrue, beFalse )
-          strings.contains( "B" ) must expectsNow( beTrue, beFalse )
-          strings.contains( "C" ) must expectsNow( beFalse, beFalse )
-          strings.contains( "D" ) must expectsNow( beTrue, beFalse )
-
-          strings.remove( "A" ).size must expectsNow( 2, 0 )
-          strings.contains( "A" ) must expectsNow( beFalse, beFalse )
-          strings.contains( "B" ) must expectsNow( beTrue, beFalse )
-          strings.contains( "C" ) must expectsNow( beFalse, beFalse )
-          strings.contains( "D" ) must expectsNow( beTrue, beFalse )
-
-          strings.remove( "B", "C", "D" ).size must expectsNow( 0, 0 )
-          strings.contains( "A" ) must expectsNow( beFalse, beFalse )
-          strings.contains( "B" ) must expectsNow( beFalse, beFalse )
-          strings.contains( "C" ) must expectsNow( beFalse, beFalse )
-          strings.contains( "D" ) must expectsNow( beFalse, beFalse )
-        }
-
-        "working with the set at non-set key" in {
-          implicit val key: Key = s"$prefix-set-invalid"
-
-          cache.set( key.key, "invalid" ) must expectsNow( beUnit )
-          strings.add( "A" ) must expectsNow( throwA[ IllegalArgumentException ], beAnInstanceOf[ RedisSet[ String, AsynchronousResult ] ] )
-        }
-
-        "objects in the set" in {
-          implicit val key: Key = s"$prefix-set-objects"
-
-          def A = SimpleObject( "A", 1 )
-          def B = SimpleObject( "B", 2 )
-          def C = SimpleObject( "C", 3 )
-          def D = SimpleObject( "D", 4 )
-          def E = SimpleObject( "E", 5 )
-
-          objects.size must expectsNow( 0 )
-          objects.add( A, B, D ).add( A ).size must expectsNow( 3, 0 )
-
-          objects.contains( A ) must expectsNow( beTrue, beFalse )
-          objects.contains( B ) must expectsNow( beTrue, beFalse )
-          objects.contains( C ) must expectsNow( beFalse, beFalse )
-          objects.contains( D ) must expectsNow( beTrue, beFalse )
-
-          objects.remove( A ).size must expectsNow( 2, 0 )
-          objects.contains( A ) must expectsNow( beFalse, beFalse )
-          objects.contains( B ) must expectsNow( beTrue, beFalse )
-          objects.contains( C ) must expectsNow( beFalse, beFalse )
-          objects.contains( D ) must expectsNow( beTrue, beFalse )
-
-          objects.remove( B, C, D ).size must expectsNow( 0, 0 )
-          objects.contains( A ) must expectsNow( beFalse, beFalse )
-          objects.contains( B ) must expectsNow( beFalse, beFalse )
-          objects.contains( C ) must expectsNow( beFalse, beFalse )
-          objects.contains( D ) must expectsNow( beFalse, beFalse )
-        }
-      }
+    "empty/non-empty set (failing)" in new MockedSet {
+      connector.setSize( beEq( key ) ) returns ex
+      set.isEmpty must beTrue.await
+      set.nonEmpty must beFalse.await
     }
   }
-
 }

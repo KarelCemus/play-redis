@@ -15,13 +15,11 @@ scalaVersion := "2.12.5"
 
 crossScalaVersions := Seq( "2.11.12", scalaVersion.value )
 
-val playVersion = "2.6.12"
+val playVersion = "2.6.13"
 
 val connectorVersion = "1.8.3"
 
 val specs2Version = "4.0.3"
-
-parallelExecution in Test := false
 
 libraryDependencies ++= Seq(
   // play framework cache API
@@ -31,7 +29,9 @@ libraryDependencies ++= Seq(
   // test framework
   "org.specs2" %% "specs2-core" % specs2Version % Test,
   // test module for play framework
-  "com.typesafe.play" %% "play-specs2" % playVersion % Test
+  "com.typesafe.play" %% "play-specs2" % playVersion % Test,
+  // mockito framework
+  "org.mockito" % "mockito-core" % "2.18.0"
 )
 
 resolvers ++= Seq(
@@ -71,3 +71,6 @@ publishTo := {
   if (isSnapshot.value) Some(Opts.resolver.sonatypeSnapshots)
   else Some( Opts.resolver.sonatypeStaging )
 }
+
+// exclude from tests coverage
+coverageExcludedFiles := ".*exceptions.*"

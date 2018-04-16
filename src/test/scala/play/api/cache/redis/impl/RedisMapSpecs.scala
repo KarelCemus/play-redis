@@ -1,152 +1,144 @@
 package play.api.cache.redis.impl
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
-import scala.reflect.ClassTag
-
 import play.api.cache.redis._
 
+import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
 
 /**
-  * <p>Test of cache to be sure that keys are differentiated, expires etc.</p>
+  * @author Karel Cemus
   */
-class RedisMapSpecs extends Specification with Redis {
-  outer =>
+class RedisMapSpecs( implicit ee: ExecutionEnv ) extends Specification with ReducedMockito {
 
-  import play.api.cache.redis.TestHelpers._
+  import Implicits._
+  import RedisCacheImplicits._
 
-  private type Cache = RedisCache[ SynchronousResult ]
+  import org.mockito.ArgumentMatchers._
 
-  private val workingConnector = injector.instanceOf[ RedisConnector ]
+  "Redis Map" should {
 
-  implicit def runtime( policy: RecoveryPolicy ) =  RedisRuntime( "play", 3.minutes, ExecutionContext.Implicits.global, policy, invocation = LazyInvocation )
+    "set" in new MockedMap {
+      connector.hashSet( anyString, anyString, anyString ) returns true
+      map.add( field, value ) must beEqualTo( map ).await
+      there were one( connector ).hashSet( key, field, value )
+    }
 
-  // test proper implementation, no fails
-  new RedisMapSuite( "implement", "redis-cache-implements", new RedisCache( workingConnector, Builders.SynchronousBuilder )( FailThrough ), AlwaysSuccess )
+    "set (failing)" in new MockedMap {
+      connector.hashSet( anyString, anyString, anyString ) returns ex
+      map.add( field, value ) must beEqualTo( map ).await
+      there were one( connector ).hashSet( key, field, value )
+    }
 
-  new RedisMapSuite( "recover from", "redis-cache-recovery", new RedisCache( FailingConnector, Builders.SynchronousBuilder )( RecoverWithDefault ), AlwaysDefault )
+    "get" in new MockedMap {
+      connector.hashGet[ String ]( anyString, beEq( field ) )( anyClassTag ) returns Some( value )
+      connector.hashGet[ String ]( anyString, beEq( other ) )( anyClassTag ) returns None
+      map.get( field ) must beSome( value ).await
+      map.get( other ) must beNone.await
+      there were one( connector ).hashGet[ String ]( key, field )
+      there were one( connector ).hashGet[ String ]( key, other )
+    }
 
-  new RedisMapSuite( "fail on", "redis-cache-fail", new RedisCache( FailingConnector, Builders.SynchronousBuilder )( FailThrough ), AlwaysException )
+    "get (failing)" in new MockedMap {
+      connector.hashGet[ String ]( anyString, beEq( field ) )( anyClassTag ) returns ex
+      map.get( field ) must beNone.await
+      there were one( connector ).hashGet[ String ]( key, field )
+    }
 
-  class RedisMapSuite( suiteName: String, prefix: String, cache: Cache, expectation: Expectation ) {
+    "contains" in new MockedMap {
+      connector.hashExists( anyString, beEq( field ) ) returns true
+      connector.hashExists( anyString, beEq( other ) ) returns false
+      map.contains( field ) must beTrue.await
+      map.contains( other ) must beFalse.await
+    }
 
-    def map[ T: ClassTag ]( key: String ) = cache.map[ T ]( key )
+    "contains (failing)" in new MockedMap {
+      connector.hashExists( anyString, anyString ) returns ex
+      map.contains( field ) must beFalse.await
+      there were one( connector ).hashExists( key, field )
+    }
 
-    def numbers( implicit theKey: Key ) = map[ Long ]( theKey.key )
+    "remove" in new MockedMap {
+      connector.hashRemove( anyString, anyVarArgs ) returns 1L
+      map.remove( field ) must beEqualTo( map ).await
+      map.remove( field, other ) must beEqualTo( map ).await
+      there were one( connector ).hashRemove( key, field )
+      there were one( connector ).hashRemove( key, field, other )
+    }
 
-    def strings( implicit theKey: Key ) = map[ String ]( theKey.key )
+    "remove (failing)" in new MockedMap {
+      connector.hashRemove( anyString, anyVarArgs ) returns ex
+      map.remove( field ) must beEqualTo( map ).await
+      there were one( connector ).hashRemove( key, field )
+    }
 
-    def objects( implicit theKey: Key ) = map[ SimpleObject ]( theKey.key )
+    "increment" in new MockedMap {
+      connector.hashIncrement( anyString, beEq( field ), anyLong ) returns 5L
+      map.increment( field, 2L ) must beEqualTo( 5L ).await
+      there were one( connector ).hashIncrement( key, field, 2L )
+    }
 
-    "SynchronousRedisMap" should {
+    "increment (failing)" in new MockedMap {
+      connector.hashIncrement( anyString, beEq( field ), anyLong ) returns ex
+      map.increment( field, 2L ) must beEqualTo( 2L ).await
+      there were one( connector ).hashIncrement( key, field, 2L )
+    }
 
-      import expectation._
+    "toMap" in new MockedMap {
+      connector.hashGetAll[ String ]( anyString )( anyClassTag ) returns Map( field -> value )
+      map.toMap must beEqualTo( Map( field -> value ) ).await
+    }
 
-      suiteName >> {
+    "toMap (failing)" in new MockedMap {
+      connector.hashGetAll[ String ]( anyString )( anyClassTag ) returns ex
+      map.toMap must beEqualTo( Map.empty ).await
+    }
 
-        "add into the map" in {
-          implicit val key: Key = s"$prefix-map-add"
+    "keySet" in new MockedMap {
+      connector.hashKeys( anyString ) returns Set( field )
+      map.keySet must beEqualTo( Set( field ) ).await
+    }
 
-          strings.size must expectsNow( 0 )
-          strings.isEmpty must expectsNow( beTrue )
-          strings.nonEmpty must expectsNow( beFalse )
+    "keySet (failing)" in new MockedMap {
+      connector.hashKeys( anyString ) returns ex
+      map.keySet must beEqualTo( Set.empty ).await
+    }
 
-          strings.add( "KA", "A1" ).add( "KB", "B" ).add( "KC", "C" ).add( "KA", "A2" ).size must expectsNow( 3, 0 )
-          strings.isEmpty must expectsNow( beFalse, beTrue )
-          strings.nonEmpty must expectsNow( beTrue, beFalse )
+    "values" in new MockedMap {
+      connector.hashValues[ String ]( anyString )( anyClassTag ) returns Set( value )
+      map.values must beEqualTo( Set( value ) ).await
+    }
 
-          strings.toMap must expectsNow( Map( "KA" -> "A2", "KB" -> "B", "KC" -> "C" ), Map.empty[ String, String ] )
-          strings.contains( "KA" ) must expectsNow( beTrue, beFalse )
-          strings.contains( "KB" ) must expectsNow( beTrue, beFalse )
-          strings.contains( "KC" ) must expectsNow( beTrue, beFalse )
-          strings.contains( "KD" ) must expectsNow( beFalse, beFalse )
-        }
+    "values (failing)" in new MockedMap {
+      connector.hashValues[ String ]( anyString )( anyClassTag ) returns ex
+      map.values must beEqualTo( Set.empty ).await
+    }
 
-        "increment in the map" in {
-          implicit val key: Key = s"$prefix-map-increment"
+    "size" in new MockedMap {
+      connector.hashSize( key ) returns 2L
+      map.size must beEqualTo( 2L ).await
+    }
 
-          numbers.size must expectsNow( 0 )
-          numbers.isEmpty must expectsNow( beTrue )
-          numbers.nonEmpty must expectsNow( beFalse )
+    "size (failing)" in new MockedMap {
+      connector.hashSize( key ) returns ex
+      map.size must beEqualTo( 0L ).await
+    }
 
-          numbers.add( "A", 0 ).add( "B", 5 ).add( "C", 10 ).size must expectsNow( 3, 0 )
-          numbers.isEmpty must expectsNow( beFalse, beTrue )
-          numbers.nonEmpty must expectsNow( beTrue, beFalse )
+    "empty map" in new MockedMap {
+      connector.hashSize( beEq( key ) ) returns 0L
+      map.isEmpty must beTrue.await
+      map.nonEmpty must beFalse.await
+    }
 
-          numbers.increment( "A" ) must expectsNow( 1, 1 )
-          numbers.increment( "B", 2 ) must expectsNow( 7, 2 )
-          numbers.increment( "C", -2 ) must expectsNow( 8, -2 )
-          numbers.increment( "D", 10 ) must expectsNow( 10, 10 )
-          numbers.toMap must expectsNow( Map( "A" -> 1, "B" -> 7, "C" -> 8, "D" -> 10 ), Map.empty[ String, Long ] )
-        }
+    "non-empty map" in new MockedMap {
+      connector.hashSize( beEq( key ) ) returns 1L
+      map.isEmpty must beFalse.await
+      map.nonEmpty must beTrue.await
+    }
 
-        "remove from the map" in {
-          implicit val key: Key = s"$prefix-map-remove"
-
-          strings.size must expectsNow( 0 )
-          strings.add( "KA", "A1" ).add( "KB", "B" ).add( "KC", "C" ).add( "KA", "A2" ).size must expectsNow( 3, 0 )
-
-          strings.contains( "KA" ) must expectsNow( beTrue, beFalse )
-          strings.contains( "KB" ) must expectsNow( beTrue, beFalse )
-          strings.contains( "KC" ) must expectsNow( beTrue, beFalse )
-          strings.contains( "KD" ) must expectsNow( beFalse, beFalse )
-
-          strings.remove( "KA" ).size must expectsNow( 2, 0 )
-          strings.contains( "KA" ) must expectsNow( beFalse, beFalse )
-          strings.contains( "KB" ) must expectsNow( beTrue, beFalse )
-          strings.contains( "KC" ) must expectsNow( beTrue, beFalse )
-          strings.contains( "KD" ) must expectsNow( beFalse, beFalse )
-
-          strings.remove( "KB", "KC" ).size must expectsNow( 0, 0 )
-          strings.contains( "KA" ) must expectsNow( beFalse, beFalse )
-          strings.contains( "KB" ) must expectsNow( beFalse, beFalse )
-          strings.contains( "KC" ) must expectsNow( beFalse, beFalse )
-          strings.contains( "KD" ) must expectsNow( beFalse, beFalse )
-        }
-
-        "working with the map at non-map key" in {
-          implicit val key: Key = s"$prefix-map-invalid"
-
-          cache.set( key.key, "invalid" ) must expectsNow( beUnit )
-          strings.add( "KA", "A" ) must expectsNow( throwA[ IllegalArgumentException ], beAnInstanceOf[ RedisMap[ String, AsynchronousResult ] ] )
-        }
-
-        "objects in the map" in {
-          implicit val key: Key = s"$prefix-map-objects"
-
-          def A = SimpleObject( "A", 1 )
-
-          def B = SimpleObject( "B", 2 )
-
-          def C = SimpleObject( "C", 3 )
-
-          def D = SimpleObject( "D", 4 )
-
-          def E = SimpleObject( "E", 5 )
-
-          objects.size must expectsNow( 0 )
-          objects.add( "A", A ).add( "B", B ).add( "C", C ).add( "A", A ).size must expectsNow( 3, 0 )
-
-          objects.contains( "A" ) must expectsNow( beTrue, beFalse )
-          objects.contains( "B" ) must expectsNow( beTrue, beFalse )
-          objects.contains( "C" ) must expectsNow( beTrue, beFalse )
-          objects.contains( "D" ) must expectsNow( beFalse, beFalse )
-
-          objects.remove( "A" ).size must expectsNow( 2, 0 )
-          objects.contains( "A" ) must expectsNow( beFalse, beFalse )
-          objects.contains( "B" ) must expectsNow( beTrue, beFalse )
-          objects.contains( "C" ) must expectsNow( beTrue, beFalse )
-          objects.contains( "D" ) must expectsNow( beFalse, beFalse )
-
-          objects.remove( "B", "C", "D" ).size must expectsNow( 0, 0 )
-          objects.contains( "A" ) must expectsNow( beFalse, beFalse )
-          objects.contains( "B" ) must expectsNow( beFalse, beFalse )
-          objects.contains( "C" ) must expectsNow( beFalse, beFalse )
-          objects.contains( "D" ) must expectsNow( beFalse, beFalse )
-        }
-      }
+    "empty/non-empty map (failing)" in new MockedMap {
+      connector.hashSize( beEq( key ) ) returns ex
+      map.isEmpty must beTrue.await
+      map.nonEmpty must beFalse.await
     }
   }
-
 }
