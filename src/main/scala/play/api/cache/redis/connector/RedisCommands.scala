@@ -100,11 +100,12 @@ private[ connector ] class RedisCommandsStandalone( configuration: RedisStandalo
   * @param system        actor system
   */
 private[ connector ] class RedisCommandsCluster( configuration: RedisCluster )( implicit system: ActorSystem, val lifecycle: ApplicationLifecycle ) extends Provider[ RedisCommands ] with AbstractRedisCommands {
+  import HostnameResolver._
   import configuration._
 
   val client = new RedisClusterClient(
     nodes.map {
-      case RedisHost( host, port, database, password ) => RedisServer( host, port, password, database )
+      case RedisHost( host, port, database, password ) => RedisServer( host.resolvedIpAddress, port, password, database )
     }
   ) with RedisRequestTimeout {
 
