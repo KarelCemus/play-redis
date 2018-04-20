@@ -2,12 +2,12 @@ package play.api.cache.redis.configuration
 
 import play.api.cache.redis._
 
-import org.specs2.mutable.Spec
+import org.specs2.mutable.Specification
 
 /**
   * @author Karel Cemus
   */
-class RedisHostSpecs extends Spec {
+class RedisHostSpecs extends Specification {
   import Implicits._
 
   private implicit val loader = RedisHost
