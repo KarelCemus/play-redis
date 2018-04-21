@@ -11,12 +11,105 @@
 </div>
 
 
-## About the project
+## About the Project
 
-This module for Play framework 2 adds support of Redis cache server and provides
-a set of handful APIs. For more details and **full documentation for the version `2.x.x`** and newer please **see
-[the wiki](https://github.com/KarelCemus/play-redis/wiki)**. For the documentation of older versions see
-README at corresponding tag in git history.
+[Play framework 2](http://playframework.com/) is delivered with EHCache module implementing
+[SyncCacheApi and AsyncCacheApi](https://playframework.com/documentation/2.6.x/ScalaCache).
+This module adds **support of Redis cache** server, i.e., key/value storage. 
+
+Besides the compatibility with all Play's cache APIs,
+it introduces more evolved API providing lots of handful 
+operations. Besides the basic methods such as `get`, `set` 
+and `remove`, it provides more convenient methods such as 
+`expire`, `exists`, `invalidate` and much more.
+
+The implementation builds on the top of Akka actor system, 
+it is **completely non-blocking and asynchronous** under 
+the hood, though it also provides blocking APIs to ease 
+the use. Furthermore, the library supports several configuration 
+providers to let you easily use `play-redis` on localhost, Heroku, 
+as well as on your premise.
+ 
+
+## Features
+
+- [synchronous and asynchronous APIs](#provided-apis)
+- [implements standard APIs defined by Play's `cacheApi` project](#provided-apis)
+- support of [named caches](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/20-configuration.md#named-caches)
+- [works with Guice](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/40-migration.md#runtime-time-dependency-injection) as well as [compile-time DI](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/40-migration.md#compile-time-dependency-injection)
+- [getOrElse and getOrFuture operations](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/30-how-to-use.md#use-of-cacheapi) easing the use
+- [wildcards in remove operation](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/30-how-to-use.md#use-of-cacheapi)
+- support of collections: [sets](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/30-how-to-use.md#use-of-sets), [lists](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/30-how-to-use.md#use-of-lists), and [maps](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/30-how-to-use.md#use-of-maps)
+- [increment and decrement operations](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/30-how-to-use.md#use-of-cacheapi)
+- [eager and lazy invocation policies](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/30-how-to-use.md#eager-and-lazy-invocation) waiting or not waiting for the result
+- several [recovery policies](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/20-configuration.md#recovery-policy) and possibility of further customization
+- support of [several configuration sources](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/20-configuration.md#running-in-different-environments) 
+    - static in the configuration file
+    - from the connection string optionally in the environmental variable
+    - custom implementation of the configuration provider
+- support of [both standalone and cluster modes](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/20-configuration.md#standalone-vs-cluster)
+- build on the top of Akka actors and serializers, [agnostic to the serialization mechanism](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/30-how-to-use.md#limitations)
+    - for simplicity, it uses deprecated Java serialization by default
+    - it is recommended to use [Kryo library](https://github.com/romix/akka-kryo-serialization) or any other mechanism  
+
+
+## Provided APIs
+
+This library delivers a single module with following implementations of the API. While the core
+of the framework is **fully non-blocking**, most of the provided facades are **only blocking wrappers**.
+
+<center>
+
+|    | Trait                                | Language | Blocking     | Features |
+| -- | ------------------------------------ | :------: | :----------: | :------: |
+| 1. | `play.api.cache.redis.CacheApi`      | Scala    | *blocking*   | advanced |
+| 2. | `play.api.cache.redis.CacheAsyncApi` | Scala    | non-blocking | advanced |
+| 3. | `play.api.cache.SyncCacheApi`        | Scala    | *blocking*   | basic    |
+| 4. | `play.api.cache.AsyncCacheApi`       | Scala    | non-blocking | basic    |
+| 5. | `play.cache.SyncCacheApi`            | Java     | *blocking*   | basic    |
+| 6. | `play.cache.AsyncCacheApi`           | Java     | non-blocking | basic    |
+
+</center>
+
+First, the `CacheAsyncApi` provides extended API to work with Redis and enables **non-blocking** 
+connection providing results through `scala.concurrent.Future`.
+Second, the `CacheApi` is a thin **blocking** wrapper around the asynchronous implementation.
+Third, there are other implementations supporting contemporary versions of the `CacheApi`s 
+bundled within Play framework. Finally, `play-redis` also supports Java version of the API.
+
+
+## Documentation and Getting Started
+ 
+**[The full documentation](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc) for the upcoming version** 
+is in the `doc` directory on `master` branch. **The documentation for a released version** 
+is under [the particular tag in the Git history](https://github.com/KarelCemus/play-redis/releases) 
+or you can use shortcuts in the table below.
+
+To use this module:
+
+1. [Add this library into your project](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/10-integration.md) and expose APIs
+1. See the [configuration options](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/20-configuration.md)
+1. [Browse examples of use](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/30-how-to-use.md)
+
+If you come from older version, you might check the [Migration Guide](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/40-migration.md)
+   
+
+## Samples
+
+To ease the initial learning, there are 
+[several sample projects](https://github.com/KarelCemus/play-redis-samples) 
+intended to demonstrate the most common configurations. Feel free
+to study, copy or fork them to better understand the `play-redis` use.
+
+
+1. [**Getting Started**](https://github.com/KarelCemus/play-redis-samples/tree/master/hello_world) is a very basic example showing the 
+minimal configuration required to use the redis cache
+
+1. [**Named Caches**](https://github.com/KarelCemus/play-redis-samples/tree/master/named_caches) is the advanced example with custom recovery policy and multiple named caches.
+
+1. [**EhCache and Redis**](https://github.com/KarelCemus/play-redis-samples/tree/master/redis_and_ehcache) shows a combination of both caching provides used at once. 
+While the EhCache is bound to unqualified APIs, the Redis cache uses named APIs.
+
 
 ## How to add the module into the project
 
@@ -26,22 +119,25 @@ To your SBT `build.sbt` add the following lines:
 // enable Play cache API (based on your Play version)
 libraryDependencies += play.sbt.PlayImport.cacheApi
 // include play-redis library
-libraryDependencies += "com.github.karelcemus" %% "play-redis" % "2.0.1"
+libraryDependencies += "com.github.karelcemus" %% "play-redis" % "2.0.2"
 ```
+
 
 ## Compatibility matrix
 
-| play framework  | play-redis     |
-|-----------------|---------------:|
-| 2.6.x           | 2.0.1  ([Migration Guide](https://github.com/KarelCemus/play-redis/wiki/Migration-Guide))        |
-| 2.5.x           | 1.4.2          |
-| 2.4.x           | 1.0.0          |
-| 2.3.x           | 0.2.1          |
+| play framework  | play-redis     | documentation    |
+|-----------------|---------------:|-----------------:|
+| 2.6.x           | 2.0.2          | [see here](https://github.com/KarelCemus/play-redis/blob/2.0.2/README.md) ([Migration Guide](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/40-migration.md)) |
+| 2.5.x           | 1.4.2          | [see here](https://github.com/KarelCemus/play-redis/blob/1.4.2/README.md) |
+| 2.4.x           | 1.0.0          | [see here](https://github.com/KarelCemus/play-redis/blob/1.0.0/README.md) |
+| 2.3.x           | 0.2.1          | [see here](https://github.com/KarelCemus/play-redis/blob/0.2.1/README.md) |
+
 
 ## Contribution
 
 If you encounter any issue, have a feature request, or just
 like this library, please feel free to report it or contact me.
+
 
 ## Changelog
 
