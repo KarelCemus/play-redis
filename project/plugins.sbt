@@ -1,7 +1,7 @@
 resolvers += Resolver.url( "scoverage-bintray", url( "https://dl.bintray.com/sksamuel/sbt-plugins/" ) )( Resolver.ivyStylePatterns )
 
 // library release
-addSbtPlugin( "com.github.gseitz" % "sbt-release" % "1.0.6" )
+addSbtPlugin( "com.github.gseitz" % "sbt-release" % "1.0.8" )
 
 // PGP signature
 addSbtPlugin( "com.jsuereth" % "sbt-pgp" % "1.1.0" )
