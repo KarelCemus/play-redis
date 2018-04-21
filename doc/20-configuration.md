@@ -52,7 +52,7 @@ The configuration of each instance is inherited from the `play.cache.redis` conf
 
 Named caches are defined under the `play.cache.redis.instances` node, which automatically **disables and ignores** the default cache defined directly under the root `play.cache.redis`. The instances are defined as a map with name-definition pairs.
 
-``` 
+```hocon
 play.cache.redis {
 
   # source property; standalone is default
@@ -75,8 +75,14 @@ play.cache.redis {
 }
 ```
 
+```scala
+class MyController @Inject()( @NamedCache( "myNamedCache" ) local: CacheAsyncApi ) {
+  // my implementation
+}
+```
 
-### Namespace prefix
+
+## Namespace prefix
 
 Each cache can optionally define a namespace for keys. It means that each key is automatically prefixed. For example, having `prefix: "my-prefix"` and the key `my-key`, the cache operates with `my-prefix:my-key`. This behavior is especially useful to avoid collisions, when:
 
@@ -86,33 +92,77 @@ Each cache can optionally define a namespace for keys. It means that each key is
 This property may be locally overridden for each named cache.
 
 
-### Timeout
+## Timeout
 
 The `play-redis` is designed fully asynchronously and there is no timeout applied
 by this library itself. However, there are other timeouts you might be interested in.
+
+### Synchronization timeout
+
 First, when you use `SyncAPI` instead of `AsyncAPI`, the **internal `Future[T]` has to be converted
 into `T`**. It uses [`Await.result`](https://www.scala-lang.org/api/current/scala/concurrent/Await$.html#result%5BT%5D(awaitable:scala.concurrent.Awaitable%5BT%5D,atMost:scala.concurrent.duration.Duration):T)
-from standard Scala library, which requires a timeout definition. This is the `play.cache.redis.timeout`.
+from standard Scala library, which requires a timeout definition. This is the `play.cache.redis.sync-timeout`.
 
 This timeout applies on the invocation of the whole request including the communication to Redis, data serialization,
-and invocation `orElse` parts. If you don't want any timeouts and your application logic has to never timeout,
-just set it to something really high or use asynchronous API to be absolutely sure.
+and invocation `orElse` part when the `Future` is used. If you don't want any timeouts and your application logic
+has to never timeout, just set it to something really high or use asynchronous API to be absolutely sure.
+
+### Timeout on Redis commands
+
+Second, there is a `redis-timeout`, which
+limits the waiting for the response from the redis server. However, it is expected
+the redis works smoothly thus no timeout is necessary. In consequence, it is **disabled
+by default** to avoid unnecessary performance penalty.
 
 The other timeouts you might be interested in are related to the communication to Redis, e.g., connection timeout
 and receive timeout. These are provided directly by the underlying connector and `play-redis` doesn't affect them.
 For more details, see
 the [`Redis` configuration](https://github.com/etaty/rediscala).
 
-### Recovery policy
+## Recovery policy
 
 The intention of cache is usually to optimize the application behavior, not to provide any business logic.
 In this case, it makes sense the cache could be removed without any visible change except for possible
-performance loss. In consequence, **failed cache requests should not break the application flow**,
+performance loss.
+
+In consequence, **failed cache requests should not break the application flow**,
 they should be logged and ignored. However, not always this is the desired behavior. To resolve this ambiguity,
 the module provides `RecoveryPolicy` trait implementing the behavior to be executed when the cache request fails.
 There are two major implementations. They both log the failure at first, and while one produces
 the exception and let the application to deal with it, the other returns some neutral value, which
-should result in behavior like there is no cache (default policy). However, besides these, it is possible, e.g., to also implement your own policy to, e.g., rerun a failed command. For more information see `RecoveryPolicy` trait.
+should result in behavior like there is no cache (default policy). However, besides these, it is possible,
+e.g., to also implement your own policy to, e.g., rerun a failed command. For more information
+see `RecoveryPolicy` trait.
+
+```hocon
+  # By default, there are two basic implementations:
+  #
+  # 'log-and-fail':               Logs the error at firts and then emits RedisException
+  #
+  # 'log-condensed-and-fail':     Same as 'log-and-fail' but with reduced logging.
+  #
+  #
+  #
+  # 'log-and-default':            Logs the error at first and then returns operation
+  #                               neutral value, which should look like there is no
+  #                               cache in use.
+  #
+  # 'log-condensed-and-default':  Same as 'log-and-default' but with reduced logging.
+  #
+  # 'custom':             User provides his own binding to implementation of `RecoveryPolicy`
+  #
+  #
+  # Besides logging and re-populating the exceptions, it is also possible to
+  # send email or re-run the failed command, which could like like certain robustness.
+  #
+  # note: this is global definition, can be locally overriden for each
+  # cache instance. To do so, redefine this property
+  # under 'play.cache.redis.instances.instance-name.this-property'.
+  #
+  recovery:         log-and-default
+```
+
+### Custom Recovery Policy
 
 Besides the default implementations, you are free to extend the `RecoveryPolicy` trait and provide your own implementation. For example:
 
@@ -122,9 +172,10 @@ class MyPolicy extends RecoveryPolicy {
 }
 ```
 
-Next, name it and update the configuration file: `play.cache.redis.recovery: custom`, where `custom` is the name. Any name is possible.
+Next, name it and update the configuration file: `play.cache.redis.recovery: custom`, where `custom` is the name. **Any name is possible**.
 
-Then, if you use runtime DI (e.g. Guice), you have to bind the named `RecoveryPolicy` trait to your implementation. For example, create a module for it. Don't forget to register the module into enabled modules. And that's it.
+Then, if you use runtime DI (e.g. Guice), you have to bind the named `RecoveryPolicy` trait to your implementation.
+For example, create a module for it. **Don't forget to register the module** into enabled modules. And that's it.
 
 ```scala
 import play.api.cache.redis.RecoveryPolicy
@@ -140,7 +191,48 @@ class ApplicationModule extends Module {
 }
 ```
 
-If you use compile-time DI, override `recoveryPolicyResolver` in `RedisCacheComponents` and return the instance when the policy name matches.
+If you use compile-time DI, override `recoveryPolicyResolver` in `RedisCacheComponents`
+and return the instance when the policy name matches.
+
+
+## Eager and Lazy Invocation
+
+Some operations, e.g., `getOrElse` and `getOrFuture`,
+besides the intended computation of the value, invoke a
+side-effect to store and cache the value, e.g.,
+with the `set` operation. However, though it is usually
+correct to wait for the side-effect and process the occasional
+error, there exist situations, where it is safe to ignore the result
+of the side-effect and return the value directly. This mechanism is
+handled by the `InvocationPolicy` trait, where default `LazyInvocation`
+waits for the result and considers the error (if any),
+while the `EagerInvocation` does not wait for the result of the side-effect,
+ignores the result and possible error and returns immediately.
+
+The policy to use is configured within the instance. By default,
+each instance uses `lazy` policy.
+
+
+```hocon
+  # invocation policy applies in methods `getOrElse`. It determines
+  # whether to wait until the `set` completes or return eagerly the
+  # computed value. Valid values:
+  #  - 'lazy':  for lazy invocation waiting for the `set` completion
+  #  - 'eager': for eager invocation returning the computed on miss
+  #             without waiting for the `set` completion. Eager
+  #             invocation ignores the error in `set`, if occurs.
+  #
+  # Default value is 'lazy' to properly handle errors, if occurs.
+  #
+  # note: this is global definition, can be locally overriden for each
+  # cache instance. To do so, redefine this property
+  # under 'play.cache.redis.instances.instance-name.this-property'.
+  #
+  invocation:       lazy
+```
+
+
+
 
 ## Running in different environments
 
@@ -162,7 +254,10 @@ play.cache.redis {
 }
 ```
 
-Second, when none of the already existing providers is sufficient, you can implement your own and let the `RedisInstanceResolver` to take care of it. When the module finds a `custom` source, it calls the resolver with the cache name and expects the configuration in return. So all you need to do is to implement your own resolver and register it with DI. Details may differ based on the type of DI you use.
+Second, when none of the already existing providers is sufficient, you can implement your own and let the
+`RedisInstanceResolver` to take care of it. When the module finds a `custom` source, it calls the resolver
+with the cache name and expects the configuration in return. So all you need to do is to implement your
+own resolver and register it with DI. Details may differ based on the type of DI you use.
 
 ### Example: Running on Heroku
 
@@ -172,6 +267,20 @@ To enable redis cache on Heroku we have to do the following steps:
  2. enable `play.cache.redis.RedisCacheModule`
  4. set `play.cache.redis.source` to `"${REDIS_URL}"` or  `"${REDISCLOUD_URL}"`.
  5. done, you can run it and use any of provided interfaces
+
+
+## Limitation of Data Serialization
+
+The major limitation of this module is data serialization required for their transmission
+to and from the server. Play-redis provides native serialization support to basic data
+types such as String, Int, etc. However, for other objects including collections,
+it uses `JavaSerializer` by default.
+
+Since Akka 2.4.1, default `JavaSerializer` is [officially considered inefficient for production use](https://github.com/akka/akka/pull/18552).
+Nevertheless, to keep things simple, play-redis **still uses this inefficient serializer NOT to enforce** any serialization
+library to end users. Although, it recommends [kryo serializer](https://github.com/romix/akka-kryo-serialization) claiming
+great performance and small output stream. Any serialization library can be smoothly connected through Akka
+configuration, see the [official Akka documentation](http://doc.akka.io/docs/akka/current/scala/serialization.html).
 
 
 ## Overview
@@ -186,11 +295,11 @@ To enable redis cache on Heroku we have to do the following steps:
 
 ### Instance-specific (can be locally overridden)
 
-| Key                         | Type     | Default                         | Description                         |
-|-------------------------------------|---------:|--------------------------------:|-------------------------------------|
-| play.cache.redis.source     | String   | `standalone`                        | Defines the source of the configuration. Accepted values are `standalone`, `cluster`, `connection-string`, and `custom` |
-| play.cache.redis.timeout    | Duration | `1s`                            | conversion timeout applied by `SyncAPI` to convert `Future[T]` to `T`|
-| play.cache.redis.prefix    | String | `null`                            | optional namespace, i.e., key prefix |
-| play.cache.redis.dispatcher | String   | `akka.actor.default-dispatcher` | Akka actor                          |
-| play.cache.redis.recovery   | String   | `log-and-default`               | Defines behavior when command execution fails. Accepted values are `log-and-fail` to log the error and rethrow the exception, `log-and-default` to log the failure and return default value neutral to the operation, `log-condensed-and-default` `log-condensed-and-fail` produce shorter but less informative error logs, and `custom` indicates the user binds his own implementation of `RecoveryPolicy`.        |
-
+| Key                                                      | Type     | Default                         | Description                         |
+|----------------------------------------------------------|---------:|--------------------------------:|-------------------------------------|
+| [play.cache.redis.source](#standalone-vs-cluster)        | String   | `standalone`                    | Defines the source of the configuration. Accepted values are `standalone`, `cluster`, `connection-string`, and `custom` |
+| [play.cache.redis.sync-timeout](#timeout)                | Duration | `1s`                            | conversion timeout applied by `SyncAPI` to convert `Future[T]` to `T`|
+| [play.cache.redis.redis-timeout](#timeout)               | Duration | `null`                          | waiting for the response from redis server |
+| [play.cache.redis.prefix](#namespace-prefix)             | String   | `null`                          | optional namespace, i.e., key prefix |
+| play.cache.redis.dispatcher                              | String   | `akka.actor.default-dispatcher` | Akka actor                          |
+| [play.cache.redis.recovery](#recovery-policy)            | String   | `log-and-default`               | Defines behavior when command execution fails. For accepted values and more see |
