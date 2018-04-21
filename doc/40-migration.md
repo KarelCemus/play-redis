@@ -43,8 +43,8 @@ The major goal of the 2.0.x version was to support named caches and clean up the
 
 - default database was changed from 1 to 0 (redis default) to remove the inconsistency between play-redis and the redis itself
 - the cache instance defined directly under the `play.cache.redis` is a default instance and is named with a default name
-- introduced `instances` property to support named caches. See [documentation](https://github.com/KarelCemus/play-redis/wiki/Configuration#named-caches) for more details.
-- `configuration` property was redesigned and renamed to `source`. Valid values are now `standalone`, `cluster`, `connection-string`, and `custom`. See [documentation](https://github.com/KarelCemus/play-redis/wiki/Configuration#standalone-vs-cluster) for more details.
+- introduced `instances` property to support named caches. See [documentation](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/20-configuration.md#named-caches) for more details.
+- `configuration` property was redesigned and renamed to `source`. Valid values are now `standalone`, `cluster`, `connection-string`, and `custom`. See [documentation](https://github.com/KarelCemus/play-redis/blob/2.0.2/doc/20-configuration.md#standalone-vs-cluster) for more details.
 - `connection-string-variable` was replaced by the `connection-string` property defining the connection string itself. The value is now passed directly into the property through, e.g., `${REDIS_URL}`, which HOCON correctly resolves. This applies when combined with `source: connection-string`.
 - `wait` property renamed to `timeout`
 - `source`, `timeout`, `dispatcher`, and `recovery` define defaults and may be locally overridden within each named cache configuration.
@@ -65,7 +65,7 @@ Major redesign of `RedisCacheModule`, however, no changes in use are expected. I
 
 #### Compile-time DI
 
-Major redesign of `RedisCacheComponents`. See the [trait](https://github.com/KarelCemus/play-redis/blob/master/src/main/scala/play/api/cache/redis/RedisCacheComponents.scala#L14) for details. To create
+Major redesign of `RedisCacheComponents`. See the [trait](https://github.com/KarelCemus/play-redis/blob/2.0.0/src/main/scala/play/api/cache/redis/RedisCacheComponents.scala#L14) for details. To create
 new API, call `cacheApi( instance )`, where the instance is either a String with the instance name or `RedisInstance` object with a custom configuration. This returns a `RedisCaches` object encapsulating all available APIs. In case of using multiple different APIs, it is suggested to **reuse this object** to prevent the duplicate creation of instances of the same cache connector. To provide a custom instance configuration, either override `redisInstanceResolver` mapping names to the objects or pass the `RedisInstance` object directly to the `cacheApi` call. For custom recovery policy override `recoveryPolicyResolver`.
 
 ### Implementation changes
