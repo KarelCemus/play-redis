@@ -41,7 +41,7 @@ as well as on your premise.
 - [wildcards in remove operation](https://github.com/KarelCemus/play-redis/blob/master/doc/30-how-to-use.md#use-of-cacheapi)
 - support of collections: [sets](https://github.com/KarelCemus/play-redis/blob/master/doc/30-how-to-use.md#use-of-sets), [lists](https://github.com/KarelCemus/play-redis/blob/master/doc/30-how-to-use.md#use-of-lists), and [maps](https://github.com/KarelCemus/play-redis/blob/master/doc/30-how-to-use.md#use-of-maps)
 - [increment and decrement operations](https://github.com/KarelCemus/play-redis/blob/master/doc/30-how-to-use.md#use-of-cacheapi)
-- [eager and lazy invocation policies](https://github.com/KarelCemus/play-redis/blob/master/doc/30-how-to-use.md#eager-and-lazy-invocation) waiting or not waiting for the result
+- [eager and lazy invocation policies](https://github.com/KarelCemus/play-redis/blob/master/doc/20-configuration.md#eager-and-lazy-invocation) waiting or not waiting for the result
 - several [recovery policies](https://github.com/KarelCemus/play-redis/blob/master/doc/20-configuration.md#recovery-policy) and possibility of further customization
 - support of [several configuration sources](https://github.com/KarelCemus/play-redis/blob/master/doc/20-configuration.md#running-in-different-environments) 
     - static in the configuration file
@@ -80,7 +80,7 @@ bundled within Play framework. Finally, `play-redis` also supports Java version 
 
 ## Documentation and Getting Started
  
-**[The full documentation](https://github.com/KarelCemus/play-redis/blob/master/doc) for the upcoming version** 
+**[The full documentation](https://github.com/KarelCemus/play-redis/) for the upcoming version** 
 is in the `doc` directory on `master` branch. **The documentation for a released version** 
 is under [the particular tag in the Git history](https://github.com/KarelCemus/play-redis/releases) 
 or you can use shortcuts in the table below.
