@@ -1,6 +1,6 @@
 # How to Use this Module
 
-When you have the library added to your project, you can safely inject the `play.api.cache.redis.CacheApi` trait for the synchronous cache. If you want the asynchronous implementation, then inject `play.api.cache.redis.CacheAsyncApi`. 
+When you have the library added to your project, you can safely inject the `play.api.cache.redis.CacheApi` trait for the synchronous cache. If you want the asynchronous implementation, then inject `play.api.cache.redis.CacheAsyncApi`.
 
 Besides various common operations over the cache, the API supports working with the collections: List, Set, and Map. First, create a typed worker to use the collection under the give key. For example: `cache.list[ String ]( "my-list" )` Then you can fully operate the collection. Please **be aware of the complexity** of the operations and **optimize your code**. Although the API is simple and seems efficient, each of your calls is transmitted to Redis.
 
@@ -11,35 +11,6 @@ successful invocations do not throw an exception. The only difference is in chec
 While synchronous APIs really throw an exception, asynchronous API returns a `Future`
 wrapping both the success and the exception, i.e., use `onFailure` or `onComplete` to
 check for errors.
-
-## Limitations
-
-The major limitation of this module is data serialization required for their transmission to and from the server. Play-redis provides native serialization support to basic data types such as String, Int, etc.
-However, for other objects including collections, it uses `JavaSerializer` by default.
-
-Since Akka 2.4.1, default `JavaSerializer` is [officially considered inefficient for production use](https://github.com/akka/akka/pull/18552).
-Nevertheless, to keep things simple, play-redis **still uses this inefficient serializer NOT to enforce** any serialization
-library to end users. Although, it recommends [kryo serializer](https://github.com/romix/akka-kryo-serialization) claiming
-great performance and small output stream. Any serialization library can be smoothly connected through Akka
-configuration, see the [official Akka documentation](http://doc.akka.io/docs/akka/current/scala/serialization.html).
-
-## Eager and Lazy Invocation
-
-Some operations, e.g., `getOrElse` and `getOrFuture`, besides the intended computation of the value, invoke a side-effect to store and cache the value, e.g., with the `set` operation. However, though it is usually correct to wait for the side-effect and process the occasional error, there exist situations, where it is safe to ignore the result of the side-effect and return the value directly. This mechanism is handled by the `InvocationPolicy` trait, where default `LazyInvocation` waits for the result and considers the error (if any), while `EagerInvocation` does not wait for the result and ignores the error if happens.
-
-```scala
- // this applies default LazyInvocation waiting for
- // the result of the side-effect
- cache.getOrElse( "my-key" )( "my-value" )
-```
-
-```scala
- import play.api.cache.redis._
- implicit val invocationPolicy = EagerInvocation
- // this applies EagerInvocation not-waiting 
- // for the result of the side-effect
- cache.getOrElse( "my-key" )( "my-value" )
-```
 
 
 ## Use of `CacheApi`

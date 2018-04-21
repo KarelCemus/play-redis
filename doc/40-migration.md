@@ -9,6 +9,31 @@ backward compatibility in a few places. This Migration Guide allows you to adjus
 in the smoothest possible way. We believe that removing technical debt as soon as possible
 is the only way of keeping this project in a good shape.
 
+## Migration from 2.0.x to 2.1.x
+
+The most changes are under the hood, however, there are couple
+changes in public API, which needs your code to be updated.
+
+### Revamped Invocation Policy
+
+The invocation policy in `2.0.x` was used as an implicit parameter. Since
+`2.1.x` it is a static configurable property inside the instance configuration.
+See the [updated documentation for more details](https://github.com/KarelCemus/play-redis/blob/2.1.0/doc/20-configuration.md#eager-and-lazy-invocation).
+
+### Named caches uses @NamedCache instead of @Named
+
+Up to `2.0.x`, play-redis bound named caches with `@Named` annotation. Since
+`2.1.0`, this binding was deprecated any replaced by `@NamedCache` to be consistent
+with Play framework implementation. All deprecations will be removed in `2.2.0`.
+
+### Renamed `timeout` to `sync-timeout`
+
+Since `2.1.0`, there is a new `redis-timeout` property. To avoid
+ambiguity, the original `timeout` property was renamed to `sync-redis`.
+The `timeout` property was deprecated any will be removed in `2.2.0`.
+
+See the updated [documentation for more details](https://github.com/KarelCemus/play-redis/blob/2.1.0/doc/20-configuration.md#eager-and-lazy-invocation).
+
 
 ## Migration from 1.6.x to 2.0.x
 
