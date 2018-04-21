@@ -7,7 +7,7 @@ Published snapshots no longer depends on scoverage runtime [#143](https://github
 
 `play.cache.AsyncCacheApi` is bound to `JavaRedis` instead of `DefaultAsyncCacheApi`
  to fixed value deserialization and support Java HTTP context [#140](https://github.com/KarelCemus/play-redis/issues/140).
- 
+
 Standalone client now fails eagerly when the connection to redis is not
 established. This is to avoid long timeout while the rediscala is trying
 to reconnect. [#147](https://github.com/KarelCemus/play-redis/issues/147)
@@ -30,15 +30,15 @@ Revamped tests, reduced their number but increased value and code coverage [#108
 
 #### Removal of `@Named` and introduction of `@NamedCache`
 
-Named caches now uses `@NamedCache` instead of `@Named` to be consistent with Play's EhCache and 
-enable interchangeability of the implementation. 
+Named caches now uses `@NamedCache` instead of `@Named` to be consistent with Play's EhCache and
+enable interchangeability of the implementation.
 
-**Migration**: Change the annotation where necessary. 
+**Migration**: Change the annotation where necessary.
 
 **Backward compatibility**: In simple scenarios, there should
-be no breaking changes. Use of `@Named` was deprecated and should emit warning in logs, but the 
-binding should still work. The warnings can be disabled through the logger configuration, though 
-the support will be fully removed in the `2.2.0`. The complex scenarios with the custom 
+be no breaking changes. Use of `@Named` was deprecated and should emit warning in logs, but the
+binding should still work. The warnings can be disabled through the logger configuration, though
+the support will be fully removed in the `2.2.0`. The complex scenarios with the custom
 `RedisInstance` or `RedisCaches` have to be migrated right away, there is no fallback binding.
 
 **Note**: `RecoveryPolicy` still uses `@Named` as it neither is nor relates to any particular cache.
@@ -69,7 +69,7 @@ Implemented increment in maps [#112](https://github.com/KarelCemus/play-redis/is
 
 Support of named caches [#114](https://github.com/KarelCemus/play-redis/pull/114)
 
-Introduced `prefix` configuration property to apply a namespace on all keys in 
+Introduced `prefix` configuration property to apply a namespace on all keys in
 the cache instance [#118](https://github.com/KarelCemus/play-redis/pull/118).
 
 Simplified `RedisCacheModule` and `RedisCacheComponents`. Internal components are no longer
@@ -88,7 +88,7 @@ for more details.
 
 Introduced `InvocationPolicy` implementing `Eager` and `Lazy` invocation mechanism handling waiting
 for the result of the `set` operation. `Lazy` policy (default) does wait for the result, `Eager` does
-not wait and ignores it instead [#98](https://github.com/KarelCemus/play-redis/pull/98). 
+not wait and ignores it instead [#98](https://github.com/KarelCemus/play-redis/pull/98).
 
 ### [:link: 1.6.1](https://github.com/KarelCemus/play-redis/tree/1.6.1)
 

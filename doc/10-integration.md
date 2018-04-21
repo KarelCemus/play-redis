@@ -9,7 +9,7 @@ Although the use of runtime-time injection is preferred, both options are equal 
 // enable Play cache API (based on your Play version)
 libraryDependencies += play.sbt.PlayImport.cacheApi
 // include play-redis library
-libraryDependencies += "com.github.karelcemus" %% "play-redis" % "2.0.2"
+libraryDependencies += "com.github.karelcemus" %% "play-redis" % "2.1.0"
 ```
 
 
@@ -17,7 +17,7 @@ libraryDependencies += "com.github.karelcemus" %% "play-redis" % "2.0.2"
 
 You **must enable the redis cache module** in `application.conf`:
 
-```
+```hocon
 # enable redis cache module
 play.modules.enabled += "play.api.cache.redis.RedisCacheModule"
 ```
@@ -34,7 +34,7 @@ of `RedisCaches` encapsulating all available APIs for this particular cache. The
 can access and expose them yourself. Next, it provides a few methods to override and
 provide customized configuration. For more details, see directly `RedisCacheComponents` source.
 
-```
+```scala
    // 'play' is the name of the named cache
    // (play is default name of the default cache)
    //
