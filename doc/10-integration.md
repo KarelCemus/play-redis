@@ -9,7 +9,7 @@ Although the use of runtime-time injection is preferred, both options are equal 
 // enable Play cache API (based on your Play version)
 libraryDependencies += play.sbt.PlayImport.cacheApi
 // include play-redis library
-libraryDependencies += "com.github.karelcemus" %% "play-redis" % "2.1.0"
+libraryDependencies += "com.github.karelcemus" %% "play-redis" % "2.1.1"
 ```
 
 
