@@ -1,6 +1,10 @@
 
 ## Changelog
 
+### [:link: 2.1.1](https://github.com/KarelCemus/play-redis/tree/2.1.1)
+
+Scope of the Mockito dependency is set to Test, was Compile [#168](https://github.com/KarelCemus/play-redis/issues/168).
+
 ### [:link: 2.1.0](https://github.com/KarelCemus/play-redis/tree/2.1.0)
 
 Published snapshots no longer depends on scoverage runtime [#143](https://github.com/KarelCemus/play-redis/issues/143).
