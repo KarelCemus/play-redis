@@ -19,7 +19,7 @@ val playVersion = "2.6.13"
 
 val connectorVersion = "1.8.3"
 
-val specs2Version = "4.0.3"
+val specs2Version = "4.1.0"
 
 libraryDependencies ++= Seq(
   // play framework cache API
@@ -28,10 +28,10 @@ libraryDependencies ++= Seq(
   "com.github.Ma27" %% "rediscala" % connectorVersion,
   // test framework
   "org.specs2" %% "specs2-core" % specs2Version % Test,
+  // with mockito extension
+  "org.specs2" %% "specs2-mock" % specs2Version % Test,
   // test module for play framework
-  "com.typesafe.play" %% "play-specs2" % playVersion % Test,
-  // mockito framework
-  "org.mockito" % "mockito-core" % "2.18.0"
+  "com.typesafe.play" %% "play-specs2" % playVersion % Test
 )
 
 resolvers ++= Seq(
