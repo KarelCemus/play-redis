@@ -23,6 +23,7 @@ object Implicits {
   val defaultCacheName = "play"
   val localhost = "localhost"
   val localhostIp = "127.0.0.1"
+  val dockerIp = "172.17.0.2"
   val defaultPort = 6379
 
   val defaults = RedisSettingsTest( "akka.actor.default-dispatcher", "lazy", RedisTimeouts( 1.second ), "log-and-default", "standalone" )

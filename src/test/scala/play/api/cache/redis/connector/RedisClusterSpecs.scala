@@ -25,7 +25,7 @@ class RedisClusterSpec( implicit ee: ExecutionEnv ) extends Specification with B
 
   private val serializer = new AkkaSerializerImpl( system )
 
-  private val clusterInstance = RedisCluster( defaultCacheName, nodes = RedisHost( localhost, 7000 ) :: RedisHost( localhost, 7001 ) :: RedisHost( localhostIp, 7002 ) :: RedisHost( localhostIp, 7003 ) :: Nil, defaults )
+  private val clusterInstance = RedisCluster( defaultCacheName, nodes = RedisHost( dockerIp, 7000 ) :: RedisHost( dockerIp, 7001 ) :: RedisHost( dockerIp, 7002 ) :: RedisHost( dockerIp, 7003 ) :: Nil, defaults )
 
   private val connector: RedisConnector = new RedisConnectorProvider( clusterInstance, serializer ).get
 
