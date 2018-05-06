@@ -71,7 +71,7 @@ class SerializerSpecs extends Specification with Mockito {
           |TG9yZy9qb2RhL3RpbWUvQ2hyb25vbG9neTt4cAAAAAAAAeJAc3IAJ29yZy5qb2RhLnRpbWUuY2hy
           |b25vLklTT0Nocm9ub2xvZ3kkU3R1YqnIEWZxN1AnAwAAeHBzcgAfb3JnLmpvZGEudGltZS5EYXRl
           |VGltZVpvbmUkU3R1YqYvAZp8MhrjAwAAeHB3BQADVVRDeHg=
-        """.stripMargin.trim
+        """.stripMargin.lines.map(_.trim).mkString
     }
 
     "custom classes" in {
@@ -79,7 +79,7 @@ class SerializerSpecs extends Specification with Mockito {
           |rO0ABXNyADtwbGF5LmFwaS5jYWNoZS5yZWRpcy5jb25uZWN0b3IuU2VyaWFsaXplclNwZWNzJFNp
           |bXBsZU9iamVjdMm6wvThiaEsAgACSQAFdmFsdWVMAANrZXl0ABJMamF2YS9sYW5nL1N0cmluZzt4
           |cAAAAAN0AAFC
-        """.stripMargin.trim
+        """.stripMargin.lines.map(_.trim).mkString
     }
 
     "null" in {
@@ -91,7 +91,7 @@ class SerializerSpecs extends Specification with Mockito {
           |rO0ABXNyADJzY2FsYS5jb2xsZWN0aW9uLmltbXV0YWJsZS5MaXN0JFNlcmlhbGl6YXRpb25Qcm94
           |eQAAAAAAAAABAwAAeHB0AAFBdAABQnQAAUNzcgAsc2NhbGEuY29sbGVjdGlvbi5pbW11dGFibGUu
           |TGlzdFNlcmlhbGl6ZUVuZCSKXGNb91MLbQIAAHhweA==
-        """.stripMargin.trim
+        """.stripMargin.lines.map(_.trim).mkString
     }
 
   }
@@ -151,7 +151,7 @@ class SerializerSpecs extends Specification with Mockito {
         |TG9yZy9qb2RhL3RpbWUvQ2hyb25vbG9neTt4cAAAAAAAAeJAc3IAJ29yZy5qb2RhLnRpbWUuY2hy
         |b25vLklTT0Nocm9ub2xvZ3kkU3R1YqnIEWZxN1AnAwAAeHBzcgAfb3JnLmpvZGEudGltZS5EYXRl
         |VGltZVpvbmUkU3R1YqYvAZp8MhrjAwAAeHB3BQADVVRDeHg=
-      """.stripMargin.trim.decoded[ DateTime ] mustEqual new DateTime( 123456L, DateTimeZone.forID( "UTC" ) )
+      """.stripMargin.lines.map(_.trim).mkString.decoded[ DateTime ] mustEqual new DateTime( 123456L, DateTimeZone.forID( "UTC" ) )
     }
 
     "custom classes" in {
@@ -159,7 +159,7 @@ class SerializerSpecs extends Specification with Mockito {
         |rO0ABXNyADtwbGF5LmFwaS5jYWNoZS5yZWRpcy5jb25uZWN0b3IuU2VyaWFsaXplclNwZWNzJFNp
         |bXBsZU9iamVjdMm6wvThiaEsAgACSQAFdmFsdWVMAANrZXl0ABJMamF2YS9sYW5nL1N0cmluZzt4
         |cAAAAAN0AAFC
-      """.stripMargin.trim.decoded[ SimpleObject ] mustEqual SimpleObject( "B", 3 )
+      """.stripMargin.lines.map(_.trim).mkString.decoded[ SimpleObject ] mustEqual SimpleObject( "B", 3 )
     }
 
     "list" in {
@@ -167,7 +167,7 @@ class SerializerSpecs extends Specification with Mockito {
         |rO0ABXNyADJzY2FsYS5jb2xsZWN0aW9uLmltbXV0YWJsZS5MaXN0JFNlcmlhbGl6YXRpb25Qcm94
         |eQAAAAAAAAABAwAAeHB0AAFBdAABQnQAAUNzcgAsc2NhbGEuY29sbGVjdGlvbi5pbW11dGFibGUu
         |TGlzdFNlcmlhbGl6ZUVuZCSKXGNb91MLbQIAAHhweA==
-      """.stripMargin.trim.decoded[ List[ String ] ] mustEqual List( "A", "B", "C" )
+      """.stripMargin.lines.map(_.trim).mkString.decoded[ List[ String ] ] mustEqual List( "A", "B", "C" )
     }
 
     "forgotten type" in {

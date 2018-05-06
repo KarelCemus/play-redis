@@ -1,13 +1,13 @@
 package play.api.cache.redis.connector
 
-import javax.inject._
+import java.util.Base64
 
+import javax.inject._
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util._
 
 import play.api.cache.redis._
-
 import akka.actor.ActorSystem
 import akka.serialization._
 
@@ -72,7 +72,7 @@ private[ connector ] class AkkaEncoder( serializer: Serialization ) {
 
   /** Produces BASE64 encoded string from an array of bytes */
   protected def binaryToString( bytes: Array[ Byte ] ): String =
-    new sun.misc.BASE64Encoder( ).encode( bytes )
+    Base64.getEncoder.encodeToString( bytes )
 
   /** unsafe method converting AnyRef into BASE64 string */
   protected def anyRefToString( value: AnyRef ): String =
@@ -117,7 +117,7 @@ private[ connector ] class AkkaDecoder( serializer: Serialization ) {
 
   /** consumes BASE64 string and returns array of bytes */
   protected def stringToBinary( base64: String ): Array[ Byte ] =
-    new sun.misc.BASE64Decoder( ).decodeBuffer( base64 )
+    Base64.getDecoder.decode( base64 )
 
   /** deserializes the binary stream into the object */
   protected def binaryToAnyRef[ T ]( binary: Array[ Byte ] )( implicit classTag: ClassTag[ T ] ): AnyRef =
