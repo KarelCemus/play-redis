@@ -46,20 +46,9 @@ homepage := Some( url( "https://github.com/karelcemus/play-redis" ) )
 
 licenses := Seq( "Apache 2" -> url( "http://www.apache.org/licenses/LICENSE-2.0" ) )
 
-publishMavenStyle := true
+vcsScm := "git@github.com:KarelCemus/play-redis.git"
 
-pomIncludeRepository := { _ => false}
-
-pomExtra :=
-    <scm>
-      <url>git@github.com:KarelCemus/play-redis.git</url>
-      <connection>scm:git@github.com:KarelCemus/play-redis.git</connection>
-    </scm>
-    <developers>
-      <developer>
-        <name>Karel Cemus</name>
-      </developer>
-    </developers>
+authors := Seq( "Karel Čemus" )
 
 // Release plugin settings
 releaseCrossBuild := true
