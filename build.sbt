@@ -15,23 +15,23 @@ scalaVersion := "2.12.6"
 
 crossScalaVersions := Seq( "2.11.12", scalaVersion.value )
 
-val playVersion = "2.6.13"
+playVersion := "2.6.13"
 
-val connectorVersion = "1.8.3"
+connectorVersion := "1.8.3"
 
-val specs2Version = "4.2.0"
+specs2Version := "4.2.0"
 
 libraryDependencies ++= Seq(
   // play framework cache API
-  "com.typesafe.play" %% "play-cache" % playVersion % Provided,
+  "com.typesafe.play" %% "play-cache" % playVersion.value % Provided,
   // redis connector
-  "com.github.Ma27" %% "rediscala" % connectorVersion,
+  "com.github.Ma27" %% "rediscala" % connectorVersion.value,
   // test framework
-  "org.specs2" %% "specs2-core" % specs2Version % Test,
+  "org.specs2" %% "specs2-core" % specs2Version.value % Test,
   // with mockito extension
-  "org.specs2" %% "specs2-mock" % specs2Version % Test,
+  "org.specs2" %% "specs2-mock" % specs2Version.value % Test,
   // test module for play framework
-  "com.typesafe.play" %% "play-specs2" % playVersion % Test
+  "com.typesafe.play" %% "play-specs2" % playVersion.value % Test
 )
 
 resolvers ++= Seq(
