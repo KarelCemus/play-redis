@@ -5,6 +5,8 @@
 
 JDK 10 compatibility. Replace deprecated com.sun.misc.BASE64* usages with jdk8 java.util.Base64 [#170](https://github.com/KarelCemus/play-redis/pull/170).
 
+Customized release process to automatically update versions in README and documentation [#173](https://github.com/KarelCemus/play-redis/pull/173).
+
 ### [:link: 2.1.1](https://github.com/KarelCemus/play-redis/tree/2.1.1)
 
 Scope of the Mockito dependency is set to Test, was Compile [#168](https://github.com/KarelCemus/play-redis/issues/168).
