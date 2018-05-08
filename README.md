@@ -128,10 +128,10 @@ libraryDependencies += "com.github.karelcemus" %% "play-redis" % "2.1.1"
 
 | play framework  | play-redis     | documentation    |
 |-----------------|---------------:|-----------------:|
-| 2.6.x           | 2.1.1          | [see here](https://github.com/KarelCemus/play-redis/blob/2.1.1/README.md) ([Migration Guide](https://github.com/KarelCemus/play-redis/blob/2.1.1/doc/40-migration.md)) |
-| 2.5.x           | 1.4.2          | [see here](https://github.com/KarelCemus/play-redis/blob/1.4.2/README.md) |
-| 2.4.x           | 1.0.0          | [see here](https://github.com/KarelCemus/play-redis/blob/1.0.0/README.md) |
-| 2.3.x           | 0.2.1          | [see here](https://github.com/KarelCemus/play-redis/blob/0.2.1/README.md) |
+| 2.6.x           | <!-- Play 2.6 -->2.1.1<!-- / -->          | [see here](https://github.com/KarelCemus/play-redis/blob/2.1.1/README.md) ([Migration Guide](https://github.com/KarelCemus/play-redis/blob/2.1.1/doc/40-migration.md)) |
+| 2.5.x           | <!-- Play 2.5 -->1.4.2<!-- / -->          | [see here](https://github.com/KarelCemus/play-redis/blob/1.4.2/README.md) |
+| 2.4.x           | <!-- Play 2.4 -->1.0.0<!-- / -->          | [see here](https://github.com/KarelCemus/play-redis/blob/1.0.0/README.md) |
+| 2.3.x           | <!-- Play 2.3 -->0.2.1<!-- / -->          | [see here](https://github.com/KarelCemus/play-redis/blob/0.2.1/README.md) |
 
 
 ## Contribution
