@@ -5,6 +5,7 @@ import java.util.Date
 import scala.reflect.ClassTag
 
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.cache.redis._
 
 import org.joda.time.{DateTime, DateTimeZone}
 import org.specs2.mock.Mockito
@@ -24,6 +25,11 @@ class SerializerSpecs extends Specification with Mockito {
 
     "byte" in {
       0xAB.toByte.encoded mustEqual "-85"
+      JavaTypes.byteValue.encoded mustEqual "5"
+    }
+
+    "byte[]" in {
+      JavaTypes.bytesValue.encoded mustEqual "AQID"
     }
 
     "char" in {
@@ -93,13 +99,16 @@ class SerializerSpecs extends Specification with Mockito {
           |TGlzdFNlcmlhbGl6ZUVuZCSKXGNb91MLbQIAAHhweA==
         """.stripMargin.lines.map(_.trim).mkString
     }
-
   }
 
   "AkkaDecoder" should "decode" >> {
 
     "byte" in {
       "-85".decoded[ Byte ] mustEqual 0xAB.toByte
+    }
+
+    "byte[]" in {
+      "YWJj".decoded[ Array[ Byte ] ] mustEqual Array( "a".head.toByte, "b".head.toByte, "c".head.toByte )
     }
 
     "char" in {

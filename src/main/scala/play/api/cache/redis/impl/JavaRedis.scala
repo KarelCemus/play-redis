@@ -33,7 +33,7 @@ private[ impl ] class JavaRedis( internal: CacheAsyncApi, environment: Environme
         // set the value
         internal.set( key, value, duration ),
         // and set its type to be able to read it
-        internal.set( s"classTag::$key", if ( value == null ) "" else value.getClass.getCanonicalName, duration )
+        internal.set( s"classTag::$key", classTagOf( value ), duration )
       )
     ).map {
       case Seq( done, _ ) => done
@@ -57,8 +57,7 @@ private[ impl ] class JavaRedis( internal: CacheAsyncApi, environment: Environme
     implicit val context = HttpExecutionContext.fromThread( runtime.context )
     // get the tag and decode it
     def getClassTag = internal.get[ String ]( s"classTag::$key" )
-    def decodeClassTag( name: String ): ClassTag[ T ] = if ( name == "" ) ClassTag.Null.asInstanceOf[ ClassTag[ T ] ] else ClassTag( environment.classLoader.loadClass( name ) )
-    def decodedClassTag( tag: Option[ String ] ) = tag.map( decodeClassTag )
+    def decodedClassTag( tag: Option[ String ] ) = tag.map( classTagFrom[ T ] )
     // if tag is defined, get Option[ value ] otherwise None
     def getValue = getClassTag.map( decodedClassTag ).flatMap {
       case Some( ClassTag.Null ) => Future.successful( Some( null.asInstanceOf[ T ] ) )
@@ -81,6 +80,15 @@ private[ impl ] class JavaRedis( internal: CacheAsyncApi, environment: Environme
   }
 
   def removeAll( ) = internal.invalidate().toJava
+
+  protected def classTagOf( value: Any ): String = {
+    if ( value == null ) "" else value.getClass.getCanonicalName
+  }
+
+  protected def classTagFrom[ T ]( tag: String ): ClassTag[ T ] = {
+    if ( tag == "" ) ClassTag.Null.asInstanceOf[ ClassTag[ T ] ]
+    else ClassTag( classTagNameToClass( tag, environment ) )
+  }
 }
 
 private[ impl ] object JavaRedis {
@@ -93,4 +101,19 @@ private[ impl ] object JavaRedis {
   private[ impl ] implicit class ScalaCompatibility[ T ]( val future: CompletionStage[ T ] ) extends AnyVal {
     @inline def toScala: Future[ T ] = FutureConverters.toScala( future )
   }
+
+  // $COVERAGE-OFF$
+  /** java primitives are serialized into their type names instead of classes */
+  private[ impl ] def classTagNameToClass( name: String, environment: Environment ): Class[ _ ] = name match {
+    case "boolean[]" => classOf[ Array[ java.lang.Boolean ] ]
+    case "byte[]" => classOf[ Array[ java.lang.Byte ] ]
+    case "char[]" => classOf[ Array[ java.lang.Character ] ]
+    case "short[]" => classOf[ Array[ java.lang.Short ] ]
+    case "int[]" => classOf[ Array[ java.lang.Integer ] ]
+    case "long[]" => classOf[ Array[ java.lang.Long ] ]
+    case "float[]" => classOf[ Array[ java.lang.Float ] ]
+    case "double[]" => classOf[ Array[ java.lang.Double ] ]
+    case clazz => environment.classLoader.loadClass( clazz )
+  }
+  // $COVERAGE-ON$
 }

@@ -1,7 +1,5 @@
 package play.api.cache.redis.impl
 
-import java.util.concurrent.Callable
-
 import scala.concurrent.duration.Duration
 
 import play.api.cache.redis._
@@ -104,6 +102,36 @@ class JavaRedisSpecs( implicit ee: ExecutionEnv ) extends Specification with Red
     "remove all" in new MockedJavaRedis {
       async.invalidate() returns execDone
       cache.removeAll().toScala must beDone.await
+    }
+
+    "get and set 'byte'" in new MockedJavaRedis {
+      val byte = JavaTypes.byteValue
+
+      // set a value
+      // note: there should be hit on "byte" but the value is wrapped instead
+      async.set( anyString, beEq( byte ), any[ Duration ] ) returns execDone
+      async.set( anyString, beEq( "byte" ), any[ Duration ] ) returns execDone
+      async.set( anyString, beEq( "java.lang.Byte" ), any[ Duration ] ) returns execDone
+      cache.set( key, byte ).toScala must beDone.await
+
+      // hit on GET
+      async.get[ Byte ]( beEq( key ) )( anyClassTag ) returns Some( byte )
+      async.get[ String ]( beEq( s"classTag::$key" ) )( anyClassTag ) returns Some( "java.lang.Byte" )
+      cache.get[ Byte ]( key ).toScala must beEqualTo( byte ).await
+    }
+
+    "get and set 'byte[]'" in new MockedJavaRedis {
+      val bytes = JavaTypes.bytesValue
+
+      // set a value
+      async.set( anyString, beEq( bytes ), any[ Duration ] ) returns execDone
+      async.set( anyString, beEq( "byte[]" ), any[ Duration ] ) returns execDone
+      cache.set( key, bytes ).toScala must beDone.await
+
+      // hit on GET
+      async.get[ Array[ Byte ] ]( beEq( key ) )( anyClassTag ) returns Some( bytes )
+      async.get[ String ]( beEq( s"classTag::$key" ) )( anyClassTag ) returns Some( "byte[]" )
+      cache.get[ Array[ Byte ] ]( key ).toScala must beEqualTo( bytes ).await
     }
   }
 }
