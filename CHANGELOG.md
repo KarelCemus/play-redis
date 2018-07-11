@@ -1,6 +1,10 @@
 
 ## Changelog
 
+### [:link: 2.2.0](https://github.com/KarelCemus/play-redis/tree/2.2.0)
+
+Support of plain arrays in JavaRedis [#176](https://github.com/KarelCemus/play-redis/pull/176).
+
 ### [:link: 2.1.2](https://github.com/KarelCemus/play-redis/tree/2.1.2)
 
 JDK 10 compatibility. Replace deprecated com.sun.misc.BASE64* usages with jdk8 java.util.Base64 [#170](https://github.com/KarelCemus/play-redis/pull/170).
