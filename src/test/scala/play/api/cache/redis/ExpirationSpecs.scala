@@ -24,10 +24,6 @@ class ExpirationSpecs extends Specification {
       new Date( expireAt.getMillis ).asExpiration must beBetween( expirationFrom, expirationTo )
     }
 
-    "from org.joda.time.DateTime (deprecated)" in {
-      expireAt.asExpiration must beBetween( expirationFrom, expirationTo )
-    }
-
     "from java.time.LocalDateTime" in {
       import java.time._
       LocalDateTime.ofInstant( expireAt.toInstant.toDate.toInstant, ZoneId.systemDefault() ).asExpiration must beBetween( expirationFrom, expirationTo )
