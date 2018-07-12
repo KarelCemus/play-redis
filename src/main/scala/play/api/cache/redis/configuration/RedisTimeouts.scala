@@ -50,8 +50,6 @@ case class RedisTimeoutsImpl
 object RedisTimeouts {
   import RedisConfigLoader._
 
-  private def log = Logger( "play.api.cache.redis" )
-
   def requiredDefault: RedisTimeouts = new RedisTimeouts {
     def sync = required( "sync-timeout" )
     def redis = None
@@ -68,23 +66,9 @@ object RedisTimeouts {
     connection = loadConnectionTimeout( config, path ) getOrElse default.connection
   )
 
-  @scala.deprecated( "Property 'timeout' was deprecated in 2.1.0 and was replaced by the 'sync-timeout' with the identical use and meaning.", since = "2.1.0" )
-  private def loadTimeout( config: Config, path: String ): Option[ FiniteDuration ] =
-    config.getOption( path / "timeout", _.getDuration ).map { duration =>
-      log.warn(
-        """
-          |Deprecated settings: Property 'timeout' was deprecated in 2.1.0 and was replaced
-          |by the 'sync-timeout' with the identical use and meaning. The property, the fallback,
-          |and this warning will be removed in 2.2.0.
-        """.stripMargin.replace( "\n", " " )
-      )
-      FiniteDuration( duration.getSeconds, TimeUnit.SECONDS )
-    }
-
-  private def loadSyncTimeout( config: Config, path: String ): Option[ FiniteDuration ] =
-    loadTimeout( config, path ) orElse {
-      config.getOption( path / "sync-timeout", _.getDuration ).map( duration => FiniteDuration( duration.getSeconds, TimeUnit.SECONDS ) )
-    }
+  private def loadSyncTimeout( config: Config, path: String ): Option[ FiniteDuration ] = {
+    config.getOption( path / "sync-timeout", _.getDuration ).map( duration => FiniteDuration( duration.getSeconds, TimeUnit.SECONDS ) )
+  }
 
   private def loadRedisTimeout( config: Config, path: String ): Option[ Option[ FiniteDuration ] ] = {
     config.getNullable( path / "redis-timeout", _.getDuration ).map {

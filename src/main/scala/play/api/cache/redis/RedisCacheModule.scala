@@ -57,11 +57,7 @@ object GuiceProvider extends ProviderImplicits {
 
   private class QualifiedBindingKey[ T ]( key: BindingKey[ T ], f: impl.RedisCaches => T ) {
     @inline private def provider( f: impl.RedisCaches => T )( implicit name: CacheName ): Provider[ T ] = new NamedCacheInstanceProvider( f )
-    @inline private def deprecatedProvider( f: impl.RedisCaches => T )( implicit name: CacheName ): Provider[ T ] = new DeprecatedNamedCacheInstanceProvider( f )
-    def toBindings( implicit name: CacheName ): Seq[ Binding[ _ ] ] = Seq(
-      key.named( name ).to( provider( f ) ),
-      key.qualifiedWith( name ).to( deprecatedProvider( f ) )
-    )
+    def toBindings( implicit name: CacheName ): Binding[ _ ] = key.named( name ).to( provider( f ) )
   }
 
   private def namedBinding[ T: ClassTag ]( f: impl.RedisCaches => T ) = new QualifiedBindingKey( bind[ T ], f )
@@ -80,7 +76,7 @@ object GuiceProvider extends ProviderImplicits {
       namedBinding( _.scalaSync ),
       namedBinding( _.javaSync ),
       namedBinding( _.javaAsync )
-    ).flatMap( _.toBindings )
+    ).map( _.toBindings )
   }
 
   def defaults( instance: RedisInstanceProvider ) = {
@@ -103,7 +99,7 @@ object GuiceProvider extends ProviderImplicits {
 
 class GuiceRedisCacheProvider( instance: RedisInstanceProvider ) extends Provider[ RedisCaches ] with GuiceProviderImplicits {
   @Inject() var injector: Injector = _
-  lazy val get = new impl.RedisCachesProvider(
+  lazy val get: RedisCaches = new impl.RedisCachesProvider(
     instance = instance.resolved( bind[ configuration.RedisInstanceResolver ] ),
     serializer = bind[ connector.AkkaSerializer ],
     environment = bind[ play.api.Environment ]
@@ -117,15 +113,6 @@ class GuiceRedisCacheProvider( instance: RedisInstanceProvider ) extends Provide
 class NamedCacheInstanceProvider[ T ]( f: RedisCaches => T )( implicit name: CacheName ) extends Provider[ T ] with GuiceProviderImplicits {
   @Inject() var injector: Injector = _
   lazy val get = f( bind[ RedisCaches ].named( name ) )
-}
-
-@deprecated( "Use @NamedCache instead of @Named to inject named caches.", since = "2.1.0" )
-class DeprecatedNamedCacheInstanceProvider[ T ]( f: RedisCaches => T )( implicit name: CacheName ) extends Provider[ T ] with GuiceProviderImplicits {
-  @Inject() var injector: Injector = _
-  lazy val get = {
-    play.api.Logger( "play.api.cache.redis.deprecation" ).warn( "Named caches annotated with @Named are deprecated and will be removed in the next release. Use @NamedCache instead. See changelog for more details." )
-    f( bind[ RedisCaches ].named( name ) )
-  }
 }
 
 class CacheName( val name: String ) extends AnyVal
