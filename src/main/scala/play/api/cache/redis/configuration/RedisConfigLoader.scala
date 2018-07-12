@@ -1,8 +1,5 @@
 package play.api.cache.redis.configuration
 
-
-import play.api.ConfigLoader
-
 import com.typesafe.config.Config
 
 /**
@@ -14,8 +11,13 @@ import com.typesafe.config.Config
 private[ configuration ] object RedisConfigLoader {
 
   implicit class ConfigOption( val config: Config ) extends AnyVal {
-    def getOption[ T ]( path: String, f: Config => String => T ): Option[ T ] =
+    def getOption[ T ]( path: String, f: Config => String => T ): Option[ T ] = {
       if ( config hasPath path ) Some( f( config )( path ) ) else None
+    }
+
+    def getNullable[ T ]( path: String, f: Config => String => T ): Option[ Option[ T ] ] = {
+      if ( config hasPathOrNull path ) Some( getOption( path, f ) ) else None
+    }
   }
 
   implicit class ConfigPath( val path: String ) extends AnyVal {

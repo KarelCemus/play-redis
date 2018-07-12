@@ -13,7 +13,7 @@ class RedisInstanceManagerSpecs extends Specification {
   private implicit def implicitlyInstance2resolved( instance: RedisInstance ): RedisInstanceProvider = new ResolvedRedisInstance( instance )
   private implicit def implicitlyString2unresolved( name: String ): RedisInstanceProvider = new UnresolvedRedisInstance( name )
 
-  private val extras = RedisSettingsTest( "my-dispatcher", "eager", RedisTimeouts( 5.minutes, 5.seconds ), "log-and-fail", "standalone", "redis." )
+  private val extras = RedisSettingsTest( "my-dispatcher", "eager", RedisTimeouts( 5.minutes, 5.seconds, 300.millis ), "log-and-fail", "standalone", "redis." )
 
   "default configuration" in new WithRedisInstanceManager(
     """
@@ -41,6 +41,8 @@ class RedisInstanceManagerSpecs extends Specification {
       |
       |  sync-timeout:  5 minutes
       |  redis-timeout: 5 seconds
+      |  connection-timeout: 300 ms
+      |
       |  prefix:        "redis."
       |  dispatcher:    my-dispatcher
       |  invocation:    eager
@@ -65,6 +67,8 @@ class RedisInstanceManagerSpecs extends Specification {
       |
       |      sync-timeout:  5 minutes
       |      redis-timeout: 5 seconds
+      |      connection-timeout: 300 ms
+      |
       |      prefix:        "redis."
       |      dispatcher:    my-dispatcher
       |      invocation:    eager
