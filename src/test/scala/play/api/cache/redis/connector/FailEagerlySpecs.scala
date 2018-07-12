@@ -8,6 +8,7 @@ import play.api.cache.redis._
 import akka.actor.ActorSystem
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
+
 /**
   * @author Karel Cemus
   */
@@ -65,6 +66,9 @@ object FailEagerlySpecs {
   }
 
   class FailEagerlyImpl( implicit system: ActorSystem ) extends FailEagerlyBase with FailEagerly {
+
+    def connectionTimeout = Some( 300.millis )
+
     def isConnected = connected
 
     def markConnected( ) = connected = true

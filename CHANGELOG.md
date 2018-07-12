@@ -5,6 +5,9 @@
 
 Support of plain arrays in JavaRedis [#176](https://github.com/KarelCemus/play-redis/pull/176).
 
+Connection timeout introduced in [#147](https://github.com/KarelCemus/play-redis/issues/147) 
+is now configurable and can be disabled [#174](https://github.com/KarelCemus/play-redis/pull/174).
+
 ### [:link: 2.1.2](https://github.com/KarelCemus/play-redis/tree/2.1.2)
 
 JDK 10 compatibility. Replace deprecated com.sun.misc.BASE64* usages with jdk8 java.util.Base64 [#170](https://github.com/KarelCemus/play-redis/pull/170).

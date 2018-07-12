@@ -51,13 +51,13 @@ trait FailEagerly extends RequestTimeout {
 
   /** max timeout of the future when the redis is disconnected */
   @inline
-  private val failAfter = 300.millis
+  protected def connectionTimeout: Option[ FiniteDuration ]
 
   abstract override def send[ T ]( redisCommand: RedisCommand[ _ <: protocol.RedisReply, T ] ) = {
     // proceed with the command
     @inline def continue = super.send( redisCommand )
     // based on connection status
-    if ( connected ) continue else invokeOrFail( continue, failAfter )
+    if ( connected ) continue else connectionTimeout.fold( continue )( invokeOrFail( continue, _ ) )
   }
 }
 
