@@ -20,9 +20,6 @@ private[ redis ] trait ExpirationImplicits {
 
   implicit def javaDate2AsExpiration( expireAt: Date ): Expiration = new Expiration( expireAt.getTime )
 
-  @deprecated( message = "Since Play 2.6 org.joda.time is removed and replaced ba Java 8 DateTime API. Use java.time.LocalDateTime instead.", since = "2.0.0" )
-  implicit def jodaDate2AsExpiration( expireAt: DateTime ): Expiration = new Expiration( expireAt.getMillis )
-
   implicit def java8Date2AsExpiration( expireAt: LocalDateTime ): Expiration = new Expiration( expireAt.atZone( ZoneId.systemDefault() ).toEpochSecond * 1000 )
 }
 

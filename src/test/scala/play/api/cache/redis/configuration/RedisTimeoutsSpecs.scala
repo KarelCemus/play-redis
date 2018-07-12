@@ -60,16 +60,6 @@ class RedisTimeoutsSpecs extends Specification {
     RedisTimeouts.load( config, "play.cache.redis" )( orDefault ) mustEqual RedisTimeouts( sync = 1.second, redis = None, connection = None )
   }
 
-  "load deprecated timeout option" in new WithConfiguration(
-    """
-      |play.cache.redis {
-      |  timeout: 5s
-      |}
-    """
-  ) {
-    RedisTimeouts.load( config, "play.cache.redis" )( orDefault ) mustEqual RedisTimeouts( 5.second, None, 500.millis )
-  }
-
   "load defaults" in {
     RedisTimeouts.requiredDefault.sync must throwA[ RuntimeException ]
     RedisTimeouts.requiredDefault.redis must beNone
