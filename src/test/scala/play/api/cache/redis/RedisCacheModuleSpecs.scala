@@ -50,24 +50,16 @@ class RedisCacheModuleSpecs extends Specification {
     "bind named cache in simple mode" in new WithApplication with Scope with Around {
       override protected def builder = super.builder.bindings( new RedisCacheModule )
       def around[ T: AsResult ]( t: => T ): Result = runAndStop( t )( injector )
+      def checkBinding[ T <: AnyRef : ClassTag ] = {
+        injector.instanceOf( binding[ T ].namedCache( defaultCacheName ) ) must beAnInstanceOf[ T ]
+      }
 
-      injector.instanceOf( binding[ CacheApi ].named( defaultCacheName ) ) must beAnInstanceOf[ CacheApi ]
-      injector.instanceOf( binding[ CacheApi ].namedCache( defaultCacheName ) ) must beAnInstanceOf[ CacheApi ]
-
-      injector.instanceOf( binding[ CacheAsyncApi ].named( defaultCacheName ) ) must beAnInstanceOf[ CacheAsyncApi ]
-      injector.instanceOf( binding[ CacheAsyncApi ].namedCache( defaultCacheName ) ) must beAnInstanceOf[ CacheAsyncApi ]
-
-      injector.instanceOf( binding[ play.cache.AsyncCacheApi ].named( defaultCacheName ) ) must beAnInstanceOf[ play.cache.AsyncCacheApi ]
-      injector.instanceOf( binding[ play.cache.AsyncCacheApi ].namedCache( defaultCacheName ) ) must beAnInstanceOf[ play.cache.AsyncCacheApi ]
-
-      injector.instanceOf( binding[ play.cache.SyncCacheApi ].named( defaultCacheName ) ) must beAnInstanceOf[ play.cache.SyncCacheApi ]
-      injector.instanceOf( binding[ play.cache.SyncCacheApi ].namedCache( defaultCacheName ) ) must beAnInstanceOf[ play.cache.SyncCacheApi ]
-
-      injector.instanceOf( binding[ play.api.cache.AsyncCacheApi ].named( defaultCacheName ) ) must beAnInstanceOf[ play.api.cache.AsyncCacheApi ]
-      injector.instanceOf( binding[ play.api.cache.AsyncCacheApi ].namedCache( defaultCacheName ) ) must beAnInstanceOf[ play.api.cache.AsyncCacheApi ]
-
-      injector.instanceOf( binding[ play.api.cache.SyncCacheApi ].named( defaultCacheName ) ) must beAnInstanceOf[ play.api.cache.SyncCacheApi ]
-      injector.instanceOf( binding[ play.api.cache.SyncCacheApi ].namedCache( defaultCacheName ) ) must beAnInstanceOf[ play.api.cache.SyncCacheApi ]
+      checkBinding[ CacheApi ]
+      checkBinding[ CacheAsyncApi ]
+      checkBinding[ play.cache.AsyncCacheApi ]
+      checkBinding[ play.cache.SyncCacheApi ]
+      checkBinding[ play.api.cache.AsyncCacheApi ]
+      checkBinding[ play.api.cache.SyncCacheApi ]
     }
 
     "bind named caches" in new WithHocon with WithApplication with Scope with Around {
@@ -139,9 +131,9 @@ class RedisCacheModuleSpecs extends Specification {
 }
 
 object RedisCacheModuleSpecs {
+  import Implicits._
   import play.api.cache.redis.configuration._
   import play.cache.NamedCacheImpl
-  import Implicits._
 
   class AnyProvider[ T ]( instance: => T ) extends Provider[ T ] {
     lazy val get = instance
@@ -150,7 +142,6 @@ object RedisCacheModuleSpecs {
   def binding[ T: ClassTag ]: BindingKey[ T ] = BindingKey( implicitly[ ClassTag[ T ] ].runtimeClass.asInstanceOf[ Class[ T ] ] )
 
   implicit class RichBindingKey[ T ]( val key: BindingKey[ T ] ) {
-    def named( name: String ) = key.qualifiedWith( name )
     def namedCache( name: String ) = key.qualifiedWith( new NamedCacheImpl( name ) )
   }
 
