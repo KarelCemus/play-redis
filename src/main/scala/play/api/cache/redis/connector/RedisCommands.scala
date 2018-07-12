@@ -60,12 +60,14 @@ private[ connector ] trait AbstractRedisCommands {
 private[ connector ] class RedisCommandsStandalone( configuration: RedisStandalone )( implicit system: ActorSystem, val lifecycle: ApplicationLifecycle ) extends Provider[ RedisCommands ] with AbstractRedisCommands {
   import configuration._
 
-  val client = new RedisStandaloneClient(
+  val client: RedisStandaloneClient= new RedisStandaloneClient(
     host = host,
     port = port,
     db = database,
     password = password
   ) with FailEagerly with RedisRequestTimeout {
+
+    protected val connectionTimeout = configuration.timeout.connection
 
     protected val timeout = configuration.timeout.redis
 
@@ -103,7 +105,7 @@ private[ connector ] class RedisCommandsCluster( configuration: RedisCluster )( 
   import HostnameResolver._
   import configuration._
 
-  val client = new RedisClusterClient(
+  val client: RedisClusterClient = new RedisClusterClient(
     nodes.map {
       case RedisHost( host, port, database, password ) => RedisServer( host.resolvedIpAddress, port, password, database )
     }

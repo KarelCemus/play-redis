@@ -114,7 +114,21 @@ limits the waiting for the response from the redis server. However, it is expect
 the redis works smoothly thus no timeout is necessary. In consequence, it is **disabled
 by default** to avoid unnecessary performance penalty.
 
-The other timeouts you might be interested in are related to the communication to Redis, e.g., connection timeout
+### Timeout when disconnected
+
+There is a `connection-timeout`, which
+limits the waiting for the response from the redis server when the connection is
+not established. As the connection is fully asynchronnous, it tends to wait endlessly. 
+To avoid hanging of requests, the connection timeout defines the upper bound of
+waiting for a response. Each request is eather resolved or rejected within this
+time window. It is expected the redis works smoothly thus the timeout
+usually does not apply. However, it is expected the cache should be fast responding
+and thus **by default the timeout is set to 500 millis** to avoid unnecessary delays.
+This timeout is optional and can be disabled.
+
+### Other timeouts
+
+Other timeouts you might be interested in are related to the communication to Redis, e.g., connection timeout
 and receive timeout. These are provided directly by the underlying connector and `play-redis` doesn't affect them.
 For more details, see
 the [`Redis` configuration](https://github.com/etaty/rediscala).
