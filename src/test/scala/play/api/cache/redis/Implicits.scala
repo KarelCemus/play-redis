@@ -26,7 +26,7 @@ object Implicits {
   val dockerIp = "172.17.0.2"
   val defaultPort = 6379
 
-  val defaults = RedisSettingsTest( "akka.actor.default-dispatcher", "lazy", RedisTimeouts( 1.second ), "log-and-default", "standalone" )
+  val defaults = RedisSettingsTest( "akka.actor.default-dispatcher", "lazy", RedisTimeouts( 1.second, None, 500.millis ), "log-and-default", "standalone" )
 
   val defaultInstance = RedisStandalone( defaultCacheName, RedisHost( localhost, defaultPort ), defaults )
 
