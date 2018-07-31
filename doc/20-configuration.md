@@ -151,7 +151,7 @@ see `RecoveryPolicy` trait.
 ```hocon
   # By default, there are two basic implementations:
   #
-  # 'log-and-fail':               Logs the error at firts and then emits RedisException
+  # 'log-and-fail':               Logs the error at first and then emits RedisException
   #
   # 'log-condensed-and-fail':     Same as 'log-and-fail' but with reduced logging.
   #
