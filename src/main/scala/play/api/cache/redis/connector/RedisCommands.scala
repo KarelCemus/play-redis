@@ -20,6 +20,7 @@ private[connector] class RedisCommandsProvider(instance: RedisInstance)(implicit
   lazy val get = instance match {
     case cluster: RedisCluster       => new RedisCommandsCluster(cluster).get
     case standalone: RedisStandalone => new RedisCommandsStandalone(standalone).get
+    case sentinel: RedisSentinel     => new RedisCommandsSentinel(sentinel).get
   }
 }
 
@@ -99,6 +100,7 @@ private[connector] class RedisCommandsStandalone(configuration: RedisStandalone)
   */
 private[connector] class RedisCommandsCluster(configuration: RedisCluster)(implicit system: ActorSystem, val lifecycle: ApplicationLifecycle) extends Provider[RedisCommands] with AbstractRedisCommands {
   import HostnameResolver._
+
   import configuration._
 
   val client: RedisClusterClient = new RedisClusterClient(
@@ -106,7 +108,6 @@ private[connector] class RedisCommandsCluster(configuration: RedisCluster)(impli
       case RedisHost(host, port, database, password) => RedisServer(host.resolvedIpAddress, port, password, database)
     }
   ) with RedisRequestTimeout {
-
     protected val timeout = configuration.timeout.redis
 
     protected implicit val scheduler = system.scheduler
@@ -126,6 +127,46 @@ private[connector] class RedisCommandsCluster(configuration: RedisCluster)(impli
     log.info("Stopping the redis cluster cache actor ...")
     client.stop()
     log.info("Redis cluster cache stopped.")
+  }
+  // $COVERAGE-ON$
+}
+
+/**
+  * Creates a connection to multiple redis sentinels.
+  *
+  * @param lifecycle     application lifecycle to trigger on stop hook
+  * @param configuration configures sentinels
+  * @param system        actor system
+  */
+private[connector] class RedisCommandsSentinel(configuration: RedisSentinel)(implicit system: ActorSystem, val lifecycle: ApplicationLifecycle) extends Provider[RedisCommands] with AbstractRedisCommands {
+  import HostnameResolver._
+
+  val client: SentinelMonitoredRedisClient with RedisRequestTimeout = new SentinelMonitoredRedisClient(
+    configuration.sentinels.map {
+      case RedisHost(host, port, _, _) => (host.resolvedIpAddress, port)
+    },
+    master = configuration.masterGroup,
+    password = configuration.password,
+    db = configuration.database
+  ) with RedisRequestTimeout {
+    protected val connectionTimeout = configuration.timeout.connection
+
+    protected val timeout = configuration.timeout.redis
+
+    protected implicit val scheduler = system.scheduler
+
+    override def send[T](redisCommand: RedisCommand[_ <: protocol.RedisReply, T]) = super.send(redisCommand)
+  }
+
+  // $COVERAGE-OFF$
+  def start(): Unit = {
+    log.info(s"Redis sentinel cache actor started. It is connected to ${configuration.toString}")
+  }
+
+  def stop(): Future[Unit] = Future successful {
+    log.info("Stopping the redis sentinel cache actor ...")
+    client.stop()
+    log.info("Redis sentinel cache stopped.")
   }
   // $COVERAGE-ON$
 }
