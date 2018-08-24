@@ -1,7 +1,6 @@
 package play.api.cache.redis.configuration
 
 import scala.collection.JavaConverters._
-
 import com.typesafe.config.{Config, ConfigOrigin}
 
 /**
@@ -56,6 +55,7 @@ private[ configuration ] object RedisInstanceProvider extends RedisConfigInstanc
       case "standalone" => RedisInstanceStandalone
       // required static configuration of the cluster using application.conf
       case "cluster" => RedisInstanceCluster
+      case "sentinel" => RedisInstanceSentinel
       // required possibly environmental configuration of the standalone instance
       case "connection-string" => RedisInstanceEnvironmental
       // supplied custom configuration
@@ -114,6 +114,24 @@ private[ configuration ] object RedisInstanceEnvironmental extends RedisConfigIn
     RedisStandalone.apply(
       name = instanceName,
       host = RedisHost.fromConnectionString( config getString path./( "connection-string" ) ),
+      settings = RedisSettings.withFallback( defaults ).load( config, path )
+    )
+  )
+}
+
+/**
+  * @author Tomas Cerny (tmscer@gmail.com)
+  */
+private[ configuration ] object RedisInstanceSentinel extends RedisConfigInstanceLoader[ RedisInstanceProvider ] {
+  import RedisConfigLoader._
+
+  def load( config: Config, path: String, instanceName: String )( implicit defaults: RedisSettings ) = new ResolvedRedisInstance(
+    RedisSentinel.apply(
+      name = instanceName,
+      masterGroupName = config.getString(path / "master_group_name"),
+      password = config.getOption(path / "password", _.getString ),
+      database = config.getOption(path / "database", _.getInt ),
+      sentinels = config.getConfigList( path / "sentinel" ).asScala.map( config => RedisHost.load( config ) ).toList,
       settings = RedisSettings.withFallback( defaults ).load( config, path )
     )
   )
