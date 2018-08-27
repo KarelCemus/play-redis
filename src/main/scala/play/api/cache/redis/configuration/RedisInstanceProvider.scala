@@ -128,10 +128,10 @@ private[ configuration ] object RedisInstanceSentinel extends RedisConfigInstanc
   def load( config: Config, path: String, instanceName: String )( implicit defaults: RedisSettings ) = new ResolvedRedisInstance(
     RedisSentinel.apply(
       name = instanceName,
+      sentinels = config.getConfigList( path / "sentinels" ).asScala.map( config => RedisHost.load( config ) ).toList,
       masterGroupName = config.getString(path / "master_group_name"),
       password = config.getOption(path / "password", _.getString ),
       database = config.getOption(path / "database", _.getInt ),
-      sentinels = config.getConfigList( path / "sentinel" ).asScala.map( config => RedisHost.load( config ) ).toList,
       settings = RedisSettings.withFallback( defaults ).load( config, path )
     )
   )

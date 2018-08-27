@@ -43,6 +43,41 @@ play.cache.redis {
 }
 ```
 
+## Sentinel
+
+Use `source: sentinel` to enable sentinel mode. Required parameters are
+`master_group_name: ...` and `sentinels: []`. An example of sentinel settings:
+
+```
+play.cache.redis {
+	source: sentinel
+
+	# master name that you specify when using the `sentinel
+	# get-master-addr-by-name NAME` command
+	master_group_name: r0
+
+	# Number of your redis database (optional)
+	database: 1
+	# Password to your redis hosts (optional)
+	password: something
+
+	# List of sentinels
+	sentinels: [
+		{
+			host: localhost
+			port: 16380
+		},
+		{
+			host: localhost
+			port: 16381
+		},
+		{
+			host: localhost
+			port: 16382
+		}
+	]
+}
+```
 
 ## Named caches
 

@@ -109,7 +109,6 @@ private[ connector ] class RedisCommandsCluster( configuration: RedisCluster )( 
       case RedisHost( host, port, database, password ) => RedisServer( host.resolvedIpAddress, port, password, database )
     }
   ) with RedisRequestTimeout {
-
     protected val timeout = configuration.timeout.redis
 
     protected implicit val scheduler = system.scheduler
