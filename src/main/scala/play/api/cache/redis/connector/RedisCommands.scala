@@ -150,7 +150,7 @@ private[ connector ] class RedisCommandsSentinel( configuration: RedisSentinel )
     },
     master = configuration.masterGroupName,
     password = configuration.password,
-    db = configuration.database,
+    db = configuration.database
   ) with RedisRequestTimeout {
     protected val connectionTimeout = configuration.timeout.connection
 
