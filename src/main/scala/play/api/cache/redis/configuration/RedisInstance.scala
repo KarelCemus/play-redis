@@ -101,7 +101,6 @@ trait RedisSentinel extends RedisInstance {
 
   override def equals( obj: scala.Any ): Boolean = obj match {
     case that: RedisSentinel => equalsAsInstance( that ) && this.sentinels == that.sentinels
-    case _ => false
   }
   /** to string */
   override def toString = s"Sentinel[${ sentinels mkString "," }]"
