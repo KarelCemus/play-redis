@@ -55,6 +55,7 @@ private[ configuration ] object RedisInstanceProvider extends RedisConfigInstanc
       case "standalone" => RedisInstanceStandalone
       // required static configuration of the cluster using application.conf
       case "cluster" => RedisInstanceCluster
+      // required static configuration of the sentinel using application.conf
       case "sentinel" => RedisInstanceSentinel
       // required possibly environmental configuration of the standalone instance
       case "connection-string" => RedisInstanceEnvironmental
