@@ -50,32 +50,32 @@ Use `source: sentinel` to enable sentinel mode. Required parameters are
 
 ```
 play.cache.redis {
-	source: sentinel
+    source: sentinel
 
-	# master name that you specify when using the `sentinel
-	# get-master-addr-by-name NAME` command
-	master_group_name: r0
+    # master name that you specify when using the `sentinel
+    # get-master-addr-by-name NAME` command
+    master_group_name: r0
 
-	# Number of your redis database (optional)
-	database: 1
-	# Password to your redis hosts (optional)
-	password: something
+    # Number of your redis database (optional)
+    database: 1
+    # Password to your redis hosts (optional)
+    password: something
 
-	# List of sentinels
-	sentinels: [
-		{
-			host: localhost
-			port: 16380
-		},
-		{
-			host: localhost
-			port: 16381
-		},
-		{
-			host: localhost
-			port: 16382
-		}
-	]
+    # List of sentinels
+    sentinels: [
+        {
+            host: localhost
+            port: 16380
+        },
+        {
+            host: localhost
+            port: 16381
+        },
+        {
+            host: localhost
+            port: 16382
+        }
+    ]
 }
 ```
 
