@@ -24,7 +24,7 @@ class RedisSentinelSpecs(implicit ee: ExecutionEnv ) extends Specification with 
 
   private val serializer = new AkkaSerializerImpl(system)
 
-  private val sentinelInstance = RedisSentinel(defaultCacheName, masterGroup = "r0", sentinels = RedisHost(localhost, 16380) :: RedisHost(localhost, 16381) :: RedisHost(localhost, 16382) :: Nil, defaults)
+  private val sentinelInstance = RedisSentinel(defaultCacheName, masterGroup = "r0", sentinels = RedisHost( dockerIp, 17000) :: RedisHost( dockerIp, 17001) :: RedisHost( dockerIp, 17002) :: Nil, defaults)
 
   private val connector: RedisConnector = new RedisConnectorProvider(sentinelInstance, serializer).get
 
