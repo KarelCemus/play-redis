@@ -146,9 +146,9 @@ private[ connector ] class RedisCommandsSentinel( configuration: RedisSentinel )
 
   val client: SentinelMonitoredRedisClient with RedisRequestTimeout = new SentinelMonitoredRedisClient(
     configuration.sentinels.map {
-      case RedisHost(host, port, db, password) => (host.resolvedIpAddress, port)
+      case RedisHost(host, port, _, _) => (host.resolvedIpAddress, port)
     },
-    master = configuration.masterGroupName,
+    master = configuration.masterGroup,
     password = configuration.password,
     db = configuration.database
   ) with RedisRequestTimeout {

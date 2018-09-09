@@ -129,7 +129,7 @@ private[ configuration ] object RedisInstanceSentinel extends RedisConfigInstanc
     RedisSentinel.apply(
       name = instanceName,
       sentinels = config.getConfigList( path / "sentinels" ).asScala.map( config => RedisHost.load( config ) ).toList,
-      masterGroupName = config.getString(path / "master_group_name"),
+      masterGroup = config.getString(path / "master-group"),
       password = config.getOption(path / "password", _.getString ),
       database = config.getOption(path / "database", _.getInt ),
       settings = RedisSettings.withFallback( defaults ).load( config, path )

@@ -54,7 +54,7 @@ play.cache.redis {
 
     # master name that you specify when using the `sentinel
     # get-master-addr-by-name NAME` command
-    master_group_name: r0
+    master-group: r0
 
     # Number of your redis database (optional)
     database: 1

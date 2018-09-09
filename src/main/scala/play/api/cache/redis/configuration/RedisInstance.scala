@@ -95,7 +95,7 @@ object RedisStandalone {
 trait RedisSentinel extends RedisInstance {
 
   def sentinels: List[ RedisHost ]
-  def masterGroupName: String
+  def masterGroup: String
   def password: Option[ String ]
   def database: Option[ Int ]
 
@@ -111,19 +111,19 @@ trait RedisSentinel extends RedisInstance {
   */
 object RedisSentinel {
 
-  def apply( name: String, masterGroupName: String,
+  def apply( name: String, masterGroup: String,
              sentinels: List[ RedisHost ],
              settings: RedisSettings,
              password: Option[ String ] = None,
              database: Option[ Int ] = None ): RedisSentinel with RedisDelegatingSettings =
-    create(name, masterGroupName, password, database, sentinels, settings)
+    create(name, masterGroup, password, database, sentinels, settings)
 
   @inline
-  private def create( _name: String, _masterGroupName: String, _password: Option[ String ], _database: Option[ Int ],
+  private def create( _name: String, _masterGroup: String, _password: Option[ String ], _database: Option[ Int ],
                      _sentinels: List[ RedisHost ], _settings: RedisSettings ) =
     new RedisSentinel with RedisDelegatingSettings {
       val name = _name
-      val masterGroupName = _masterGroupName
+      val masterGroup = _masterGroup
       val password = _password
       val database = _database
       val sentinels = _sentinels
