@@ -4,9 +4,6 @@ import play.api.cache.redis._
 
 import org.specs2.mutable.Specification
 
-/**
-  * @author Karel Cemus
-  */
 class RedisHostSpecs extends Specification {
   import Implicits._
 
@@ -22,7 +19,7 @@ class RedisHostSpecs extends Specification {
       |}
     """
   ) {
-    configuration.get[ RedisHost ]( "play.cache.redis" ) mustEqual RedisHost( "localhost", 6378, database = 1, password = "something" )
+    configuration.get[RedisHost]("play.cache.redis") mustEqual RedisHost("localhost", 6378, database = 1, password = "something")
   }
 
   "host without database and password" in new WithConfiguration(
@@ -33,13 +30,13 @@ class RedisHostSpecs extends Specification {
       |}
     """
   ) {
-    configuration.get[ RedisHost ]( "play.cache.redis" ) mustEqual RedisHost( "localhost", 6378, database = 0 )
+    configuration.get[RedisHost]("play.cache.redis") mustEqual RedisHost("localhost", 6378, database = 0)
   }
 
   "host from connection string" in {
-    RedisHost.fromConnectionString( "redis://redis:something@localhost:6378" ) mustEqual RedisHost( "localhost", 6378, password = "something" )
-    RedisHost.fromConnectionString( "redis://localhost:6378" ) mustEqual RedisHost( "localhost", 6378 )
+    RedisHost.fromConnectionString("redis://redis:something@localhost:6378") mustEqual RedisHost("localhost", 6378, password = "something")
+    RedisHost.fromConnectionString("redis://localhost:6378") mustEqual RedisHost("localhost", 6378)
     // test invalid string
-    RedisHost.fromConnectionString( "redis:/localhost:6378" ) must throwA[ IllegalArgumentException ]
+    RedisHost.fromConnectionString("redis:/localhost:6378") must throwA[IllegalArgumentException]
   }
 }

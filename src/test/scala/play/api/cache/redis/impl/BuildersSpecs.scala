@@ -11,22 +11,19 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification._
 
-/**
-  * @author Karel Cemus
-  */
-class BuildersSpecs( implicit ee: ExecutionEnv ) extends Specification with Mockito with WithApplication {
+class BuildersSpecs(implicit ee: ExecutionEnv) extends Specification with Mockito with WithApplication {
 
   import Builders._
   import BuildersSpecs._
   import Implicits._
 
-  def defaultTask = Future.successful( "default" )
+  def defaultTask = Future.successful("default")
 
-  def regularTask = Future( "response" )
+  def regularTask = Future("response")
 
-  def longTask = Future.after( seconds = 2, "response" )
+  def longTask = Future.after(seconds = 2, "response")
 
-  def failingTask = Future.failed( TimeoutException( new IllegalArgumentException( "Simulated failure." ) ) )
+  def failingTask = Future.failed(TimeoutException(new IllegalArgumentException("Simulated failure.")))
 
   "AsynchronousBuilder" should {
 
@@ -35,21 +32,21 @@ class BuildersSpecs( implicit ee: ExecutionEnv ) extends Specification with Mock
     }
 
     "run" in new RuntimeMock {
-      AsynchronousBuilder.toResult( regularTask, defaultTask ) must beEqualTo( "response" ).await
+      AsynchronousBuilder.toResult(regularTask, defaultTask) must beEqualTo("response").await
     }
 
     "run long running task" in new RuntimeMock {
-      AsynchronousBuilder.toResult( longTask, defaultTask ) must beEqualTo( "response" ).awaitFor( 3.seconds )
+      AsynchronousBuilder.toResult(longTask, defaultTask) must beEqualTo("response").awaitFor(3.seconds)
     }
 
     "recover with default policy" in new RuntimeMock {
       runtime.policy returns defaultPolicy
-      AsynchronousBuilder.toResult( failingTask, defaultTask ) must beEqualTo( "default" ).await
+      AsynchronousBuilder.toResult(failingTask, defaultTask) must beEqualTo("default").await
     }
 
     "recover with fail through policy" in new RuntimeMock {
       runtime.policy returns failThrough
-      AsynchronousBuilder.toResult( failingTask, defaultTask ) must throwA[ TimeoutException ].await
+      AsynchronousBuilder.toResult(failingTask, defaultTask) must throwA[TimeoutException].await
     }
   }
 
@@ -60,28 +57,28 @@ class BuildersSpecs( implicit ee: ExecutionEnv ) extends Specification with Mock
     }
 
     "run" in new RuntimeMock {
-      SynchronousBuilder.toResult( regularTask, defaultTask ) must beEqualTo( "response" )
+      SynchronousBuilder.toResult(regularTask, defaultTask) must beEqualTo("response")
     }
 
     "recover from failure with default policy" in new RuntimeMock {
       runtime.policy returns defaultPolicy
-      SynchronousBuilder.toResult( failingTask, defaultTask ) must beEqualTo( "default" )
+      SynchronousBuilder.toResult(failingTask, defaultTask) must beEqualTo("default")
     }
 
     "recover from failure with fail through policy" in new RuntimeMock {
       runtime.policy returns failThrough
-      SynchronousBuilder.toResult( failingTask, defaultTask ) must throwA[ TimeoutException ]
+      SynchronousBuilder.toResult(failingTask, defaultTask) must throwA[TimeoutException]
     }
 
     "recover from timeout due to long running task" in new RuntimeMock {
       runtime.policy returns failThrough
-      SynchronousBuilder.toResult( longTask, defaultTask ) must throwA[ TimeoutException ]
+      SynchronousBuilder.toResult(longTask, defaultTask) must throwA[TimeoutException]
     }
 
     "recover from akka ask timeout" in new RuntimeMock {
       runtime.policy returns failThrough
-      val actorFailure = Future.failed( new AskTimeoutException( "Simulated actor ask timeout" ) )
-      SynchronousBuilder.toResult( actorFailure, defaultTask ) must throwA[ TimeoutException ]
+      val actorFailure = Future.failed(new AskTimeoutException("Simulated actor ask timeout"))
+      SynchronousBuilder.toResult(actorFailure, defaultTask) must throwA[TimeoutException]
     }
   }
 }
@@ -92,8 +89,8 @@ object BuildersSpecs {
 
     import MockitoImplicits._
 
-    private val timeout = akka.util.Timeout( 1.second )
-    implicit protected val runtime: RedisRuntime = mock[ RedisRuntime ]
+    private val timeout = akka.util.Timeout(1.second)
+    implicit protected val runtime: RedisRuntime = mock[RedisRuntime]
 
     runtime.timeout returns timeout
     runtime.context returns ExecutionContext.global
