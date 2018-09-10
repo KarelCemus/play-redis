@@ -17,3 +17,6 @@ addSbtPlugin( "org.scoverage" % "sbt-coveralls" % "1.2.2" )
 
 // lists project dependencies
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.0")
+
+// code linter
+addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.8.2")

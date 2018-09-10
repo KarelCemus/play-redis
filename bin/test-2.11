@@ -1,0 +1,11 @@
+#! /bin/bash
+
+. "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/config"
+
+runSbt ++$SCALA_211 $SBT_CMD
+
+result=$?
+
+doAfterSuccess $result $SCALA_211
+
+exit $result

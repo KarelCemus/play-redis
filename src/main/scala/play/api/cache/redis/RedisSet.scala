@@ -9,9 +9,8 @@ import scala.language.higherKinds
   * <strong>This simplified wrapper implements only unordered Sets.</strong>
   *
   * @tparam Elem Data type of the inserted element
-  * @author Karel Cemus
   */
-trait RedisSet[ Elem, Result[ _ ] ] extends RedisCollection[ Set[ Elem ], Result ] {
+trait RedisSet[Elem, Result[_]] extends RedisCollection[Set[Elem], Result] {
 
   /**
     * <p>Add the specified members to the set stored at key. Specified members that are already a member of this
@@ -23,7 +22,7 @@ trait RedisSet[ Elem, Result[ _ ] ] extends RedisCollection[ Set[ Elem ], Result
     * @param element elements to be added
     * @return the set for chaining calls
     */
-  def add( element: Elem* ): Result[ This ]
+  def add(element: Elem*): Result[This]
 
   /**
     * <p>Tests if the element is contained in the set. Returns true if exists, otherwise returns false</p>
@@ -32,7 +31,7 @@ trait RedisSet[ Elem, Result[ _ ] ] extends RedisCollection[ Set[ Elem ], Result
     * @param element tested element
     * @return true if exists in the set, otherwise false
     */
-  def contains( element: Elem ): Result[ Boolean ]
+  def contains(element: Elem): Result[Boolean]
 
   /**
     * <p>Removes the specified members from the sorted set stored at key. Non existing members are ignored.
@@ -42,7 +41,7 @@ trait RedisSet[ Elem, Result[ _ ] ] extends RedisCollection[ Set[ Elem ], Result
     * @param element elements to be removed
     * @return the set for chaining calls
     */
-  def remove( element: Elem* ): Result[ This ]
+  def remove(element: Elem*): Result[This]
 
   /**
     * <p>Returns all elements in the set</p>
@@ -50,5 +49,5 @@ trait RedisSet[ Elem, Result[ _ ] ] extends RedisCollection[ Set[ Elem ], Result
     * @note <strong>Time complexity:</strong> O(N) where N is the set cardinality.
     * @return all elements in the set
     */
-  def toSet: Result[ Set[ Elem ] ]
+  def toSet: Result[Set[Elem]]
 }
