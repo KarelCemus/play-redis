@@ -8,11 +8,8 @@ import play.api.{Configuration, Environment}
 /**
   * <p>Components for compile-time dependency injection.
   * It binds components from configuration package</p>
-  *
-  * @author Karel Cemus
   */
-trait RedisCacheComponents
-{
+trait RedisCacheComponents {
   implicit def actorSystem: akka.actor.ActorSystem
   implicit def applicationLifecycle: ApplicationLifecycle
   def configuration: Configuration
@@ -34,10 +31,10 @@ trait RedisCacheComponents
 
   private lazy val akkaSerializer: connector.AkkaSerializer = new connector.AkkaSerializerProvider().get
 
-  private lazy val manager = configuration.get( "play.cache.redis" )( play.api.cache.redis.configuration.RedisInstanceManager )
+  private lazy val manager = configuration.get("play.cache.redis")(play.api.cache.redis.configuration.RedisInstanceManager)
 
   /** translates the cache name into the configuration  */
-  implicit def redisInstance( name: String )( implicit resolver: play.api.cache.redis.configuration.RedisInstanceResolver ): RedisInstance = manager.instanceOf( name ).resolved
+  implicit def redisInstance(name: String)(implicit resolver: play.api.cache.redis.configuration.RedisInstanceResolver): RedisInstance = manager.instanceOf(name).resolved
 
-  def cacheApi( instance: RedisInstance ): impl.RedisCaches = new impl.RedisCachesProvider( instance, akkaSerializer, environment ).get
+  def cacheApi(instance: RedisInstance): impl.RedisCaches = new impl.RedisCachesProvider(instance, akkaSerializer, environment).get
 }
