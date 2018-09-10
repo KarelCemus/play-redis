@@ -3,9 +3,6 @@ import scala.sys.process.ProcessLogger
 import sbt._
 import sbtrelease._
 
-/**
-  * @author Karel Cemus
-  */
 object Utilities {
 
   import ReleasePlugin.autoImport._

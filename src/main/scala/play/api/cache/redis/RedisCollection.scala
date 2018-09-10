@@ -2,10 +2,7 @@ package play.api.cache.redis
 
 import scala.language.higherKinds
 
-/**
-  * @author Karel Cemus
-  */
-private[ redis ] trait RedisCollection[ Collection, Result[ _ ] ] {
+private[redis] trait RedisCollection[Collection, Result[_]] {
 
   type This = this.type
 
@@ -18,9 +15,9 @@ private[ redis ] trait RedisCollection[ Collection, Result[ _ ] ] {
     *
     * @return size of the list
     */
-  def size: Result[ Long ]
+  def size: Result[Long]
 
-  def isEmpty: Result[ Boolean ]
+  def isEmpty: Result[Boolean]
 
-  def nonEmpty: Result[ Boolean ]
+  def nonEmpty: Result[Boolean]
 }

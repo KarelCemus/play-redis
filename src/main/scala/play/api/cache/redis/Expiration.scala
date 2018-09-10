@@ -10,17 +10,14 @@ import scala.language.implicitConversions
   * {{{
   * expireAt in seconds - now in seconds = duration in seconds
   * }}}
-  *
-  * @author Karel Cemus
   */
-private[ redis ] trait ExpirationImplicits {
+private[redis] trait ExpirationImplicits {
   import java.time.{LocalDateTime, ZoneId}
   import java.util.Date
-  import org.joda.time.DateTime
 
-  implicit def javaDate2AsExpiration( expireAt: Date ): Expiration = new Expiration( expireAt.getTime )
+  implicit def javaDate2AsExpiration(expireAt: Date): Expiration = new Expiration(expireAt.getTime)
 
-  implicit def java8Date2AsExpiration( expireAt: LocalDateTime ): Expiration = new Expiration( expireAt.atZone( ZoneId.systemDefault() ).toEpochSecond * 1000 )
+  implicit def java8Date2AsExpiration(expireAt: LocalDateTime): Expiration = new Expiration(expireAt.atZone(ZoneId.systemDefault()).toEpochSecond * 1000)
 }
 
 /**
@@ -28,11 +25,11 @@ private[ redis ] trait ExpirationImplicits {
   *
   * @param expireAt The class accepts timestamp in milliseconds since 1970
   */
-class Expiration( val expireAt: Long ) extends AnyVal {
+class Expiration(val expireAt: Long) extends AnyVal {
 
   /** returns now in milliseconds */
   private def now = System.currentTimeMillis()
 
   /** converts given timestamp indication expiration date into duration from now */
-  def asExpiration = ( expireAt - now ).milliseconds
+  def asExpiration = (expireAt - now).milliseconds
 }
