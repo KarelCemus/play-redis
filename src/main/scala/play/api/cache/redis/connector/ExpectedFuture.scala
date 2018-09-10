@@ -1,6 +1,7 @@
 package play.api.cache.redis.connector
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.implicitConversions
 
 import play.api.cache.redis._
 
@@ -25,10 +26,22 @@ private[connector] trait ExpectedFuture[T] {
     case ex                 => onFailed(ex)
   }
 
+  /** invokes logging statements when the expected future is completed */
+  def logging(doLogging: PartialFunction[T, Unit])(implicit context: ExecutionContext): Future[T] = {
+    future foreach doLogging
+    future recover onException
+  }
+
   /** handles both expected and unexpected responses and failure recovery */
   def expects[U](expected: PartialFunction[T, U])(implicit context: ExecutionContext): Future[U] = {
     future map (expected orElse onUnexpected) recover onException
   }
+}
+
+private[connector] object ExpectedFuture {
+
+  /** converts future to Future[Unit] */
+  @inline implicit def futureToUnit[T](future: Future[T])(implicit context: ExecutionContext): Future[Unit] = future.map(_ => Unit)
 }
 
 private[connector] class ExpectedFutureWithoutKey[T](protected val future: Future[T], protected val cmd: String) extends ExpectedFuture[T] {
