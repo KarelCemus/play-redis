@@ -2,9 +2,6 @@ package play.api.cache.redis.configuration
 
 import org.specs2.mutable.Specification
 
-/**
-  * @author Karel Cemus
-  */
 class HostnameResolverSpecs extends Specification {
   import HostnameResolver._
 

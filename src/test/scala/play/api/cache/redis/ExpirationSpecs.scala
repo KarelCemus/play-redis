@@ -14,19 +14,19 @@ class ExpirationSpecs extends Specification {
 
   "Expiration" should {
 
-    def expireAt = DateTime.now().plusMinutes( 5 ).plusSeconds( 30 )
+    def expireAt = DateTime.now().plusMinutes(5).plusSeconds(30)
 
     val expiration = 5.minutes + 30.seconds
     val expirationFrom = expiration - 2.second
     val expirationTo = expiration + 1.second
 
     "from java.util.Date" in {
-      new Date( expireAt.getMillis ).asExpiration must beBetween( expirationFrom, expirationTo )
+      new Date(expireAt.getMillis).asExpiration must beBetween(expirationFrom, expirationTo)
     }
 
     "from java.time.LocalDateTime" in {
       import java.time._
-      LocalDateTime.ofInstant( expireAt.toInstant.toDate.toInstant, ZoneId.systemDefault() ).asExpiration must beBetween( expirationFrom, expirationTo )
+      LocalDateTime.ofInstant(expireAt.toInstant.toDate.toInstant, ZoneId.systemDefault()).asExpiration must beBetween(expirationFrom, expirationTo)
     }
   }
 }

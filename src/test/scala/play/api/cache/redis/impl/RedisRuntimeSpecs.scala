@@ -4,9 +4,6 @@ import play.api.cache.redis._
 
 import org.specs2.mutable.Specification
 
-/**
-  * @author Karel Cemus
-  */
 class RedisRuntimeSpecs extends Specification with WithApplication {
 
   import Implicits._
@@ -24,8 +21,8 @@ class RedisRuntimeSpecs extends Specification with WithApplication {
         prefix = None
       )
 
-      runtime.timeout mustEqual akka.util.Timeout( defaultInstance.timeout.sync )
-      runtime.policy must beAnInstanceOf[ LogAndFailPolicy ]
+      runtime.timeout mustEqual akka.util.Timeout(defaultInstance.timeout.sync)
+      runtime.policy must beAnInstanceOf[LogAndFailPolicy]
       runtime.invocation mustEqual EagerInvocation
       runtime.prefix mustEqual RedisEmptyPrefix
     }
@@ -35,12 +32,12 @@ class RedisRuntimeSpecs extends Specification with WithApplication {
         instance = defaultInstance,
         recovery = "log-and-default",
         invocation = "lazy",
-        prefix = Some( "prefix" )
+        prefix = Some("prefix")
       )
 
-      runtime.policy must beAnInstanceOf[ LogAndDefaultPolicy ]
+      runtime.policy must beAnInstanceOf[LogAndDefaultPolicy]
       runtime.invocation mustEqual LazyInvocation
-      runtime.prefix mustEqual new RedisPrefixImpl( "prefix" )
+      runtime.prefix mustEqual new RedisPrefixImpl("prefix")
     }
 
     "be build from config (C)" in {
@@ -48,8 +45,8 @@ class RedisRuntimeSpecs extends Specification with WithApplication {
         instance = defaultInstance,
         recovery = "log-and-default",
         invocation = "other",
-        prefix = Some( "prefix" )
-      ) must throwA[ IllegalArgumentException ]
+        prefix = Some("prefix")
+      ) must throwA[IllegalArgumentException]
     }
   }
 }
