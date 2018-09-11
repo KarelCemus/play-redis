@@ -2,9 +2,6 @@ import sbt._
 import sbt.Keys._
 import sbtrelease._
 
-/**
-  * @author Karel Cemus
-  */
 object DocumentationUpdate {
 
   import CustomReleasePlugin.autoImport._

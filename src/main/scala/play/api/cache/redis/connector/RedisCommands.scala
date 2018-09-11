@@ -12,10 +12,8 @@ import scala.concurrent.Future
 /**
   * Dispatches a provider of the redis commands implementation. Use with Guice
   * or some other DI container.
-  *
-  * @author Karel Cemus
   */
-private[ connector ] class RedisCommandsProvider( instance: RedisInstance )( implicit system: ActorSystem, lifecycle: ApplicationLifecycle ) extends Provider[ RedisCommands ] {
+private[connector] class RedisCommandsProvider(instance: RedisInstance)(implicit system: ActorSystem, lifecycle: ApplicationLifecycle) extends Provider[RedisCommands] {
 
   lazy val get = instance match {
     case cluster: RedisCluster => new RedisCommandsCluster( cluster ).get
@@ -24,10 +22,10 @@ private[ connector ] class RedisCommandsProvider( instance: RedisInstance )( imp
   }
 }
 
-private[ connector ] trait AbstractRedisCommands {
+private[connector] trait AbstractRedisCommands {
 
   /** logger instance */
-  protected def log = Logger( "play.api.cache.redis" )
+  protected def log = Logger("play.api.cache.redis")
 
   def lifecycle: ApplicationLifecycle
 
@@ -37,17 +35,16 @@ private[ connector ] trait AbstractRedisCommands {
   lazy val get = client
 
   /** action invoked on the start of the actor */
-  def start( ): Unit
+  def start(): Unit
 
   /** stops the actor */
-  def stop( ): Future[ Unit ]
+  def stop(): Future[Unit]
 
   // start the connector
   start()
   // listen on system stop
-  lifecycle.addStopHook( () => stop() )
+  lifecycle.addStopHook(() => stop())
 }
-
 
 /**
   * Creates a connection to the single instance of redis
@@ -56,10 +53,10 @@ private[ connector ] trait AbstractRedisCommands {
   * @param configuration configures clusters
   * @param system        actor system
   */
-private[ connector ] class RedisCommandsStandalone( configuration: RedisStandalone )( implicit system: ActorSystem, val lifecycle: ApplicationLifecycle ) extends Provider[ RedisCommands ] with AbstractRedisCommands {
+private[connector] class RedisCommandsStandalone(configuration: RedisStandalone)(implicit system: ActorSystem, val lifecycle: ApplicationLifecycle) extends Provider[RedisCommands] with AbstractRedisCommands {
   import configuration._
 
-  val client: RedisStandaloneClient= new RedisStandaloneClient(
+  val client: RedisStandaloneClient = new RedisStandaloneClient(
     host = host,
     port = port,
     db = database,
@@ -72,26 +69,25 @@ private[ connector ] class RedisCommandsStandalone( configuration: RedisStandalo
 
     protected implicit val scheduler = system.scheduler
 
-    override def send[ T ]( redisCommand: RedisCommand[ _ <: protocol.RedisReply, T ] ) = super.send( redisCommand )
+    override def send[T](redisCommand: RedisCommand[_ <: protocol.RedisReply, T]) = super.send(redisCommand)
 
-    override def onConnectStatus = ( status: Boolean ) => connected = status
+    override def onConnectStatus = (status: Boolean) => connected = status
   }
 
   // $COVERAGE-OFF$
-  def start( ) = database.fold {
-    log.info( s"Redis cache actor started. It is connected to $host:$port" )
+  def start() = database.fold {
+    log.info(s"Redis cache actor started. It is connected to $host:$port")
   } {
-    database => log.info( s"Redis cache actor started. It is connected to $host:$port?database=$database" )
+    database => log.info(s"Redis cache actor started. It is connected to $host:$port?database=$database")
   }
 
-  def stop( ): Future[ Unit ] = Future successful {
-    log.info( "Stopping the redis cache actor ..." )
+  def stop(): Future[Unit] = Future successful {
+    log.info("Stopping the redis cache actor ...")
     client.stop()
-    log.info( "Redis cache stopped." )
+    log.info("Redis cache stopped.")
   }
   // $COVERAGE-ON$
 }
-
 
 /**
   * Creates a connection to the redis cluster.
@@ -100,13 +96,13 @@ private[ connector ] class RedisCommandsStandalone( configuration: RedisStandalo
   * @param configuration configures clusters
   * @param system        actor system
   */
-private[ connector ] class RedisCommandsCluster( configuration: RedisCluster )( implicit system: ActorSystem, val lifecycle: ApplicationLifecycle ) extends Provider[ RedisCommands ] with AbstractRedisCommands {
+private[connector] class RedisCommandsCluster(configuration: RedisCluster)(implicit system: ActorSystem, val lifecycle: ApplicationLifecycle) extends Provider[RedisCommands] with AbstractRedisCommands {
   import HostnameResolver._
   import configuration._
 
   val client: RedisClusterClient = new RedisClusterClient(
     nodes.map {
-      case RedisHost( host, port, database, password ) => RedisServer( host.resolvedIpAddress, port, password, database )
+      case RedisHost(host, port, database, password) => RedisServer(host.resolvedIpAddress, port, password, database)
     }
   ) with RedisRequestTimeout {
     protected val timeout = configuration.timeout.redis
@@ -115,19 +111,19 @@ private[ connector ] class RedisCommandsCluster( configuration: RedisCluster )( 
   }
 
   // $COVERAGE-OFF$
-  def start( ) = {
+  def start() = {
     def servers = nodes.map {
-      case RedisHost( host, port, Some( database ), _ ) => s" $host:$port?database=$database"
-      case RedisHost( host, port, None, _ ) => s" $host:$port"
+      case RedisHost(host, port, Some(database), _) => s" $host:$port?database=$database"
+      case RedisHost(host, port, None, _)           => s" $host:$port"
     }
 
-    log.info( s"Redis cluster cache actor started. It is connected to ${ servers mkString ", " }" )
+    log.info(s"Redis cluster cache actor started. It is connected to ${servers mkString ", "}")
   }
 
-  def stop( ): Future[ Unit ] = Future successful {
-    log.info( "Stopping the redis cluster cache actor ..." )
+  def stop(): Future[Unit] = Future successful {
+    log.info("Stopping the redis cluster cache actor ...")
     client.stop()
-    log.info( "Redis cluster cache stopped." )
+    log.info("Redis cluster cache stopped.")
   }
   // $COVERAGE-ON$
 }
