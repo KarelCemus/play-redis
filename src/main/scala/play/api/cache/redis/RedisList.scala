@@ -8,9 +8,8 @@ import scala.language.higherKinds
   * on the head (on the left) or on the tail (on the right) of the list.
   *
   * @tparam Elem Data type of the inserted element
-  * @author Karel Cemus
   */
-trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Result ] {
+trait RedisList[Elem, Result[_]] extends RedisCollection[List[Elem], Result] {
 
   /**
     * Insert all the specified values at the head of the list stored at key.
@@ -28,7 +27,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
     * @param element element to be prepended
     * @return this collection to chain commands
     */
-  def prepend( element: Elem ): Result[ This ]
+  def prepend(element: Elem): Result[This]
 
   /**
     * Insert all the specified values at the tail of the list stored at key.
@@ -46,7 +45,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
     * @param element to be apended
     * @return this collection to chain commands
     */
-  def append( element: Elem ): Result[ This ]
+  def append(element: Elem): Result[This]
 
   /**
     * Insert all the specified values at the head of the list stored at key.
@@ -64,7 +63,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
     * @param element element to be prepended
     * @return this collection to chain commands
     */
-  def +:( element: Elem ): Result[ This ]
+  def +:(element: Elem): Result[This]
 
   /**
     * Insert all the specified values at the tail of the list stored at key.
@@ -82,7 +81,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
     * @param element to be apended
     * @return this collection to chain commands
     */
-  def :+( element: Elem ): Result[ This ]
+  def :+(element: Elem): Result[This]
 
   /**
     * Insert all the specified values at the head of the list stored at key.
@@ -100,7 +99,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
     * @param elements element to be prepended
     * @return this collection to chain commands
     */
-  def ++:( elements: Traversable[ Elem ] ): Result[ This ]
+  def ++:(elements: Traversable[Elem]): Result[This]
 
   /**
     * Insert all the specified values at the tail of the list stored at key.
@@ -118,7 +117,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
     * @param elements to be apended
     * @return this collection to chain commands
     */
-  def :++( elements: Traversable[ Elem ] ): Result[ This ]
+  def :++(elements: Traversable[Elem]): Result[This]
 
   /**
     * Returns the element at index index in the list stored at key.
@@ -136,7 +135,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
     * @return element at the index or exception
     *
     */
-  def apply( index: Int ): Result[ Elem ]
+  def apply(index: Int): Result[Elem]
 
   /**
     * Returns the element at index index in the list stored at key.
@@ -154,17 +153,17 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
     * @return Some( element ) at the index, None if no element exists,
     *         or exception when the value is not a list
     */
-  def get( index: Int ): Result[ Option[ Elem ] ]
+  def get(index: Int): Result[Option[Elem]]
 
   /**
     * @return first element of the collection or an exception
     */
-  def head: Result[ Elem ] = apply( 0 )
+  def head: Result[Elem] = apply(0)
 
   /**
     * @return first element of the collection or None
     */
-  def headOption: Result[ Option[ Elem ] ] = get( 0 )
+  def headOption: Result[Option[Elem]] = get(0)
 
   /**
     * Removes and returns the first element of the list stored at key.
@@ -173,22 +172,22 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
     *
     * @return head element if exists
     */
-  def headPop: Result[ Option[ Elem ] ]
+  def headPop: Result[Option[Elem]]
 
   /**
     * @return last element of the collection or an exception
     */
-  def last: Result[ Elem ] = apply( -1 )
+  def last: Result[Elem] = apply(-1)
 
   /**
     * @return last element of the collection or None
     */
-  def lastOption: Result[ Option[ Elem ] ] = get( -1 )
+  def lastOption: Result[Option[Elem]] = get(-1)
 
   /**
     * @return Helper to this.view.all returning all object in the list
     */
-  def toList: Result[ Seq[ Elem ] ] = view.all
+  def toList: Result[Seq[Elem]] = view.all
 
   /**
     * Inserts value in the list stored at key either before the
@@ -205,7 +204,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
     * @param element elements to be inserted
     * @return new size of the collection or None if pivot not found
     */
-  def insertBefore( pivot: Elem, element: Elem ): Result[ Option[ Long ] ]
+  def insertBefore(pivot: Elem, element: Elem): Result[Option[Long]]
 
   /**
     * Sets the list element at index to value. For more information on the
@@ -215,7 +214,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
     * @param element  elements to be inserted
     * @return this collection to chain commands
     */
-  def set( position: Int, element: Elem ): Result[ This ]
+  def set(position: Int, element: Elem): Result[This]
 
   /**
     * Removes first N values equal to the given value from the list.
@@ -230,7 +229,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
     * @param count   first N occurrences
     * @return this collection to chain commands
     */
-  def remove( element: Elem, count: Int = 1 ): Result[ This ]
+  def remove(element: Elem, count: Int = 1): Result[This]
 
   /**
     * Removes the element at the given position. If the index
@@ -241,7 +240,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
     * @param position element index to be removed
     * @return this collection to chain commands
     */
-  def removeAt( position: Int ): Result[ This ]
+  def removeAt(position: Int): Result[This]
 
   /**
     * @return read-only operations over the collection, does not modify data
@@ -261,7 +260,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
       * @param n takes initial N elements
       * @return first N elements of the collection if exist
       */
-    def take( n: Int ): Result[ Seq[ Elem ] ] = slice( 0, n - 1 )
+    def take(n: Int): Result[Seq[Elem]] = slice(0, n - 1)
 
     /**
       * Helper method of slice. For more details see that method.
@@ -269,14 +268,14 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
       * @param n ignore initial N elements
       * @return rest of the collection ignoring initial N elements
       */
-    def drop( n: Int ): Result[ Seq[ Elem ] ] = slice( n, -1 )
+    def drop(n: Int): Result[Seq[Elem]] = slice(n, -1)
 
     /**
       * Helper method of slice. For more details see that method.
       *
       * @return whole collection
       */
-    def all: Result[ Seq[ Elem ] ] = slice( 0, -1 )
+    def all: Result[Seq[Elem]] = slice(0, -1)
 
     /**
       * Returns the specified elements of the list stored at key.
@@ -301,7 +300,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
       * @param end  index of the last element included
       * @return collection at the specified range
       */
-    def slice( from: Int, end: Int ): Result[ Seq[ Elem ] ]
+    def slice(from: Int, end: Int): Result[Seq[Elem]]
   }
 
   trait RedisListModification {
@@ -317,7 +316,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
       * @param n takes initial N elements
       * @return this object to chain commands
       */
-    def take( n: Int ): Result[ this.type ] = slice( 0, n - 1 )
+    def take(n: Int): Result[this.type] = slice(0, n - 1)
 
     /**
       * Helper method of slice. For more details see that method.
@@ -325,14 +324,14 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
       * @param n ignore initial N elements
       * @return this object to chain commands
       */
-    def drop( n: Int ): Result[ this.type ] = slice( n, -1 )
+    def drop(n: Int): Result[this.type] = slice(n, -1)
 
     /**
       * Helper method of slice. Wiping the whole collection
       *
       * @return this object to chain commands
       */
-    def clear( ): Result[ this.type ]
+    def clear(): Result[this.type]
 
     /**
       * Trim an existing list so that it will contain only the specified range
@@ -355,7 +354,7 @@ trait RedisList[ Elem, Result[ _ ] ] extends RedisCollection[ List[ Elem ], Resu
       * @param end  index of the last element included
       * @return this object to chain commands
       */
-    def slice( from: Int, end: Int ): Result[ this.type ]
+    def slice(from: Int, end: Int): Result[this.type]
   }
 
 }

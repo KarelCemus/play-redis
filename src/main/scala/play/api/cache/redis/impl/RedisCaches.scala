@@ -11,8 +11,6 @@ import akka.actor.ActorSystem
 /**
   * Aggregates all available redis APIs into a single handler. This simplifies
   * binding, construction, and accessing all APIs.
-  *
-  * @author Karel Cemus
   */
 trait RedisCaches {
   def sync: CacheApi
@@ -23,20 +21,20 @@ trait RedisCaches {
   def javaAsync: play.cache.AsyncCacheApi
 }
 
-private[ redis ] class RedisCachesProvider( instance: RedisInstance, serializer: connector.AkkaSerializer, environment: Environment )( implicit system: ActorSystem, lifecycle: ApplicationLifecycle, recovery: RecoveryPolicyResolver ) extends Provider[ RedisCaches ] {
+private[redis] class RedisCachesProvider(instance: RedisInstance, serializer: connector.AkkaSerializer, environment: Environment)(implicit system: ActorSystem, lifecycle: ApplicationLifecycle, recovery: RecoveryPolicyResolver) extends Provider[RedisCaches] {
   import RedisRuntime._
 
-  private implicit lazy val runtime: RedisRuntime = RedisRuntime( instance, instance.recovery, instance.invocationPolicy, instance.prefix )( system )
+  private implicit lazy val runtime: RedisRuntime = RedisRuntime(instance, instance.recovery, instance.invocationPolicy, instance.prefix)(system)
 
-  private lazy val redisConnector = new connector.RedisConnectorProvider( instance, serializer ).get
+  private lazy val redisConnector = new connector.RedisConnectorProvider(instance, serializer).get
 
   lazy val get = new RedisCaches {
-    lazy val async =  new AsyncRedis( redisConnector )
-    lazy val sync = new SyncRedis( redisConnector )
-    lazy val scalaSync = new play.api.cache.DefaultSyncCacheApi( async )
+    lazy val async = new AsyncRedis(redisConnector)
+    lazy val sync = new SyncRedis(redisConnector)
+    lazy val scalaSync = new play.api.cache.DefaultSyncCacheApi(async)
     lazy val scalaAsync = async
-    lazy val java = new JavaRedis( async, environment )
+    lazy val java = new JavaRedis(async, environment)
     lazy val javaAsync = java
-    lazy val javaSync = new play.cache.DefaultSyncCacheApi( java )
+    lazy val javaSync = new play.cache.DefaultSyncCacheApi(java)
   }
 }

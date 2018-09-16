@@ -1,7 +1,6 @@
 package play.api.cache.redis;
 
 /**
- * @author Karel Cemus
  */
 public class JavaTypes {
 

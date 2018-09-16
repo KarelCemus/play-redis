@@ -4,29 +4,26 @@ import scala.concurrent.duration._
 
 import org.specs2.mutable.Specification
 
-/**
-  * @author Karel Cemus
-  */
 class RedisInstanceManagerSpecs extends Specification {
   import play.api.cache.redis.Implicits._
 
-  private implicit def implicitlyInstance2resolved( instance: RedisInstance ): RedisInstanceProvider = new ResolvedRedisInstance( instance )
-  private implicit def implicitlyString2unresolved( name: String ): RedisInstanceProvider = new UnresolvedRedisInstance( name )
+  private implicit def implicitlyInstance2resolved(instance: RedisInstance): RedisInstanceProvider = new ResolvedRedisInstance(instance)
+  private implicit def implicitlyString2unresolved(name: String): RedisInstanceProvider = new UnresolvedRedisInstance(name)
 
-  private val extras = RedisSettingsTest( "my-dispatcher", "eager", RedisTimeouts( 5.minutes, 5.seconds, 300.millis ), "log-and-fail", "standalone", "redis." )
+  private val extras = RedisSettingsTest("my-dispatcher", "eager", RedisTimeouts(5.minutes, 5.seconds, 300.millis), "log-and-fail", "standalone", "redis.")
 
   "default configuration" in new WithRedisInstanceManager(
     """
       |play.cache.redis {}
     """
   ) {
-    val defaultCache: RedisInstanceProvider = RedisStandalone( defaultCacheName, RedisHost( localhost, defaultPort, database = 0 ), defaults )
+    val defaultCache: RedisInstanceProvider = RedisStandalone(defaultCacheName, RedisHost(localhost, defaultPort, database = 0), defaults)
 
-    manager mustEqual RedisInstanceManagerTest( defaultCacheName )( defaultCache )
+    manager mustEqual RedisInstanceManagerTest(defaultCacheName)(defaultCache)
 
-    manager.instanceOf( defaultCacheName ) mustEqual defaultCache
-    manager.instanceOfOption( defaultCacheName ) must beSome( defaultCache )
-    manager.instanceOfOption( "other" ) must beNone
+    manager.instanceOf(defaultCacheName) mustEqual defaultCache
+    manager.instanceOfOption(defaultCacheName) must beSome(defaultCache)
+    manager.instanceOfOption("other") must beNone
 
     manager.defaultInstance mustEqual defaultCache
   }
@@ -50,8 +47,8 @@ class RedisInstanceManagerSpecs extends Specification {
       |}
     """
   ) {
-    manager mustEqual RedisInstanceManagerTest( defaultCacheName )(
-      RedisStandalone( defaultCacheName, RedisHost( "redis.localhost.cz", 6378, database = 2, password = "something" ), extras )
+    manager mustEqual RedisInstanceManagerTest(defaultCacheName)(
+      RedisStandalone(defaultCacheName, RedisHost("redis.localhost.cz", 6378, database = 2, password = "something"), extras)
     )
   }
 
@@ -87,12 +84,12 @@ class RedisInstanceManagerSpecs extends Specification {
       |}
     """
   ) {
-    val defaultCache: RedisInstanceProvider = RedisStandalone( defaultCacheName, RedisHost( localhost, defaultPort, database = 1 ), extras )
-    val otherCache: RedisInstanceProvider = RedisStandalone( "other", RedisHost( "redis.localhost.cz", 6378, database = 2, password = "something" ), defaults )
+    val defaultCache: RedisInstanceProvider = RedisStandalone(defaultCacheName, RedisHost(localhost, defaultPort, database = 1), extras)
+    val otherCache: RedisInstanceProvider = RedisStandalone("other", RedisHost("redis.localhost.cz", 6378, database = 2, password = "something"), defaults)
 
-    manager mustEqual RedisInstanceManagerTest( "other" )( defaultCache, otherCache )
-    manager.instanceOf( defaultCacheName ) mustEqual defaultCache
-    manager.instanceOf( "other" ) mustEqual otherCache
+    manager mustEqual RedisInstanceManagerTest("other")(defaultCache, otherCache)
+    manager.instanceOf(defaultCacheName) mustEqual defaultCache
+    manager.instanceOf("other") mustEqual otherCache
     manager.defaultInstance mustEqual otherCache
   }
 
@@ -113,10 +110,10 @@ class RedisInstanceManagerSpecs extends Specification {
       |}
     """
   ) {
-    def node( port: Int ) = RedisHost( localhost, port )
+    def node(port: Int) = RedisHost(localhost, port)
 
-    manager mustEqual RedisInstanceManagerTest( defaultCacheName )(
-      RedisCluster( defaultCacheName, node( 6380 ) :: node( 6381 ) :: node( 6382 ) :: node( 6383 ) :: Nil, defaults.copy( source = "cluster" ) )
+    manager mustEqual RedisInstanceManagerTest(defaultCacheName)(
+      RedisCluster(defaultCacheName, node(6380) :: node(6381) :: node(6382) :: node(6383) :: Nil, defaults.copy(source = "cluster"))
     )
   }
 
@@ -128,8 +125,8 @@ class RedisInstanceManagerSpecs extends Specification {
       |}
     """
   ) {
-    manager mustEqual RedisInstanceManagerTest( defaultCacheName )(
-      RedisStandalone( defaultCacheName, RedisHost( localhost, defaultPort ), defaults.copy( source = "connection-string" ) )
+    manager mustEqual RedisInstanceManagerTest(defaultCacheName)(
+      RedisStandalone(defaultCacheName, RedisHost(localhost, defaultPort), defaults.copy(source = "connection-string"))
     )
   }
 
@@ -140,7 +137,7 @@ class RedisInstanceManagerSpecs extends Specification {
       |}
     """
   ) {
-    manager mustEqual RedisInstanceManagerTest( defaultCacheName )( defaultCacheName )
+    manager mustEqual RedisInstanceManagerTest(defaultCacheName)(defaultCacheName)
   }
 
   "typo in mode with simple syntax" in new WithRedisInstanceManager(
@@ -150,7 +147,7 @@ class RedisInstanceManagerSpecs extends Specification {
       |}
     """
   ) {
-    manager.defaultInstance must throwA[ IllegalStateException ]
+    manager.defaultInstance must throwA[IllegalStateException]
   }
 
   "typo in mode with advanced syntax" in new WithRedisInstanceManager(
@@ -164,7 +161,7 @@ class RedisInstanceManagerSpecs extends Specification {
       |}
     """
   ) {
-    manager.defaultInstance must throwA[ IllegalStateException ]
+    manager.defaultInstance must throwA[IllegalStateException]
   }
 
   "fail when requesting undefined cache" in new WithRedisInstanceManager(
@@ -181,10 +178,10 @@ class RedisInstanceManagerSpecs extends Specification {
     """
   ) {
 
-    manager.instanceOfOption( defaultCacheName ) must beSome[ RedisInstanceProvider ]
-    manager.instanceOfOption( "other" ) must beNone
+    manager.instanceOfOption(defaultCacheName) must beSome[RedisInstanceProvider]
+    manager.instanceOfOption("other") must beNone
 
-    manager.instanceOf( "other" ) must throwA[ IllegalArgumentException ]
-    manager.defaultInstance must throwA[ IllegalArgumentException ]
+    manager.instanceOf("other") must throwA[IllegalArgumentException]
+    manager.defaultInstance must throwA[IllegalArgumentException]
   }
 }
