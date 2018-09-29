@@ -51,8 +51,19 @@ private[impl] class RedisCache[Result[_]](redis: RedisConnector, builder: Builde
     redis.expire(key, expiration).recoverWithDone
   }
 
+  /**
+    * cached implementation of the matching function
+    *
+    * - when a prefix is empty, it simply delegates the invocation to the connector
+    * - when a prefix is defined, it unprefixes the keys when returned
+    */
+  private val doMatching = runtime.prefix match {
+    case RedisEmptyPrefix => (pattern: String) => redis.matching(pattern)
+    case prefix => (pattern: String) => redis.matching(pattern).map(_.unprefixed)
+  }
+
   def matching(pattern: String) = pattern.prefixed { pattern =>
-    redis.matching(pattern).recoverWithDefault(Seq.empty[String])
+    doMatching(pattern).recoverWithDefault(Seq.empty[String])
   }
 
   def getOrElse[T: ClassTag](key: String, expiration: Duration)(orElse: => T) = key.prefixed { key =>

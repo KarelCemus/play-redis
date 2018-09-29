@@ -56,7 +56,7 @@ object RedisCacheImplicits {
   }
 
   class MockedCache extends MockedConnector {
-    protected val cache = new RedisCache(connector, Builders.AsynchronousBuilder)
+    protected lazy val cache = new RedisCache(connector, Builders.AsynchronousBuilder)
   }
 
   class MockedList extends MockedCache {
