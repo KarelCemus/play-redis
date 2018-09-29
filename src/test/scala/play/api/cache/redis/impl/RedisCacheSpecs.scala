@@ -142,6 +142,14 @@ class RedisCacheSpec(implicit ee: ExecutionEnv) extends Specification with Reduc
       cache.matching("pattern") must beEqualTo(Seq.empty).await
     }
 
+    "matching with a prefix" in new MockedCache {
+      // define a non-empty prefix
+      val prefix = "prefix"
+      runtime.prefix returns new RedisPrefixImpl(prefix)
+      connector.matching(beEq(s"$prefix:pattern")) returns Seq(s"$prefix:$key")
+      cache.matching("pattern") must beEqualTo(Seq(key)).await
+    }
+
     "get or else (hit)" in new MockedCache with OrElse {
       connector.get[String](anyString)(anyClassTag) returns Some(value)
       cache.getOrElse(key)(doElse(value)) must beEqualTo(value).await

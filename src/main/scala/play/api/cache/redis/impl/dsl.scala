@@ -52,6 +52,7 @@ private[impl] object dsl {
   /** applies prefixer to produce final cache key */
   implicit class CacheKeys(val keys: Seq[String]) extends AnyVal {
     def prefixed[T](f: Seq[String] => T)(implicit prefixer: RedisPrefix): T = f(prefixer prefixed keys)
+    def unprefixed(implicit prefixer: RedisPrefix): Seq[String] = prefixer unprefixed keys
   }
 
   /** applies prefixer to produce final cache key */
