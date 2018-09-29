@@ -82,3 +82,44 @@ object RedisStandalone {
       val settings = _settings
     }
 }
+
+/**
+  * Type of Redis Instance - a sentinel. It encapsulates common settings of
+  * the instance, name of the master group, and the list of sentinel nodes.
+  */
+trait RedisSentinel extends RedisInstance {
+
+  def sentinels: List[RedisHost]
+  def masterGroup: String
+  def password: Option[String]
+  def database: Option[Int]
+
+  override def equals(obj: scala.Any): Boolean = obj match {
+    case that: RedisSentinel => equalsAsInstance(that) && this.sentinels == that.sentinels
+  }
+  /** to string */
+  override def toString = s"Sentinel[${sentinels mkString ","}]"
+}
+
+object RedisSentinel {
+
+  def apply(name: String, masterGroup: String,
+      sentinels: List[RedisHost],
+      settings: RedisSettings,
+      password: Option[String] = None,
+      database: Option[Int] = None): RedisSentinel with RedisDelegatingSettings =
+    create(name, masterGroup, password, database, sentinels, settings)
+
+  @inline
+  private def create(_name: String, _masterGroup: String, _password: Option[String], _database: Option[Int],
+      _sentinels: List[RedisHost], _settings: RedisSettings) =
+    new RedisSentinel with RedisDelegatingSettings {
+      val name = _name
+      val masterGroup = _masterGroup
+      val password = _password
+      val database = _database
+      val sentinels = _sentinels
+      val settings = _settings
+    }
+
+}

@@ -117,6 +117,32 @@ class RedisInstanceManagerSpecs extends Specification {
     )
   }
 
+  "sentinel mode" in new WithRedisInstanceManager(
+    """
+      |play.cache.redis {
+      |  instances {
+      |    play {
+      |      sentinels: [
+      |        { host: "localhost", port: 6380 }
+      |        { host: "localhost", port: 6381 }
+      |        { host: "localhost", port: 6382 }
+      |      ]
+      |      master-group: primary
+      |      password: "my-password"
+      |      database: 1
+      |      source: sentinel
+      |    }
+      |  }
+      |}
+    """
+  ) {
+    def node(port: Int) = RedisHost(localhost, port)
+
+    manager mustEqual RedisInstanceManagerTest(defaultCacheName)(
+      RedisSentinel(defaultCacheName, "primary", node(6380) :: node(6381) :: node(6382) :: Nil, defaults.copy(source = "sentinel"), password = "my-password", database = 1)
+    )
+  }
+
   "connection string mode" in new WithRedisInstanceManager(
     """
       |play.cache.redis {
