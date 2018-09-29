@@ -5,6 +5,9 @@
 
 Support of Redis Sentinel [#181](https://github.com/KarelCemus/play-redis/pull/181)
 
+Fixed operation `matching` with prefixed a instance.
+Returned keys are automatically unprefixed. [#184](https://github.com/KarelCemus/play-redis/pull/184)
+
 ### [:link: 2.2.0](https://github.com/KarelCemus/play-redis/tree/2.2.0)
 
 Support of plain arrays in JavaRedis [#176](https://github.com/KarelCemus/play-redis/pull/176).
