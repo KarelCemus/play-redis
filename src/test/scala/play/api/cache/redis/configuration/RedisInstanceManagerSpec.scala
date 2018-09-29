@@ -4,7 +4,7 @@ import scala.concurrent.duration._
 
 import org.specs2.mutable.Specification
 
-class RedisInstanceManagerSpecs extends Specification {
+class RedisInstanceManagerSpec extends Specification {
   import play.api.cache.redis.Implicits._
 
   private implicit def implicitlyInstance2resolved(instance: RedisInstance): RedisInstanceProvider = new ResolvedRedisInstance(instance)

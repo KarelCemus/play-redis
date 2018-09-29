@@ -9,9 +9,9 @@ import akka.actor.ActorSystem
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
 
-class FailEagerlySpecs(implicit ee: ExecutionEnv) extends Specification with WithApplication {
+class FailEagerlySpec(implicit ee: ExecutionEnv) extends Specification with WithApplication {
 
-  import FailEagerlySpecs._
+  import FailEagerlySpec._
   import Implicits._
   import MockitoImplicits._
 
@@ -44,7 +44,7 @@ class FailEagerlySpecs(implicit ee: ExecutionEnv) extends Specification with Wit
   }
 }
 
-object FailEagerlySpecs {
+object FailEagerlySpec {
 
   import redis.RedisCommand
   import redis.protocol.RedisReply

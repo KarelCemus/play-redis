@@ -11,7 +11,7 @@ object CustomReleasePlugin extends AutoPlugin {
 
     val playVersion = settingKey[ String ]( "Version of Play framework" )
     val connectorVersion = settingKey[ String ]( "Version redis connector" )
-    val specs2Version = settingKey[ String ]( "Version of Specs2 testing framework" )
+    val specs2Version = settingKey[ String ]( "Version of specs2 testing framework" )
 
     val authors = settingKey[ Seq[ String ] ]( "List of authors of the library" )
     val vcsScm = settingKey[ String ]( "URL of the GIT repository" )

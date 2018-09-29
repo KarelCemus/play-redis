@@ -6,7 +6,7 @@ import play.api.cache.redis._
 
 import org.specs2.mutable.Specification
 
-class RedisTimeoutsSpecs extends Specification {
+class RedisTimeoutsSpec extends Specification {
   import Implicits._
 
   private def orDefault = RedisTimeouts(1.second, None, 500.millis)

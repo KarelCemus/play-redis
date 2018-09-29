@@ -11,10 +11,10 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification._
 
-class BuildersSpecs(implicit ee: ExecutionEnv) extends Specification with Mockito with WithApplication {
+class BuildersSpec(implicit ee: ExecutionEnv) extends Specification with Mockito with WithApplication {
 
   import Builders._
-  import BuildersSpecs._
+  import BuildersSpec._
   import Implicits._
 
   def defaultTask = Future.successful("default")
@@ -83,7 +83,7 @@ class BuildersSpecs(implicit ee: ExecutionEnv) extends Specification with Mockit
   }
 }
 
-object BuildersSpecs {
+object BuildersSpec {
 
   trait RuntimeMock extends Scope {
 
