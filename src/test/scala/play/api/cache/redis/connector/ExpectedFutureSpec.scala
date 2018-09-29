@@ -7,9 +7,9 @@ import play.api.cache.redis._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
 
-class ExpectedFutureSpecs(implicit ee: ExecutionEnv) extends Specification {
+class ExpectedFutureSpec(implicit ee: ExecutionEnv) extends Specification {
 
-  import ExpectedFutureSpecs._
+  import ExpectedFutureSpec._
 
   class Suite(name: String)(implicit f: ExpectationBuilder[String]) {
 
@@ -50,7 +50,7 @@ class ExpectedFutureSpecs(implicit ee: ExecutionEnv) extends Specification {
   }
 }
 
-object ExpectedFutureSpecs {
+object ExpectedFutureSpec {
 
   val cmd = "TEST CMD"
 

@@ -2,7 +2,7 @@ package play.api.cache.redis.configuration
 
 import org.specs2.mutable.Specification
 
-class RedisInstanceProviderSpecs extends Specification {
+class RedisInstanceProviderSpec extends Specification {
   import play.api.cache.redis.Implicits._
 
   val defaultCache = RedisStandalone(defaultCacheName, RedisHost(localhost, defaultPort, database = 0), defaults)

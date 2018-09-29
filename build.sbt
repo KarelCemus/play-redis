@@ -11,7 +11,7 @@ description := "Redis cache plugin for the Play framework 2"
 
 organization := "com.github.karelcemus"
 
-scalaVersion := "2.12.6"
+scalaVersion := "2.12.7"
 
 crossScalaVersions := Seq( "2.11.12", scalaVersion.value )
 

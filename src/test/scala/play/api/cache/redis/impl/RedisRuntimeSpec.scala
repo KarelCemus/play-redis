@@ -4,7 +4,7 @@ import play.api.cache.redis._
 
 import org.specs2.mutable.Specification
 
-class RedisRuntimeSpecs extends Specification with WithApplication {
+class RedisRuntimeSpec extends Specification with WithApplication {
 
   import Implicits._
 

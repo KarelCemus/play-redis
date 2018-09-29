@@ -14,7 +14,7 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
   * <p>Specification of the low level connector implementing basic commands</p>
   */
-class RedisSentinelSpecs(implicit ee: ExecutionEnv) extends Specification with BeforeAll with AfterAll with WithApplication {
+class RedisSentinelSpec(implicit ee: ExecutionEnv) extends Specification with BeforeAll with AfterAll with WithApplication {
 
   import Implicits._
 
