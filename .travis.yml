@@ -36,8 +36,14 @@ services:
   - docker
 
 install:
-  - docker pull grokzen/redis-cluster:4.0.8
-  - docker run -d -p 7000:7000 -p 7001:7001 -p 7002:7002 -p 7003:7003 -p 7004:7004 -p 7005:7005 --name redis-cluster grokzen/redis-cluster:4.0.8
+  - docker pull karelcemus/redis-cluster:latest
+  - |
+    docker run -d -e "SENTINEL=true" -e "IP=0.0.0.0" \
+    -p 5000:5000 -p 5001:5001 -p 5002:5002 \
+    -p 7000:7000 -p 7001:7001 -p 7002:7002 -p 7003:7003 -p 7004:7004 -p 7005:7005 \
+    -p 7006:7006 -p 7007:7007 -p 7008:7008 \
+    --name redis-cluster \
+    karelcemus/redis-cluster:latest
 
 after_script:
   - docker stop redis-cluster
