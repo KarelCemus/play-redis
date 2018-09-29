@@ -14,10 +14,10 @@ import org.specs2.specification.Scope
 /**
   * <p>This specification tests expiration conversion</p>
   */
-class RedisCacheModuleSpecs extends Specification {
+class RedisCacheModuleSpec extends Specification {
 
   import Implicits._
-  import RedisCacheModuleSpecs._
+  import RedisCacheModuleSpec._
 
   "RedisCacheModule" should {
 
@@ -130,7 +130,7 @@ class RedisCacheModuleSpecs extends Specification {
   }
 }
 
-object RedisCacheModuleSpecs {
+object RedisCacheModuleSpec {
   import Implicits._
   import play.api.cache.redis.configuration._
   import play.cache.NamedCacheImpl

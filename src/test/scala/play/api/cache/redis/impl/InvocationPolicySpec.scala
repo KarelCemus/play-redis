@@ -8,7 +8,7 @@ import play.api.cache.redis._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
 
-class InvocationPolicySpecs(implicit ee: ExecutionEnv) extends Specification with ReducedMockito with WithApplication {
+class InvocationPolicySpec(implicit ee: ExecutionEnv) extends Specification with ReducedMockito with WithApplication {
 
   import Implicits._
   import RedisCacheImplicits._

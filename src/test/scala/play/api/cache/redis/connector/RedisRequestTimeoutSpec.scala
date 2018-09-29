@@ -9,11 +9,11 @@ import akka.actor.ActorSystem
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
 
-class RedisRequestTimeoutSpecs(implicit ee: ExecutionEnv) extends Specification with WithApplication {
+class RedisRequestTimeoutSpec(implicit ee: ExecutionEnv) extends Specification with WithApplication {
 
   import Implicits._
   import MockitoImplicits._
-  import RedisRequestTimeoutSpecs._
+  import RedisRequestTimeoutSpec._
 
   "RedisRequestTimeout" should {
 
@@ -26,7 +26,7 @@ class RedisRequestTimeoutSpecs(implicit ee: ExecutionEnv) extends Specification 
   }
 }
 
-object RedisRequestTimeoutSpecs {
+object RedisRequestTimeoutSpec {
 
   import redis.RedisCommand
   import redis.protocol.RedisReply
