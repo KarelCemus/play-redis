@@ -6,7 +6,7 @@ import play.api.inject.ApplicationLifecycle
 import org.specs2.mutable.Specification
 import org.specs2.specification.AfterAll
 
-class RedisCacheComponentsSpecs extends Specification with WithApplication with AfterAll {
+class RedisCacheComponentsSpec extends Specification with WithApplication with AfterAll {
 
   object components extends RedisCacheComponents {
     def actorSystem = system

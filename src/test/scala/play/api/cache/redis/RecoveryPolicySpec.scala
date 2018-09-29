@@ -8,7 +8,7 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 
-class RecoveryPolicySpecs(implicit ee: ExecutionEnv) extends Specification with Mockito {
+class RecoveryPolicySpec(implicit ee: ExecutionEnv) extends Specification with Mockito {
 
   class BasicPolicy extends RecoveryPolicy {
     def recoverFrom[T](rerun: => Future[T], default: => Future[T], failure: RedisException) = default

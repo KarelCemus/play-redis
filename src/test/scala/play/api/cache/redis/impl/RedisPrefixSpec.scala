@@ -5,7 +5,7 @@ import play.api.cache.redis._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
 
-class RedisPrefixSpecs(implicit ee: ExecutionEnv) extends Specification with ReducedMockito {
+class RedisPrefixSpec(implicit ee: ExecutionEnv) extends Specification with ReducedMockito {
 
   import Implicits._
   import RedisCacheImplicits._

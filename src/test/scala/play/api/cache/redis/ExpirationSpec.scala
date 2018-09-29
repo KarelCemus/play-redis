@@ -10,7 +10,7 @@ import org.specs2.mutable.Specification
 /**
   * <p>This specification tests expiration conversion</p>
   */
-class ExpirationSpecs extends Specification {
+class ExpirationSpec extends Specification {
 
   "Expiration" should {
 

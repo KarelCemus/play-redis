@@ -11,8 +11,8 @@ import org.joda.time.{DateTime, DateTimeZone}
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 
-class SerializerSpecs extends Specification with Mockito {
-  import SerializerSpecs._
+class SerializerSpec extends Specification with Mockito {
+  import SerializerSpec._
 
   private val system = GuiceApplicationBuilder().build().actorSystem
 
@@ -79,9 +79,9 @@ class SerializerSpecs extends Specification with Mockito {
 
     "custom classes" in {
       SimpleObject("B", 3).encoded mustEqual """
-          |rO0ABXNyADtwbGF5LmFwaS5jYWNoZS5yZWRpcy5jb25uZWN0b3IuU2VyaWFsaXplclNwZWNzJFNp
-          |bXBsZU9iamVjdMm6wvThiaEsAgACSQAFdmFsdWVMAANrZXl0ABJMamF2YS9sYW5nL1N0cmluZzt4
-          |cAAAAAN0AAFC
+          |rO0ABXNyADpwbGF5LmFwaS5jYWNoZS5yZWRpcy5jb25uZWN0b3IuU2VyaWFsaXplclNwZWMkU2lt
+          |cGxlT2JqZWN09MwyyJJbanoCAAJJAAV2YWx1ZUwAA2tleXQAEkxqYXZhL2xhbmcvU3RyaW5nO3hw
+          |AAAAA3QAAUI=
         """.stripMargin.lines.map(_.trim).mkString
     }
 
@@ -162,9 +162,9 @@ class SerializerSpecs extends Specification with Mockito {
 
     "custom classes" in {
       """
-        |rO0ABXNyADtwbGF5LmFwaS5jYWNoZS5yZWRpcy5jb25uZWN0b3IuU2VyaWFsaXplclNwZWNzJFNp
-        |bXBsZU9iamVjdMm6wvThiaEsAgACSQAFdmFsdWVMAANrZXl0ABJMamF2YS9sYW5nL1N0cmluZzt4
-        |cAAAAAN0AAFC
+        |rO0ABXNyADpwbGF5LmFwaS5jYWNoZS5yZWRpcy5jb25uZWN0b3IuU2VyaWFsaXplclNwZWMkU2lt
+        |cGxlT2JqZWN09MwyyJJbanoCAAJJAAV2YWx1ZUwAA2tleXQAEkxqYXZhL2xhbmcvU3RyaW5nO3hw
+        |AAAAA3QAAUI=
       """.stripMargin.lines.map(_.trim).mkString.decoded[SimpleObject] mustEqual SimpleObject("B", 3)
     }
 
@@ -183,7 +183,7 @@ class SerializerSpecs extends Specification with Mockito {
   }
 }
 
-object SerializerSpecs {
+object SerializerSpec {
 
   implicit class ValueEncoder(val any: Any) extends AnyVal {
     def encoded(implicit serializer: AkkaSerializer): String = serializer.encode(any).get

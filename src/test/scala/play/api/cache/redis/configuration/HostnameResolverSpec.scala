@@ -2,7 +2,7 @@ package play.api.cache.redis.configuration
 
 import org.specs2.mutable.Specification
 
-class HostnameResolverSpecs extends Specification {
+class HostnameResolverSpec extends Specification {
   import HostnameResolver._
 
   "hostname is resolved to IP address" in {
