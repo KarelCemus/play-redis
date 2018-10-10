@@ -50,7 +50,7 @@ as well as on your premise.
     - custom implementation of the configuration provider
 - support of [standalone, cluster,](https://github.com/KarelCemus/play-redis/blob/2.3.0/doc/20-configuration.md#standalone-vs-cluster)
   and [sentinel modes](https://github.com/KarelCemus/play-redis/blob/2.3.0/doc/20-configuration.md#sentinel)
-- build on the top of Akka actors and serializers, [agnostic to the serialization mechanism](https://github.com/KarelCemus/play-redis/blob/2.3.0/doc/30-how-to-use.md#limitations)
+- build on the top of Akka actors and serializers, [agnostic to the serialization mechanism](https://github.com/KarelCemus/play-redis/blob/2.3.0/doc/20-configuration.md#limitation-of-data-serialization)
     - for simplicity, it uses deprecated Java serialization by default
     - it is recommended to use [Kryo library](https://github.com/romix/akka-kryo-serialization) or any other mechanism
 
