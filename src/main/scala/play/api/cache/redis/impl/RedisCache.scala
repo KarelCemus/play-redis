@@ -4,8 +4,8 @@ import scala.concurrent._
 import scala.concurrent.duration.Duration
 import scala.language.{higherKinds, implicitConversions}
 import scala.reflect.ClassTag
-
 import play.api.cache.redis._
+import scala.collection.AbstractSeq
 
 /** <p>Implementation of plain API using redis-server cache and Brando connector implementation.</p> */
 private[impl] class RedisCache[Result[_]](redis: RedisConnector, builder: Builders.ResultBuilder[Result])(implicit runtime: RedisRuntime) extends AbstractCacheApi[Result] {
@@ -22,6 +22,8 @@ private[impl] class RedisCache[Result[_]](redis: RedisConnector, builder: Builde
   def getAll[T: ClassTag](keys: String*): Result[Seq[Option[T]]] = keys.prefixed { keys =>
     redis.mGet[T](keys: _*).recoverWithDefault(keys.toList.map(_ => None))
   }
+
+  def getAll[T: ClassTag](keys: AbstractSeq[String]): Result[Seq[Option[T]]] = getAll[T](keys.toArray: _*)
 
   def set(key: String, value: Any, expiration: Duration) = key.prefixed { key =>
     redis.set(key, value, expiration).map(_ => (): Unit).recoverWithDone
