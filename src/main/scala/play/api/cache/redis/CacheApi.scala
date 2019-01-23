@@ -1,5 +1,6 @@
 package play.api.cache.redis
 
+import scala.collection.Iterable
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.language.higherKinds
@@ -28,6 +29,8 @@ private[redis] trait AbstractCacheApi[Result[_]] {
     * @return stored record, Some if exists, otherwise None
     */
   def getAll[T: ClassTag](key: String*): Result[Seq[Option[T]]]
+
+  def getAll[T: ClassTag](keys: Iterable[String]): Result[Seq[Option[T]]] = getAll[T](keys.toArray: _*)
 
   /**
     * Retrieve a value from the cache. If is missing, set default value with
