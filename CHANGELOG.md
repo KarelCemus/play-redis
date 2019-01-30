@@ -1,6 +1,11 @@
 
 ## Changelog
 
+### [:link: 2.4.0](https://github.com/KarelCemus/play-redis/tree/2.4.0)
+
+Added `getAll[T: ClassTag](keys: Iterable[String]): Result[Seq[Option[T]]]` into `AbstractCacheApi` 
+in order to also accept collections aside vararg. [#194](https://github.com/KarelCemus/play-redis/pull/194)
+
 ### [:link: 2.3.0](https://github.com/KarelCemus/play-redis/tree/2.3.0)
 
 Support of Redis Sentinel [#181](https://github.com/KarelCemus/play-redis/pull/181)

@@ -44,6 +44,11 @@ class RedisCacheSpec(implicit ee: ExecutionEnv) extends Specification with Reduc
       cache.getAll[String](key, key, key) must beEqualTo(Seq(None, None, None)).await
     }
 
+    "get all (keys in a collection)" in new MockedCache {
+      connector.mGet[String](anyVarArgs)(anyClassTag) returns Seq(Some(value), None, None)
+      cache.getAll[String](Seq(key, key, key)) must beEqualTo(Seq(Some(value), None, None)).await
+    }
+
     "set" in new MockedCache {
       connector.set(anyString, anyString, any[Duration], beEq(false)) returns true
       cache.set(key, value) must beDone.await
