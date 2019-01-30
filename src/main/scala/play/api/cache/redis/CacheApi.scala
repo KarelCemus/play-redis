@@ -30,6 +30,16 @@ private[redis] trait AbstractCacheApi[Result[_]] {
   def getAll[T: ClassTag](key: String*): Result[Seq[Option[T]]]
 
   /**
+    * Retrieve the values of all specified keys from the cache.
+    *
+    * @param keys a collection of cache storage keys
+    * @return stored record, Some if exists, otherwise None
+    */
+  def getAll[T: ClassTag](keys: Iterable[String]): Result[Seq[Option[T]]] = {
+    getAll[T](keys.toSeq: _*)
+  }
+
+  /**
     * Retrieve a value from the cache. If is missing, set default value with
     * given expiration and return the value.
     *
