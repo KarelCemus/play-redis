@@ -174,6 +174,14 @@ class RedisCacheSpec(implicit ee: ExecutionEnv) extends Specification with Reduc
       orElse mustEqual 1
     }
 
+    "get or else (prefixed,miss)" in new MockedSyncRedis with OrElse {
+      runtime.prefix returns new RedisPrefixImpl("prefix")
+      connector.get[String](beEq(s"prefix:$key"))(anyClassTag) returns None
+      connector.set(beEq(s"prefix:$key"), anyString, any[Duration], anyBoolean) returns true
+      cache.getOrElse(key)(doElse(value)) must beEqualTo(value)
+      orElse mustEqual 1
+    }
+
     "get or future (hit)" in new MockedCache with OrElse {
       connector.get[String](anyString)(anyClassTag) returns Some(value)
       cache.getOrFuture(key)(doFuture(value)) must beEqualTo(value).await

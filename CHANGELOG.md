@@ -6,6 +6,8 @@
 Added `getAll[T: ClassTag](keys: Iterable[String]): Result[Seq[Option[T]]]` into `AbstractCacheApi` 
 in order to also accept collections aside vararg. [#194](https://github.com/KarelCemus/play-redis/pull/194)
 
+Fixed `getOrElse` method in Synchronous API with non-empty cache prefix. [#196](https://github.com/KarelCemus/play-redis/pull/196)
+
 ### [:link: 2.3.0](https://github.com/KarelCemus/play-redis/tree/2.3.0)
 
 Support of Redis Sentinel [#181](https://github.com/KarelCemus/play-redis/pull/181)
