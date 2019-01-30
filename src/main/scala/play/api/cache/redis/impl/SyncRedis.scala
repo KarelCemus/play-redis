@@ -12,7 +12,7 @@ private[impl] class SyncRedis(redis: RedisConnector)(implicit runtime: RedisRunt
   // helpers for dsl
   import dsl._
 
-  override def getOrElse[T: ClassTag](key: String, expiration: Duration)(orElse: => T) = {
+  override def getOrElse[T: ClassTag](key: String, expiration: Duration)(orElse: => T) = key.prefixed { key =>
     // note: this method is overridden so the `orElse` won't be included in the timeout
     // compute orElse and try to set it into the cache
     def computeAndSet = {
