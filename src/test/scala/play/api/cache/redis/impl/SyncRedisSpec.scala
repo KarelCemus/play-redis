@@ -35,5 +35,13 @@ class SyncRedisSpec(implicit ee: ExecutionEnv) extends Specification with Reduce
       cache.getOrElse(key)(doElse(value)) must beEqualTo(value)
       orElse mustEqual 1
     }
+
+    "get or else (prefixed,miss)" in new MockedSyncRedis with OrElse {
+      runtime.prefix returns new RedisPrefixImpl("prefix")
+      connector.get[String](beEq(s"prefix:$key"))(anyClassTag) returns None
+      connector.set(beEq(s"prefix:$key"), anyString, any[Duration], anyBoolean) returns true
+      cache.getOrElse(key)(doElse(value)) must beEqualTo(value)
+      orElse mustEqual 1
+    }
   }
 }
