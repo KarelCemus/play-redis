@@ -11,15 +11,15 @@ description := "Redis cache plugin for the Play framework 2"
 
 organization := "com.github.karelcemus"
 
-scalaVersion := "2.12.7"
+scalaVersion := "2.12.8"
 
 crossScalaVersions := Seq( "2.11.12", scalaVersion.value )
 
-playVersion := "2.6.19"
+playVersion := "2.6.21"
 
 connectorVersion := "1.8.4"
 
-specs2Version := "4.3.4"
+specs2Version := "4.4.1"
 
 libraryDependencies ++= Seq(
   // play framework cache API
