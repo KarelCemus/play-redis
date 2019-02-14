@@ -408,6 +408,6 @@ class RedisConnectorSpec(implicit ee: ExecutionEnv) extends Specification with B
   }
 
   def afterAll() = {
-    lifecycle.stop()
+    Shutdown.run
   }
 }
