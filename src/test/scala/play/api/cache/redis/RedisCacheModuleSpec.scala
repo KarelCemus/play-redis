@@ -7,6 +7,7 @@ import scala.reflect.ClassTag
 
 import play.api.inject._
 
+import akka.actor.ActorSystem
 import org.specs2.execute.{AsResult, Result}
 import org.specs2.mutable._
 import org.specs2.specification.Scope
@@ -23,7 +24,7 @@ class RedisCacheModuleSpec extends Specification {
 
     "bind defaults" in new WithApplication with Scope with Around {
       override protected def builder = super.builder.bindings(new RedisCacheModule)
-      def around[T: AsResult](t: => T): Result = runAndStop(t)(injector)
+      def around[T: AsResult](t: => T): Result = runAndStop(t)
 
       injector.instanceOf[CacheApi] must beAnInstanceOf[CacheApi]
       injector.instanceOf[CacheAsyncApi] must beAnInstanceOf[CacheAsyncApi]
@@ -35,7 +36,7 @@ class RedisCacheModuleSpec extends Specification {
 
     "not bind defaults" in new WithHocon with WithApplication with Scope with Around {
       override protected def builder = super.builder.bindings(new RedisCacheModule).configure(configuration)
-      def around[T: AsResult](t: => T): Result = runAndStop(t)(injector)
+      def around[T: AsResult](t: => T): Result = runAndStop(t)
       protected def hocon = "play.cache.redis.bind-default: false"
 
       // bind named caches
@@ -49,7 +50,7 @@ class RedisCacheModuleSpec extends Specification {
 
     "bind named cache in simple mode" in new WithApplication with Scope with Around {
       override protected def builder = super.builder.bindings(new RedisCacheModule)
-      def around[T: AsResult](t: => T): Result = runAndStop(t)(injector)
+      def around[T: AsResult](t: => T): Result = runAndStop(t)
       def checkBinding[T <: AnyRef: ClassTag] = {
         injector.instanceOf(binding[T].namedCache(defaultCacheName)) must beAnInstanceOf[T]
       }
@@ -64,7 +65,7 @@ class RedisCacheModuleSpec extends Specification {
 
     "bind named caches" in new WithHocon with WithApplication with Scope with Around {
       override protected def builder = super.builder.bindings(new RedisCacheModule).configure(configuration)
-      def around[T: AsResult](t: => T): Result = runAndStop(t)(injector)
+      def around[T: AsResult](t: => T): Result = runAndStop(t)
       protected def hocon =
         """
           |play.cache.redis {
@@ -118,7 +119,7 @@ class RedisCacheModuleSpec extends Specification {
       override protected def builder = super.builder.bindings(new RedisCacheModule).configure(configuration).bindings(
         binding[RedisInstance].namedCache(defaultCacheName).to(MyRedisInstance)
       )
-      def around[T: AsResult](t: => T): Result = runAndStop(t)(injector)
+      def around[T: AsResult](t: => T): Result = runAndStop(t)
       protected def hocon = "play.cache.redis.source: custom"
 
       // bind named caches
@@ -145,11 +146,11 @@ object RedisCacheModuleSpec {
     def namedCache(name: String) = key.qualifiedWith(new NamedCacheImpl(name))
   }
 
-  def runAndStop[T: AsResult](t: => T)(injector: Injector) = {
+  def runAndStop[T: AsResult](t: => T)(implicit system: ActorSystem) = {
     try {
       AsResult.effectively(t)
     } finally {
-      injector.instanceOf[ApplicationLifecycle].stop()
+      Shutdown.run(system)
     }
   }
 

@@ -76,6 +76,6 @@ class RedisSentinelSpec(implicit ee: ExecutionEnv) extends Specification with Be
   }
 
   def afterAll(): Unit = {
-    lifecycle.stop()
+    Shutdown.run
   }
 }

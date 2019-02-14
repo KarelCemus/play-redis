@@ -2,7 +2,7 @@
 
   # Redis Cache module for Play framework
 
-  **This version supports Play framework 2.6.x with JDK 8 and both Scala 2.11 and Scala 2.12.**<br/>
+  **This version supports Play framework 2.7.x with JDK 8 and both Scala 2.11 and Scala 2.12.**<br/>
   **For previous versions see older releases.**
 
   [![Travis CI: Status](https://travis-ci.org/KarelCemus/play-redis.svg?branch=master)](https://travis-ci.org/KarelCemus/play-redis)
@@ -15,7 +15,7 @@
 ## About the Project
 
 [Play framework 2](http://playframework.com/) is delivered with EHCache module implementing
-[SyncCacheApi and AsyncCacheApi](https://playframework.com/documentation/2.6.x/ScalaCache).
+[SyncCacheApi and AsyncCacheApi](https://playframework.com/documentation/2.7.x/ScalaCache).
 This module adds **support of Redis cache** server, i.e., key/value storage.
 
 Besides the compatibility with all Play's cache APIs,
@@ -129,6 +129,7 @@ libraryDependencies += "com.github.karelcemus" %% "play-redis" % "2.3.0"
 
 | play framework  | play-redis     | documentation    |
 |-----------------|---------------:|-----------------:|
+| 2.7.x           | <!-- Play 2.7 -->2.4.0-SNAPSHOT<!-- / -->          | [see here](https://github.com/KarelCemus/play-redis/blob/2.4.0/README.md) |
 | 2.6.x           | <!-- Play 2.6 -->2.3.0<!-- / -->          | [see here](https://github.com/KarelCemus/play-redis/blob/2.3.0/README.md) ([Migration Guide](https://github.com/KarelCemus/play-redis/blob/2.3.0/doc/40-migration.md)) |
 | 2.5.x           | <!-- Play 2.5 -->1.4.2<!-- / -->          | [see here](https://github.com/KarelCemus/play-redis/blob/1.4.2/README.md) |
 | 2.4.x           | <!-- Play 2.4 -->1.0.0<!-- / -->          | [see here](https://github.com/KarelCemus/play-redis/blob/1.0.0/README.md) |

@@ -1,11 +1,11 @@
 package play.api.cache.redis.impl
 
+import java.util.Optional
 import java.util.concurrent.{Callable, CompletionStage}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
-
 import play.api.Environment
 import play.api.cache.redis._
 
@@ -40,8 +40,13 @@ private[impl] class JavaRedis(internal: CacheAsyncApi, environment: Environment)
 
   def remove(key: String): CompletionStage[Done] = internal.remove(key).toJava
 
-  def get[T](key: String): CompletionStage[T] =
-    getOrElse[T](key, None)
+  def get[T](key: String): CompletionStage[T] = getOrElse[T](key, None)
+
+  def getOptional[T](key: String): CompletionStage[Optional[T]] = {
+    async { implicit context =>
+      getOrElseOption[T](key, None).map(opt => Optional.ofNullable[T](play.libs.Scala.orNull(opt))).toJava
+    }
+  }
 
   def getOrElseUpdate[T](key: String, block: Callable[CompletionStage[T]]): CompletionStage[T] =
     getOrElse[T](key, Some(block))
@@ -50,9 +55,12 @@ private[impl] class JavaRedis(internal: CacheAsyncApi, environment: Environment)
     getOrElse[T](key, Some(block), duration = expiration.seconds)
 
   def getOrElse[T](key: String, callable: Option[Callable[CompletionStage[T]]], duration: Duration = Duration.Inf): CompletionStage[T] = {
-    import play.core.j.HttpExecutionContext
-    // save the HTTP context if any and restore it later for orElse clause
-    implicit val context = HttpExecutionContext.fromThread(runtime.context)
+    async { implicit context =>
+      getOrElseOption(key, callable, duration).map[T](play.libs.Scala.orNull).toJava
+    }
+  }
+
+  private def getOrElseOption[T](key: String, callable: Option[Callable[CompletionStage[T]]], duration: Duration = Duration.Inf)(implicit context: ExecutionContext): Future[Option[T]] = {
     // get the tag and decode it
     def getClassTag = internal.get[String](s"classTag::$key")
     def decodedClassTag(tag: Option[String]) = tag.map(classTagFrom[T])
@@ -72,9 +80,7 @@ private[impl] class JavaRedis(internal: CacheAsyncApi, environment: Environment)
     getValue.flatMap {
       case Some(value) => Future.successful(Some(value))
       case None        => callable.fold[Future[Option[T]]](Future successful None)(savedOrElse)
-    }.map[T] {
-      play.libs.Scala.orNull
-    }.toJava
+    }
   }
 
   def removeAll() = internal.invalidate().toJava
@@ -86,6 +92,14 @@ private[impl] class JavaRedis(internal: CacheAsyncApi, environment: Environment)
   protected def classTagFrom[T](tag: String): ClassTag[T] = {
     if (tag == "") ClassTag.Null.asInstanceOf[ClassTag[T]]
     else ClassTag(classTagNameToClass(tag, environment))
+  }
+
+  @inline
+  protected def async[T](doAsync: ExecutionContext => T): T = {
+    doAsync {
+      // save the HTTP context if any and restore it later for orElse clause
+      play.core.j.HttpExecutionContext.fromThread(runtime.context)
+    }
   }
 }
 

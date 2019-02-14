@@ -77,6 +77,6 @@ class RedisClusterSpec(implicit ee: ExecutionEnv) extends Specification with Bef
   }
 
   def afterAll() = {
-    lifecycle.stop()
+    Shutdown.run
   }
 }
