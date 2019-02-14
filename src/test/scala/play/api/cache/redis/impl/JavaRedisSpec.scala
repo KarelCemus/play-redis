@@ -1,5 +1,7 @@
 package play.api.cache.redis.impl
 
+import java.util.Optional
+
 import scala.concurrent.duration.Duration
 
 import play.api.cache.redis._
@@ -89,6 +91,17 @@ class JavaRedisSpec(implicit ee: ExecutionEnv) extends Specification with Reduce
       there was one(async).get[String](s"classTag::$key")
       there was one(async).set(key, value, expiration)
       there was one(async).set(s"classTag::$key", "java.lang.String", expiration)
+    }
+
+    "get optional (none)" in new MockedJavaRedis {
+      async.get[String](anyString)(anyClassTag) returns None
+      cache.getOptional[String](key).toScala must beEqualTo(Optional.ofNullable(null)).await
+    }
+
+    "get optional (some)" in new MockedJavaRedis {
+      async.get[String](anyString)(anyClassTag) returns Some("value")
+      async.get[String](beEq(s"classTag::$key"))(anyClassTag) returns Some("java.lang.String")
+      cache.getOptional[String](key).toScala must beEqualTo(Optional.ofNullable("value")).await
     }
 
     "remove" in new MockedJavaRedis {

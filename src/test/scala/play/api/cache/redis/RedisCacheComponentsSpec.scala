@@ -43,6 +43,6 @@ class RedisCacheComponentsSpec extends Specification with WithApplication with A
   }
 
   def afterAll() = {
-    components.applicationLifecycle.stop()
+    Shutdown.run
   }
 }
