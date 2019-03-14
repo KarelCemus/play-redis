@@ -171,7 +171,7 @@ private[redis] trait AbstractCacheApi[Result[_]] {
     * @param key        cache storage key
     * @return the remaining time to live of a key in milliseconds
     */
-  def pttl(key: String): Future[Long]
+  def pttl(key: String): Result[Long]
 
   /**
     * Remove a value under the given key from the cache
