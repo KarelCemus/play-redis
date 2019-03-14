@@ -166,6 +166,14 @@ private[redis] trait AbstractCacheApi[Result[_]] {
   def expire(key: String, expiration: Duration): Result[Done]
 
   /**
+    * returns the remaining time to live of a key that has an expire set, useful, e.g., when we want to check remaining session duration
+    *
+    * @param key        cache storage key
+    * @return the remaining time to live of a key in milliseconds
+    */
+  def pttl(key: String): Future[Long]
+
+  /**
     * Remove a value under the given key from the cache
     *
     * @param key cache storage key

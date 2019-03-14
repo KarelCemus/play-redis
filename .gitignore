@@ -32,3 +32,5 @@ rebel.xml
 
 # OS-specific files
 .DS_Store
+
+INST
