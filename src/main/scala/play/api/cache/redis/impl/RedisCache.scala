@@ -102,6 +102,10 @@ private[impl] class RedisCache[Result[_]](redis: RedisConnector, builder: Builde
     redis.exists(key).recoverWithDefault(false)
   }
 
+  def pttl(key: String) = key.prefixed { key =>
+    redis.pttl(key).recoverWithDefault(0)
+  }
+
   def increment(key: String, by: Long) = key.prefixed { key =>
     redis.increment(key, by).recoverWithDefault(by)
   }

@@ -85,6 +85,14 @@ private[redis] trait CoreCommands {
   def expire(key: String, expiration: Duration): Future[Unit]
 
   /**
+    * returns the remaining time to live of a key that has an expire set, useful, e.g., when we want to check remaining session duration
+    *
+    * @param key        cache storage key
+    * @return the remaining time to live of a key in milliseconds
+    */
+  def pttl(key: String): Future[Long]
+
+  /**
     * Removes all keys in arguments. The other remove methods are for syntax sugar
     *
     * @param keys cache storage keys

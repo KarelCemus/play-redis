@@ -113,6 +113,13 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
       case false => log.debug(s"Expiration set on key '$key' failed. Key does not exist.") // Nothing was removed
     }
 
+  def pttl(key: String): Future[Long] =
+    redis.pttl(key) executing "PTTL" withKey key logging {
+      case -2 => log.debug(s"PTTL returns -2 if '$key' does not exist.")
+      case -1 => log.debug(s"PTTL returns -1 if '$key' exists but has no associated expire.")
+      case _  => log.debug(s"PTTL returns the remaining time to live of '$key' that has an expire set in milliseconds.")
+    }
+
   def matching(pattern: String): Future[Seq[String]] =
     redis.keys(pattern) executing "KEYS" withKey pattern logging {
       case keys => log.debug(s"KEYS on '$pattern' responded '${keys.mkString(", ")}'.")
