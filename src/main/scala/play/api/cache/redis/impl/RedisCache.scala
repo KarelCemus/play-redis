@@ -103,7 +103,7 @@ private[impl] class RedisCache[Result[_]](redis: RedisConnector, builder: Builde
   }
 
   def pttl(key: String) = key.prefixed { key =>
-    redis.pttl(key).recoverWithDefault(0)
+    redis.pttl(key).recoverWithDefault(-2)
   }
 
   def increment(key: String, by: Long) = key.prefixed { key =>
