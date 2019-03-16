@@ -1,5 +1,7 @@
 package play.api.cache.redis.connector
 
+import java.util.concurrent.TimeUnit
+
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
@@ -111,6 +113,19 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
     redis.expire(key, expiration.toSeconds.toInt) executing "EXPIRE" withKey key andParameter s"$expiration" logging {
       case true  => log.debug(s"Expiration set on key '$key'.") // expiration was set
       case false => log.debug(s"Expiration set on key '$key' failed. Key does not exist.") // Nothing was removed
+    }
+
+  def expiresIn(key: String): Future[Option[Duration]] =
+    redis.pttl(key) executing "PTTL" withKey key expects {
+      case -2 =>
+        log.debug(s"PTTL on key '$key' returns -2, it does not exist.")
+        None
+      case -1 =>
+        log.debug(s"PTTL on key '$key' returns -1, it has no associated expiration.")
+        Some(Duration.Inf)
+      case expiration =>
+        log.debug(s"PTTL on key '$key' returns $expiration milliseconds.")
+        Some(Duration(expiration, TimeUnit.MILLISECONDS))
     }
 
   def matching(pattern: String): Future[Seq[String]] =
