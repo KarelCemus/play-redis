@@ -166,6 +166,18 @@ private[redis] trait AbstractCacheApi[Result[_]] {
   def expire(key: String, expiration: Duration): Result[Done]
 
   /**
+    * Returns the remaining time to live of a key that has an expire set,
+    * useful, e.g., when we want to check remaining session duration
+    *
+    * @param key cache storage key
+    * @return the remaining time to live of a key. Some finite duration when
+    *         the value exists and the expiration is set, Some infinite duration
+    *         when the value exists but never expires, and None when the key does
+    *         not exist.
+    */
+  def expiresIn(key: String): Result[Option[Duration]]
+
+  /**
     * Remove a value under the given key from the cache
     *
     * @param key cache storage key

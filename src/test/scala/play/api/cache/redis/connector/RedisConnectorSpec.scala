@@ -90,6 +90,25 @@ class RedisConnectorSpec(implicit ee: ExecutionEnv) extends Specification with B
       connector.get[String](s"$prefix-$idx") must beSome("value").await
     }
 
+    "expires in returns finite duration" in new TestCase {
+      connector.set(s"$prefix-$idx", "value", 2.second).await
+      connector.expiresIn(s"$prefix-$idx") must beSome(beLessThanOrEqualTo(Duration("2 s"))).await
+    }
+
+    "expires in returns infinite duration" in new TestCase {
+      connector.set(s"$prefix-$idx", "value").await
+      connector.expiresIn(s"$prefix-$idx") must beSome(Duration.Inf: Duration).await
+    }
+
+    "expires in returns not defined key" in new TestCase {
+      connector.expiresIn(s"$prefix-$idx") must beNone.await
+      connector.set(s"$prefix-$idx", "value", 1.second).await
+      connector.expiresIn(s"$prefix-$idx") must beSome[Duration].await
+      // wait until the first duration expires
+      Future.after(2) must not(throwA[Throwable]).awaitFor(3.seconds)
+      connector.expiresIn(s"$prefix-$idx") must beNone.await
+    }
+
     "positive exists on existing keys" in new TestCase {
       connector.set(s"$prefix-$idx", "value").await
       connector.exists(s"$prefix-$idx") must beTrue.await
