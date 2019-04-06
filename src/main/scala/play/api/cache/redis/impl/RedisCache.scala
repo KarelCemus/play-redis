@@ -102,6 +102,10 @@ private[impl] class RedisCache[Result[_]](redis: RedisConnector, builder: Builde
     redis.exists(key).recoverWithDefault(false)
   }
 
+  def expiresIn(key: String) = key.prefixed { key =>
+    redis.expiresIn(key).recoverWithDefault(None)
+  }
+
   def increment(key: String, by: Long) = key.prefixed { key =>
     redis.increment(key, by).recoverWithDefault(by)
   }

@@ -137,6 +137,16 @@ class RedisCacheSpec(implicit ee: ExecutionEnv) extends Specification with Reduc
       cache.expire(key, expiration) must beDone.await
     }
 
+    "expires in" in new MockedCache {
+      connector.expiresIn(anyString) returns Some(Duration("1500 ms"))
+      cache.expiresIn(key) must beSome(Duration("1500 ms")).await
+    }
+
+    "expires in recover with default" in new MockedCache {
+      connector.expiresIn(anyString) returns ex
+      cache.expiresIn(key) must beNone.await
+    }
+
     "matching" in new MockedCache {
       connector.matching(anyString) returns Seq(key)
       cache.matching("pattern") must beEqualTo(Seq(key)).await
