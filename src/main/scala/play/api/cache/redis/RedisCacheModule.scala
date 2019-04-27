@@ -74,7 +74,8 @@ object GuiceProvider extends ProviderImplicits {
         namedBinding(_.scalaAsync),
         namedBinding(_.scalaSync),
         namedBinding(_.javaSync),
-        namedBinding(_.javaAsync)
+        namedBinding[play.cache.AsyncCacheApi](_.javaAsync),
+        namedBinding[play.cache.redis.AsyncCacheApi](_.javaAsync)
       ).map(_.toBindings)
   }
 
@@ -88,8 +89,11 @@ object GuiceProvider extends ProviderImplicits {
       // expose a single-implementation providers
       defaultBinding[CacheApi],
       defaultBinding[CacheAsyncApi],
+      defaultBinding[play.cache.redis.AsyncCacheApi],
+      // scala default api
       defaultBinding[play.api.cache.SyncCacheApi],
       defaultBinding[play.api.cache.AsyncCacheApi],
+      // java default api
       defaultBinding[play.cache.SyncCacheApi],
       defaultBinding[play.cache.AsyncCacheApi]
     )
