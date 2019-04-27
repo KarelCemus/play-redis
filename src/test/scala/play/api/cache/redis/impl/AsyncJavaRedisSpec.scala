@@ -9,10 +9,10 @@ import play.api.cache.redis._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
 
-class JavaRedisSpec(implicit ee: ExecutionEnv) extends Specification with ReducedMockito {
+class AsyncJavaRedisSpec(implicit ee: ExecutionEnv) extends Specification with ReducedMockito {
 
   import Implicits._
-  import JavaRedis._
+  import AsyncJavaRedis._
   import RedisCacheImplicits._
 
   import org.mockito.ArgumentMatchers._

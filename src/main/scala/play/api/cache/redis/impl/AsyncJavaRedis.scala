@@ -14,8 +14,8 @@ import play.api.cache.redis._
   *
   * This acts as an adapter to Play Scala CacheApi, because Java Api is slightly different than Scala Api
   */
-private[impl] class JavaRedis(internal: CacheAsyncApi, environment: Environment)(implicit runtime: RedisRuntime) extends play.cache.AsyncCacheApi {
-  import JavaRedis._
+private[impl] class AsyncJavaRedis(internal: CacheAsyncApi, environment: Environment)(implicit runtime: RedisRuntime) extends play.cache.AsyncCacheApi {
+  import AsyncJavaRedis._
 
   def set(key: String, value: scala.Any, expiration: Int): CompletionStage[Done] =
     set(key, value, expiration.seconds).toJava
@@ -103,7 +103,7 @@ private[impl] class JavaRedis(internal: CacheAsyncApi, environment: Environment)
   }
 }
 
-private[impl] object JavaRedis {
+private[impl] object AsyncJavaRedis {
   import scala.compat.java8.FutureConverters
 
   private[impl] implicit class Java8Compatibility[T](val future: Future[T]) extends AnyVal {
