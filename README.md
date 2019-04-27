@@ -14,9 +14,9 @@
 
 ## About the Project
 
-[Play framework 2](http://playframework.com/) is delivered with EHCache module implementing
+[Play framework 2](http://playframework.com/) is delivered with
 [SyncCacheApi and AsyncCacheApi](https://playframework.com/documentation/2.7.x/ScalaCache).
-This module adds **support of Redis cache** server, i.e., key/value storage.
+This module provides **implementation of a cache over Redis** server, i.e., key/value storage.
 
 Besides the compatibility with all Play's cache APIs,
 it introduces more evolved API providing lots of handful
@@ -65,11 +65,12 @@ of the framework is **fully non-blocking**, most of the provided facades are **o
 |    | Trait                                | Language | Blocking     | Features |
 | -- | ------------------------------------ | :------: | :----------: | :------: |
 | 1. | `play.api.cache.redis.CacheApi`      | Scala    | *blocking*   | advanced |
-| 2. | `play.api.cache.redis.CacheAsyncApi` | Scala    | non-blocking | advanced |
-| 3. | `play.api.cache.SyncCacheApi`        | Scala    | *blocking*   | basic    |
-| 4. | `play.api.cache.AsyncCacheApi`       | Scala    | non-blocking | basic    |
-| 5. | `play.cache.SyncCacheApi`            | Java     | *blocking*   | basic    |
-| 6. | `play.cache.AsyncCacheApi`           | Java     | non-blocking | basic    |
+| 1. | `play.api.cache.redis.CacheAsyncApi` | Scala    | non-blocking | advanced |
+| 1. | `play.cache.redis.AsyncCacheApi`     | Java     | non-blocking | advanced |
+| 1. | `play.api.cache.SyncCacheApi`        | Scala    | *blocking*   | basic    |
+| 1. | `play.api.cache.AsyncCacheApi`       | Scala    | non-blocking | basic    |
+| 1. | `play.cache.SyncCacheApi`            | Java     | *blocking*   | basic    |
+| 1. | `play.cache.AsyncCacheApi`           | Java     | non-blocking | basic    |
 
 </center>
 
@@ -77,7 +78,8 @@ First, the `CacheAsyncApi` provides extended API to work with Redis and enables 
 connection providing results through `scala.concurrent.Future`.
 Second, the `CacheApi` is a thin **blocking** wrapper around the asynchronous implementation.
 Third, there are other implementations supporting contemporary versions of the `CacheApi`s
-bundled within Play framework. Finally, `play-redis` also supports Java version of the API.
+bundled within Play framework. Finally, `play-redis` also supports Java version of the API,
+though it is primarily **designed for and more efficient with Scala**.
 
 
 ## Documentation and Getting Started
