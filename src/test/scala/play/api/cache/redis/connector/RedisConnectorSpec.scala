@@ -391,6 +391,8 @@ class RedisConnectorSpec(implicit ee: ExecutionEnv) extends Specification with B
       connector.hashGet[String](key, "KA") must beSome("VA2").await
       connector.hashSet(key, "KB", "VB") must beTrue.await
 
+      connector.hashGet[String](key, Seq("KA", "KB", "KC")) must beEqualTo(Seq(Some("VA2"), Some("VB"), None)).await
+
       connector.hashExists(key, "KB") must beTrue.await
       connector.hashExists(key, "KC") must beFalse.await
 

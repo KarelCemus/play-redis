@@ -27,7 +27,7 @@ private[redis] trait AbstractCacheApi[Result[_]] {
     * @param key cache storage keys
     * @return stored record, Some if exists, otherwise None
     */
-  def getAll[T: ClassTag](key: String*): Result[Seq[Option[T]]]
+  def getAll[T: ClassTag](key: String*): Result[Seq[Option[T]]] = getAll(key)
 
   /**
     * Retrieve the values of all specified keys from the cache.
@@ -35,9 +35,7 @@ private[redis] trait AbstractCacheApi[Result[_]] {
     * @param keys a collection of cache storage keys
     * @return stored record, Some if exists, otherwise None
     */
-  def getAll[T: ClassTag](keys: Iterable[String]): Result[Seq[Option[T]]] = {
-    getAll[T](keys.toSeq: _*)
-  }
+  def getAll[T: ClassTag](keys: Iterable[String]): Result[Seq[Option[T]]]
 
   /**
     * Retrieve a value from the cache. If is missing, set default value with

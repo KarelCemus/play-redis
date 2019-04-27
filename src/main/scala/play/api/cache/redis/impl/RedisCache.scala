@@ -19,7 +19,7 @@ private[impl] class RedisCache[Result[_]](redis: RedisConnector, builder: Builde
     redis.get[T](key).recoverWithDefault(None)
   }
 
-  def getAll[T: ClassTag](keys: String*): Result[Seq[Option[T]]] = keys.prefixed { keys =>
+  def getAll[T: ClassTag](keys: Iterable[String]): Result[Seq[Option[T]]] = keys.toSeq.prefixed { keys =>
     redis.mGet[T](keys: _*).recoverWithDefault(keys.toList.map(_ => None))
   }
 

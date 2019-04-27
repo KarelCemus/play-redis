@@ -41,6 +41,20 @@ class RedisMapSpec(implicit ee: ExecutionEnv) extends Specification with Reduced
       there were one(connector).hashGet[String](key, field)
     }
 
+    "get fields" in new MockedMap {
+      connector.hashGet[String](anyString, beEq(Seq(field, other)))(anyClassTag) returns Seq(Some(value), None)
+      map.getFields(field, other) must beEqualTo(Seq(Some(value), None)).await
+      map.getFields(Seq(field, other)) must beEqualTo(Seq(Some(value), None)).await
+      there were two(connector).hashGet[String](key, Seq(field, other))
+    }
+
+    "get fields (failing)" in new MockedMap {
+      connector.hashGet[String](anyString, beEq(Seq(field, other)))(anyClassTag) returns ex
+      map.getFields(field, other) must beEqualTo(Seq(None, None)).await
+      map.getFields(Seq(field, other)) must beEqualTo(Seq(None, None)).await
+      there were two(connector).hashGet[String](key, Seq(field, other))
+    }
+
     "contains" in new MockedMap {
       connector.hashExists(anyString, beEq(field)) returns true
       connector.hashExists(anyString, beEq(other)) returns false
