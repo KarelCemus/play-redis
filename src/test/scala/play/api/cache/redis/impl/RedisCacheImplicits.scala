@@ -92,7 +92,7 @@ object RedisCacheImplicits {
 
     protected val environment = mock[Environment]
     protected val async = mock[AsyncRedis]
-    protected val cache: play.cache.AsyncCacheApi = new JavaRedis(async, environment)
+    protected val cache: play.cache.AsyncCacheApi = new AsyncJavaRedis(async, environment)
 
     environment.classLoader returns getClass.getClassLoader
   }
