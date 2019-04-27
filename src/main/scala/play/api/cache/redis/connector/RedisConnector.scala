@@ -181,6 +181,17 @@ private[redis] trait HashCommands {
   def hashGet[T: ClassTag](key: String, field: String): Future[Option[T]]
 
   /**
+    * Returns the values associated with fields in the hash stored at given keys.
+    *
+    * Time complexity: O(n), where n is number of fields
+    *
+    * @param key    cache storage key
+    * @param fields accessed fields to get
+    * @return Some value if the field exists, otherwise None
+    */
+  def hashGet[T: ClassTag](key: String, fields: Seq[String]): Future[Seq[Option[T]]]
+
+  /**
     * Returns all fields and values of the hash stored at key. In the returned value, every field name is followed
     * by its value, so the length of the reply is twice the size of the hash.
     *

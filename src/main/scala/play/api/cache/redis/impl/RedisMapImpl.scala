@@ -18,6 +18,8 @@ private[impl] class RedisMapImpl[Elem: ClassTag, Result[_]](key: String, redis: 
 
   def get(field: String) = redis.hashGet[Elem](key, field).recoverWithDefault(None)
 
+  def getFields(fields: Iterable[String]): Result[Seq[Option[Elem]]] = redis.hashGet[Elem](key, fields.toSeq).recoverWithDefault(Seq.fill(fields.size)(None))
+
   def contains(field: String) = redis.hashExists(key, field).recoverWithDefault(false)
 
   def remove(fields: String*) = redis.hashRemove(key, fields: _*).map(_ => This).recoverWithDefault(This)

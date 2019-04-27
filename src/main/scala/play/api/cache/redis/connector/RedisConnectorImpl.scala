@@ -21,6 +21,7 @@ import redis._
   */
 private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: RedisCommands)(implicit runtime: RedisRuntime) extends RedisConnector {
   import ExpectedFuture._
+
   import runtime._
 
   /** logger instance */
@@ -317,6 +318,13 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
       case None =>
         log.debug(s"Item $field is not in the collection at '$key'.")
         None
+    }
+
+  def hashGet[T: ClassTag](key: String, fields: Seq[String]): Future[Seq[Option[T]]] =
+    redis.hmget[String](key, fields: _*) executing "HMGET" withKey key andParameters fields expects {
+      case encoded =>
+        log.debug(s"Collection at '$key' with fields '$fields' has returned ${encoded.size} items.")
+        encoded.map(_.map(decode[T](key, _)))
     }
 
   def hashGetAll[T: ClassTag](key: String) =
