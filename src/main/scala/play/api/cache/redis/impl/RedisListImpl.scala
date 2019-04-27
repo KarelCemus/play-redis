@@ -71,12 +71,12 @@ private[impl] class RedisListImpl[Elem: ClassTag, Result[_]](key: String, redis:
 
     def clear() =
       redis.remove(key).map {
-        _ => this: this.type
+        _ => this: RedisListModification
       }.recoverWithDefault(this)
 
     def slice(start: Int, end: Int) =
       redis.listTrim(key, start, end).map {
-        _ => this: this.type
+        _ => this: RedisListModification
       }.recoverWithDefault(this)
   }
 

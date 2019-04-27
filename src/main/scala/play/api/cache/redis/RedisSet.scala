@@ -12,6 +12,8 @@ import scala.language.higherKinds
   */
 trait RedisSet[Elem, Result[_]] extends RedisCollection[Set[Elem], Result] {
 
+  override type This = RedisSet[Elem, Result]
+
   /**
     * <p>Add the specified members to the set stored at key. Specified members that are already a member of this
     * set are ignored. If key does not exist, a new set is created before adding the specified members.</p>

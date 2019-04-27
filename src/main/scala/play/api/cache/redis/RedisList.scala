@@ -11,6 +11,8 @@ import scala.language.higherKinds
   */
 trait RedisList[Elem, Result[_]] extends RedisCollection[List[Elem], Result] {
 
+  override type This = RedisList[Elem, Result]
+
   /**
     * Insert all the specified values at the head of the list stored at key.
     * If key does not exist, it is created as empty list before performing
@@ -316,7 +318,7 @@ trait RedisList[Elem, Result[_]] extends RedisCollection[List[Elem], Result] {
       * @param n takes initial N elements
       * @return this object to chain commands
       */
-    def take(n: Int): Result[this.type] = slice(0, n - 1)
+    def take(n: Int): Result[RedisListModification] = slice(0, n - 1)
 
     /**
       * Helper method of slice. For more details see that method.
@@ -324,14 +326,14 @@ trait RedisList[Elem, Result[_]] extends RedisCollection[List[Elem], Result] {
       * @param n ignore initial N elements
       * @return this object to chain commands
       */
-    def drop(n: Int): Result[this.type] = slice(n, -1)
+    def drop(n: Int): Result[RedisListModification] = slice(n, -1)
 
     /**
       * Helper method of slice. Wiping the whole collection
       *
       * @return this object to chain commands
       */
-    def clear(): Result[this.type]
+    def clear(): Result[RedisListModification]
 
     /**
       * Trim an existing list so that it will contain only the specified range
@@ -354,7 +356,7 @@ trait RedisList[Elem, Result[_]] extends RedisCollection[List[Elem], Result] {
       * @param end  index of the last element included
       * @return this object to chain commands
       */
-    def slice(from: Int, end: Int): Result[this.type]
+    def slice(from: Int, end: Int): Result[RedisListModification]
   }
 
 }
