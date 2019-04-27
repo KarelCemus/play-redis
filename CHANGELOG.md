@@ -6,6 +6,9 @@
 Added `expiresIn(key: String): Option[Duration]` implementing PTTL 
 command to get expiration of the given key. [#204](https://github.com/KarelCemus/play-redis/pull/204)
 
+Added `getFields(fields: String*)` and `getFields(fields: Iterable[String])` into `RedisMap` API
+implementing HMGET command. [#207](https://github.com/KarelCemus/play-redis/issues/207)
+
 ### [:link: 2.4.0](https://github.com/KarelCemus/play-redis/tree/2.4.0)
 
 Update to Play `2.7.0` [#202](https://github.com/KarelCemus/play-redis/pull/202)

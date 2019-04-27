@@ -30,6 +30,26 @@ trait RedisMap[Elem, Result[_]] extends RedisCollection[Map[String, Elem], Resul
   def get(field: String): Result[Option[Elem]]
 
   /**
+    * Returns the values stored at given keys in the map. The collection
+    * or results has same size as the collection of given fields, it preserves
+    * ordering.
+    *
+    * @param fields keys to get
+    * @return Some if the value exists in the map, None otherwise
+    */
+  def getFields(fields: String*): Result[Seq[Option[Elem]]] = getFields(fields)
+
+  /**
+    * Returns the values stored at given keys in the map. The collection
+    * or results has same size as the collection of given fields, it preserves
+    * ordering.
+    *
+    * @param fields keys to get
+    * @return Some if the value exists in the map, None otherwise
+    */
+  def getFields(fields: Iterable[String]): Result[Seq[Option[Elem]]]
+
+  /**
     * <p>Tests if the field is contained in the map. Returns true if exists, otherwise returns false</p>
     *
     * @note <strong>Time complexity:</strong> O(1)
