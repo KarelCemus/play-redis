@@ -26,6 +26,7 @@ class RedisCacheModuleSpec extends Specification {
       override protected def builder = super.builder.bindings(new RedisCacheModule)
       def around[T: AsResult](t: => T): Result = runAndStop(t)
 
+      injector.instanceOf[RedisConnector] must beAnInstanceOf[RedisConnector]
       injector.instanceOf[CacheApi] must beAnInstanceOf[CacheApi]
       injector.instanceOf[CacheAsyncApi] must beAnInstanceOf[CacheAsyncApi]
       injector.instanceOf[play.cache.AsyncCacheApi] must beAnInstanceOf[play.cache.AsyncCacheApi]
@@ -55,6 +56,7 @@ class RedisCacheModuleSpec extends Specification {
         injector.instanceOf(binding[T].namedCache(defaultCacheName)) must beAnInstanceOf[T]
       }
 
+      checkBinding[RedisConnector]
       checkBinding[CacheApi]
       checkBinding[CacheAsyncApi]
       checkBinding[play.cache.AsyncCacheApi]
@@ -91,6 +93,7 @@ class RedisCacheModuleSpec extends Specification {
       val other = "other"
 
       // something is bound to the default cache name
+      injector.instanceOf(binding[RedisConnector].namedCache(defaultCacheName)) must beAnInstanceOf[RedisConnector]
       injector.instanceOf(binding[CacheApi].namedCache(defaultCacheName)) must beAnInstanceOf[CacheApi]
       injector.instanceOf(binding[CacheAsyncApi].namedCache(defaultCacheName)) must beAnInstanceOf[CacheAsyncApi]
       injector.instanceOf(binding[play.cache.AsyncCacheApi].namedCache(defaultCacheName)) must beAnInstanceOf[play.cache.AsyncCacheApi]
@@ -99,6 +102,7 @@ class RedisCacheModuleSpec extends Specification {
       injector.instanceOf(binding[play.api.cache.SyncCacheApi].namedCache(defaultCacheName)) must beAnInstanceOf[play.api.cache.SyncCacheApi]
 
       // something is bound to the other cache name
+      injector.instanceOf(binding[RedisConnector].namedCache(other)) must beAnInstanceOf[RedisConnector]
       injector.instanceOf(binding[CacheApi].namedCache(other)) must beAnInstanceOf[CacheApi]
       injector.instanceOf(binding[CacheAsyncApi].namedCache(other)) must beAnInstanceOf[CacheAsyncApi]
       injector.instanceOf(binding[play.cache.AsyncCacheApi].namedCache(other)) must beAnInstanceOf[play.cache.AsyncCacheApi]
@@ -107,6 +111,7 @@ class RedisCacheModuleSpec extends Specification {
       injector.instanceOf(binding[play.api.cache.SyncCacheApi].namedCache(other)) must beAnInstanceOf[play.api.cache.SyncCacheApi]
 
       // the other cache is a default
+      injector.instanceOf(binding[RedisConnector].namedCache(other)) mustEqual injector.instanceOf[RedisConnector]
       injector.instanceOf(binding[CacheApi].namedCache(other)) mustEqual injector.instanceOf[CacheApi]
       injector.instanceOf(binding[CacheAsyncApi].namedCache(other)) mustEqual injector.instanceOf[CacheAsyncApi]
       injector.instanceOf(binding[play.cache.AsyncCacheApi].namedCache(other)) mustEqual injector.instanceOf[play.cache.AsyncCacheApi]
@@ -123,6 +128,7 @@ class RedisCacheModuleSpec extends Specification {
       protected def hocon = "play.cache.redis.source: custom"
 
       // bind named caches
+      injector.instanceOf[RedisConnector] must beAnInstanceOf[RedisConnector]
       injector.instanceOf[CacheApi] must beAnInstanceOf[CacheApi]
       injector.instanceOf[CacheAsyncApi] must beAnInstanceOf[CacheAsyncApi]
 
