@@ -69,6 +69,7 @@ object GuiceProvider extends ProviderImplicits {
       bind[impl.RedisCaches].named(name).to(new GuiceRedisCacheProvider(instance))
     ) ++ Seq[QualifiedBindingKey[_]](
         // expose a single-implementation providers
+        namedBinding(_.redisConnector),
         namedBinding(_.sync),
         namedBinding(_.async),
         namedBinding(_.scalaAsync),
@@ -86,6 +87,8 @@ object GuiceProvider extends ProviderImplicits {
     Seq(
       // bind implementation of all caches
       defaultBinding[impl.RedisCaches],
+      // bind redis connector
+      defaultBinding[RedisConnector],
       // expose a single-implementation providers
       defaultBinding[CacheApi],
       defaultBinding[CacheAsyncApi],
