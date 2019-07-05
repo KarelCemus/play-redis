@@ -6,6 +6,11 @@
 Added `expiresIn(key: String): Option[Duration]` implementing PTTL 
 command to get expiration of the given key. [#204](https://github.com/KarelCemus/play-redis/pull/204)
 
+Introduced asynchronous implementation of advanced Java API for redis cache. The API
+wraps the Scala version thus provides slightly worse performance and deals with
+the lack of `classTag` in Play's API design. **This API implementation is experimental 
+and may change in future.** Feedback will be welcome. [#206](https://github.com/KarelCemus/play-redis/issues/206)
+
 Added `getFields(fields: String*)` and `getFields(fields: Iterable[String])` into `RedisMap` API
 implementing HMGET command. [#207](https://github.com/KarelCemus/play-redis/issues/207)
 

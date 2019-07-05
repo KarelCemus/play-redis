@@ -1,8 +1,18 @@
 # How to Use this Module
 
-When you have the library added to your project, you can safely inject the `play.api.cache.redis.CacheApi` trait for the synchronous cache. If you want the asynchronous implementation, then inject `play.api.cache.redis.CacheAsyncApi`.
+When you have the library added to your project, you can safely inject
+`play.api.cache.redis.CacheApi` trait for the synchronous cache. If you
+want the asynchronous implementation, then inject `play.api.cache.redis.CacheAsyncApi`.
+And for Java version, there is available `play.cache.redis.AsyncCacheApi`,
+which provides Java-friendly interface, though it is limited, slightely slower,
+and has to deal with missing `ClassTag`.
 
-Besides various common operations over the cache, the API supports working with the collections: List, Set, and Map. First, create a typed worker to use the collection under the give key. For example: `cache.list[ String ]( "my-list" )` Then you can fully operate the collection. Please **be aware of the complexity** of the operations and **optimize your code**. Although the API is simple and seems efficient, each of your calls is transmitted to Redis.
+Besides various common operations over the cache, the API supports working with
+the collections: List, Set, and Map. First, create a typed worker to use the collection
+under the give key. For example: `cache.list[ String ]( "my-list" )` Then you can fully
+operate the collection. Please **be aware of the complexity** of the operations and
+**optimize your code**. Although the API is simple and seems efficient, each of your calls
+is transmitted to Redis.
 
 ## Checking operation result
 

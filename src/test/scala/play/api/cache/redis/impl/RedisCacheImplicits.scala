@@ -35,10 +35,12 @@ object RedisCacheImplicits {
 
   val ex = TimeoutException(new IllegalArgumentException("Simulated failure."))
 
+  object NoSuchElementException extends NoSuchElementException
+
   trait AbstractMocked extends Scope {
-    val key = "key"
-    val value = "value"
-    val other = "other"
+    protected val key = "key"
+    protected val value = "value"
+    protected val other = "other"
 
     protected def invocation = LazyInvocation
 
@@ -60,20 +62,20 @@ object RedisCacheImplicits {
   }
 
   class MockedList extends MockedCache {
-    val data = new mutable.ListBuffer[String]
+    protected val data = new mutable.ListBuffer[String]
     data.append(other, value, value)
 
     protected val list = cache.list[String]("key")
   }
 
   class MockedSet extends MockedCache {
-    val data = mutable.Set[String](other, value)
+    protected val data = mutable.Set[String](other, value)
 
     protected val set = cache.set[String]("key")
   }
 
   class MockedMap extends MockedCache {
-    val field = "field"
+    protected val field = "field"
 
     protected val map = cache.map[String]("key")
   }
@@ -88,13 +90,38 @@ object RedisCacheImplicits {
   }
 
   class MockedJavaRedis extends AbstractMocked {
-    val expiration = 5.seconds
+    protected val expiration = 5.seconds
+    protected val expirationLong = expiration.toSeconds
+    protected val expirationInt = expirationLong.intValue
+    protected val classTag = "java.lang.String"
+    protected val classTagKey = s"classTag::$key"
+    protected val classTagOther = s"classTag::$other"
 
-    protected val environment = mock[Environment]
+    protected implicit val environment = mock[Environment]
     protected val async = mock[AsyncRedis]
-    protected val cache: play.cache.AsyncCacheApi = new JavaRedis(async, environment)
+    protected val cache: play.cache.redis.AsyncCacheApi = new AsyncJavaRedis(async)
 
     environment.classLoader returns getClass.getClassLoader
+  }
+
+  class MockedJavaList extends AbstractMocked {
+    protected val internal = mock[RedisList[String, Future]]
+    protected val view = mock[internal.RedisListView]
+    protected val modifier = mock[internal.RedisListModification]
+    protected val list = new RedisListJavaImpl(internal)
+    internal.view returns view
+    internal.modify returns modifier
+  }
+
+  class MockedJavaSet extends MockedJavaRedis {
+    protected val internal = mock[RedisSet[String, Future]]
+    protected val set = new RedisSetJavaImpl(internal)
+  }
+
+  class MockedJavaMap extends MockedJavaRedis {
+    val field = "field"
+    protected val internal = mock[RedisMap[String, Future]]
+    protected val map = new RedisMapJavaImpl(internal)
   }
 
   trait OrElse extends Scope {

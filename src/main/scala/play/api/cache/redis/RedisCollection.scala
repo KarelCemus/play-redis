@@ -4,7 +4,7 @@ import scala.language.higherKinds
 
 private[redis] trait RedisCollection[Collection, Result[_]] {
 
-  type This = this.type
+  type This >: this.type
 
   /**
     * Returns the length of the collection stored at key. If key does not exist,
