@@ -12,6 +12,8 @@ import scala.language.higherKinds
   */
 trait RedisMap[Elem, Result[_]] extends RedisCollection[Map[String, Elem], Result] {
 
+  override type This = RedisMap[Elem, Result]
+
   /**
     * Insert the value at the given key into the map
     *
