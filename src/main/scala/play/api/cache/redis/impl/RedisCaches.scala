@@ -13,6 +13,7 @@ import akka.actor.ActorSystem
   * binding, construction, and accessing all APIs.
   */
 trait RedisCaches {
+  def redisConnector: connector.RedisConnector
   def sync: CacheApi
   def async: CacheAsyncApi
   def scalaAsync: play.api.cache.AsyncCacheApi
@@ -28,9 +29,8 @@ private[redis] class RedisCachesProvider(instance: RedisInstance, serializer: co
 
   private implicit def implicitEnvironment = environment
 
-  private lazy val redisConnector = new connector.RedisConnectorProvider(instance, serializer).get
-
   lazy val get = new RedisCaches {
+    lazy val redisConnector = new connector.RedisConnectorProvider(instance, serializer).get
     lazy val async = new AsyncRedis(redisConnector)
     lazy val sync = new SyncRedis(redisConnector)
     lazy val scalaSync = new play.api.cache.DefaultSyncCacheApi(async)
