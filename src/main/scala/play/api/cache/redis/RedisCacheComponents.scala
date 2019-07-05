@@ -19,22 +19,24 @@ trait RedisCacheComponents {
   private lazy val emptyRecoveryResolver = new RecoveryPolicyResolverImpl
 
   /** override this for providing a custom policy resolver */
-  implicit def recoveryPolicyResolver = emptyRecoveryResolver
+  implicit def recoveryPolicyResolver: RecoveryPolicyResolver = emptyRecoveryResolver
 
   /** default implementation of the empty resolver */
-  private lazy val emptyInstanceResolver = new play.api.cache.redis.configuration.RedisInstanceResolver {
-    val resolve = PartialFunction.empty
+  private lazy val emptyInstanceResolver: RedisInstanceResolver = new RedisInstanceResolver {
+    val resolve: PartialFunction[String, RedisInstance] = PartialFunction.empty
   }
 
   /** override this for providing a custom redis instance resolver */
-  implicit def redisInstanceResolver = emptyInstanceResolver
+  implicit def redisInstanceResolver: RedisInstanceResolver = emptyInstanceResolver
 
   private lazy val akkaSerializer: connector.AkkaSerializer = new connector.AkkaSerializerProvider().get
 
   private lazy val manager = configuration.get("play.cache.redis")(play.api.cache.redis.configuration.RedisInstanceManager)
 
   /** translates the cache name into the configuration  */
-  implicit def redisInstance(name: String)(implicit resolver: play.api.cache.redis.configuration.RedisInstanceResolver): RedisInstance = manager.instanceOf(name).resolved
+  private def redisInstance(name: String)(implicit resolver: RedisInstanceResolver): RedisInstance = manager.instanceOf(name).resolved(resolver)
 
-  def cacheApi(instance: RedisInstance): impl.RedisCaches = new impl.RedisCachesProvider(instance, akkaSerializer, environment).get
+  private def cacheApi(instance: RedisInstance): impl.RedisCaches = new impl.RedisCachesProvider(instance, akkaSerializer, environment).get
+
+  def cacheApi(name: String)(implicit resolver: RedisInstanceResolver): RedisCaches = cacheApi(redisInstance(name)(resolver))
 }
