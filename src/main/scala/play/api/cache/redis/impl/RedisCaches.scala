@@ -31,7 +31,7 @@ private[redis] class RedisCachesProvider(instance: RedisInstance, serializer: co
 
   lazy val get = new RedisCaches {
     lazy val redisConnector = new connector.RedisConnectorProvider(instance, serializer).get
-    lazy val async = new AsyncRedis(redisConnector)
+    lazy val async = new AsyncRedisImpl(redisConnector)
     lazy val sync = new SyncRedis(redisConnector)
     lazy val scalaSync = new play.api.cache.DefaultSyncCacheApi(async)
     lazy val scalaAsync = async

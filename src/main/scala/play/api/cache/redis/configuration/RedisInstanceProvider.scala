@@ -1,7 +1,8 @@
 package play.api.cache.redis.configuration
 
-import scala.collection.JavaConverters._
-import com.typesafe.config.{Config, ConfigOrigin}
+import play.api.cache.redis._
+
+import com.typesafe.config.Config
 
 trait RedisInstanceResolver {
   def resolve: PartialFunction[String, RedisInstance]
@@ -59,18 +60,15 @@ private[configuration] object RedisInstanceProvider extends RedisConfigInstanceL
       // supplied custom configuration
       case "custom"            => RedisInstanceCustom
       // found but unrecognized
-      case other               => invalidConfiguration(config.getValue(path / "source").origin(), other)
+      case other => invalidConfiguration(
+        s"""
+           |Unrecognized configuration provider '$other' in ${config.getValue(path / "source").origin().filename()}
+           |at ${config.getValue(path / "source").origin().lineNumber()}.
+           |Expected values are 'standalone', 'cluster', 'connection-string', and 'custom'.
+        """.stripMargin
+      )
     }
   }.load(config, path, name)
-
-  /** helper indicating invalid configuration */
-  @throws[IllegalStateException]
-  private def invalidConfiguration(source: ConfigOrigin, value: String): Nothing = throw new IllegalStateException(
-    s"""
-       |Unrecognized configuration provider '$value' in ${source.filename()} at ${source.lineNumber()}.
-       |Expected values are 'standalone', 'cluster', 'connection-string', and 'custom'.
-    """.stripMargin
-  )
 }
 
 /**
@@ -90,6 +88,7 @@ private[configuration] object RedisInstanceStandalone extends RedisConfigInstanc
   * Statically configured redis cluster
   */
 private[configuration] object RedisInstanceCluster extends RedisConfigInstanceLoader[RedisInstanceProvider] {
+  import JavaCompatibilityBase._
   import RedisConfigLoader._
 
   def load(config: Config, path: String, instanceName: String)(implicit defaults: RedisSettings) = new ResolvedRedisInstance(
@@ -121,6 +120,7 @@ private[configuration] object RedisInstanceEnvironmental extends RedisConfigInst
   * Statically configures redis sentinel
   */
 private[configuration] object RedisInstanceSentinel extends RedisConfigInstanceLoader[RedisInstanceProvider] {
+  import JavaCompatibilityBase._
   import RedisConfigLoader._
 
   def load(config: Config, path: String, instanceName: String)(implicit defaults: RedisSettings) = new ResolvedRedisInstance(

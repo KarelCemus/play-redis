@@ -159,12 +159,12 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
         case removed => log.debug(s"Remove on keys ${keys.mkString("'", ",", "'")} removed $removed values.")
       }
     } else {
-      Future.successful(Unit) // otherwise return immediately
+      Future.successful(()) // otherwise return immediately
     }
 
   def ping(): Future[Unit] =
     redis.ping() executing "PING" logging {
-      case "PONG" => Unit
+      case "PONG" => ()
     }
 
   def increment(key: String, by: Long): Future[Long] =
@@ -334,7 +334,7 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
         Map.empty
       case encoded =>
         log.debug(s"Collection at '$key' has ${encoded.size} items.")
-        encoded.mapValues(decode[T](key, _))
+        encoded.map { case (itemKey, value) => itemKey -> decode[T](itemKey, value) }
     }
 
   def hashSize(key: String) =
