@@ -1,15 +1,15 @@
 package play.api.cache.redis.impl
 
-import scala.collection.convert.{DecorateAsJava, DecorateAsScala}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 import play.api.Environment
+import play.api.cache.redis.JavaCompatibilityBase
 
 import akka.Done
 
-private[impl] object JavaCompatibility extends DecorateAsScala with DecorateAsJava {
+private[impl] object JavaCompatibility extends JavaCompatibilityBase {
   import scala.compat.java8.{FutureConverters, OptionConverters}
 
   type CompletionStage[T] = java.util.concurrent.CompletionStage[T]

@@ -61,9 +61,4 @@ trait ExceptionImplicits {
   @throws[IllegalStateException]
   def invalidConfiguration(message: String): Nothing =
     throw new IllegalStateException(message)
-
-  /** helper indicating the code to be overwritten */
-  @throws[UnsupportedOperationException]
-  def shouldBeOverwritten(message: String): Nothing =
-    throw new UnsupportedOperationException(message)
 }
