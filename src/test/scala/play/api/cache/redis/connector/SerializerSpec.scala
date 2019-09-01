@@ -12,7 +12,7 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 
 class SerializerSpec extends Specification with Mockito {
-  import SerializerSpec._
+  import SerializerImplicits._
 
   private val system = GuiceApplicationBuilder().build().actorSystem
 
@@ -77,24 +77,8 @@ class SerializerSpec extends Specification with Mockito {
         """.stripMargin.removeAllWhitespaces
     }
 
-    "custom classes" in {
-      SimpleObject("B", 3).encoded mustEqual """
-          |rO0ABXNyADpwbGF5LmFwaS5jYWNoZS5yZWRpcy5jb25uZWN0b3IuU2VyaWFsaXplclNwZWMkU2lt
-          |cGxlT2JqZWN09MwyyJJbanoCAAJJAAV2YWx1ZUwAA2tleXQAEkxqYXZhL2xhbmcvU3RyaW5nO3hw
-          |AAAAA3QAAUI=
-        """.stripMargin.removeAllWhitespaces
-    }
-
     "null" in {
       new ValueEncoder(null).encoded must throwA[UnsupportedOperationException]
-    }
-
-    "list" in {
-      List("A", "B", "C").encoded mustEqual """
-          |rO0ABXNyADJzY2FsYS5jb2xsZWN0aW9uLmltbXV0YWJsZS5MaXN0JFNlcmlhbGl6YXRpb25Qcm94
-          |eQAAAAAAAAABAwAAeHB0AAFBdAABQnQAAUNzcgAsc2NhbGEuY29sbGVjdGlvbi5pbW11dGFibGUu
-          |TGlzdFNlcmlhbGl6ZUVuZCSKXGNb91MLbQIAAHhweA==
-        """.stripMargin.removeAllWhitespaces
     }
   }
 
@@ -160,43 +144,9 @@ class SerializerSpec extends Specification with Mockito {
       """.stripMargin.removeAllWhitespaces.decoded[DateTime] mustEqual new DateTime(123456L, DateTimeZone.forID("UTC"))
     }
 
-    "custom classes" in {
-      """
-        |rO0ABXNyADpwbGF5LmFwaS5jYWNoZS5yZWRpcy5jb25uZWN0b3IuU2VyaWFsaXplclNwZWMkU2lt
-        |cGxlT2JqZWN09MwyyJJbanoCAAJJAAV2YWx1ZUwAA2tleXQAEkxqYXZhL2xhbmcvU3RyaW5nO3hw
-        |AAAAA3QAAUI=
-      """.stripMargin.removeAllWhitespaces.decoded[SimpleObject] mustEqual SimpleObject("B", 3)
-    }
-
-    "list" in {
-      """
-        |rO0ABXNyADJzY2FsYS5jb2xsZWN0aW9uLmltbXV0YWJsZS5MaXN0JFNlcmlhbGl6YXRpb25Qcm94
-        |eQAAAAAAAAABAwAAeHB0AAFBdAABQnQAAUNzcgAsc2NhbGEuY29sbGVjdGlvbi5pbW11dGFibGUu
-        |TGlzdFNlcmlhbGl6ZUVuZCSKXGNb91MLbQIAAHhweA==
-      """.stripMargin.removeAllWhitespaces.decoded[List[String]] mustEqual List("A", "B", "C")
-    }
-
     "forgotten type" in {
       def decoded: String = "something".decoded
       decoded must throwA[IllegalArgumentException]
     }
   }
-}
-
-object SerializerSpec {
-
-  implicit class ValueEncoder(val any: Any) extends AnyVal {
-    def encoded(implicit serializer: AkkaSerializer): String = serializer.encode(any).get
-  }
-
-  implicit class StringDecoder(val string: String) extends AnyVal {
-    def decoded[T: ClassTag](implicit serializer: AkkaSerializer): T = serializer.decode[T](string).get
-  }
-
-  implicit class StringOps(val string: String) extends AnyVal {
-    def removeAllWhitespaces = string.replaceAll("\\s", "")
-  }
-
-  /** Plain test object to be cached */
-  case class SimpleObject(key: String, value: Int)
 }

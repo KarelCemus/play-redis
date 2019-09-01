@@ -101,7 +101,7 @@ trait RedisList[Elem, Result[_]] extends RedisCollection[List[Elem], Result] {
     * @param elements element to be prepended
     * @return this collection to chain commands
     */
-  def ++:(elements: Traversable[Elem]): Result[This]
+  def ++:(elements: Iterable[Elem]): Result[This]
 
   /**
     * Insert all the specified values at the tail of the list stored at key.
@@ -119,7 +119,7 @@ trait RedisList[Elem, Result[_]] extends RedisCollection[List[Elem], Result] {
     * @param elements to be apended
     * @return this collection to chain commands
     */
-  def :++(elements: Traversable[Elem]): Result[This]
+  def :++(elements: Iterable[Elem]): Result[This]
 
   /**
     * Returns the element at index index in the list stored at key.

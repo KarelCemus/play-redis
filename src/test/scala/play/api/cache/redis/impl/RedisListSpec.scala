@@ -200,25 +200,25 @@ class RedisListSpec(implicit ee: ExecutionEnv) extends Specification with Reduce
     }
 
     "view all" in new MockedList {
-      connector.listSlice[String](anyString, anyInt, anyInt)(anyClassTag) returns data
+      connector.listSlice[String](anyString, anyInt, anyInt)(anyClassTag) returns (data: Seq[String])
       list.view.all must beEqualTo(data).await
       there were one(connector).listSlice[String](key, 0, -1)
     }
 
     "view take" in new MockedList {
-      connector.listSlice[String](anyString, anyInt, anyInt)(anyClassTag) returns data
+      connector.listSlice[String](anyString, anyInt, anyInt)(anyClassTag) returns (data: Seq[String])
       list.view.take(2) must beEqualTo(data).await
       there were one(connector).listSlice[String](key, 0, 1)
     }
 
     "view drop" in new MockedList {
-      connector.listSlice[String](anyString, anyInt, anyInt)(anyClassTag) returns data
+      connector.listSlice[String](anyString, anyInt, anyInt)(anyClassTag) returns (data: Seq[String])
       list.view.drop(2) must beEqualTo(data).await
       there were one(connector).listSlice[String](key, 2, -1)
     }
 
     "view slice" in new MockedList {
-      connector.listSlice[String](anyString, anyInt, anyInt)(anyClassTag) returns data
+      connector.listSlice[String](anyString, anyInt, anyInt)(anyClassTag) returns (data: Seq[String])
       list.view.slice(1, 2) must beEqualTo(data).await
       there were one(connector).listSlice[String](key, 1, 2)
     }
@@ -269,7 +269,7 @@ class RedisListSpec(implicit ee: ExecutionEnv) extends Specification with Reduce
     }
 
     "toList" in new MockedList {
-      connector.listSlice[String](anyString, anyInt, anyInt)(anyClassTag) returns data
+      connector.listSlice[String](anyString, anyInt, anyInt)(anyClassTag) returns (data: Seq[String])
       list.toList must beEqualTo(data).await
       there were one(connector).listSlice[String](key, 0, -1)
     }

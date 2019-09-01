@@ -43,7 +43,7 @@ private[impl] class RedisCache[Result[_]](redis: RedisConnector, builder: Builde
     redis.append(key, value).flatMap { result =>
       // if the new string length is equal to the appended string, it means they should equal
       // when the finite duration is required, set it
-      if (result == value.length && expiration.isFinite()) redis.expire(key, expiration) else Future.successful[Unit](Unit)
+      if (result == value.length && expiration.isFinite) redis.expire(key, expiration) else Future.successful[Unit](())
     }.recoverWithDone
   }
 

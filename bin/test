@@ -2,10 +2,12 @@
 
 . "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/config"
 
-runSbt ++$SCALA_212 $SBT_CMD
+SCALA_VERSION="$1"
+
+runSbt ++$SCALA_VERSION $SBT_CMD
 
 result=$?
 
-doAfterSuccess $result $SCALA_212
+doAfterSuccess $result $SCALA_VERSION
 
 exit $result

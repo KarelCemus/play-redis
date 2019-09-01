@@ -1,8 +1,7 @@
 package play.api.cache.redis.configuration
 
-import scala.collection.JavaConverters._
-
 import play.api.ConfigLoader
+import play.api.cache.redis.JavaCompatibilityBase
 
 import com.typesafe.config.Config
 
@@ -16,7 +15,7 @@ import com.typesafe.config.Config
   * the application is running, there should be no need to use this
   * manager.
   */
-trait RedisInstanceManager extends Traversable[RedisInstanceProvider] {
+trait RedisInstanceManager extends Iterable[RedisInstanceProvider] {
 
   /** names of all known redis caches */
   def caches: Set[String]
@@ -32,8 +31,7 @@ trait RedisInstanceManager extends Traversable[RedisInstanceProvider] {
   /** returns the default instance */
   def defaultInstance: RedisInstanceProvider
 
-  /** traverse all binders */
-  def foreach[U](f: RedisInstanceProvider => U) = caches.view.flatMap(instanceOfOption).foreach(f)
+  def iterator: Iterator[RedisInstanceProvider] = caches.view.flatMap(instanceOfOption).iterator
 
   // $COVERAGE-OFF$
   override def equals(obj: scala.Any) = obj match {
@@ -61,6 +59,7 @@ private[redis] object RedisInstanceManager extends ConfigLoader[RedisInstanceMan
   * Redis manager reading 'play.cache.redis.instances' tree for cache definitions.
   */
 class RedisInstanceManagerImpl(config: Config, path: String)(implicit defaults: RedisSettings) extends RedisInstanceManager {
+  import JavaCompatibilityBase._
   import RedisConfigLoader._
 
   /** names of all known redis caches */

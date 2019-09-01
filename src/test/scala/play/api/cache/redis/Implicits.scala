@@ -2,6 +2,7 @@ package play.api.cache.redis
 
 import java.util.concurrent.Callable
 
+import scala.collection.mutable
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.language.implicitConversions
@@ -10,6 +11,7 @@ import scala.util._
 import play.api.cache.redis.configuration._
 
 import akka.actor.ActorSystem
+
 import org.specs2.execute.{AsResult, Result}
 import org.specs2.matcher.Expectations
 import org.specs2.mock.mockito._
@@ -26,6 +28,8 @@ object Implicits {
   val defaults = RedisSettingsTest("akka.actor.default-dispatcher", "lazy", RedisTimeouts(1.second, None, 500.millis), "log-and-default", "standalone")
 
   val defaultInstance = RedisStandalone(defaultCacheName, RedisHost(localhost, defaultPort), defaults)
+
+  implicit def implicitlyImmutableSeq[T](value: mutable.ListBuffer[T]): Seq[T] = value.toSeq
 
   implicit def implicitlyAny2Some[T](value: T): Option[T] = Some(value)
 
@@ -59,7 +63,7 @@ object Implicits {
     }
 
     def after(seconds: Int)(implicit system: ActorSystem, ec: ExecutionContext): Future[Unit] = {
-      after(seconds, Unit)
+      after(seconds, ())
     }
   }
 }

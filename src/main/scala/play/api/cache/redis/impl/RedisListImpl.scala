@@ -22,9 +22,9 @@ private[impl] class RedisListImpl[Elem: ClassTag, Result[_]](key: String, redis:
 
   def :+(element: Elem) = appendAll(element)
 
-  def ++:(elements: Traversable[Elem]) = prependAll(elements.toSeq: _*)
+  def ++:(elements: Iterable[Elem]) = prependAll(elements.toSeq: _*)
 
-  def :++(elements: Traversable[Elem]) = appendAll(elements.toSeq: _*)
+  def :++(elements: Iterable[Elem]) = appendAll(elements.toSeq: _*)
 
   private def prependAll(elements: Elem*) =
     redis.listPrepend(key, elements: _*).map(_ => This).recoverWithDefault(This)
