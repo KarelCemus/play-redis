@@ -41,7 +41,7 @@ private[connector] trait ExpectedFuture[T] {
 private[connector] object ExpectedFuture {
 
   /** converts future to Future[Unit] */
-  @inline implicit def futureToUnit[T](future: Future[T])(implicit context: ExecutionContext): Future[Unit] = future.map(_ => Unit)
+  @inline implicit def futureToUnit[T](future: Future[T])(implicit context: ExecutionContext): Future[Unit] = future.map(_ => ())
 }
 
 private[connector] class ExpectedFutureWithoutKey[T](protected val future: Future[T], protected val cmd: String) extends ExpectedFuture[T] {
@@ -55,7 +55,7 @@ private[connector] class ExpectedFutureWithoutKey[T](protected val future: Futur
 
   def withKey(key: String): ExpectedFutureWithKey[T] = new ExpectedFutureWithKey[T](future, cmd, key, s"$cmd $key")
 
-  def withKeys(keys: Traversable[String]): ExpectedFutureWithKey[T] = withKey(keys mkString " ")
+  def withKeys(keys: Iterable[String]): ExpectedFutureWithKey[T] = withKey(keys mkString " ")
 
   override def toString = s"ExpectedFuture($cmd)"
 }
@@ -71,7 +71,7 @@ private[connector] class ExpectedFutureWithKey[T](protected val future: Future[T
 
   def andParameter(param: => Any): ExpectedFutureWithKey[T] = andParameters(param.toString)
 
-  def andParameters(params: Traversable[Any]): ExpectedFutureWithKey[T] = andParameters(params mkString " ")
+  def andParameters(params: Iterable[Any]): ExpectedFutureWithKey[T] = andParameters(params mkString " ")
 
   def andParameters(params: => String): ExpectedFutureWithKey[T] = new ExpectedFutureWithKey(future, cmd, key, s"$statement $params")
 

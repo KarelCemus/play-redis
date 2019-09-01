@@ -1,7 +1,6 @@
-import sbt._
-import sbt.Keys._
-
 import com.typesafe.sbt.pgp.PgpKeys
+import sbt.Keys._
+import sbt._
 
 normalizedName := "play-redis"
 
@@ -11,21 +10,24 @@ description := "Redis cache plugin for the Play framework 2"
 
 organization := "com.github.karelcemus"
 
-scalaVersion := "2.12.8"
+scalaVersion := "2.13.0"
 
-crossScalaVersions := Seq( "2.11.12", scalaVersion.value )
+crossScalaVersions := Seq( "2.11.12", "2.12.9", scalaVersion.value )
 
-playVersion := "2.7.0"
+playVersion := {
+  // todo play 2.7.3 does not work in scala 2.11
+  if (scalaVersion.value startsWith "2.11") "2.7.0" else "2.7.3"
+}
 
-connectorVersion := "1.8.4"
+connectorVersion := "1.9.1"
 
-specs2Version := "4.4.1"
+specs2Version := "4.7.0"
 
 libraryDependencies ++= Seq(
   // play framework cache API
   "com.typesafe.play" %% "play-cache" % playVersion.value % Provided,
   // redis connector
-  "com.github.Ma27" %% "rediscala" % connectorVersion.value,
+  "com.github.karelcemus" %% "rediscala" % connectorVersion.value,
   // test framework
   "org.specs2" %% "specs2-core" % specs2Version.value % Test,
   // with mockito extension

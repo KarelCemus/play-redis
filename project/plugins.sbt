@@ -10,7 +10,7 @@ addSbtPlugin( "com.jsuereth" % "sbt-pgp" % "1.1.2" )
 addSbtPlugin( "com.timushev.sbt" % "sbt-updates" % "0.4.0" )
 
 // code coverage
-addSbtPlugin( "org.scoverage" % "sbt-scoverage" % "1.5.1" )
+addSbtPlugin( "org.scoverage" % "sbt-scoverage" % "1.6.0" )
 
 // uploads the coverage results into the coveralls.io
 addSbtPlugin( "org.scoverage" % "sbt-coveralls" % "1.2.2" )
