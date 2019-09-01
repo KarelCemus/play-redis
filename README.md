@@ -2,12 +2,12 @@
 
   # Redis Cache module for Play framework
 
-  **This version supports Play framework 2.7.x with JDK 8 and both Scala 2.11 and Scala 2.12.**<br/>
+  **This version supports Play framework 2.7.x with JDK 8 and both Scala 2.11, Scala 2.12 and Scala 2.13.**<br/>
   **For previous versions see older releases.**
 
   [![Travis CI: Status](https://travis-ci.org/KarelCemus/play-redis.svg?branch=master)](https://travis-ci.org/KarelCemus/play-redis)
   [![Coverage Status](https://coveralls.io/repos/github/KarelCemus/play-redis/badge.svg?branch=master)](https://coveralls.io/github/KarelCemus/play-redis?branch=master)
-  [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.karelcemus/play-redis_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.karelcemus/play-redis_2.12)
+  [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.karelcemus/play-redis_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.karelcemus/play-redis_2.13)
 
 </div>
 

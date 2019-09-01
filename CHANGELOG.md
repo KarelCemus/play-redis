@@ -17,6 +17,8 @@ implementing HMGET command. [#207](https://github.com/KarelCemus/play-redis/issu
 Exposed `RedisConnector` in `RedisCacheComponents` and `RedisCacheModule` to enable
 health check implementation [#212](https://github.com/KarelCemus/play-redis/issues/212).
 
+Cross-compiled with Scala 2.13 [#211](https://github.com/KarelCemus/play-redis/issues/211).
+
 ### [:link: 2.4.0](https://github.com/KarelCemus/play-redis/tree/2.4.0)
 
 Update to Play `2.7.0` [#202](https://github.com/KarelCemus/play-redis/pull/202)
