@@ -65,12 +65,12 @@ of the framework is **fully non-blocking**, most of the provided facades are **o
 |    | Trait                                | Language | Blocking     | Features |
 | -- | ------------------------------------ | :------: | :----------: | :------: |
 | 1. | `play.api.cache.redis.CacheApi`      | Scala    | *blocking*   | advanced |
-| 1. | `play.api.cache.redis.CacheAsyncApi` | Scala    | non-blocking | advanced |
-| 1. | `play.cache.redis.AsyncCacheApi`     | Java     | non-blocking | advanced |
-| 1. | `play.api.cache.SyncCacheApi`        | Scala    | *blocking*   | basic    |
-| 1. | `play.api.cache.AsyncCacheApi`       | Scala    | non-blocking | basic    |
-| 1. | `play.cache.SyncCacheApi`            | Java     | *blocking*   | basic    |
-| 1. | `play.cache.AsyncCacheApi`           | Java     | non-blocking | basic    |
+| 2. | `play.api.cache.redis.CacheAsyncApi` | Scala    | non-blocking | advanced |
+| 3. | `play.cache.redis.AsyncCacheApi`     | Java     | non-blocking | advanced |
+| 4. | `play.api.cache.SyncCacheApi`        | Scala    | *blocking*   | basic    |
+| 5. | `play.api.cache.AsyncCacheApi`       | Scala    | non-blocking | basic    |
+| 6. | `play.cache.SyncCacheApi`            | Java     | *blocking*   | basic    |
+| 7. | `play.cache.AsyncCacheApi`           | Java     | non-blocking | basic    |
 
 </center>
 
