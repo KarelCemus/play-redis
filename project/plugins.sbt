@@ -4,7 +4,7 @@ resolvers += Resolver.url( "scoverage-bintray", url( "https://dl.bintray.com/sks
 addSbtPlugin( "com.github.gseitz" % "sbt-release" % "1.0.11" )
 
 // PGP signature
-addSbtPlugin( "com.jsuereth" % "sbt-pgp" % "1.1.2" )
+addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.0")
 
 // checks for updates
 addSbtPlugin( "com.timushev.sbt" % "sbt-updates" % "0.4.0" )
