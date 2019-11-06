@@ -9,6 +9,10 @@ See [#222](https://github.com/KarelCemus/play-redis/pull/222) for more details.
 Note: This should not be a breaking change since it was not possible to properly deserialize
 the value in Java without encountering the exception.
 
+Introduced another source `aws-cluster`, which is a cluster with nodes defined by DNS record. For example,
+Amazon AWS uses this kind of cluster definition. Therefore this type of a cluster resolves 
+a domain main to extract all nodes. See [#221](https://github.com/KarelCemus/play-redis/pull/221) for more details.
+
 ### [:link: 2.5.0](https://github.com/KarelCemus/play-redis/tree/2.5.0)
 
 Added `expiresIn(key: String): Option[Duration]` implementing PTTL 
