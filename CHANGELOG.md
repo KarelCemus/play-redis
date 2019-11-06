@@ -227,11 +227,11 @@ Since Akka 2.4.1, default `JavaSerializer` is [officially considered inefficient
 Nevertheless, to keep things simple, play-redis **still uses this inefficient serializer NOT to enforce** any serialization
 library to end users. Although, it recommends [kryo serializer](https://github.com/romix/akka-kryo-serialization) claiming
 great performance and small output stream. Any serialization library can be smoothly connected through Akka
-configuration, see the [official Akka documentation](http://doc.akka.io/docs/akka/current/scala/serialization.html).
+configuration, see the [official Akka documentation](https://doc.akka.io/docs/akka/current/scala/serialization.html).
 
 This release is focused on library refactoring. While **public API remained unchanged**, there are several significant
 changes to their implementations. Those are consequences of refactoring some functionality into self-standing
-units. For example, there has been extracted `RedisConnector` implementing the [Redis protocol](http://redis.io/commands)
+units. For example, there has been extracted `RedisConnector` implementing the [Redis protocol](https://redis.io/commands)
 and `RedisCache` implementing cache API over that. Before, it was tangled together. As consequence, the library has
 now layered architecture (facades -> cache implementation -> protocol implementation) with several public facades.
 

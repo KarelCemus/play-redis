@@ -14,7 +14,7 @@
 
 ## About the Project
 
-[Play framework 2](http://playframework.com/) is delivered with
+[Play framework 2](https://playframework.com/) is delivered with
 [SyncCacheApi and AsyncCacheApi](https://playframework.com/documentation/2.7.x/ScalaCache).
 This module provides **implementation of a cache over Redis** server, i.e., key/value storage.
 

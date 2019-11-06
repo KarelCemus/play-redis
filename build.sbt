@@ -1,4 +1,4 @@
-import com.typesafe.sbt.pgp.PgpKeys
+import com.jsuereth.sbtpgp.PgpKeys
 import sbt.Keys._
 import sbt._
 
@@ -12,7 +12,7 @@ organization := "com.github.karelcemus"
 
 scalaVersion := "2.13.0"
 
-crossScalaVersions := Seq( "2.11.12", "2.12.9", scalaVersion.value )
+crossScalaVersions := Seq( "2.11.12", "2.12.10", scalaVersion.value )
 
 playVersion := {
   // todo play 2.7.3 does not work in scala 2.11
@@ -21,7 +21,7 @@ playVersion := {
 
 connectorVersion := "1.9.1"
 
-specs2Version := "4.7.0"
+specs2Version := "4.8.0"
 
 libraryDependencies ++= Seq(
   // play framework cache API
@@ -37,7 +37,7 @@ libraryDependencies ++= Seq(
 )
 
 resolvers ++= Seq(
-  "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
+  "Typesafe repository" at "https://repo.typesafe.com/typesafe/releases/"
 )
 
 javacOptions ++= Seq( "-source", "1.8", "-target", "1.8", "-Xlint:unchecked", "-encoding", "UTF-8" )
@@ -46,7 +46,7 @@ scalacOptions ++= Seq( "-deprecation", "-feature", "-unchecked" )
 
 homepage := Some( url( "https://github.com/karelcemus/play-redis" ) )
 
-licenses := Seq( "Apache 2" -> url( "http://www.apache.org/licenses/LICENSE-2.0" ) )
+licenses := Seq( "Apache 2" -> url( "https://www.apache.org/licenses/LICENSE-2.0" ) )
 
 vcsScm := "git@github.com:KarelCemus/play-redis.git"
 
