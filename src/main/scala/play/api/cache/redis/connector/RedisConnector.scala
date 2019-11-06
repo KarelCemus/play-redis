@@ -9,7 +9,7 @@ import scala.reflect.ClassTag
   *
   * Subset of REDIS commands, basic commands.
   *
-  * @see http://redis.io/commands
+  * @see https://redis.io/commands
   */
 private[redis] trait CoreCommands {
 
@@ -142,7 +142,7 @@ private[redis] trait CoreCommands {
   *
   * Subset of REDIS commands, Hash-related commands.
   *
-  * @see http://redis.io/commands
+  * @see https://redis.io/commands
   */
 private[redis] trait HashCommands {
 
@@ -261,7 +261,7 @@ private[redis] trait HashCommands {
   *
   * Subset of REDIS commands, List-related commands.
   *
-  * @see http://redis.io/commands
+  * @see https://redis.io/commands
   */
 private[redis] trait ListCommands {
 
@@ -396,7 +396,7 @@ private[redis] trait ListCommands {
   *
   * Subset of REDIS commands, unordered Set-related commands.
   *
-  * @see http://redis.io/commands
+  * @see https://redis.io/commands
   */
 private[redis] trait SetCommands {
 
@@ -466,7 +466,7 @@ private[redis] trait SetCommands {
 /**
   * Internal non-blocking Redis API implementing REDIS protocol
   *
-  * @see http://redis.io/commands
+  * @see https://redis.io/commands
   */
 trait RedisConnector extends AnyRef
   with CoreCommands
