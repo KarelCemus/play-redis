@@ -49,6 +49,7 @@ as well as on your premise.
     - from the connection string optionally in the environmental variable
     - custom implementation of the configuration provider
 - support of [standalone, cluster,](https://github.com/KarelCemus/play-redis/blob/2.5.0/doc/20-configuration.md#standalone-vs-cluster)
+  [aws-cluster,](https://github.com/KarelCemus/play-redis/blob/2.5.0/doc/20-configuration.md#aws-cluster)
   and [sentinel modes](https://github.com/KarelCemus/play-redis/blob/2.5.0/doc/20-configuration.md#sentinel)
 - build on the top of Akka actors and serializers, [agnostic to the serialization mechanism](https://github.com/KarelCemus/play-redis/blob/2.5.0/doc/20-configuration.md#limitation-of-data-serialization)
     - for simplicity, it uses deprecated Java serialization by default

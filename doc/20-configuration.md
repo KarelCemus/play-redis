@@ -43,6 +43,22 @@ play.cache.redis {
 }
 ```
 
+## Aws Cluster
+
+Some platforms such as Amazon AWS use a single DNS record to define a whole cluster. Such
+a domain name resolves to multiple IP addresses, which are nodes of a cluster.
+
+```
+play.cache.redis {
+  instances {
+    play {
+      host:    cluster.domain.name.com
+      source:  aws-cluster
+    }
+  }
+}
+``` 
+
 ## Sentinel
 
 Use `source: sentinel` to enable sentinel mode. Required parameters are
