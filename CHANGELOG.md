@@ -1,6 +1,14 @@
 
 ## Changelog
 
+### [:link: 2.5.1](https://github.com/KarelCemus/play-redis/tree/2.5.1)
+
+Java interop: Changed internal manifest for `null` values from `""` to `"null"` since
+an empty string was not properly deserialized and caused `NullPointerException`.
+See [#222](https://github.com/KarelCemus/play-redis/pull/222) for more details.
+Note: This should not be a breaking change since it was not possible to properly deserialize
+the value in Java without encountering the exception.
+
 ### [:link: 2.5.0](https://github.com/KarelCemus/play-redis/tree/2.5.0)
 
 Added `expiresIn(key: String): Option[Duration]` implementing PTTL 
