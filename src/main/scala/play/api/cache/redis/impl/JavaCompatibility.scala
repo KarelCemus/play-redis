@@ -62,11 +62,11 @@ private[impl] object JavaCompatibility extends JavaCompatibilityBase {
   @inline def classTagKey(key: String): String = s"classTag::$key"
 
   @inline def classTagOf(value: Any): String = {
-    if (value == null) "" else value.getClass.getCanonicalName
+    if (value == null) "null" else value.getClass.getCanonicalName
   }
 
   @inline def classTagFrom[T](tag: String)(implicit environment: Environment): ClassTag[T] = {
-    if (tag == "") ClassTag.Null.asInstanceOf[ClassTag[T]]
+    if (tag == "null") ClassTag.Null.asInstanceOf[ClassTag[T]]
     else ClassTag(classTagNameToClass(tag, environment))
   }
 
