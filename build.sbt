@@ -10,18 +10,15 @@ description := "Redis cache plugin for the Play framework 2"
 
 organization := "com.github.karelcemus"
 
-scalaVersion := "2.13.0"
+scalaVersion := "2.13.1"
 
 crossScalaVersions := Seq( "2.11.12", "2.12.10", scalaVersion.value )
 
-playVersion := {
-  // todo play 2.7.3 does not work in scala 2.11
-  if (scalaVersion.value startsWith "2.11") "2.7.0" else "2.7.3"
-}
+playVersion := "2.7.3"
 
 connectorVersion := "1.9.1"
 
-specs2Version := "4.8.0"
+specs2Version := "4.8.1"
 
 libraryDependencies ++= Seq(
   // play framework cache API
