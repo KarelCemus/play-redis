@@ -31,7 +31,7 @@ class AsyncJavaRedisSpec(implicit ee: ExecutionEnv) extends Specification with R
     }
 
     "get null" in new MockedJavaRedis {
-      async.get[String](beEq(classTagKey))(anyClassTag) returns Some("")
+      async.get[String](beEq(classTagKey))(anyClassTag) returns Some("null")
       cache.get[String](key).asScala must beNull.await
       there was one(async).get[String](classTagKey)
     }
@@ -54,7 +54,7 @@ class AsyncJavaRedisSpec(implicit ee: ExecutionEnv) extends Specification with R
       async.set(anyString, any, any[Duration]) returns execDone
       cache.set(key, null: AnyRef).asScala must beDone.await
       there was one(async).set(key, null, Duration.Inf)
-      there was one(async).set(classTagKey, "", Duration.Inf)
+      there was one(async).set(classTagKey, "null", Duration.Inf)
     }
 
     "get or else (hit)" in new MockedJavaRedis with OrElse {
