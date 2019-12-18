@@ -1,6 +1,11 @@
 
 ## Changelog
 
+### [:link: 2.6.0](https://github.com/KarelCemus/play-redis/tree/2.6.0)
+
+Update to Play `2.8.0`, dropped `Scala 2.11` since it was discontinued from the Play framework.
+Credits to Tomofumi Tanaka. [#225](https://github.com/KarelCemus/play-redis/pull/225)
+
 ### [:link: 2.5.1](https://github.com/KarelCemus/play-redis/tree/2.5.1)
 
 Java interop: Changed internal manifest for `null` values from `""` to `"null"` since
