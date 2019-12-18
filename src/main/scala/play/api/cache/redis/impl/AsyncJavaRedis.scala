@@ -41,13 +41,14 @@ private[impl] class AsyncJavaRedis(internal: CacheAsyncApi)(implicit environment
     internal.remove(key, classTagKey(key)).asJava
   }
 
-  def get[T](key: String): CompletionStage[T] = getOrElse[T](key, None)
-
-  def getOptional[T](key: String): CompletionStage[Optional[T]] = {
+  def get[T](key: String): CompletionStage[Optional[T]] = {
     async { implicit context =>
       getOrElseOption[T](key, None).map(_.asJava)
     }
   }
+
+  @deprecated(message = "Method `getOptional` was deprecated in Play 2.8. Use `get` instead.", since = "2.6.0")
+  override def getOptional[T](key: String): CompletionStage[Optional[T]] = get(key)
 
   def getOrElse[T](key: String, block: Callable[T]): CompletionStage[T] =
     getOrElseUpdate[T](key, (() => Future.successful(block.call()).asJava).asJava)
@@ -96,7 +97,7 @@ private[impl] class AsyncJavaRedis(internal: CacheAsyncApi)(implicit environment
     }
   }
 
-  def removeAll() = internal.invalidate().asJava
+  def removeAll(): CompletionStage[Done] = internal.invalidate().asJava
 
   def exists(key: String): CompletionStage[java.lang.Boolean] = {
     async { implicit context =>
