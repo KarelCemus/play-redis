@@ -26,13 +26,9 @@ env:
 
 jobs:
   include:
-    - name: "Test Scala 2.11"
-      env:
-        - SCALA_VERSION=2.11.12
-        - SCRIPT=test
     - name: "Test Scala 2.12"
       env:
-        - SCALA_VERSION=2.12.9
+        - SCALA_VERSION=2.12.10
         - SCRIPT=test
     - name: "Test Scala 2.13"
       env:

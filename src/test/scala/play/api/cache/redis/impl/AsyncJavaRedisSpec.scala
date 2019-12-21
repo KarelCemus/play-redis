@@ -21,18 +21,18 @@ class AsyncJavaRedisSpec(implicit ee: ExecutionEnv) extends Specification with R
 
     "get and miss" in new MockedJavaRedis {
       async.get[String](anyString)(anyClassTag) returns None
-      cache.get[String](key).asScala must beNull.await
+      cache.get[String](key).asScala must beEqualTo(Optional.empty).await
     }
 
     "get and hit" in new MockedJavaRedis {
       async.get[String](beEq(key))(anyClassTag) returns Some(value)
       async.get[String](beEq(classTagKey))(anyClassTag) returns Some(classTag)
-      cache.get[String](key).asScala must beEqualTo(value).await
+      cache.get[String](key).asScala must beEqualTo(Optional.of(value)).await
     }
 
     "get null" in new MockedJavaRedis {
       async.get[String](beEq(classTagKey))(anyClassTag) returns Some("null")
-      cache.get[String](key).asScala must beNull.await
+      cache.get[String](key).asScala must beEqualTo(Optional.empty).await
       there was one(async).get[String](classTagKey)
     }
 
@@ -134,7 +134,7 @@ class AsyncJavaRedisSpec(implicit ee: ExecutionEnv) extends Specification with R
       // hit on GET
       async.get[Byte](beEq(key))(anyClassTag) returns Some(byte)
       async.get[String](beEq(classTagKey))(anyClassTag) returns Some("java.lang.Byte")
-      cache.get[Byte](key).asScala must beEqualTo(byte).await
+      cache.get[Byte](key).asScala must beEqualTo(Optional.ofNullable(byte)).await
     }
 
     "get and set 'byte[]'" in new MockedJavaRedis {
@@ -148,7 +148,7 @@ class AsyncJavaRedisSpec(implicit ee: ExecutionEnv) extends Specification with R
       // hit on GET
       async.get[Array[Byte]](beEq(key))(anyClassTag) returns Some(bytes)
       async.get[String](beEq(classTagKey))(anyClassTag) returns Some("byte[]")
-      cache.get[Array[Byte]](key).asScala must beEqualTo(bytes).await
+      cache.get[Array[Byte]](key).asScala must beEqualTo(Optional.ofNullable(bytes)).await
     }
 
     "get all" in new MockedJavaRedis {
