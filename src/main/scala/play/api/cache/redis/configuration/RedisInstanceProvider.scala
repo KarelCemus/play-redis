@@ -1,5 +1,7 @@
 package play.api.cache.redis.configuration
 
+import java.net.InetAddress
+
 import play.api.cache.redis._
 
 import com.typesafe.config.Config
@@ -53,6 +55,8 @@ private[configuration] object RedisInstanceProvider extends RedisConfigInstanceL
       case "standalone"        => RedisInstanceStandalone
       // required static configuration of the cluster using application.conf
       case "cluster"           => RedisInstanceCluster
+      // required static configuration of the cluster using application.conf
+      case "aws-cluster"       => RedisInstanceAwsCluster
       // required static configuration of the sentinel using application.conf
       case "sentinel"          => RedisInstanceSentinel
       // required possibly environmental configuration of the standalone instance
@@ -95,6 +99,21 @@ private[configuration] object RedisInstanceCluster extends RedisConfigInstanceLo
     RedisCluster.apply(
       name = instanceName,
       nodes = config.getConfigList(path / "cluster").asScala.map(config => RedisHost.load(config)).toList,
+      settings = RedisSettings.withFallback(defaults).load(config, path)
+    )
+  )
+}
+
+/**
+  * Statically configured redis cluster driven by DNS configuration
+  */
+private[configuration] object RedisInstanceAwsCluster extends RedisConfigInstanceLoader[RedisInstanceProvider] {
+  import RedisConfigLoader._
+
+  def load(config: Config, path: String, instanceName: String)(implicit defaults: RedisSettings) = new ResolvedRedisInstance(
+    RedisCluster.apply(
+      name = instanceName,
+      nodes = InetAddress.getAllByName(config.getString(path / "host")).map(address => RedisHost(address.getHostAddress, 6379)).toList,
       settings = RedisSettings.withFallback(defaults).load(config, path)
     )
   )
