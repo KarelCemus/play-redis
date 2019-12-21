@@ -117,6 +117,23 @@ class RedisInstanceManagerSpec extends Specification {
     )
   }
 
+  "AWS cluster mode" in new WithRedisInstanceManager(
+    """
+      |play.cache.redis {
+      |  instances {
+      |    play {
+      |      host:    localhost
+      |      source:  aws-cluster
+      |    }
+      |  }
+      |}
+    """
+  ) {
+    val provider = manager.defaultInstance.asInstanceOf[ResolvedRedisInstance]
+    val instance = provider.instance.asInstanceOf[RedisCluster]
+    instance.nodes must contain(RedisHost("127.0.0.1", 6379))
+  }
+
   "sentinel mode" in new WithRedisInstanceManager(
     """
       |play.cache.redis {
