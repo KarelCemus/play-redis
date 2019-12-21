@@ -31,6 +31,7 @@ class RedisCacheModuleSpec extends Specification {
       injector.instanceOf[CacheAsyncApi] must beAnInstanceOf[CacheAsyncApi]
       injector.instanceOf[play.cache.AsyncCacheApi] must beAnInstanceOf[play.cache.AsyncCacheApi]
       injector.instanceOf[play.cache.SyncCacheApi] must beAnInstanceOf[play.cache.SyncCacheApi]
+      injector.instanceOf[play.cache.redis.AsyncCacheApi] must beAnInstanceOf[play.cache.redis.AsyncCacheApi]
       injector.instanceOf[play.api.cache.AsyncCacheApi] must beAnInstanceOf[play.api.cache.AsyncCacheApi]
       injector.instanceOf[play.api.cache.SyncCacheApi] must beAnInstanceOf[play.api.cache.SyncCacheApi]
     }
