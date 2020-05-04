@@ -1,6 +1,10 @@
 
 ## Changelog
 
+### [:link: 2.6.1](https://github.com/KarelCemus/play-redis/tree/2.6.1)
+
+Support of `DEL` operation in redis cluster [#230](https://github.com/KarelCemus/play-redis/issues/230)
+
 ### [:link: 2.6.0](https://github.com/KarelCemus/play-redis/tree/2.6.0)
 
 Update to Play `2.8.0`, dropped `Scala 2.11` since it was discontinued from the Play framework.

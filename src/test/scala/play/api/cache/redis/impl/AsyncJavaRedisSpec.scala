@@ -110,9 +110,10 @@ class AsyncJavaRedisSpec(implicit ee: ExecutionEnv) extends Specification with R
     }
 
     "remove" in new MockedJavaRedis {
-      async.remove(anyString, anyString, anyVarArgs) returns execDone
+      async.remove(anyString) returns execDone
       cache.remove(key).asScala must beDone.await
-      there was one(async).remove(key, classTagKey)
+      there was one(async).remove(key)
+      there was one(async).remove(classTagKey)
     }
 
     "remove all" in new MockedJavaRedis {
