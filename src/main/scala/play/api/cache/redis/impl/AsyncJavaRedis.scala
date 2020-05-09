@@ -38,7 +38,12 @@ private[impl] class AsyncJavaRedis(internal: CacheAsyncApi)(implicit environment
   }
 
   def remove(key: String): CompletionStage[Done] = {
-    internal.remove(key, classTagKey(key)).asJava
+    async { implicit context =>
+      Future.from(
+        internal.remove(key),
+        internal.remove(classTagKey(key))
+      ).asDone
+    }
   }
 
   def get[T](key: String): CompletionStage[Optional[T]] = {
