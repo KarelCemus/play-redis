@@ -20,7 +20,8 @@ env:
     - secure: ozghyo5Yp3enkBx53MzQaD0LeqhBNbGFC3vkkZAcQbele4tR5GrOzR4xjTH0oHhVj7NUHq7WGu4nUDj1h43fJW7uCViepUARrBMPLaUc8ba036IX1OXTU7e2ilGKnOsFeOGfgOo9tb5HnisgfhSXAfMBCgigc+oCtL0HTBdxn9CqjqsUo23c/fnG2UKyLk0Hv5vp91Z/3+kMNkxQTMdJs+ywpKRbMHdIwkghJIqSVfezGxmqhi1wSfoh0xMjOQjaHC0NpTWUs+gmD0hENzV/THwtkeLNcIsdkMIJPoPKruOlfGeTnCFHF3ojNgrUEEDwulrwpLTLoQJeDU6P60JSwUdtzu9hSxwTZLgndwmaE77r2cVsiD5xM5AGB4jVQbd9oOFMW7TIErUemg53qFAiix1W5KtgGv6vW9qT7Z/CRpYC2LG99BUnNzdTKu9e2oBsCY1QbYrXHORSqefnzihAlwJ/6lAGDLnAFw4pgYb779oo8GIhQQdCDMqELSunhP8uJ6G3dpY5p5ubrsSA7yS6tRcaQ+iB1410iTNfMAoD0tKIjgbpR4Zs8lg/5bpiO914f3Xf0KKwFM7lXdajMdN5z5iDnOGgAgtwXB1a/QT2phHqKQ/DFLUbqVUdE2tmuycJ9iAUtVVsyOXZggtOun6o04hfBG1NK/tc1ifGUPigjXw=
     - secure: b1gPGCnIdQPqvztIFzM1JkVqYhgDSx5KC273sg9/I2f9zAP+YqPgJ9WjdUBj2Wp2pzQdggakdBgAj36cpEhpylr4W2t4aMzHitvmu/BvHW9+vpjzMhqpLP/6GG8N+Szbhm3nj4BDA/BjelTnN2SyvKrxWGrD6QJuU33AakWM3v/b/Og5L2Sb2E63X80i2iZk9qTdOHCoTxizkTtB/DEgt9PpzUfMJmn8Ww1Gs1mbou3fPUPOVO88iBjn5JmF6iJ+sIRY0MQuPHhDnk98z6BvITg8GycQBc27OWzJFxK0Zu78MVV3t8WRjZ0sxyJNwdGSBBdz5L1jEzP5J5GtgRZiCcCOVZ4j04kdd2/2/4RaZX2jdZAyr1uzIEuBY+xwKhg6J0386HGrQVUu+IvgPQbpFOtmDeyIBRRAXW11KXR2+cNH6RFF8wA274G8l3SAfvvpWKUwussj9j3h1T/37xdCL2igaOmbOEIQYL1Mpo5cnN8lI080LoCc5vL9XHqCVlE7Hr+VUhoagmuiMMUzrTW0Rg81fI+I8dswyy6QTaqY8EYg8KdxQhDoFnkRtHAdaJyjWrL7IuM5G1Poto9UkW8Gg4YwK5HHeg9xDaLMD/OBnup2DVIqwsi2walsM6OlLB0WkEaDa2VG8WVKFOrTOLTAmfWFCscg+qutgTrfasF12EM=
     # set version of JDK
-    - TRAVIS_JDK=adopt@1.8.0-232
+    - TRAVIS_JDK_MIN=1.8.0-0
+    - TRAVIS_JDK_MAX=1.9.0-0
     - SCALA_VERSION=2.13.0
     - COURSIER_CACHE=$HOME/.coursier
 
@@ -49,6 +50,7 @@ before_install:
   - curl -Ls https://git.io/jabba | bash && . ~/.jabba/jabba.sh
 
 install:
+  - TRAVIS_JDK=`jabba ls-remote "adopt@>=$TRAVIS_JDK_MIN < $TRAVIS_JDK_MAX" --latest=minor`
   - jabba install "$TRAVIS_JDK" && jabba use "$TRAVIS_JDK" && java -Xmx32m -version
   - javac -version
   - docker pull karelcemus/redis-cluster:latest
