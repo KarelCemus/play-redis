@@ -50,8 +50,9 @@ object DocumentationUpdate {
 
   def bumpVersionInDoc: ReleaseStep = ReleaseStep( { implicit st: State =>
     // update versions in documentation
-    ( readme +: documentationSources ).transform {
-      _.replace( s"blob/$latest", s"blob/$next" )
+    ( readme +: documentationSources ).transform { _
+      .replace( s"blob/$latest", s"blob/$next" )
+      .replaceAll( sbtDependency( latest ), sbtDependency( next ) )
     }
     // stage the changes
     vcs.stage( readme +: documentationSources: _* )
