@@ -466,6 +466,95 @@ private[redis] trait SetCommands {
 /**
   * Internal non-blocking Redis API implementing REDIS protocol
   *
+  * Subset of REDIS commands, sorted set related commands.
+  *
+  * @see https://redis.io/commands
+  */
+private[redis] trait SortedSetCommands {
+
+  /**
+    * Adds all the specified members with the specified scores to the sorted set stored at key.
+    * It is possible to specify multiple score / member pairs. If a specified member is already
+    * a member of the sorted set, the score is updated and the element reinserted at the right
+    * position to ensure the correct ordering.
+    *
+    * If key does not exist, a new sorted set with the specified members as sole members is created,
+    * like if the sorted set was empty. If the key exists but does not hold a sorted set, an error
+    * is returned.
+    *
+    * @note Time complexity: O(log(N)) for each item added, where N is the number of elements in the sorted set.
+    * @param key   cache storage key
+    * @param scoreValues values and corresponding scores to be added
+    * @return number of inserted elements ignoring already existing
+    */
+  def zsetAdd(key: String, scoreValues: (Double, Any)*): Future[Long]
+
+  /**
+    * Returns the sorted set cardinality (number of elements) of the sorted set stored at key.
+    *
+    * Time complexity: O(1)
+    *
+    * @param key cache storage key
+    * @return the cardinality (number of elements) of the set, or 0 if key does not exist.
+    */
+  def zsetSize(key: String): Future[Long]
+
+  /**
+    * Returns the score of member in the sorted set at key.
+    *
+    * If member does not exist in the sorted set, or key does not exist, nil is returned.
+    *
+    * Time complexity: O(1)
+    *
+    * @param key   cache storage key
+    * @param value tested element
+    * @return the score of member (a double precision floating point number).
+    */
+  def zscore(key: String, value: Any): Future[Option[Double]]
+
+  /**
+    * Removes the specified members from the sorted set stored at key. Non existing members are ignored.
+    *
+    * An error is returned when key exists and does not hold a sorted set.
+    *
+    * Time complexity: O(M*log(N)) with N being the number of elements in the sorted set and M the number of elements to be removed.
+    *
+    * @param key   cache storage key
+    * @param value values to be removed
+    * @return total number of removed values, non existing are ignored
+    */
+  def zsetRemove(key: String, value: Any*): Future[Long]
+
+  /**
+    * Returns the specified range of elements in the sorted set stored at key.
+    *
+    * An error is returned when key exists and does not hold a sorted set.
+    * @param key   cache storage key
+    * @param start the start index of the range
+    * @param stop  the stop index of the range
+    * @note  The start and stop arguments represent zero-based indexes, where 0 is the first element,
+    *        1 is the next element, and so on. These arguments specify an inclusive range.
+    * @return list of elements in the specified range
+    */
+  def zrange[T: ClassTag](key: String, start: Long, stop: Long): Future[Seq[T]]
+
+  /**
+    * Returns the specified range of elements in the sorted set stored at key.
+    * The elements are considered to be ordered from the highest to the lowest score.
+    * Descending lexicographical order is used for elements with equal score.
+    *
+    * @param key   cache storage key
+    * @param start the start index of the range
+    * @param stop  the stop index of the range
+    * @note Apart from the reversed ordering, the zrevRange is similar to zrange.
+    * @return list of elements in the specified range
+    */
+  def zrevRange[T: ClassTag](key: String, start: Long, stop: Long): Future[Seq[T]]
+}
+
+/**
+  * Internal non-blocking Redis API implementing REDIS protocol
+  *
   * @see https://redis.io/commands
   */
 trait RedisConnector extends AnyRef
@@ -473,3 +562,4 @@ trait RedisConnector extends AnyRef
   with ListCommands
   with SetCommands
   with HashCommands
+  with SortedSetCommands

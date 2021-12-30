@@ -294,6 +294,57 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
     }
   }
 
+  def zsetAdd(key: String, scoreValues: (Double, Any)*) = {
+    // encodes the value
+    def toEncoded(value: Any) = encode(key, value)
+    Future.sequence(scoreValues.map(scoreValue => toEncoded(scoreValue._2).map(encodedString => (scoreValue._1, encodedString)))).flatMap(redis.zadd(key, _: _*)) executing "ZADD" withKey key andParameters scoreValues expects {
+      case inserted =>
+        log.debug(s"Inserted $inserted elements into the zset at '$key'.")
+        inserted
+    } recover {
+      case ExecutionFailedException(_, _, _, ex) if ex.getMessage startsWith "WRONGTYPE" =>
+        log.warn(s"Value at '$key' is not a zset.")
+        throw new IllegalArgumentException(s"Value at '$key' is not a zset.")
+    }
+  }
+
+  def zsetSize(key: String) =
+    redis.zcard(key) executing "ZCARD" withKey key logging {
+      case length => log.debug(s"The zset at '$key' has $length items.")
+    }
+
+  def zscore(key: String, value: Any) = {
+    encode(key, value) flatMap (redis.zscore(key, _)) executing "ZSCORE" withKey key andParameter value logging {
+      case Some(score) => log.debug(s"The score of item: $value is $score in the collection at '$key'.")
+      case None        => log.debug(s"Item $value does not exist in the collection at '$key'")
+    }
+  }
+
+  def zsetRemove(key: String, values: Any*) = {
+    // encodes the value
+    def toEncoded(value: Any) = encode(key, value)
+
+    Future.sequence(values map toEncoded).flatMap(redis.zrem(key, _: _*)) executing "ZREM" withKey key andParameters values logging {
+      case removed => log.debug(s"Removed $removed elements from the zset at '$key'.")
+    }
+  }
+
+  def zrange[T: ClassTag](key: String, start: Long, stop: Long) = {
+    redis.zrange[String](key, start, stop) executing "ZRANGE" withKey key andParameter s"$start $stop" expects {
+      case encodedSeq =>
+        log.debug(s"Got range from $start to $stop in the zset at '$key'.")
+        encodedSeq.map(encoded => decode[T](key, encoded))
+    }
+  }
+
+  def zrevRange[T: ClassTag](key: String, start: Long, stop: Long) = {
+    redis.zrevrange[String](key, start, stop) executing "ZREVRANGE" withKey key andParameter s"$start $stop" expects {
+      case encodedSeq =>
+        log.debug(s"Got reverse range from $start to $stop in the zset at '$key'.")
+        encodedSeq.map(encoded => decode[T](key, encoded))
+    }
+  }
+
   def hashRemove(key: String, fields: String*) =
     redis.hdel(key, fields: _*) executing "HDEL" withKey key andParameters fields logging {
       case removed => log.debug(s"Removed $removed elements from the collection at '$key'.")
