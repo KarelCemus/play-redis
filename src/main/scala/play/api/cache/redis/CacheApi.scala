@@ -280,6 +280,15 @@ private[redis] trait AbstractCacheApi[Result[_]] {
     * @return Scala wrapper
     */
   def map[T: ClassTag](key: String): RedisMap[T, Result]
+
+  /**
+    * Scala wrapper around Redis sorted-set-related commands.
+    *
+    * @param key the key storing the map
+    * @tparam T type of elements within the sorted-set
+    * @return Scala wrapper
+    */
+  def zset[T: ClassTag](key: String): RedisSortedSet[T, Result]
 }
 
 /** Synchronous and blocking implementation of the connection to the redis database */

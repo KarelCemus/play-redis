@@ -48,6 +48,10 @@ class BuildersSpec(implicit ee: ExecutionEnv) extends Specification with Mockito
       runtime.policy returns failThrough
       AsynchronousBuilder.toResult(failingTask, defaultTask) must throwA[TimeoutException].await
     }
+
+    "map value" in new RuntimeMock {
+      AsynchronousBuilder.map(Future(5))(_ + 5) must beEqualTo(10).await
+    }
   }
 
   "SynchronousBuilder" should {
@@ -80,6 +84,10 @@ class BuildersSpec(implicit ee: ExecutionEnv) extends Specification with Mockito
       val actorFailure = Future.failed(new AskTimeoutException("Simulated actor ask timeout"))
       SynchronousBuilder.toResult(actorFailure, defaultTask) must throwA[TimeoutException]
     }
+
+    "map value" in new RuntimeMock {
+      SynchronousBuilder.map(5)(_ + 5) must beEqualTo(10)
+    }
   }
 }
 
@@ -99,5 +107,4 @@ object BuildersSpec {
 
     protected def defaultPolicy = new RecoverWithDefault {}
   }
-
 }

@@ -126,6 +126,10 @@ private[impl] class RedisCache[Result[_]](redis: RedisConnector, builder: Builde
     new RedisMapImpl(key, redis)
   }
 
+  def zset[T: ClassTag](key: String): RedisSortedSet[T, Result] = key.prefixed { key =>
+    new RedisSortedSetImpl(key, redis)
+  }
+
   // $COVERAGE-OFF$
   override def toString = s"RedisCache(name=${runtime.name})"
   // $COVERAGE-ON$
