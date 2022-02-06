@@ -296,8 +296,9 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
 
   def zsetAdd(key: String, scoreValues: (Double, Any)*) = {
     // encodes the value
-    def toEncoded(value: Any) = encode(key, value)
-    Future.sequence(scoreValues.map(scoreValue => toEncoded(scoreValue._2).map(encodedString => (scoreValue._1, encodedString)))).flatMap(redis.zadd(key, _: _*)) executing "ZADD" withKey key andParameters scoreValues expects {
+    def toEncoded(scoreValue: (Double, Any)) = encode(key, scoreValue._2).map((scoreValue._1, _))
+
+    Future.sequence(scoreValues.map(toEncoded)).flatMap(redis.zadd(key, _: _*)) executing "ZADD" withKey key andParameters scoreValues expects {
       case inserted =>
         log.debug(s"Inserted $inserted elements into the zset at '$key'.")
         inserted
