@@ -42,6 +42,9 @@ object RedisCacheImplicits {
     protected val value = "value"
     protected val other = "other"
 
+    protected val scoreValue: (Double, String) = (1.0, "value")
+    protected val otherScoreValue: (Double, String) = (2.0, "other")
+
     protected def invocation = LazyInvocation
 
     protected def policy: RecoveryPolicy = new RecoverWithDefault {}
@@ -72,6 +75,10 @@ object RedisCacheImplicits {
     protected val data = mutable.Set[String](other, value)
 
     protected val set = cache.set[String]("key")
+  }
+
+  class MockedSortedSet extends MockedCache {
+    protected val set = cache.zset[String]("key")
   }
 
   class MockedMap extends MockedCache {
