@@ -73,9 +73,9 @@ private[impl] class RedisCache[Result[_]](redis: RedisConnector, builder: Builde
   def getOrFuture[T: ClassTag](key: String, expiration: Duration)(orElse: => Future[T]): Future[T] = key.prefixed { key =>
     redis.get[T](key).flatMap {
       // cache hit, return the unwrapped value
-      case Some(value: T) => value.toFuture
+      case Some(value) => value.toFuture
       // cache miss, compute the value, store it into the cache but do not wait for the result and ignore it, directly return the value
-      case None           => orElse flatMap { value => runtime.invocation.invoke(redis.set(key, value, expiration), thenReturn = value) }
+      case None        => orElse flatMap { value => runtime.invocation.invoke(redis.set(key, value, expiration), thenReturn = value) }
     }.recoverWithFuture(orElse)
   }
 
