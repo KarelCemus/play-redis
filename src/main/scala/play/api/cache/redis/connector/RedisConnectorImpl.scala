@@ -74,10 +74,10 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
     redis.set(
       key,
       value,
-      exSeconds = if (expiration.isFinite) Some(expiration.toSeconds) else None,
+      pxMilliseconds = if (expiration.isFinite) Some(expiration.toMillis) else None,
       NX = ifNotExists
-    ) executing "SET" withKey key andParameters s"$value${s" EX $expiration" when expiration.isFinite}${" NX" when ifNotExists}" logging {
-      case true if expiration.isFinite => log.debug(s"Set on key '$key' for ${expiration.toSeconds} seconds.")
+    ) executing "SET" withKey key andParameters s"$value${s" PX $expiration" when expiration.isFinite}${" NX" when ifNotExists}" logging {
+      case true if expiration.isFinite => log.debug(s"Set on key '$key' for ${expiration.toMillis} milliseconds.")
       case true                        => log.debug(s"Set on key '$key' for infinite seconds.")
       case false                       => log.debug(s"Set on key '$key' ignored. Condition was not met.")
     }

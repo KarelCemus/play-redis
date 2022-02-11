@@ -1,6 +1,12 @@
 
 ## Changelog
 
+### [:link: 2.7.0](https://github.com/KarelCemus/play-redis/tree/2.7.0)
+
+SET command supports milliseconds, previous versions used seconds [#247](https://github.com/KarelCemus/play-redis/issues/247)
+
+Added support for sorted sets ZSET [#259](https://github.com/KarelCemus/play-redis/pull/259)
+
 ### [:link: 2.6.1](https://github.com/KarelCemus/play-redis/tree/2.6.1)
 
 Support of `DEL` operation in redis cluster [#230](https://github.com/KarelCemus/play-redis/issues/230)
