@@ -421,6 +421,79 @@ class RedisConnectorSpec(implicit ee: ExecutionEnv) extends Specification with B
       connector.get[String](s"$prefix-hash-invalid-$idx") must beSome("value").await
       connector.hashSet(s"$prefix-hash-invalid-$idx", "KA", "VA1") must throwA[IllegalArgumentException].await
     }
+
+    "sorted set add" in new TestCase {
+      connector.sortedSetAdd(s"$prefix-sorted-set-add", (1, "A")) must beEqualTo(1).await
+      connector.sortedSetSize(s"$prefix-sorted-set-add") must beEqualTo(1).await
+      connector.sortedSetSize(s"$prefix-sorted-set-add") must beEqualTo(1).await
+      connector.sortedSetAdd(s"$prefix-sorted-set-add", (2, "B"), (3, "C")) must beEqualTo(2).await
+      connector.sortedSetSize(s"$prefix-sorted-set-add") must beEqualTo(3).await
+      connector.sortedSetAdd(s"$prefix-sorted-set-add", (1, "A")) must beEqualTo(0).await
+      connector.sortedSetSize(s"$prefix-sorted-set-add") must beEqualTo(3).await
+    }
+
+    "sorted set add invalid type" in new TestCase {
+      connector.set(s"$prefix-sorted-set-invalid-$idx", "value") must not(throwA[Throwable]).await
+      connector.get[String](s"$prefix-sorted-set-invalid-$idx") must beSome("value").await
+      connector.sortedSetAdd(s"$prefix-sorted-set-invalid-$idx", 1D -> "VA1") must throwA[IllegalArgumentException].await
+    }
+
+    "sorted set score" in new TestCase {
+      connector.sortedSetSize(s"$prefix-sorted-set-score") must beEqualTo(0).await
+      connector.sortedSetAdd(s"$prefix-sorted-set-score", 1D -> "A", 3D -> "B") must beEqualTo(2).await
+      connector.sortedSetSize(s"$prefix-sorted-set-score") must beEqualTo(2).await
+
+      connector.sortedSetScore(s"$prefix-sorted-set-score", "A") must beSome(1D).await
+      connector.sortedSetScore(s"$prefix-sorted-set-score", "B") must beSome(3D).await
+      connector.sortedSetScore(s"$prefix-sorted-set-score", "C") must beNone.await
+
+      connector.sortedSetAdd(s"$prefix-sorted-set-score", 2D -> "C", 4D -> "B") must beEqualTo(1).await
+
+      connector.sortedSetScore(s"$prefix-sorted-set-score", "A") must beSome(1D).await
+      connector.sortedSetScore(s"$prefix-sorted-set-score", "B") must beSome(4D).await
+      connector.sortedSetScore(s"$prefix-sorted-set-score", "C") must beSome(2D).await
+    }
+
+    "sorted set size" in new TestCase {
+      connector.sortedSetSize(s"$prefix-sorted-set-size") must beEqualTo(0).await
+      connector.sortedSetAdd(s"$prefix-sorted-set-size", (1, "A"), (2, "B")) must beEqualTo(2).await
+      connector.sortedSetSize(s"$prefix-sorted-set-size") must beEqualTo(2).await
+    }
+
+    "sorted set remove" in new TestCase {
+      connector.sortedSetSize(s"$prefix-sorted-set-rem") must beEqualTo(0).await
+      connector.sortedSetAdd(s"$prefix-sorted-set-rem", 1D -> "A", 2D -> "B", 3D -> "C") must beEqualTo(3).await
+      connector.sortedSetSize(s"$prefix-sorted-set-rem") must beEqualTo(3).await
+
+      connector.sortedSetRemove(s"$prefix-sorted-set-rem", "A") must beEqualTo(1).await
+      connector.sortedSetSize(s"$prefix-sorted-set-rem") must beEqualTo(2).await
+      connector.sortedSetRemove(s"$prefix-sorted-set-rem", "B", "C", "D") must beEqualTo(2).await
+      connector.sortedSetSize(s"$prefix-sorted-set-rem") must beEqualTo(0).await
+    }
+
+    "sorted set range" in new TestCase {
+      connector.sortedSetSize(s"$prefix-sorted-set-range") must beEqualTo(0).await
+      connector.sortedSetAdd(s"$prefix-sorted-set-range", 1D -> "A", 2D -> "B", 4D -> "C") must beEqualTo(3).await
+      connector.sortedSetSize(s"$prefix-sorted-set-range") must beEqualTo(3).await
+
+      connector.sortedSetRange[String](s"$prefix-sorted-set-range", 0, 1) must beEqualTo(Vector("A", "B")).await
+      connector.sortedSetRange[String](s"$prefix-sorted-set-range", 0, 4) must beEqualTo(Vector("A", "B", "C")).await
+      connector.sortedSetRange[String](s"$prefix-sorted-set-range", 1, 9) must beEqualTo(Vector("B", "C")).await
+
+      connector.sortedSetSize(s"$prefix-sorted-set-range") must beEqualTo(3).await
+    }
+
+    "sorted set reverse range" in new TestCase {
+      connector.sortedSetSize(s"$prefix-sorted-set-reverse-range") must beEqualTo(0).await
+      connector.sortedSetAdd(s"$prefix-sorted-set-reverse-range", 1D -> "A", 2D -> "B", 4D -> "C") must beEqualTo(3).await
+      connector.sortedSetSize(s"$prefix-sorted-set-reverse-range") must beEqualTo(3).await
+
+      connector.sortedSetReverseRange[String](s"$prefix-sorted-set-reverse-range", 0, 1) must beEqualTo(Vector("C", "B")).await
+      connector.sortedSetReverseRange[String](s"$prefix-sorted-set-reverse-range", 0, 4) must beEqualTo(Vector("C", "B", "A")).await
+      connector.sortedSetReverseRange[String](s"$prefix-sorted-set-reverse-range", 1, 9) must beEqualTo(Vector("B", "A")).await
+
+      connector.sortedSetSize(s"$prefix-sorted-set-reverse-range") must beEqualTo(3).await
+    }
   }
 
   def beforeAll() = {

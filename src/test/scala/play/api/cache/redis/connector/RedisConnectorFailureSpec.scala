@@ -17,18 +17,19 @@ class RedisConnectorFailureSpec(implicit ee: ExecutionEnv) extends Specification
 
   import org.mockito.ArgumentMatchers._
 
-  val key = "key"
-  val value = "value"
+  private val key = "key"
+  private val value = "value"
+  private val score = 1D
 
-  val simulatedEx = new RuntimeException("Simulated failure.")
-  val simulatedFailure = Failure(simulatedEx)
+  private val simulatedEx = new RuntimeException("Simulated failure.")
+  private val simulatedFailure = Failure(simulatedEx)
 
-  val someValue = Some(value)
+  private val someValue = Some(value)
 
-  val disconnected = Future.failed(new IllegalStateException("Simulated redis status: disconnected."))
+  private val disconnected = Future.failed(new IllegalStateException("Simulated redis status: disconnected."))
 
-  def anySerializer = org.mockito.ArgumentMatchers.any[ByteStringSerializer[String]]
-  def anyDeserializer = org.mockito.ArgumentMatchers.any[ByteStringDeserializer[String]]
+  private def anySerializer = org.mockito.ArgumentMatchers.any[ByteStringSerializer[String]]
+  private def anyDeserializer = org.mockito.ArgumentMatchers.any[ByteStringDeserializer[String]]
 
   "Serializer failure" should {
 
@@ -137,6 +138,45 @@ class RedisConnectorFailureSpec(implicit ee: ExecutionEnv) extends Specification
       commands.hset[String](anyString, anyString, anyString)(anySerializer) returns disconnected
       // run the test
       connector.hashSet(key, "field", value) must throwA[ExecutionFailedException].await
+    }
+
+    "failed ZADD" in new MockedConnector {
+      serializer.encode(anyString) returns "encoded"
+      commands.zadd[String](anyString, any[(Double, String)])(anySerializer) returns disconnected
+      // run the test
+      connector.sortedSetAdd(key, (score, value)) must throwA[ExecutionFailedException].await
+    }
+
+    "failed ZCARD" in new MockedConnector {
+      commands.zcard(anyString) returns disconnected
+      // run the test
+      connector.sortedSetSize(key) must throwA[ExecutionFailedException].await
+    }
+
+    "failed ZSCORE" in new MockedConnector {
+      serializer.encode(anyString) returns "encoded"
+      commands.zscore[String](anyString, anyString)(anySerializer) returns disconnected
+      // run the test
+      connector.sortedSetScore(key, value) must throwA[ExecutionFailedException].await
+    }
+
+    "failed ZREM" in new MockedConnector {
+      serializer.encode(anyString) returns "encoded"
+      commands.zrem[String](anyString, anyString)(anySerializer) returns disconnected
+      // run the test
+      connector.sortedSetRemove(key, value) must throwA[ExecutionFailedException].await
+    }
+
+    "failed ZRANGE" in new MockedConnector {
+      commands.zrange[String](anyString, anyLong, anyLong)(anyDeserializer) returns disconnected
+      // run the test
+      connector.sortedSetRange[String](key, 1, 5) must throwA[ExecutionFailedException].await
+    }
+
+    "failed ZREVRANGE" in new MockedConnector {
+      commands.zrevrange[String](anyString, anyLong, anyLong)(anyDeserializer) returns disconnected
+      // run the test
+      connector.sortedSetReverseRange[String](key, 1, 5) must throwA[ExecutionFailedException].await
     }
   }
 }

@@ -74,6 +74,13 @@ object RedisCacheImplicits {
     protected val set = cache.set[String]("key")
   }
 
+  class MockedSortedSet extends MockedCache {
+    protected val scoreValue: (Double, String) = (1.0, "value")
+    protected val otherScoreValue: (Double, String) = (2.0, "other")
+
+    protected val set = cache.zset[String]("key")
+  }
+
   class MockedMap extends MockedCache {
     protected val field = "field"
 

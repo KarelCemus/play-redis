@@ -16,6 +16,8 @@ object Builders {
     def name: String
     /** converts future result produced by Redis to the result of desired type */
     def toResult[T](run: => Future[T], default: => Future[T])(implicit runtime: RedisRuntime): Result[T]
+    /** maps the value */
+    def map[T, U](result: Result[T])(f: T => U)(implicit runtime: RedisRuntime): Result[U]
     // $COVERAGE-OFF$
     /** show the builder name */
     override def toString = s"ResultBuilder($name)"
@@ -32,6 +34,9 @@ object Builders {
         // recover from known exceptions
         case failure: RedisException => runtime.policy.recoverFrom(run, default, failure)
       }
+
+    override def map[T, U](result: AsynchronousResult[T])(f: T => U)(implicit runtime: RedisRuntime): AsynchronousResult[U] =
+      result.map(f)
   }
 
   /** converts the future into the value */
@@ -54,5 +59,8 @@ object Builders {
         // apply recovery policy to recover from expected exceptions
         case failure: RedisException => Await.result(runtime.policy.recoverFrom(run, default, failure), runtime.timeout.duration)
       }.get // finally, regardless the recovery status, get the synchronous result
+
+    override def map[T, U](result: SynchronousResult[T])(f: T => U)(implicit runtime: RedisRuntime): SynchronousResult[U] =
+      f(result)
   }
 }
