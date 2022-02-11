@@ -10,15 +10,15 @@ description := "Redis cache plugin for the Play framework 2"
 
 organization := "com.github.karelcemus"
 
-scalaVersion := "2.13.2"
+scalaVersion := "2.13.8"
 
-crossScalaVersions := Seq( "2.12.11", scalaVersion.value )
+crossScalaVersions := Seq( "2.12.15", scalaVersion.value )
 
-playVersion := "2.8.1"
+playVersion := "2.8.13"
 
 connectorVersion := "1.9.1"
 
-specs2Version := "4.9.4"
+specs2Version := "4.13.2"
 
 libraryDependencies ++= Seq(
   // play framework cache API
@@ -51,7 +51,7 @@ authors := Seq( "Karel Čemus" )
 
 // Release plugin settings
 releaseCrossBuild := true
-releaseTagName := ( version in ThisBuild ).value
+releaseTagName := ( ThisBuild / version ).value
 releasePublishArtifactsAction := PgpKeys.publishSigned.value
 
 // Publish settings

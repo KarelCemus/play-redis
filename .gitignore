@@ -1,4 +1,5 @@
 # Compilation output
+.bsp/
 bin/
 lib/
 out/
