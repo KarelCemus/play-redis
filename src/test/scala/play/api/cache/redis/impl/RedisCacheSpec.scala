@@ -13,8 +13,6 @@ class RedisCacheSpec(implicit ee: ExecutionEnv) extends Specification with Reduc
 
   import org.mockito.ArgumentMatchers._
 
-  val key = "key"
-  val value = "value"
   val expiration = 1.second
 
   "Redis Cache" should {
@@ -213,7 +211,7 @@ class RedisCacheSpec(implicit ee: ExecutionEnv) extends Specification with Reduc
 
     "get or future (failing orElse)" in new MockedCache with OrElse {
       connector.get[String](anyString)(anyClassTag) returns None
-      cache.getOrFuture(key)(failedFuture) must throwA[TimeoutException].await
+      cache.getOrFuture[String](key)(failedFuture) must throwA[TimeoutException].await
       orElse mustEqual 2
     }
 

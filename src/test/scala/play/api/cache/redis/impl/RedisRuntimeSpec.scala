@@ -8,7 +8,7 @@ class RedisRuntimeSpec extends Specification with WithApplication {
 
   import Implicits._
 
-  implicit val recoveryResolver = new RecoveryPolicyResolverImpl
+  implicit val recoveryResolver: RecoveryPolicyResolver = new RecoveryPolicyResolverImpl
 
   "RedisRuntime" should {
     import RedisRuntime._

@@ -40,7 +40,7 @@ class RedisConnectorFailureSpec(implicit ee: ExecutionEnv) extends Specification
     }
 
     "fail when decoder fails" in new MockedConnector {
-      serializer.decode(anyString)(any[ClassTag[_]]) returns simulatedFailure
+      serializer.decode(anyString)(any()) returns simulatedFailure
       commands.get[String](key) returns someValue
       // run the test
       connector.get[String](key) must throwA[SerializationException].await

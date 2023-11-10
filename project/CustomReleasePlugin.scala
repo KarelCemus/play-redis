@@ -32,7 +32,9 @@ object CustomReleasePlugin extends AutoPlugin {
     pomIncludeRepository := { _ => false },
     // customized release process
     releaseProcess := customizedReleaseProcess,
-    //
+    // release details
+    homepage := Some(url("https://github.com/karelcemus/play-redis")),
+    licenses := Seq("Apache 2" -> url("https://www.apache.org/licenses/LICENSE-2.0")),
     scmInfo := Some(
       ScmInfo(
         url("https://github.com/KarelCemus/play-i18n.git"),

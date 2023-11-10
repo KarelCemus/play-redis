@@ -1,5 +1,6 @@
 package play.api.cache.redis.configuration
 
+import play.api.ConfigLoader
 import play.api.cache.redis._
 
 /**
@@ -18,7 +19,7 @@ case class RedisInstanceManagerTest(default: String)(providers: RedisInstancePro
 
 abstract class WithRedisInstanceManager(hocon: String) extends WithConfiguration(hocon) {
 
-  private implicit val loader = RedisInstanceManager
+  private implicit val loader: ConfigLoader[RedisInstanceManager] = RedisInstanceManager
 
   protected val manager = configuration.get[RedisInstanceManager]("play.cache.redis")
 }

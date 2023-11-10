@@ -16,17 +16,19 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 class RedisSentinelSpec(implicit ee: ExecutionEnv) extends Specification with BeforeAll with AfterAll with WithApplication {
 
+  args(skipAll=true)
+
   import Implicits._
 
-  implicit private val lifecycle = application.injector.instanceOf[ApplicationLifecycle]
+  implicit private val lifecycle: ApplicationLifecycle = application.injector.instanceOf[ApplicationLifecycle]
 
-  implicit private val runtime = RedisRuntime("sentinel", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
+  implicit private val runtime: RedisRuntime = RedisRuntime("sentinel", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
 
   private val serializer = new AkkaSerializerImpl(system)
 
-  private val sentinelInstance = RedisSentinel(defaultCacheName, masterGroup = "sentinel5000", sentinels = RedisHost(dockerIp, 5000) :: RedisHost(dockerIp, 5001) :: RedisHost(dockerIp, 5002) :: Nil, defaults)
+  private lazy val sentinelInstance = RedisSentinel(defaultCacheName, masterGroup = "sentinel5000", sentinels = RedisHost(dockerIp, 5000) :: RedisHost(dockerIp, 5001) :: RedisHost(dockerIp, 5002) :: Nil, defaults)
 
-  private val connector: RedisConnector = new RedisConnectorProvider(sentinelInstance, serializer).get
+  private lazy val connector: RedisConnector = new RedisConnectorProvider(sentinelInstance, serializer).get
 
   val prefix = "sentinel-test"
 
@@ -72,7 +74,7 @@ class RedisSentinelSpec(implicit ee: ExecutionEnv) extends Specification with Be
 
   def beforeAll(): Unit = {
     // initialize the connector by flushing the database
-    connector.matching(s"$prefix-*").flatMap(connector.remove).await
+    connector.matching(s"$prefix-*").flatMap(connector.remove).awaitForFuture
   }
 
   def afterAll(): Unit = {

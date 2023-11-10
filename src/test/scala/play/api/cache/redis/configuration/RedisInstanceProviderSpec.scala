@@ -7,7 +7,7 @@ class RedisInstanceProviderSpec extends Specification {
 
   val defaultCache = RedisStandalone(defaultCacheName, RedisHost(localhost, defaultPort, database = 0), defaults)
 
-  implicit val resolver = new RedisInstanceResolver {
+  implicit val resolver: RedisInstanceResolver = new RedisInstanceResolver {
     def resolve = {
       case `defaultCacheName` => defaultCache
     }

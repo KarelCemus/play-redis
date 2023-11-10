@@ -9,21 +9,23 @@ description := "Redis cache plugin for the Play framework 2"
 
 organization := "com.github.karelcemus"
 
-scalaVersion := "2.13.8"
+crossScalaVersions := Seq("2.13.12") //, "3.3.0"
 
-crossScalaVersions := Seq("2.12.15", scalaVersion.value)
+scalaVersion := crossScalaVersions.value.head
 
-playVersion := "2.8.13"
+playVersion := "2.9.0"
 
 libraryDependencies ++= Seq(
   // play framework cache API
   "com.typesafe.play" %% "play-cache" % playVersion.value % Provided,
   // redis connector
-  "com.github.karelcemus" %% "rediscala" % "1.9.1",
+  "io.github.rediscala" %% "rediscala" % "1.14.0-akka",
   // test framework with mockito extension
-  "org.specs2" %% "specs2-mock" % "4.13.2" % Test,
+  "org.specs2" %% "specs2-mock" % "4.20.3" % Test,
   // test module for play framework
-  "com.typesafe.play" %% "play-specs2" % playVersion.value % Test
+  "com.typesafe.play" %% "play-test" % playVersion.value % Test,
+  // to run integration tests
+  "com.dimafeng" %% "testcontainers-scala-core" % "0.41.0" % Test
 )
 
 resolvers ++= Seq(
@@ -33,10 +35,6 @@ resolvers ++= Seq(
 javacOptions ++= Seq("-Xlint:unchecked", "-encoding", "UTF-8")
 
 scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked")
-
-homepage := Some(url("https://github.com/karelcemus/play-redis"))
-
-licenses := Seq("Apache 2" -> url("https://www.apache.org/licenses/LICENSE-2.0"))
 
 enablePlugins(CustomReleasePlugin)
 

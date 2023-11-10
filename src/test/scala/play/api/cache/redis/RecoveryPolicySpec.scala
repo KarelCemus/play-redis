@@ -5,10 +5,9 @@ import scala.concurrent.Future
 import play.api.Logger
 
 import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 
-class RecoveryPolicySpec(implicit ee: ExecutionEnv) extends Specification with Mockito {
+class RecoveryPolicySpec(implicit ee: ExecutionEnv) extends Specification with ReducedMockito {
 
   class BasicPolicy extends RecoveryPolicy {
     def recoverFrom[T](rerun: => Future[T], default: => Future[T], failure: RedisException) = default
@@ -25,7 +24,7 @@ class RecoveryPolicySpec(implicit ee: ExecutionEnv) extends Specification with M
     val failedKey = ExecutionFailedException(Some("key"), "TEST-CMD", "TEST-CMD key value", internal)
     val timeout = TimeoutException(internal)
     val serialization = SerializationException("some key", "TEST-CMD", internal)
-    def any = unexpectedAny
+    def any: UnexpectedResponseException = unexpectedAny
   }
 
   "Recovery Policy" should {

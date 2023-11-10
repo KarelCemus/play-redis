@@ -42,7 +42,7 @@ class AsyncRedisSpec(implicit ee: ExecutionEnv) extends Specification with Reduc
 
     "getOrElseUpdate (failing orElse)" in new MockedAsyncRedis with OrElse {
       connector.get[String](anyString)(anyClassTag) returns None
-      cache.getOrElseUpdate(key)(failedFuture) must throwA[TimeoutException].await
+      cache.getOrElseUpdate[String](key)(failedFuture) must throwA[TimeoutException].await
       orElse mustEqual 2
     }
 

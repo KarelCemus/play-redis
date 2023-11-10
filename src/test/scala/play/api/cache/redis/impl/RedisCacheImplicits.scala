@@ -46,7 +46,7 @@ object RedisCacheImplicits {
 
     protected def policy: RecoveryPolicy = new RecoverWithDefault {}
 
-    protected implicit val runtime = mock[RedisRuntime]
+    protected implicit val runtime: RedisRuntime = mock[RedisRuntime]
     runtime.context returns ExecutionContext.global
     runtime.invocation returns invocation
     runtime.prefix returns RedisEmptyPrefix
@@ -104,7 +104,7 @@ object RedisCacheImplicits {
     protected val classTagKey = s"classTag::$key"
     protected val classTagOther = s"classTag::$other"
 
-    protected implicit val environment = mock[Environment]
+    protected implicit val environment: Environment = mock[Environment]
     protected val async = mock[AsyncRedis]
     protected val cache: play.cache.redis.AsyncCacheApi = new AsyncJavaRedis(async)
 

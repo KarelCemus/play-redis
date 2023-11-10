@@ -2,12 +2,9 @@ package play.api.cache.redis.connector
 
 import java.util.Date
 
-import scala.reflect.ClassTag
-
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.cache.redis._
 
-import org.joda.time.{DateTime, DateTimeZone}
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 
@@ -67,16 +64,6 @@ class SerializerSpec extends Specification with Mockito {
       new Date(123).encoded mustEqual "rO0ABXNyAA5qYXZhLnV0aWwuRGF0ZWhqgQFLWXQZAwAAeHB3CAAAAAAAAAB7eA=="
     }
 
-    "datetime" in {
-      new DateTime(123456L, DateTimeZone.forID("UTC")).encoded mustEqual """
-          |rO0ABXNyABZvcmcuam9kYS50aW1lLkRhdGVUaW1luDx4ZGpb3fkCAAB4cgAfb3JnLmpvZGEudGlt
-          |ZS5iYXNlLkJhc2VEYXRlVGltZf//+eFPXS6jAgACSgAHaU1pbGxpc0wAC2lDaHJvbm9sb2d5dAAa
-          |TG9yZy9qb2RhL3RpbWUvQ2hyb25vbG9neTt4cAAAAAAAAeJAc3IAJ29yZy5qb2RhLnRpbWUuY2hy
-          |b25vLklTT0Nocm9ub2xvZ3kkU3R1YqnIEWZxN1AnAwAAeHBzcgAfb3JnLmpvZGEudGltZS5EYXRl
-          |VGltZVpvbmUkU3R1YqYvAZp8MhrjAwAAeHB3BQADVVRDeHg=
-        """.stripMargin.removeAllWhitespaces
-    }
-
     "null" in {
       new ValueEncoder(null).encoded must throwA[UnsupportedOperationException]
     }
@@ -134,18 +121,8 @@ class SerializerSpec extends Specification with Mockito {
       "rO0ABXNyAA5qYXZhLnV0aWwuRGF0ZWhqgQFLWXQZAwAAeHB3CAAAAAAAAAB7eA==".decoded[Date] mustEqual new Date(123)
     }
 
-    "datetime" in {
-      """
-        |rO0ABXNyABZvcmcuam9kYS50aW1lLkRhdGVUaW1luDx4ZGpb3fkCAAB4cgAfb3JnLmpvZGEudGlt
-        |ZS5iYXNlLkJhc2VEYXRlVGltZf//+eFPXS6jAgACSgAHaU1pbGxpc0wAC2lDaHJvbm9sb2d5dAAa
-        |TG9yZy9qb2RhL3RpbWUvQ2hyb25vbG9neTt4cAAAAAAAAeJAc3IAJ29yZy5qb2RhLnRpbWUuY2hy
-        |b25vLklTT0Nocm9ub2xvZ3kkU3R1YqnIEWZxN1AnAwAAeHBzcgAfb3JnLmpvZGEudGltZS5EYXRl
-        |VGltZVpvbmUkU3R1YqYvAZp8MhrjAwAAeHB3BQADVVRDeHg=
-      """.stripMargin.removeAllWhitespaces.decoded[DateTime] mustEqual new DateTime(123456L, DateTimeZone.forID("UTC"))
-    }
-
-    "forgotten type" in {
-      def decoded: String = "something".decoded
+    "invalid type" in {
+      def decoded: Date = "something".decoded[Date]
       decoded must throwA[IllegalArgumentException]
     }
   }

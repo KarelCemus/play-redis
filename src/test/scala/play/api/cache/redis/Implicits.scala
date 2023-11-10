@@ -42,7 +42,7 @@ object Implicits {
   implicit def implicitlyAny2failure(ex: Throwable): Try[Nothing] = Failure(ex)
 
   implicit class FutureAwait[T](val future: Future[T]) extends AnyVal {
-    def await = Await.result(future, 2.minutes)
+    def awaitForFuture = Await.result(future, 2.minutes)
   }
 
   implicit def implicitlyAny2Callable[T](f: => T): Callable[T] = new Callable[T] {
@@ -73,9 +73,12 @@ trait ReducedMockito extends MocksCreation
   with MockitoStubs
   with CapturedArgument
   // with MockitoMatchers
-  with ArgThat
+  // with ArgThat
   with Expectations
-  with MockitoFunctions
+  with MockitoFunctions {
+
+  override def argThat[T, U <: T](m: org.specs2.matcher.Matcher[U]): T = super.argThat(m)
+}
 
 object MockitoImplicits extends ReducedMockito
 
@@ -85,13 +88,13 @@ trait WithApplication {
 
   protected def builder = new GuiceApplicationBuilder()
 
-  private val theBuilder = builder
+  private lazy val theBuilder = builder
 
-  protected val injector = theBuilder.injector
+  protected lazy val injector = theBuilder.injector()
 
-  protected val application: Application = injector.instanceOf[Application]
+  protected lazy val application: Application = injector.instanceOf[Application]
 
-  implicit protected val system = injector.instanceOf[ActorSystem]
+  implicit protected lazy val system: ActorSystem = injector.instanceOf[ActorSystem]
 }
 
 trait WithHocon {
@@ -101,13 +104,13 @@ trait WithHocon {
 
   protected def hocon: String
 
-  protected val config = {
+  protected lazy val config = {
     val reference = ConfigFactory.load()
     val local = ConfigFactory.parseString(hocon.stripMargin)
     local.withFallback(reference)
   }
 
-  protected val configuration = Configuration(config)
+  protected lazy val configuration = Configuration(config)
 }
 
 abstract class WithConfiguration(val hocon: String) extends WithHocon with Around with Scope {

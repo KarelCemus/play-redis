@@ -11,7 +11,7 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification._
 
-class BuildersSpec(implicit ee: ExecutionEnv) extends Specification with Mockito with WithApplication {
+class BuildersSpec(implicit ee: ExecutionEnv) extends Specification with ReducedMockito with WithApplication {
 
   import Builders._
   import BuildersSpec._
