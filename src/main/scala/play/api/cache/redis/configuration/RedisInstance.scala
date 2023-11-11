@@ -91,6 +91,7 @@ trait RedisSentinel extends RedisInstance {
 
   def sentinels: List[RedisHost]
   def masterGroup: String
+  def username: Option[String]
   def password: Option[String]
   def database: Option[Int]
 
@@ -103,23 +104,28 @@ trait RedisSentinel extends RedisInstance {
 
 object RedisSentinel {
 
-  def apply(name: String, masterGroup: String,
-      sentinels: List[RedisHost],
-      settings: RedisSettings,
-      password: Option[String] = None,
-      database: Option[Int] = None): RedisSentinel with RedisDelegatingSettings =
-    create(name, masterGroup, password, database, sentinels, settings)
+  def apply(
+    name: String,
+    masterGroup: String,
+    sentinels: List[RedisHost],
+    settings: RedisSettings,
+    username: Option[String] = None,
+    password: Option[String] = None,
+    database: Option[Int] = None
+  ): RedisSentinel with RedisDelegatingSettings =
+    create(name, masterGroup, username, password, database, sentinels, settings)
 
   @inline
-  private def create(_name: String, _masterGroup: String, _password: Option[String], _database: Option[Int],
+  private def create(_name: String, _masterGroup: String, _username: Option[String], _password: Option[String], _database: Option[Int],
       _sentinels: List[RedisHost], _settings: RedisSettings) =
     new RedisSentinel with RedisDelegatingSettings {
-      val name = _name
-      val masterGroup = _masterGroup
-      val password = _password
-      val database = _database
-      val sentinels = _sentinels
-      val settings = _settings
+      override val name: String = _name
+      override val masterGroup: String = _masterGroup
+      override val username: Option[String] = _username
+      override val password: Option[String] = _password
+      override val database: Option[Int] = _database
+      override val sentinels: List[RedisHost] = _sentinels
+      override val settings: RedisSettings = _settings
     }
 
 }

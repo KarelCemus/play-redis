@@ -163,16 +163,17 @@ object RedisCacheModuleSpec {
 
   object MyRedisInstance extends RedisStandalone {
 
-    def name = defaultCacheName
-    def invocationContext = "akka.actor.default-dispatcher"
-    def invocationPolicy = "lazy"
-    def timeout = RedisTimeouts(1.second)
-    def recovery = "log-and-default"
-    def source = "my-instance"
-    def prefix = None
-    def host = localhost
-    def port = defaultPort
-    def database = None
-    def password = None
+    override def name = defaultCacheName
+    override def invocationContext = "akka.actor.default-dispatcher"
+    override def invocationPolicy = "lazy"
+    override def timeout = RedisTimeouts(1.second)
+    override def recovery = "log-and-default"
+    override def source = "my-instance"
+    override def prefix = None
+    override def host = localhost
+    override def port = defaultPort
+    override def database = None
+    override def username = None
+    override def password = None
   }
 }

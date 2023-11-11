@@ -78,7 +78,7 @@ class RedisListJavaImpl[Elem](internal: RedisList[Elem, Future])(implicit runtim
     new AsyncRedisListModificationJavaImpl(internal.modify)
   }
 
-  class AsyncRedisListViewJavaImpl(view: internal.RedisListView) extends AsyncRedisList.AsyncRedisListView[Elem] {
+  private class AsyncRedisListViewJavaImpl(view: internal.RedisListView) extends AsyncRedisList.AsyncRedisListView[Elem] {
 
     def slice(from: Int, end: Int): CompletionStage[JavaList[Elem]] = {
       async { implicit context =>
@@ -87,7 +87,7 @@ class RedisListJavaImpl[Elem](internal: RedisList[Elem, Future])(implicit runtim
     }
   }
 
-  class AsyncRedisListModificationJavaImpl(modification: internal.RedisListModification) extends AsyncRedisList.AsyncRedisListModification[Elem] {
+  private class AsyncRedisListModificationJavaImpl(modification: internal.RedisListModification) extends AsyncRedisList.AsyncRedisListModification[Elem] {
 
     def collection(): AsyncRedisList[Elem] = This
 

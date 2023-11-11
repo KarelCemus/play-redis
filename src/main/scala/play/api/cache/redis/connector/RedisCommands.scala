@@ -62,6 +62,7 @@ private[connector] class RedisCommandsStandalone(configuration: RedisStandalone)
     host = host,
     port = port,
     db = database,
+    username = username,
     password = password
   ) with FailEagerly with RedisRequestTimeout {
 
@@ -105,7 +106,7 @@ private[connector] class RedisCommandsCluster(configuration: RedisCluster)(impli
 
   val client: RedisClusterClient = new RedisClusterClient(
     nodes.map {
-      case RedisHost(host, port, database, password) => RedisServer(host.resolvedIpAddress, port, password, database)
+      case RedisHost(host, port, database, username, password) => RedisServer(host.resolvedIpAddress, port, username, password, database)
     }
   ) with RedisRequestTimeout {
     protected val timeout = configuration.timeout.redis
@@ -116,8 +117,8 @@ private[connector] class RedisCommandsCluster(configuration: RedisCluster)(impli
   // $COVERAGE-OFF$
   def start() = {
     def servers = nodes.map {
-      case RedisHost(host, port, Some(database), _) => s" $host:$port?database=$database"
-      case RedisHost(host, port, None, _)           => s" $host:$port"
+      case RedisHost(host, port, Some(database), _, _) => s" $host:$port?database=$database"
+      case RedisHost(host, port, None, _, _)           => s" $host:$port"
     }
 
     log.info(s"Redis cluster cache actor started. It is connected to ${servers mkString ", "}")
@@ -143,9 +144,10 @@ private[connector] class RedisCommandsSentinel(configuration: RedisSentinel)(imp
 
   val client: SentinelMonitoredRedisClient with RedisRequestTimeout = new SentinelMonitoredRedisClient(
     configuration.sentinels.map {
-      case RedisHost(host, port, _, _) => (host.resolvedIpAddress, port)
+      case RedisHost(host, port, _, _, _) => (host.resolvedIpAddress, port)
     },
     master = configuration.masterGroup,
+    username = configuration.username,
     password = configuration.password,
     db = configuration.database
   ) with RedisRequestTimeout {

@@ -1,29 +1,31 @@
 package play.api.cache.redis.connector
 
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
-
+import org.specs2.concurrent.ExecutionEnv
+import org.specs2.mutable.Specification
 import play.api.cache.redis._
+import play.api.cache.redis.configuration.{RedisHost, RedisStandalone}
 import play.api.cache.redis.impl._
 import play.api.inject.ApplicationLifecycle
 
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
-import org.specs2.specification.{AfterAll, BeforeAll}
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
   * <p>Specification of the low level connector implementing basic commands</p>
   */
-class RedisConnectorSpec(implicit ee: ExecutionEnv) extends Specification with BeforeAll with AfterAll with WithApplication {
+class RedisConnectorSpec(implicit ee: ExecutionEnv) extends Specification with WithApplication with StandaloneRedisContainer {
   import Implicits._
 
-  implicit private val lifecycle = application.injector.instanceOf[ApplicationLifecycle]
+  implicit private val lifecycle: ApplicationLifecycle = application.injector.instanceOf[ApplicationLifecycle]
 
-  implicit private val runtime = RedisRuntime("connector", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
+  implicit private val runtime: RedisRuntime = RedisRuntime("connector", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
 
   private val serializer = new AkkaSerializerImpl(system)
 
-  private val connector: RedisConnector = new RedisConnectorProvider(defaultInstance, serializer).get
+  private lazy val connector: RedisConnector = new RedisConnectorProvider(
+    RedisStandalone(defaultCacheName, RedisHost(container.containerIpAddress, container.mappedPort(defaultPort)), defaults),
+    serializer
+  ).get
 
   val prefix = "connector-test"
 
@@ -67,11 +69,11 @@ class RedisConnectorSpec(implicit ee: ExecutionEnv) extends Specification with B
     }
 
     "hit after mset" in new TestCase {
-      connector.mSet(s"$prefix-mset-$idx-1" -> "value-1", s"$prefix-mset-$idx-2" -> "value-2").await
+      connector.mSet(s"$prefix-mset-$idx-1" -> "value-1", s"$prefix-mset-$idx-2" -> "value-2").awaitForFuture
       connector.mGet[String](s"$prefix-mset-$idx-1", s"$prefix-mset-$idx-2", s"$prefix-mset-$idx-3") must beEqualTo(List(Some("value-1"), Some("value-2"), None)).await
-      connector.mSet(s"$prefix-mset-$idx-3" -> "value-3", s"$prefix-mset-$idx-2" -> null).await
+      connector.mSet(s"$prefix-mset-$idx-3" -> "value-3", s"$prefix-mset-$idx-2" -> null).awaitForFuture
       connector.mGet[String](s"$prefix-mset-$idx-1", s"$prefix-mset-$idx-2", s"$prefix-mset-$idx-3") must beEqualTo(List(Some("value-1"), None, Some("value-3"))).await
-      connector.mSet(s"$prefix-mset-$idx-3" -> null).await
+      connector.mSet(s"$prefix-mset-$idx-3" -> null).awaitForFuture
       connector.mGet[String](s"$prefix-mset-$idx-1", s"$prefix-mset-$idx-2", s"$prefix-mset-$idx-3") must beEqualTo(List(Some("value-1"), None, None)).await
     }
 
@@ -84,7 +86,7 @@ class RedisConnectorSpec(implicit ee: ExecutionEnv) extends Specification with B
     "expire refreshes expiration" in new TestCase {
       connector.set(s"$prefix-$idx", "value", 2.second).await
       connector.get[String](s"$prefix-$idx") must beSome("value").await
-      connector.expire(s"$prefix-$idx", 1.minute).await
+      connector.expire(s"$prefix-$idx", 1.minute).awaitForFuture
       // wait until the first duration expires
       Future.after(3) must not(throwA[Throwable]).awaitFor(4.seconds)
       connector.get[String](s"$prefix-$idx") must beSome("value").await
@@ -174,7 +176,7 @@ class RedisConnectorSpec(implicit ee: ExecutionEnv) extends Specification with B
       connector.get[String](s"$prefix-remove-multiple-2") must beSome[Any].await
       connector.set(s"$prefix-remove-multiple-3", "value").await
       connector.get[String](s"$prefix-remove-multiple-3") must beSome[Any].await
-      connector.remove(s"$prefix-remove-multiple-1", s"$prefix-remove-multiple-2", s"$prefix-remove-multiple-3").await
+      connector.remove(s"$prefix-remove-multiple-1", s"$prefix-remove-multiple-2", s"$prefix-remove-multiple-3").awaitForFuture
       connector.get[String](s"$prefix-remove-multiple-1") must beNone.await
       connector.get[String](s"$prefix-remove-multiple-2") must beNone.await
       connector.get[String](s"$prefix-remove-multiple-3") must beNone.await
@@ -187,7 +189,7 @@ class RedisConnectorSpec(implicit ee: ExecutionEnv) extends Specification with B
       connector.get[String](s"$prefix-remove-batch-2") must beSome[Any].await
       connector.set(s"$prefix-remove-batch-3", "value").await
       connector.get[String](s"$prefix-remove-batch-3") must beSome[Any].await
-      connector.remove(s"$prefix-remove-batch-1", s"$prefix-remove-batch-2", s"$prefix-remove-batch-3").await
+      connector.remove(s"$prefix-remove-batch-1", s"$prefix-remove-batch-2", s"$prefix-remove-batch-3").awaitForFuture
       connector.get[String](s"$prefix-remove-batch-1") must beNone.await
       connector.get[String](s"$prefix-remove-batch-2") must beNone.await
       connector.get[String](s"$prefix-remove-batch-3") must beNone.await
@@ -235,14 +237,14 @@ class RedisConnectorSpec(implicit ee: ExecutionEnv) extends Specification with B
 
     "append like set when value is undefined" in new TestCase {
       connector.get[String](s"$prefix-append-to-null") must beNone.await
-      connector.append(s"$prefix-append-to-null", "value").await
+      connector.append(s"$prefix-append-to-null", "value").awaitForFuture
       connector.get[String](s"$prefix-append-to-null") must beSome("value").await
     }
 
     "append to existing string" in new TestCase {
       connector.set(s"$prefix-append-to-some", "some").await
       connector.get[String](s"$prefix-append-to-some") must beSome("some").await
-      connector.append(s"$prefix-append-to-some", " value").await
+      connector.append(s"$prefix-append-to-some", " value").awaitForFuture
       connector.get[String](s"$prefix-append-to-some") must beSome("some value").await
     }
 
@@ -266,7 +268,7 @@ class RedisConnectorSpec(implicit ee: ExecutionEnv) extends Specification with B
 
     "list overwrite at index" in new TestCase {
       connector.listPrepend(s"$prefix-list-set", "C", "B", "A") must beEqualTo(3).await
-      connector.listSetAt(s"$prefix-list-set", 1, "D").await
+      connector.listSetAt(s"$prefix-list-set", 1, "D").awaitForFuture
       connector.listSlice[String](s"$prefix-list-set", 0, -1) must beEqualTo(List("A", "D", "C")).await
       connector.listSetAt(s"$prefix-list-set", 3, "D") must throwA[IndexOutOfBoundsException].await
     }
@@ -297,7 +299,7 @@ class RedisConnectorSpec(implicit ee: ExecutionEnv) extends Specification with B
 
     "list trim" in new TestCase {
       connector.listPrepend(s"$prefix-list-trim", "C", "B", "A") must beEqualTo(3).await
-      connector.listTrim(s"$prefix-list-trim", 1, 2).await
+      connector.listTrim(s"$prefix-list-trim", 1, 2).awaitForFuture
       connector.listSize(s"$prefix-list-trim") must beEqualTo(2).await
       connector.listSlice[String](s"$prefix-list-trim", 0, -1) must beEqualTo(List("B", "C")).await
     }
@@ -380,7 +382,7 @@ class RedisConnectorSpec(implicit ee: ExecutionEnv) extends Specification with B
       val key = s"$prefix-hash-set"
 
       connector.hashSize(key) must beEqualTo(0).await
-      connector.hashGetAll(key) must beEqualTo(Map.empty).await
+      connector.hashGetAll[String](key) must beEqualTo(Map.empty).await
       connector.hashKeys(key) must beEqualTo(Set.empty).await
       connector.hashValues[String](key) must beEqualTo(Set.empty).await
 
@@ -496,12 +498,14 @@ class RedisConnectorSpec(implicit ee: ExecutionEnv) extends Specification with B
     }
   }
 
-  def beforeAll() = {
+  override def beforeAll(): Unit = {
+    super.beforeAll()
     // initialize the connector by flushing the database
-    connector.matching(s"$prefix-*").flatMap(connector.remove).await
+    connector.matching(s"$prefix-*").flatMap(connector.remove).awaitForFuture
   }
 
-  def afterAll() = {
-    Shutdown.run
+  override def afterAll(): Unit = {
+    Shutdown.run.awaitForFuture
+    super.afterAll()
   }
 }

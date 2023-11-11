@@ -1,0 +1,38 @@
+name: Build and Test
+on:
+  pull_request:
+
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    env:
+      SBT_OPTS: -Dfile.encoding=UTF-8 -Duser.timezone=UTC
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Cache Coursier
+        uses: coursier/cache-action@v6.4
+
+      - name: Setup JDK
+        uses: coursier/setup-action@v1.3.4
+        with:
+          jvm: adoptium:1.17
+
+      - name: Build
+        timeout-minutes: 10
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sbt --client "+clean; +compile; +Test/compile; +coverage; +test; +coverageReport; +coveralls;"

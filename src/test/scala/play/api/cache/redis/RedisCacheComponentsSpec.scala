@@ -2,23 +2,23 @@ package play.api.cache.redis
 
 import play.api._
 import play.api.inject.ApplicationLifecycle
-
 import org.specs2.mutable.Specification
-import org.specs2.specification.AfterAll
 
-class RedisCacheComponentsSpec extends Specification with WithApplication with AfterAll {
+class RedisCacheComponentsSpec extends Specification with WithApplication with StandaloneRedisContainer {
+  import Implicits._
 
-  object components extends RedisCacheComponents {
+  object components extends RedisCacheComponents with WithHocon {
     def actorSystem = system
     def applicationLifecycle = injector.instanceOf[ApplicationLifecycle]
     def environment = injector.instanceOf[Environment]
-    def configuration = injector.instanceOf[Configuration]
-    val syncRedis = cacheApi("play").sync
+    lazy val syncRedis = cacheApi("play").sync
+    override lazy val configuration = Configuration(config)
+    override protected def hocon: String = s"play.cache.redis.port: ${container.mappedPort(defaultPort)}"
   }
 
   private type Cache = CacheApi
 
-  private val cache = components.syncRedis
+  private lazy val cache = components.syncRedis
 
   val prefix = "components-sync"
 
@@ -42,7 +42,8 @@ class RedisCacheComponentsSpec extends Specification with WithApplication with A
     }
   }
 
-  def afterAll() = {
-    Shutdown.run
+  override def afterAll() = {
+    Shutdown.run.awaitForFuture
+    super.afterAll()
   }
 }
