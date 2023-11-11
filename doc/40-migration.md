@@ -9,6 +9,13 @@ backward compatibility in a few places. This Migration Guide allows you to adjus
 in the smoothest possible way. We believe that removing technical debt as soon as possible
 is the only way of keeping this project in a good shape.
 
+
+## Migration from 2.8.x to 3.0.x
+
+Migrated to Play 2.9.0 and increased minimal version of JDK to 17.
+
+Dropped support for Scala 2.12, compiled against Scala 2.13.12 to be usable with Scala 3.
+
 ## Migration from 2.0.x to 2.1.x
 
 The most changes are under the hood, however, there are couple
