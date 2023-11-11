@@ -1,155 +1,205 @@
 package play.api.cache.redis.impl
 
 import play.api.cache.redis._
+import play.api.cache.redis.impl.Builders.AsynchronousBuilder
+import play.api.cache.redis.test._
 
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
+import scala.concurrent.Future
 
-class RedisMapSpec(implicit ee: ExecutionEnv) extends Specification with ReducedMockito {
+class RedisMapSpec extends AsyncUnitSpec  with RedisRuntimeMock with RedisConnectorMock with ImplicitFutureMaterialization {
 
-  import Implicits._
-  import RedisCacheImplicits._
+  test("set") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashSet(cacheKey, field, cacheValue, result = true)
+      _ <- map.add(field, cacheValue).assertingEqual(map)
+    } yield Passed
+  }
 
-  import org.mockito.ArgumentMatchers._
+  test("set (failing)") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashSet(cacheKey, field, cacheValue, result = failure)
+      _ <- map.add(field, cacheValue).assertingEqual(map)
+    } yield Passed
+  }
 
-  "Redis Map" should {
+  test("get") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashGet[String](cacheKey, field, result = Some(cacheValue))
+      _ <- connector.expect.hashGet[String](cacheKey, otherValue, result = None)
+      _ <- map.get(field).assertingEqual(Some(cacheValue))
+      _ <- map.get(otherValue).assertingEqual(None)
+    } yield Passed
+  }
 
-    "set" in new MockedMap {
-      connector.hashSet(anyString, anyString, anyString) returns true
-      map.add(field, value) must beEqualTo(map).await
-      there were one(connector).hashSet(key, field, value)
-    }
+  test("get (failing)") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashGet[String](cacheKey, field, result = failure)
+      _ <- map.get(field).assertingEqual(None)
+    } yield Passed
+  }
 
-    "set (failing)" in new MockedMap {
-      connector.hashSet(anyString, anyString, anyString) returns ex
-      map.add(field, value) must beEqualTo(map).await
-      there were one(connector).hashSet(key, field, value)
-    }
+  test("get fields") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashGet[String](cacheKey, Seq(field, otherValue), result = Seq(Some(cacheValue), None))
+      _ <- connector.expect.hashGet[String](cacheKey, Seq(field, otherValue), result = Seq(Some(cacheValue), None))
+      _ <- map.getFields(field, otherValue).assertingEqual(Seq(Some(cacheValue), None))
+      _ <- map.getFields(Seq(field, otherValue)).assertingEqual(Seq(Some(cacheValue), None))
+    } yield Passed
+  }
 
-    "get" in new MockedMap {
-      connector.hashGet[String](anyString, beEq(field))(anyClassTag) returns Some(value)
-      connector.hashGet[String](anyString, beEq(other))(anyClassTag) returns None
-      map.get(field) must beSome(value).await
-      map.get(other) must beNone.await
-      there were one(connector).hashGet[String](key, field)
-      there were one(connector).hashGet[String](key, other)
-    }
+  test("get fields (failing)") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashGet[String](cacheKey, Seq(field, otherValue), result = failure)
+      _ <- connector.expect.hashGet[String](cacheKey, Seq(field, otherValue), result = failure)
+      _ <- map.getFields(field, otherValue).assertingEqual(Seq(None, None))
+      _ <- map.getFields(Seq(field, otherValue)).assertingEqual(Seq(None, None))
+    } yield Passed
+  }
 
-    "get (failing)" in new MockedMap {
-      connector.hashGet[String](anyString, beEq(field))(anyClassTag) returns ex
-      map.get(field) must beNone.await
-      there were one(connector).hashGet[String](key, field)
-    }
+  test("contains") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashExists(cacheKey, field, result = true)
+      _ <- connector.expect.hashExists(cacheKey, otherValue, result = false)
+      _ <- map.contains(field).assertingEqual(true)
+      _ <- map.contains(otherValue).assertingEqual(false)
+    } yield Passed
+  }
 
-    "get fields" in new MockedMap {
-      connector.hashGet[String](anyString, beEq(Seq(field, other)))(anyClassTag) returns Seq(Some(value), None)
-      map.getFields(field, other) must beEqualTo(Seq(Some(value), None)).await
-      map.getFields(Seq(field, other)) must beEqualTo(Seq(Some(value), None)).await
-      there were two(connector).hashGet[String](key, Seq(field, other))
-    }
+  test("contains (failing)") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashExists(cacheKey, field, result = failure)
+      _ <- map.contains(field).assertingEqual(false)
+    } yield Passed
+  }
 
-    "get fields (failing)" in new MockedMap {
-      connector.hashGet[String](anyString, beEq(Seq(field, other)))(anyClassTag) returns ex
-      map.getFields(field, other) must beEqualTo(Seq(None, None)).await
-      map.getFields(Seq(field, other)) must beEqualTo(Seq(None, None)).await
-      there were two(connector).hashGet[String](key, Seq(field, other))
-    }
+  test("remove") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashRemove(cacheKey, Seq(field))
+      _ <- connector.expect.hashRemove(cacheKey, Seq(field, otherValue))
+      _ <- map.remove(field).assertingEqual(map)
+      _ <- map.remove(field, otherValue).assertingEqual(map)
+    } yield Passed
+  }
 
-    "contains" in new MockedMap {
-      connector.hashExists(anyString, beEq(field)) returns true
-      connector.hashExists(anyString, beEq(other)) returns false
-      map.contains(field) must beTrue.await
-      map.contains(other) must beFalse.await
-    }
+  test("remove (failing)") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashRemove(cacheKey, Seq(field), result = failure)
+      _ <- map.remove(field).assertingEqual(map)
+    } yield Passed
+  }
 
-    "contains (failing)" in new MockedMap {
-      connector.hashExists(anyString, anyString) returns ex
-      map.contains(field) must beFalse.await
-      there were one(connector).hashExists(key, field)
-    }
+  test("increment") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashIncrement(cacheKey, field, 2L, result = 5L)
+      _ <- map.increment(field, 2L).assertingEqual(5L)
+    } yield Passed
+  }
 
-    "remove" in new MockedMap {
-      connector.hashRemove(anyString, anyVarArgs) returns 1L
-      map.remove(field) must beEqualTo(map).await
-      map.remove(field, other) must beEqualTo(map).await
-      there were one(connector).hashRemove(key, field)
-      there were one(connector).hashRemove(key, field, other)
-    }
+  test("increment (failing)") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashIncrement(cacheKey, field, 2L, result = failure)
+      _ <- map.increment(field, 2L).assertingEqual(2L)
+    } yield Passed
+  }
 
-    "remove (failing)" in new MockedMap {
-      connector.hashRemove(anyString, anyVarArgs) returns ex
-      map.remove(field) must beEqualTo(map).await
-      there were one(connector).hashRemove(key, field)
-    }
+  test("toMap") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashGetAll[String](cacheKey, result = Map(field -> cacheValue))
+      _ <- map.toMap.assertingEqual(Map(field -> cacheValue))
+    } yield Passed
+  }
 
-    "increment" in new MockedMap {
-      connector.hashIncrement(anyString, beEq(field), anyLong) returns 5L
-      map.increment(field, 2L) must beEqualTo(5L).await
-      there were one(connector).hashIncrement(key, field, 2L)
-    }
+  test("toMap (failing)") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashGetAll[String](cacheKey, result = failure)
+      _ <- map.toMap.assertingEqual(Map.empty)
+    } yield Passed
+  }
 
-    "increment (failing)" in new MockedMap {
-      connector.hashIncrement(anyString, beEq(field), anyLong) returns ex
-      map.increment(field, 2L) must beEqualTo(2L).await
-      there were one(connector).hashIncrement(key, field, 2L)
-    }
+  test("keySet") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashKeys(cacheKey, result = Set(field))
+      _ <- map.keySet.assertingEqual(Set(field))
+    } yield Passed
+  }
 
-    "toMap" in new MockedMap {
-      connector.hashGetAll[String](anyString)(anyClassTag) returns Map(field -> value)
-      map.toMap must beEqualTo(Map(field -> value)).await
-    }
+  test("keySet (failing)") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashKeys(cacheKey, result = failure)
+      _ <- map.keySet.assertingEqual(Set.empty)
+    } yield Passed
+  }
 
-    "toMap (failing)" in new MockedMap {
-      connector.hashGetAll[String](anyString)(anyClassTag) returns ex
-      map.toMap must beEqualTo(Map.empty).await
-    }
+  test("values") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashValues[String](cacheKey, result = Set(cacheValue))
+      _ <- map.values.assertingEqual(Set(cacheValue))
+    } yield Passed
+  }
 
-    "keySet" in new MockedMap {
-      connector.hashKeys(anyString) returns Set(field)
-      map.keySet must beEqualTo(Set(field)).await
-    }
+  test("values (failing)") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashValues[String](cacheKey, result = failure)
+      _ <- map.values.assertingEqual(Set.empty)
+    } yield Passed
+  }
 
-    "keySet (failing)" in new MockedMap {
-      connector.hashKeys(anyString) returns ex
-      map.keySet must beEqualTo(Set.empty).await
-    }
+  test("size") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashSize(cacheKey, result = 2L)
+      _ <- map.size.assertingEqual(2L)
+    } yield Passed
+  }
 
-    "values" in new MockedMap {
-      connector.hashValues[String](anyString)(anyClassTag) returns Set(value)
-      map.values must beEqualTo(Set(value)).await
-    }
+  test("size (failing)") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashSize(cacheKey, result = failure)
+      _ <- map.size.assertingEqual(0L)
+    } yield Passed
+  }
 
-    "values (failing)" in new MockedMap {
-      connector.hashValues[String](anyString)(anyClassTag) returns ex
-      map.values must beEqualTo(Set.empty).await
-    }
+  test("empty map") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashSize(cacheKey, result = 0L)
+      _ <- connector.expect.hashSize(cacheKey, result = 0L)
+      _ <- map.isEmpty.assertingEqual(true)
+      _ <- map.nonEmpty.assertingEqual(false)
+    } yield Passed
+  }
 
-    "size" in new MockedMap {
-      connector.hashSize(key) returns 2L
-      map.size must beEqualTo(2L).await
-    }
+  test("non-empty map") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashSize(cacheKey, result = 1L)
+      _ <- connector.expect.hashSize(cacheKey, result = 1L)
+      _ <- map.isEmpty.assertingEqual(false)
+      _ <- map.nonEmpty.assertingEqual(true)
+    } yield Passed
+  }
 
-    "size (failing)" in new MockedMap {
-      connector.hashSize(key) returns ex
-      map.size must beEqualTo(0L).await
-    }
+  test("empty/non-empty map (failing)") { (map, connector) =>
+    for {
+      _ <- connector.expect.hashSize(cacheKey, result = failure)
+      _ <- connector.expect.hashSize(cacheKey, result = failure)
+      _ <- map.isEmpty.assertingEqual(true)
+      _ <- map.nonEmpty.assertingEqual(false)
+    } yield Passed
+  }
 
-    "empty map" in new MockedMap {
-      connector.hashSize(beEq(key)) returns 0L
-      map.isEmpty must beTrue.await
-      map.nonEmpty must beFalse.await
-    }
-
-    "non-empty map" in new MockedMap {
-      connector.hashSize(beEq(key)) returns 1L
-      map.isEmpty must beFalse.await
-      map.nonEmpty must beTrue.await
-    }
-
-    "empty/non-empty map (failing)" in new MockedMap {
-      connector.hashSize(beEq(key)) returns ex
-      map.isEmpty must beTrue.await
-      map.nonEmpty must beFalse.await
+  private def test(
+    name: String,
+    policy: RecoveryPolicy = recoveryPolicy.default
+  )(
+    f: (RedisMap[String, AsynchronousResult], RedisConnectorMock) => Future[Assertion]
+  ): Unit = {
+    name in {
+      implicit val runtime: RedisRuntime = redisRuntime(
+        invocationPolicy = LazyInvocation,
+        recoveryPolicy = policy,
+      )
+      implicit val builder: Builders.AsynchronousBuilder.type = AsynchronousBuilder
+      val connector: RedisConnectorMock = mock[RedisConnectorMock]
+      val map: RedisMap[String, AsynchronousResult] = new RedisMapImpl[String, AsynchronousResult](cacheKey, connector)
+      f(map, connector)
     }
   }
-}
+ }

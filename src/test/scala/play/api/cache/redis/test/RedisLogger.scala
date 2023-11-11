@@ -1,4 +1,4 @@
-package play.api.cache.redis.logging
+package play.api.cache.redis.test
 
 import akka.event.Logging.{InitializeLogger, LoggerInitialized}
 import akka.event.slf4j.Slf4jLogger
@@ -9,11 +9,11 @@ import akka.event.slf4j.Slf4jLogger
   */
 class RedisLogger extends Slf4jLogger {
 
-  private def doReceive: PartialFunction[Any, Unit] = {
+  private val doReceive: PartialFunction[Any, Unit] = {
     case InitializeLogger(_) => sender() ! LoggerInitialized
   }
 
-  override def receive = {
+  override def receive: PartialFunction[Any, Unit] = {
     doReceive.orElse(super.receive)
   }
 }

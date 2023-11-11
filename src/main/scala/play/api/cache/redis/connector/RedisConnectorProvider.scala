@@ -12,7 +12,7 @@ import akka.actor.ActorSystem
   */
 private[redis] class RedisConnectorProvider(instance: RedisInstance, serializer: AkkaSerializer)(implicit system: ActorSystem, lifecycle: ApplicationLifecycle, runtime: RedisRuntime) extends Provider[RedisConnector] {
 
-  private lazy val commands = new RedisCommandsProvider(instance).get
+  private[connector] lazy val commands = new RedisCommandsProvider(instance).get
 
   lazy val get = new RedisConnectorImpl(serializer, commands)
 }

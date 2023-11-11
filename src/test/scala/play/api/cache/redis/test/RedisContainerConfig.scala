@@ -1,7 +1,8 @@
-package play.api.cache.redis
+package play.api.cache.redis.test
 
 final case class RedisContainerConfig(
   redisDockerImage: String,
-  redisPorts: Seq[Int],
+  redisMappedPorts: Seq[Int],
+  redisFixedPorts: Seq[Int],
   redisEnvironment: Map[String, String],
 )

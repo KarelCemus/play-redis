@@ -1,45 +1,43 @@
 package play.api.cache.redis.connector
 
+import play.api.cache.redis._
+import play.api.cache.redis.test.{AsyncUnitSpec, SimulatedException}
+
 import scala.concurrent.{ExecutionContext, Future}
 
-import play.api.cache.redis._
 
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
-
-class ExpectedFutureSpec(implicit ee: ExecutionEnv) extends Specification {
-
+class ExpectedFutureSpec extends AsyncUnitSpec {
   import ExpectedFutureSpec._
 
-  class Suite(name: String)(implicit f: ExpectationBuilder[String]) {
+  private class TestSuite(name: String)(implicit f: ExpectationBuilder[String]) {
 
-    name >> {
+    name should {
 
       "expected value" in {
-        Future.successful("expected").asExpected must beEqualTo("ok").await
+        Future.successful("expected").asExpected.assertingEqual("ok")
       }
 
       "unexpected value" in {
-        Future.successful("unexpected").asExpected must throwA[UnexpectedResponseException].await
+        Future.successful("unexpected").asExpected.assertingFailure[UnexpectedResponseException]
       }
 
       "failing expectation" in {
-        Future.successful("failing").asExpected must throwA[ExecutionFailedException].await
+        Future.successful("failing").asExpected.assertingFailure[ExecutionFailedException]
       }
 
       "failing future inside redis" in {
-        Future.failed[String](TimeoutException(simulatedFailure)).asExpected must throwA[TimeoutException].await
+        Future.failed[String](TimeoutException(SimulatedException)).asExpected.assertingFailure[TimeoutException]
       }
 
       "failing future with runtime exception" in {
-        Future.failed[String](simulatedFailure).asExpected must throwA[ExecutionFailedException].await
+        Future.failed[String](SimulatedException).asExpected.assertingFailure[ExecutionFailedException]
       }
     }
   }
 
-  new Suite("Execution without the key")((future: Future[String]) => future.executing(cmd))
+  new TestSuite("Execution without the key")((future: Future[String]) => future.executing(cmd))
 
-  new Suite("Execution with the key")((future: Future[String]) => future.executing(cmd).withKey("key"))
+  new TestSuite("Execution with the key")((future: Future[String]) => future.executing(cmd).withKey("key"))
 
   "building a command" in {
     Future.successful("expected").executing(cmd).toString mustEqual s"ExpectedFuture($cmd)"
@@ -52,20 +50,16 @@ class ExpectedFutureSpec(implicit ee: ExecutionEnv) extends Specification {
 
 object ExpectedFutureSpec {
 
-  val cmd = "TEST CMD"
+  private val cmd = "TEST CMD"
 
-  def simulatedFailure = new RuntimeException("Simulated runtime failure")
-
-  val expectation: PartialFunction[Any, String] = {
-    case "failing"  => throw simulatedFailure
+  private val expectation: PartialFunction[Any, String] = {
+    case "failing" => throw SimulatedException
     case "expected" => "ok"
   }
 
-  implicit class ExpectationBuilder[T](val f: Future[T] => ExpectedFuture[String]) extends AnyVal {
-    def apply(future: Future[T]): ExpectedFuture[String] = f(future)
-  }
+  private type ExpectationBuilder[T] = Future[T] => ExpectedFuture[String]
 
-  implicit class FutureBuilder[T](val future: Future[T]) extends AnyVal {
+  private implicit class FutureBuilder[T](private val future: Future[T]) extends AnyVal {
     def asExpected(implicit ev: ExpectationBuilder[T], context: ExecutionContext): Future[String] = ev(future).expects(expectation)
     def asCommand(implicit ev: ExpectationBuilder[T]): String = ev(future).toString
   }

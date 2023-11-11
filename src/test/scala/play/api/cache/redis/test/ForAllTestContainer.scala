@@ -1,11 +1,11 @@
-package play.api.cache.redis
+package play.api.cache.redis.test
 
 import com.dimafeng.testcontainers.SingleContainer
-import org.specs2.specification.BeforeAfterAll
+import org.scalatest.{BeforeAndAfterAll, Suite}
 
-trait ForAllTestContainer extends BeforeAfterAll {
+trait ForAllTestContainer extends BeforeAndAfterAll {this: Suite =>
 
-  def newContainer: SingleContainer[_]
+  protected def newContainer: SingleContainer[_]
 
   final protected lazy val container = newContainer
 

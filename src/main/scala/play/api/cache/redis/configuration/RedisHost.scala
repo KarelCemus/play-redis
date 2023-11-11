@@ -46,6 +46,7 @@ object RedisHost extends ConfigLoader[RedisHost] {
     host = config.getString(path / "host"),
     port = config.getInt(path / "port"),
     database = config.getOption(path / "database", _.getInt),
+    username = config.getOption(path / "username", _.getString),
     password = config.getOption(path / "password", _.getString)
   )
 

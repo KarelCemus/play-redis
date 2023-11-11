@@ -66,9 +66,8 @@ private[impl] class RedisCache[Result[_]](redis: RedisConnector, builder: Builde
     doMatching(pattern).recoverWithDefault(Seq.empty[String])
   }
 
-  def getOrElse[T: ClassTag](key: String, expiration: Duration)(orElse: => T) = key.prefixed { key =>
+  def getOrElse[T: ClassTag](key: String, expiration: Duration)(orElse: => T) =
     getOrFuture(key, expiration)(orElse.toFuture).recoverWithDefault(orElse)
-  }
 
   def getOrFuture[T: ClassTag](key: String, expiration: Duration)(orElse: => Future[T]): Future[T] = key.prefixed { key =>
     redis.get[T](key).flatMap {

@@ -1,6 +1,6 @@
 package play.api.cache.redis
 
-import org.specs2.mutable.Specification
+import play.api.cache.redis.test._
 
 import java.time.Instant
 import java.util.Date
@@ -9,7 +9,7 @@ import scala.concurrent.duration._
 /**
   * <p>This specification tests expiration conversion</p>
   */
-class ExpirationSpec extends Specification {
+class ExpirationSpec extends UnitSpec {
 
   "Expiration" should {
 
@@ -20,12 +20,16 @@ class ExpirationSpec extends Specification {
     val expirationTo = expiration + 1.second
 
     "from java.util.Date" in {
-      new Date(expireAt.toEpochMilli).asExpiration must beBetween(expirationFrom, expirationTo)
+      val expiration = new Date(expireAt.toEpochMilli).asExpiration
+      expiration mustBe >=(expirationFrom)
+      expiration mustBe <=(expirationTo)
     }
 
     "from java.time.LocalDateTime" in {
       import java.time._
-      LocalDateTime.ofInstant(expireAt, ZoneId.systemDefault()).asExpiration must beBetween(expirationFrom, expirationTo)
+      val expiration = LocalDateTime.ofInstant(expireAt, ZoneId.systemDefault()).asExpiration
+      expiration mustBe >=(expirationFrom)
+      expiration mustBe <=(expirationTo)
     }
   }
 }

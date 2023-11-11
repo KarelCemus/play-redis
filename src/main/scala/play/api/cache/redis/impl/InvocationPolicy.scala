@@ -15,9 +15,14 @@ sealed trait InvocationPolicy {
 }
 
 object EagerInvocation extends InvocationPolicy {
-  def invoke[T](f: => Future[Any], thenReturn: T)(implicit context: ExecutionContext) = { f; Future successful thenReturn }
+  override def invoke[T](f: => Future[Any], thenReturn: T)(implicit context: ExecutionContext): Future[T] = {
+    f
+    Future successful thenReturn
+  }
 }
 
 object LazyInvocation extends InvocationPolicy {
-  def invoke[T](f: => Future[Any], thenReturn: T)(implicit context: ExecutionContext) = f.map(_ => thenReturn)
+  override def invoke[T](f: => Future[Any], thenReturn: T)(implicit context: ExecutionContext): Future[T] = {
+    f.map(_ => thenReturn)
+  }
 }

@@ -1,83 +1,95 @@
 package play.api.cache.redis.connector
 
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
-import org.specs2.specification.{AfterAll, BeforeAll}
+import akka.actor.ActorSystem
+import org.scalatest.Ignore
 import play.api.cache.redis._
-import play.api.cache.redis.configuration.{RedisHost, RedisSentinel}
+import play.api.cache.redis.configuration._
 import play.api.cache.redis.impl._
-import play.api.inject.ApplicationLifecycle
+import play.api.cache.redis.test._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-/**
-  * <p>Specification of the low level connector implementing basic commands</p>
-  */
-class RedisSentinelSpec(implicit ee: ExecutionEnv) extends Specification with BeforeAll with AfterAll with WithApplication {
+@Ignore
+class RedisSentinelSpec extends IntegrationSpec with RedisSentinelContainer {
 
-  args(skipAll=true)
+  test("pong on ping") { connector =>
+    for {
+      _ <- connector.ping().assertingSuccess
+    } yield Passed
+  }
 
-  import Implicits._
+  test("miss on get") { connector =>
+    for {
+      _ <- connector.get[String]("miss-on-get").assertingEqual(None)
+    } yield Passed
+  }
 
-  implicit private val lifecycle: ApplicationLifecycle = application.injector.instanceOf[ApplicationLifecycle]
+  test("hit after set") { connector =>
+    for {
+      _ <- connector.set("hit-after-set", "value").assertingEqual(true)
+      _ <- connector.get[String]("hit-after-set").assertingEqual(Some("value"))
+    } yield Passed
+  }
 
-  implicit private val runtime: RedisRuntime = RedisRuntime("sentinel", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
+  test("ignore set if not exists when already defined") { connector =>
+    for {
+      _ <- connector.set("if-not-exists-when-exists", "previous").assertingEqual(true)
+      _ <- connector.set("if-not-exists-when-exists", "value", ifNotExists = true).assertingEqual(false)
+      _ <- connector.get[String]("if-not-exists-when-exists").assertingEqual(Some("previous"))
+    } yield Passed
+  }
 
-  private val serializer = new AkkaSerializerImpl(system)
+  test("perform set if not exists when undefined") { connector =>
+    for {
+      _ <- connector.get[String]("if-not-exists").assertingEqual(None)
+      _ <- connector.set("if-not-exists", "value", ifNotExists = true).assertingEqual(true)
+      _ <- connector.get[String]("if-not-exists").assertingEqual(Some("value"))
+      _ <- connector.set("if-not-exists", "other", ifNotExists = true).assertingEqual(false)
+      _ <- connector.get[String]("if-not-exists").assertingEqual(Some("value"))
+    } yield Passed
+  }
 
-  private lazy val sentinelInstance = RedisSentinel(defaultCacheName, masterGroup = "sentinel5000", sentinels = RedisHost(dockerIp, 5000) :: RedisHost(dockerIp, 5001) :: RedisHost(dockerIp, 5002) :: Nil, defaults)
-
-  private lazy val connector: RedisConnector = new RedisConnectorProvider(sentinelInstance, serializer).get
-
-  val prefix = "sentinel-test"
-
-  "Redis sentinel (separate)" should {
-
-    "pong on ping" in new TestCase {
-      connector.ping() must not(throwA[Throwable]).await
-    }
-
-    "miss on get" in new TestCase {
-      connector.get[String](s"$prefix-$idx") must beNone.await
-    }
-
-    "hit after set" in new TestCase {
-      connector.set(s"$prefix-$idx", "value") must beTrue.await
-      connector.get[String](s"$prefix-$idx") must beSome[Any].await
-      connector.get[String](s"$prefix-$idx") must beSome("value").await
-    }
-
-    "ignore set if not exists when already defined" in new TestCase {
-      connector.set(s"$prefix-if-not-exists-when-exists", "previous") must beTrue.await
-      connector.set(s"$prefix-if-not-exists-when-exists", "value", ifNotExists = true) must beFalse.await
-      connector.get[String](s"$prefix-if-not-exists-when-exists") must beSome("previous").await
-    }
-
-    "perform set if not exists when undefined" in new TestCase {
-      connector.get[String](s"$prefix-if-not-exists") must beNone.await
-      connector.set(s"$prefix-if-not-exists", "value", ifNotExists = true) must beTrue.await
-      connector.get[String](s"$prefix-if-not-exists") must beSome("value").await
-      connector.set(s"$prefix-if-not-exists", "other", ifNotExists = true) must beFalse.await
-      connector.get[String](s"$prefix-if-not-exists") must beSome("value").await
-    }
-
-    "perform set if not exists with expiration" in new TestCase {
-      connector.get[String](s"$prefix-if-not-exists-with-expiration") must beNone.await
-      connector.set(s"$prefix-if-not-exists-with-expiration", "value", 2.seconds, ifNotExists = true) must beTrue.await
-      connector.get[String](s"$prefix-if-not-exists-with-expiration") must beSome("value").await
+  test("perform set if not exists with expiration") { connector =>
+    for {
+      _ <- connector.get[String]("if-not-exists-with-expiration").assertingEqual(None)
+      _ <- connector.set("if-not-exists-with-expiration", "value", 300.millis, ifNotExists = true).assertingEqual(true)
+      _ <- connector.get[String]("if-not-exists-with-expiration").assertingEqual(Some("value"))
       // wait until the first duration expires
-      Future.after(3) must not(throwA[Throwable]).awaitFor(4.seconds)
-      connector.get[String](s"$prefix-if-not-exists-with-expiration") must beNone.await
+      _ <- Future.after(700.millis, ())
+      _ <- connector.get[String]("if-not-exists-with-expiration").assertingEqual(None)
+    } yield Passed
+  }
+
+  def test(name: String)(f: RedisConnector => Future[Assertion]): Unit = {
+    name in {
+      implicit val system: ActorSystem = ActorSystem("test", classLoader = Some(getClass.getClassLoader))
+      implicit val runtime: RedisRuntime = RedisRuntime("sentinel", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
+      implicit val application: StoppableApplication = StoppableApplication(system)
+      val serializer = new AkkaSerializerImpl(system)
+
+      lazy val sentinelInstance = RedisSentinel(
+        name = "sentinel",
+        masterGroup = master,
+        sentinels = 0.until(nodes).map { i =>
+          RedisHost(container.containerIpAddress, container.mappedPort(sentinelPort + i))
+        }.toList,
+        settings = RedisSettings.load(
+          config = Helpers.configuration.default.underlying,
+          path = "play.cache.redis"
+        )
+      )
+
+      application.runAsyncInApplication {
+        val connector: RedisConnector = new RedisConnectorProvider(sentinelInstance, serializer).get
+        for {
+          // initialize the connector by flushing the database
+          keys <- connector.matching("*")
+          _ <- Future.sequence(keys.map(connector.remove(_)))
+          // run the test
+          _ <- f(connector)
+        } yield Passed
+      }
     }
-  }
-
-  def beforeAll(): Unit = {
-    // initialize the connector by flushing the database
-    connector.matching(s"$prefix-*").flatMap(connector.remove).awaitForFuture
-  }
-
-  def afterAll(): Unit = {
-    Shutdown.run
   }
 }

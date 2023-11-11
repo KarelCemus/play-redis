@@ -1,318 +1,433 @@
 package play.api.cache.redis.impl
 
-import scala.concurrent.duration._
-
 import play.api.cache.redis._
+import play.api.cache.redis.test._
 
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
+import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 
-class RedisCacheSpec(implicit ee: ExecutionEnv) extends Specification with ReducedMockito {
-  import Implicits._
-  import RedisCacheImplicits._
+class RedisCacheSpec extends AsyncUnitSpec  with RedisRuntimeMock with RedisConnectorMock with ImplicitFutureMaterialization {
+  import Helpers._
 
-  import org.mockito.ArgumentMatchers._
+  test("get and miss") { (cache, connector) =>
+    for {
+      _ <- connector.expect.get[String](cacheKey, result = None)
+      _ <- cache.get[String](cacheKey).assertingEqual(None)
+    } yield Passed
+  }
 
-  val expiration = 1.second
+  test("get and hit") { (cache, connector) =>
+    for {
+      _ <- connector.expect.get[String](cacheKey, result = Some(cacheValue))
+      _ <- cache.get[String](cacheKey).assertingEqual(Some(cacheValue))
+    } yield Passed
+  }
 
-  "Redis Cache" should {
+  test("get recover with default") { (cache, connector) =>
+    for {
+      _ <- connector.expect.get[String](cacheKey, result = failure)
+      _ <- cache.get[String](cacheKey).assertingEqual(None)
+    } yield Passed
+  }
 
-    "get and miss" in new MockedCache {
-      connector.get[String](anyString)(anyClassTag) returns None
-      cache.get[String](key) must beNone.await
+  test("get all") { (cache, connector) =>
+    for {
+      _ <- connector.expect.mGet[String](Seq(cacheKey, cacheKey, cacheKey), result = Seq(Some(cacheValue), None, None))
+      _ <- cache.getAll[String](cacheKey, cacheKey, cacheKey).assertingEqual(Seq(Some(cacheValue), None, None))
+    } yield Passed
+  }
+
+  test("get all recover with default") { (cache, connector) =>
+    for {
+      _ <- connector.expect.mGet[String](Seq(cacheKey, cacheKey, cacheKey), result = failure)
+      _ <- cache.getAll[String](cacheKey, cacheKey, cacheKey).assertingEqual(Seq(None, None, None))
+    } yield Passed
+  }
+
+  test("get all (keys in a collection)") { (cache, connector) =>
+    for {
+      _ <- connector.expect.mGet[String](Seq(cacheKey, cacheKey, cacheKey), result = Seq(Some(cacheValue), None, None))
+      _ <- cache.getAll[String](Seq(cacheKey, cacheKey, cacheKey)).assertingEqual(Seq(Some(cacheValue), None, None))
+    } yield Passed
+  }
+
+    test("set") { (cache, connector) =>
+      for {
+        _ <- connector.expect.set(cacheKey, cacheValue, result = true)
+        _ <- cache.set(cacheKey, cacheValue).assertingDone
+      } yield Passed
     }
 
-    "get and hit" in new MockedCache {
-      connector.get[String](anyString)(anyClassTag) returns Some(value)
-      cache.get[String](key) must beSome(value).await
-    }
+  test("set recover with default") { (cache, connector) =>
+    for {
+      _ <- connector.expect.set(cacheKey, cacheValue, result = failure)
+      _ <- cache.set(cacheKey, cacheValue).assertingDone
+    } yield Passed
+  }
 
-    "get recover with default" in new MockedCache {
-      connector.get[String](anyString)(anyClassTag) returns ex
-      cache.get[String](key) must beNone.await
-    }
+  test("set if not exists (exists)") { (cache, connector) =>
+    for {
+      _ <- connector.expect.set(cacheKey, cacheValue, setIfNotExists=true,result = false)
+      _ <- cache.setIfNotExists(cacheKey, cacheValue).assertingEqual(false)
+    } yield Passed
+  }
 
-    "get all" in new MockedCache {
-      connector.mGet[String](anyVarArgs)(anyClassTag) returns Seq(Some(value), None, None)
-      cache.getAll[String](key, key, key) must beEqualTo(Seq(Some(value), None, None)).await
-    }
+  test("set if not exists (not exists)") { (cache, connector) =>
+    for {
+      _ <- connector.expect.set(cacheKey, cacheValue, setIfNotExists = true, result = true)
+      _ <- cache.setIfNotExists(cacheKey, cacheValue).assertingEqual(true)
+    } yield Passed
+  }
 
-    "get all recover with default" in new MockedCache {
-      connector.mGet[String](anyVarArgs)(anyClassTag) returns ex
-      cache.getAll[String](key, key, key) must beEqualTo(Seq(None, None, None)).await
-    }
+  test("set if not exists (exists) with expiration") { (cache, connector) =>
+    for {
+      _ <- connector.expect.set(cacheKey, cacheValue, cacheExpiration, setIfNotExists = true, result = false)
+      _ <- cache.setIfNotExists(cacheKey, cacheValue, cacheExpiration).assertingEqual(false)
+    } yield Passed
+  }
 
-    "get all (keys in a collection)" in new MockedCache {
-      connector.mGet[String](anyVarArgs)(anyClassTag) returns Seq(Some(value), None, None)
-      cache.getAll[String](Seq(key, key, key)) must beEqualTo(Seq(Some(value), None, None)).await
-    }
+  test("set if not exists (not exists) with expiration") { (cache, connector) =>
+    for {
+      _ <- connector.expect.set(cacheKey, cacheValue, cacheExpiration, setIfNotExists = true, result = true)
+      _ <- cache.setIfNotExists(cacheKey, cacheValue, cacheExpiration).assertingEqual(true)
+    } yield Passed
+  }
 
-    "set" in new MockedCache {
-      connector.set(anyString, anyString, any[Duration], beEq(false)) returns true
-      cache.set(key, value) must beDone.await
-    }
+  test("set if not exists recover with default") { (cache, connector) =>
+    for {
+      _ <- connector.expect.set(cacheKey, cacheValue, setIfNotExists = true, result = failure)
+      _ <- cache.setIfNotExists(cacheKey, cacheValue).assertingEqual(true)
+    } yield Passed
+  }
 
-    "set recover with default" in new MockedCache {
-      connector.set(anyString, anyString, any[Duration], beEq(false)) returns ex
-      cache.set(key, value) must beDone.await
-    }
+  test("set all") { (cache, connector) =>
+    for {
+      _ <- connector.expect.mSet(Seq(cacheKey -> cacheValue))
+      _ <- cache.setAll(cacheKey -> cacheValue).assertingDone
+    } yield Passed
+  }
 
-    "set if not exists (exists)" in new MockedCache {
-      connector.set(anyString, anyString, any[Duration], beEq(true)) returns false
-      cache.setIfNotExists(key, value) must beFalse.await
-    }
+  test("set all recover with default") { (cache, connector) =>
+    for {
+      _ <- connector.expect.mSet(Seq(cacheKey -> cacheValue), result = failure)
+      _ <- cache.setAll(cacheKey -> cacheValue).assertingDone
+    } yield Passed
+  }
 
-    "set if not exists (not exists)" in new MockedCache {
-      connector.set(anyString, anyString, any[Duration], beEq(true)) returns true
-      cache.setIfNotExists(key, value) must beTrue.await
-    }
+  test("set all if not exists (exists)") { (cache, connector) =>
+    for {
+      _ <- connector.expect.mSetIfNotExist(Seq(cacheKey -> cacheValue), result = false)
+      _ <- cache.setAllIfNotExist(cacheKey -> cacheValue).assertingEqual(false)
+    } yield Passed
+  }
 
-    "set if not exists (exists) with expiration" in new MockedCache {
-      connector.set(anyString, anyString, any[Duration], beEq(true)) returns false
-      connector.expire(anyString, any[Duration]) returns unit
-      cache.setIfNotExists(key, value, expiration) must beFalse.await
-    }
+  test("set all if not exists (not exists)") { (cache, connector) =>
+    for {
+      _ <- connector.expect.mSetIfNotExist(Seq(cacheKey -> cacheValue), result = true)
+      _ <- cache.setAllIfNotExist(cacheKey -> cacheValue).assertingEqual(true)
+    } yield Passed
+  }
 
-    "set if not exists (not exists) with expiration" in new MockedCache {
-      connector.set(anyString, anyString, any[Duration], beEq(true)) returns true
-      connector.expire(anyString, any[Duration]) returns unit
-      cache.setIfNotExists(key, value, expiration) must beTrue.await
-    }
+  test("set all if not exists recover with default") { (cache, connector) =>
+    for {
+      _ <- connector.expect.mSetIfNotExist(Seq(cacheKey -> cacheValue), result = failure)
+      _ <- cache.setAllIfNotExist(cacheKey -> cacheValue).assertingEqual(true)
+    } yield Passed
+  }
 
-    "set if not exists recover with default" in new MockedCache {
-      connector.set(anyString, anyString, any[Duration], beEq(true)) returns ex
-      cache.setIfNotExists(key, value) must beTrue.await
-    }
+  test("append") { (cache, connector) =>
+    for {
+      _ <- connector.expect.append(cacheKey, cacheValue, result = 10L)
+      _ <- cache.append(cacheKey, cacheValue).assertingDone
+    } yield Passed
+  }
 
-    "set all" in new MockedCache {
-      connector.mSet(anyVarArgs) returns unit
-      cache.setAll(key -> value) must beDone.await
-    }
+  test("append with expiration (newly set key)") { (cache, connector) =>
+    for {
+      _ <- connector.expect.append(cacheKey, cacheValue, result = cacheValue.length.toLong)
+      _ <- connector.expect.expire(cacheKey, cacheExpiration)
+      _ <- cache.append(cacheKey, cacheValue, cacheExpiration).assertingDone
+    } yield Passed
+  }
 
-    "set all recover with default" in new MockedCache {
-      connector.mSet(anyVarArgs) returns ex
-      cache.setAll(key -> value) must beDone.await
-    }
+  test("append with expiration (already existing key)") { (cache, connector) =>
+    for {
+      _ <- connector.expect.append(cacheKey, cacheValue, result = cacheValue.length.toLong + 10)
+      _ <- cache.append(cacheKey, cacheValue, cacheExpiration).assertingDone
+    } yield Passed
+  }
 
-    "set all if not exists (exists)" in new MockedCache {
-      connector.mSetIfNotExist(anyVarArgs) returns false
-      cache.setAllIfNotExist(key -> value) must beFalse.await
-    }
+  test("append recover with default") { (cache, connector) =>
+    for {
+      _ <- connector.expect.append(cacheKey, cacheValue, result = failure)
+      _ <- cache.append(cacheKey, cacheValue).assertingDone
+    } yield Passed
+  }
 
-    "set all if not exists (not exists)" in new MockedCache {
-      connector.mSetIfNotExist(anyVarArgs) returns true
-      cache.setAllIfNotExist(key -> value) must beTrue.await
-    }
+  test("expire") { (cache, connector) =>
+    for {
+      _ <- connector.expect.expire(cacheKey, cacheExpiration)
+      _ <- cache.expire(cacheKey, cacheExpiration).assertingDone
+    } yield Passed
+  }
 
-    "set all if not exists recover with default" in new MockedCache {
-      connector.mSetIfNotExist(anyVarArgs) returns ex
-      cache.setAllIfNotExist(key -> value) must beTrue.await
-    }
+  test("expire recover with default") { (cache, connector) =>
+    for {
+      _ <- connector.expect.expire(cacheKey, cacheExpiration, result = failure)
+      _ <- cache.expire(cacheKey, cacheExpiration).assertingDone
+    } yield Passed
+  }
 
-    "append" in new MockedCache {
-      connector.append(anyString, anyString) returns 5L
-      cache.append(key, value) must beDone.await
-    }
+  test("expires in") { (cache, connector) =>
+    for {
+      _ <- connector.expect.expiresIn(cacheKey, result = Some(Duration("1500 ms")))
+      _ <- cache.expiresIn(cacheKey).assertingEqual(Some(Duration("1500 ms")))
+    } yield Passed
+  }
 
-    "append with expiration" in new MockedCache {
-      connector.append(anyString, anyString) returns 5L
-      connector.expire(anyString, any[Duration]) returns unit
-      cache.append(key, value, expiration) must beDone.await
-    }
+  test("expires in recover with default") { (cache, connector) =>
+    for {
+      _ <- connector.expect.expiresIn(cacheKey, result = failure)
+      _ <- cache.expiresIn(cacheKey).assertingEqual(None)
+    } yield Passed
+  }
 
-    "append recover with default" in new MockedCache {
-      connector.append(anyString, anyString) returns ex
-      cache.append(key, value) must beDone.await
-    }
+  test("matching") { (cache, connector) =>
+    for {
+      _ <- connector.expect.matching("pattern", result = Seq(cacheKey))
+      _ <- cache.matching("pattern").assertingEqual(Seq(cacheKey))
+    } yield Passed
+  }
 
-    "expire" in new MockedCache {
-      connector.expire(anyString, any[Duration]) returns unit
-      cache.expire(key, expiration) must beDone.await
-    }
+  test("matching recover with default") { (cache, connector) =>
+    for {
+      _ <- connector.expect.matching("pattern", result = failure)
+      _ <- cache.matching("pattern").assertingEqual(Seq.empty)
+    } yield Passed
+  }
 
-    "expire recover with default" in new MockedCache {
-      connector.expire(anyString, any[Duration]) returns ex
-      cache.expire(key, expiration) must beDone.await
-    }
+  test("matching with a prefix", prefix = Some("the-prefix")) { (cache, connector) =>
+    for {
+      _ <- connector.expect.matching(s"the-prefix:pattern", result = Seq(s"the-prefix:$cacheKey"))
+      _ <- cache.matching("pattern").assertingEqual(Seq(cacheKey))
+    } yield Passed
+  }
 
-    "expires in" in new MockedCache {
-      connector.expiresIn(anyString) returns Some(Duration("1500 ms"))
-      cache.expiresIn(key) must beSome(Duration("1500 ms")).await
-    }
+  test("get or else (hit)") { (cache, connector) =>
+    for {
+      _ <- connector.expect.get[String](cacheKey, result = Some(cacheValue))
+      orElse = probe.orElse.const(otherValue)
+      _ <- cache.getOrElse[String](cacheKey)(orElse.execute()).assertingEqual(cacheValue)
+      _ = orElse.calls mustEqual 0
+    } yield Passed
+  }
 
-    "expires in recover with default" in new MockedCache {
-      connector.expiresIn(anyString) returns ex
-      cache.expiresIn(key) must beNone.await
-    }
+  test("get or else (miss)") { (cache, connector) =>
+    for {
+      _ <- connector.expect.get[String](cacheKey, result = None)
+      orElse = probe.orElse.const(cacheValue)
+      _ <- connector.expect.set(cacheKey, cacheValue, result = true)
+      _ <- cache.getOrElse[String](cacheKey)(orElse.execute()).assertingEqual(cacheValue)
+      _ = orElse.calls mustEqual 1
+    } yield Passed
+  }
 
-    "matching" in new MockedCache {
-      connector.matching(anyString) returns Seq(key)
-      cache.matching("pattern") must beEqualTo(Seq(key)).await
-    }
+  test("get or else (failure)") { (cache, connector) =>
+    for {
+      _ <- connector.expect.get[String](cacheKey, result = failure)
+      orElse = probe.orElse.const(cacheValue)
+      _ <- cache.getOrElse(cacheKey)(orElse.execute()).assertingEqual(cacheValue)
+      _ = orElse.calls mustEqual 1
+    } yield Passed
+  }
 
-    "matching recover with default" in new MockedCache {
-      connector.matching(anyString) returns ex
-      cache.matching("pattern") must beEqualTo(Seq.empty).await
-    }
+  test("get or else (prefixed,miss)", prefix = Some("the-prefix")) { (cache, connector) =>
+    for {
+      _ <- connector.expect.get[String](s"the-prefix:$cacheKey", result = None)
+      _ <- connector.expect.set(s"the-prefix:$cacheKey", cacheValue, result = true)
+      orElse = probe.orElse.const(cacheValue)
+      _ <- cache.getOrElse(cacheKey)(orElse.execute()).assertingEqual(cacheValue)
+      _ = orElse.calls mustEqual 1
+    } yield Passed
+  }
 
-    "matching with a prefix" in new MockedCache {
-      // define a non-empty prefix
-      val prefix = "prefix"
-      runtime.prefix returns new RedisPrefixImpl(prefix)
-      connector.matching(beEq(s"$prefix:pattern")) returns Seq(s"$prefix:$key")
-      cache.matching("pattern") must beEqualTo(Seq(key)).await
-    }
+  test("get or future (hit)") { (cache, connector) =>
+    for {
+      _ <- connector.expect.get[String](cacheKey, result = Some(cacheValue))
+      orElse = probe.orElse.async(otherValue)
+      _ <- cache.getOrFuture(cacheKey)(orElse.execute()).assertingEqual(cacheValue)
+      _ = orElse.calls mustEqual 0
+    } yield Passed
+  }
 
-    "get or else (hit)" in new MockedCache with OrElse {
-      connector.get[String](anyString)(anyClassTag) returns Some(value)
-      cache.getOrElse(key)(doElse(value)) must beEqualTo(value).await
-      orElse mustEqual 0
-    }
+  test("get or future (miss)") { (cache, connector) =>
+    for {
+      _ <- connector.expect.get[String](cacheKey, result = None)
+      _ <- connector.expect.set(cacheKey, cacheValue, result = true)
+      orElse = probe.orElse.async(cacheValue)
+      _ <- cache.getOrFuture(cacheKey)(orElse.execute()).assertingEqual(cacheValue)
+      _ = orElse.calls mustEqual 1
+    } yield Passed
+  }
 
-    "get or else (miss)" in new MockedCache with OrElse {
-      connector.get[String](anyString)(anyClassTag) returns None
-      connector.set(anyString, anyString, any[Duration], beEq(false)) returns true
-      cache.getOrElse(key)(doElse(value)) must beEqualTo(value).await
-      orElse mustEqual 1
-    }
+  test("get or future (failure)") { (cache, connector) =>
+    for {
+      _ <- connector.expect.get[String](cacheKey, result = failure)
+      orElse = probe.orElse.async(cacheValue)
+      _ <- cache.getOrFuture(cacheKey)(orElse.execute()).assertingEqual(cacheValue)
+      _ = orElse.calls mustEqual 1
+    } yield Passed
+  }
 
-    "get or else (failure)" in new MockedCache with OrElse {
-      connector.get[String](anyString)(anyClassTag) returns ex
-      cache.getOrElse(key)(doElse(value)) must beEqualTo(value).await
-      orElse mustEqual 1
-    }
+  test("get or future (failing orElse)") { (cache, connector) =>
+    for {
+      _ <- connector.expect.get[String](cacheKey, result = None)
+      orElse = probe.orElse.failing(failure)
+      _ <- cache.getOrFuture[String](cacheKey)(orElse.execute()).assertingFailure[RedisException]
+      _ = orElse.calls mustEqual 2
+    } yield Passed
+  }
 
-    "get or else (prefixed,miss)" in new MockedSyncRedis with OrElse {
-      runtime.prefix returns new RedisPrefixImpl("prefix")
-      connector.get[String](beEq(s"prefix:$key"))(anyClassTag) returns None
-      connector.set(beEq(s"prefix:$key"), anyString, any[Duration], anyBoolean) returns true
-      cache.getOrElse(key)(doElse(value)) must beEqualTo(value)
-      orElse mustEqual 1
-    }
+  test("get or future (rerun)", policy = recoveryPolicy.rerun) { (cache, connector) =>
+    for {
+      _ <- connector.expect.get[String](cacheKey, result = None)
+      _ <- connector.expect.get[String](cacheKey, result = None)
+      _ <- connector.expect.set(cacheKey, cacheValue, result = true)
+      orElse = probe.orElse.generic[Future[String]](failure, cacheValue, otherValue)
+      _ <- cache.getOrFuture(cacheKey)(orElse.execute()).assertingEqual(cacheValue)
+      _ = orElse.calls mustEqual 2
+    } yield Passed
+  }
 
-    "get or future (hit)" in new MockedCache with OrElse {
-      connector.get[String](anyString)(anyClassTag) returns Some(value)
-      cache.getOrFuture(key)(doFuture(value)) must beEqualTo(value).await
-      orElse mustEqual 0
-    }
+  test("remove") { (cache, connector) =>
+    for {
+      _ <- connector.expect.remove(cacheKey)
+      _ <- cache.remove(cacheKey).assertingDone
+    } yield Passed
+  }
 
-    "get or future (miss)" in new MockedCache with OrElse {
-      connector.get[String](anyString)(anyClassTag) returns None
-      connector.set(anyString, anyString, any[Duration], beEq(false)) returns true
-      cache.getOrFuture(key)(doFuture(value)) must beEqualTo(value).await
-      orElse mustEqual 1
-    }
+  test("remove recover with default") { (cache, connector) =>
+    for {
+      _ <- connector.expect.remove(Seq(cacheKey), result = failure)
+      _ <- cache.remove(cacheKey).assertingDone
+    } yield Passed
+  }
 
-    "get or future (failure)" in new MockedCache with OrElse {
-      connector.get[String](anyString)(anyClassTag) returns ex
-      cache.getOrFuture(key)(doFuture(value)) must beEqualTo(value).await
-      orElse mustEqual 1
-    }
+  test("remove multiple") { (cache, connector) =>
+    for {
+      _ <- connector.expect.remove(cacheKey, cacheKey, cacheKey, cacheKey)
+      _ <- cache.remove(cacheKey, cacheKey, cacheKey, cacheKey).assertingDone
+    } yield Passed
+  }
 
-    "get or future (failing orElse)" in new MockedCache with OrElse {
-      connector.get[String](anyString)(anyClassTag) returns None
-      cache.getOrFuture[String](key)(failedFuture) must throwA[TimeoutException].await
-      orElse mustEqual 2
-    }
+  test("remove multiple recover with default") { (cache, connector) =>
+    for {
+      _ <- connector.expect.remove(Seq(cacheKey, cacheKey, cacheKey, cacheKey), result = failure)
+      _ <- cache.remove(cacheKey, cacheKey, cacheKey, cacheKey).assertingDone
+    } yield Passed
+  }
 
-    "get or future (rerun)" in new MockedCache with OrElse with Attempts {
-      override protected def policy = new RecoveryPolicy {
-        def recoverFrom[T](rerun: => Future[T], default: => Future[T], failure: RedisException) = rerun
-      }
-      connector.get[String](anyString)(anyClassTag) returns None
-      connector.set(anyString, anyString, any[Duration], beEq(false)) returns true
-      // run the test
-      cache.getOrFuture(key) {
-        attempts match {
-          case 0 => attempt(failedFuture)
-          case _ => attempt(doFuture(value))
-        }
-      } must beEqualTo(value).await
-      // verification
-      orElse mustEqual 2
-      there were two(connector).get[String](anyString)(anyClassTag)
-      there was one(connector).set(key, value, Duration.Inf, ifNotExists = false)
-    }
+  test("remove all") { (cache, connector) =>
+    for {
+      _ <- connector.expect.remove(cacheKey, cacheKey, cacheKey, cacheKey)
+      _ <- cache.removeAll(Seq(cacheKey, cacheKey, cacheKey, cacheKey): _*).assertingDone
+    } yield Passed
+  }
 
-    "remove" in new MockedCache {
-      connector.remove(anyVarArgs) returns unit
-      cache.remove(key) must beDone.await
-    }
+  test("remove all recover with default") { (cache, connector) =>
+    for {
+      _ <- connector.expect.remove(Seq(cacheKey, cacheKey, cacheKey, cacheKey), result = failure)
+      _ <- cache.removeAll(Seq(cacheKey, cacheKey, cacheKey, cacheKey): _*).assertingDone
+    } yield Passed
+  }
 
-    "remove recover with default" in new MockedCache {
-      connector.remove(anyVarArgs) returns ex
-      cache.remove(key) must beDone.await
-    }
+  test("remove matching") { (cache, connector) =>
+    for {
+      _ <- connector.expect.matching("pattern", result = Seq(cacheKey, cacheKey))
+      _ <- connector.expect.remove(cacheKey, cacheKey)
+      _ <- cache.removeMatching("pattern").assertingDone
+    } yield Passed
+  }
 
-    "remove multiple" in new MockedCache {
-      connector.remove(anyVarArgs) returns unit
-      cache.remove(key, key, key, key) must beDone.await
-    }
+  test("remove matching recover with default") { (cache, connector) =>
+    for {
+      _ <- connector.expect.matching("pattern", result = failure)
+      _ <- cache.removeMatching("pattern").assertingDone
+    } yield Passed
+  }
 
-    "remove multiple recover with default" in new MockedCache {
-      connector.remove(anyVarArgs) returns ex
-      cache.remove(key, key, key, key) must beDone.await
-    }
+  test("invalidate") { (cache, connector) =>
+    for {
+      _ <- connector.expect.invalidate()
+      _ <- cache.invalidate().assertingDone
+    } yield Passed
+  }
 
-    "remove all" in new MockedCache {
-      connector.remove(anyVarArgs) returns unit
-      cache.removeAll(Seq(key, key, key, key): _*) must beDone.await
-    }
+  test("invalidate recover with default") { (cache, connector) =>
+    for {
+      _ <- connector.expect.invalidate(result = failure)
+      _ <- cache.invalidate().assertingDone
+    } yield Passed
+  }
 
-    "remove all recover with default" in new MockedCache {
-      connector.remove(anyVarArgs) returns ex
-      cache.removeAll(Seq(key, key, key, key): _*) must beDone.await
-    }
+  test("exists") { (cache, connector) =>
+    for {
+      _ <- connector.expect.exists(cacheKey, result = true)
+      _ <- cache.exists(cacheKey).assertingEqual(true)
+    } yield Passed
+  }
 
-    "remove matching" in new MockedCache {
-      connector.matching(beEq("pattern")) returns Seq(key, key)
-      connector.remove(key, key) returns unit
-      cache.removeMatching("pattern") must beDone.await
-    }
+  test("exists recover with default") { (cache, connector) =>
+    for {
+      _ <- connector.expect.exists(cacheKey, result = failure)
+      _ <- cache.exists(cacheKey).assertingEqual(false)
+    } yield Passed
+  }
 
-    "remove matching recover with default" in new MockedCache {
-      connector.matching(anyVarArgs) returns ex
-      cache.removeMatching("pattern") must beDone.await
-    }
+  test("increment") { (cache, connector) =>
+    for {
+      _ <- connector.expect.increment(cacheKey, 5L, result = 10L)
+      _ <- cache.increment(cacheKey, 5L).assertingEqual(10L)
+    } yield Passed
+  }
 
-    "invalidate" in new MockedCache {
-      connector.invalidate() returns unit
-      cache.invalidate() must beDone.await
-    }
+  test("increment recover with default") { (cache, connector) =>
+    for {
+      _ <- connector.expect.increment(cacheKey, 5L, result = failure)
+      _ <- cache.increment(cacheKey, 5L).assertingEqual(5L)
+    } yield Passed
+  }
 
-    "invalidate recover with default" in new MockedCache {
-      connector.invalidate() returns ex
-      cache.invalidate() must beDone.await
-    }
+  test("decrement") { (cache, connector) =>
+    for {
+      _ <- connector.expect.increment(cacheKey, -5L, result = 10L)
+      _ <- cache.decrement(cacheKey, 5L).assertingEqual(10L)
+    } yield Passed
+  }
 
-    "exists" in new MockedCache {
-      connector.exists(key) returns true
-      cache.exists(key) must beTrue.await
-    }
+  test("decrement recover with default") { (cache, connector) =>
+    for {
+      _ <- connector.expect.increment(cacheKey, -5L, result = failure)
+      _ <- cache.decrement(cacheKey, 5L).assertingEqual(-5L)
+    } yield Passed
+  }
 
-    "exists recover with default" in new MockedCache {
-      connector.exists(key) returns ex
-      cache.exists(key) must beFalse.await
-    }
-
-    "increment" in new MockedCache {
-      connector.increment(key, 5L) returns 10L
-      cache.increment(key, 5L) must beEqualTo(10L).await
-    }
-
-    "increment recover with default" in new MockedCache {
-      connector.increment(key, 5L) returns ex
-      cache.increment(key, 5L) must beEqualTo(5L).await
-    }
-
-    "decrement" in new MockedCache {
-      connector.increment(key, -5L) returns 10L
-      cache.decrement(key, 5L) must beEqualTo(10L).await
-    }
-
-    "decrement recover with default" in new MockedCache {
-      connector.increment(key, -5L) returns ex
-      cache.decrement(key, 5L) must beEqualTo(-5L).await
+  private def test(
+    name: String,
+    policy: RecoveryPolicy = recoveryPolicy.default,
+    prefix: Option[String] = None,
+  )(
+    f: (RedisCache[AsynchronousResult], RedisConnectorMock) => Future[Assertion]
+  ): Unit = {
+    name in {
+      implicit val runtime: RedisRuntime = redisRuntime(
+        invocationPolicy = LazyInvocation,
+        recoveryPolicy = policy,
+        prefix = prefix.fold[RedisPrefix](RedisEmptyPrefix)(new RedisPrefixImpl(_)),
+      )
+      val connector: RedisConnectorMock = mock[RedisConnectorMock]
+      val cache: RedisCache[AsynchronousResult] = new RedisCache[AsynchronousResult](connector, Builders.AsynchronousBuilder)
+      f(cache, connector)
     }
   }
-}
+ }

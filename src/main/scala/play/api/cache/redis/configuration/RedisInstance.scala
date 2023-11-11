@@ -71,7 +71,7 @@ trait RedisStandalone extends RedisInstance with RedisHost {
 
 object RedisStandalone {
 
-  def apply(name: String, host: RedisHost, settings: RedisSettings) =
+  def apply(name: String, host: RedisHost, settings: RedisSettings): RedisStandalone =
     create(name, host, settings)
 
   @inline
