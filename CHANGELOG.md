@@ -1,6 +1,11 @@
 
 ## Changelog
 
+### [:link: 3.0.0](https://github.com/KarelCemus/play-redis/tree/3.0.0-M1)
+
+Updated to Play `2.9.0` and dropped `Scala 2.12` since it was discontinued from the Play framework.
+Minimal supported Java version is now `11`. [#265](https://github.com/KarelCemus/play-redis/pull/265)
+
 ### [:link: 2.7.0](https://github.com/KarelCemus/play-redis/tree/2.7.0)
 
 SET command supports milliseconds, previous versions used seconds [#247](https://github.com/KarelCemus/play-redis/issues/247)
