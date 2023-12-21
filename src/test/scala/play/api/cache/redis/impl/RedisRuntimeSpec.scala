@@ -21,7 +21,7 @@ class RedisRuntimeSpec extends Specification with WithApplication {
         prefix = None
       )
 
-      runtime.timeout mustEqual akka.util.Timeout(defaultInstance.timeout.sync)
+      runtime.timeout mustEqual org.apache.pekko.util.Timeout(defaultInstance.timeout.sync)
       runtime.policy must beAnInstanceOf[LogAndFailPolicy]
       runtime.invocation mustEqual EagerInvocation
       runtime.prefix mustEqual RedisEmptyPrefix

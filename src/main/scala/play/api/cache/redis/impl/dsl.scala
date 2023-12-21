@@ -41,7 +41,7 @@ private[impl] object dsl {
       builder.toResult(future.map(unitAsDone), Future.successful(Done))
   }
 
-  /** maps units into akka.Done */
+  /** maps units into org.apache.pekko.Done */
   @inline private def unitAsDone(unit: Unit) = Done
 
   /** applies prefixer to produce final cache key */

@@ -93,7 +93,7 @@ object RedisCacheImplicits {
 
   class MockedSyncRedis extends MockedConnector {
     protected val cache = new SyncRedis(connector)
-    runtime.timeout returns akka.util.Timeout(1.second)
+    runtime.timeout returns org.apache.pekko.util.Timeout(1.second)
   }
 
   class MockedJavaRedis extends AbstractMocked {

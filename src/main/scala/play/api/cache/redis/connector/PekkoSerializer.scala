@@ -1,21 +1,20 @@
 package play.api.cache.redis.connector
 
-import java.util.Base64
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.serialization.{Serialization, SerializationExtension}
 
+import java.util.Base64
 import javax.inject._
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util._
-
 import play.api.cache.redis._
-import akka.actor.ActorSystem
-import akka.serialization._
 
 /**
   * Provides a encode and decode methods to serialize objects into strings
   * and vise versa.
   */
-trait AkkaSerializer {
+trait PekkoSerializer {
 
   /**
     * Method accepts a value to be serialized into the string.
@@ -127,7 +126,7 @@ private[connector] class AkkaDecoder(serializer: Serialization) {
 }
 
 @Singleton
-private[connector] class AkkaSerializerImpl @Inject() (system: ActorSystem) extends AkkaSerializer {
+private[connector] class AkkaSerializerImpl @Inject() (system: ActorSystem) extends PekkoSerializer {
 
   /**
     * serializer dispatcher used to serialize the objects into bytes;
@@ -200,6 +199,6 @@ private[connector] object JavaClassTag {
   val String = ClassTag(classOf[String])
 }
 
-class AkkaSerializerProvider @Inject() (implicit system: ActorSystem) extends Provider[AkkaSerializer] {
+class PekkoSerializerProvider @Inject() (implicit system: ActorSystem) extends Provider[PekkoSerializer] {
   lazy val get = new AkkaSerializerImpl(system)
 }

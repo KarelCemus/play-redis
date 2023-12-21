@@ -1,13 +1,11 @@
 package play.api.cache.redis
 
-import javax.inject.Provider
+import org.apache.pekko.actor.ActorSystem
 
+import javax.inject.Provider
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
-
 import play.api.inject._
-
-import akka.actor.ActorSystem
 import org.specs2.execute.{AsResult, Result}
 import org.specs2.mutable._
 import org.specs2.specification.Scope
@@ -164,7 +162,7 @@ object RedisCacheModuleSpec {
   object MyRedisInstance extends RedisStandalone {
 
     override def name = defaultCacheName
-    override def invocationContext = "akka.actor.default-dispatcher"
+    override def invocationContext = "pekko.actor.default-dispatcher"
     override def invocationPolicy = "lazy"
     override def timeout = RedisTimeouts(1.second)
     override def recovery = "log-and-default"

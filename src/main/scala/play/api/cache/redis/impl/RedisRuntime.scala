@@ -1,12 +1,11 @@
 package play.api.cache.redis.impl
 
+import org.apache.pekko.actor.ActorSystem
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 import scala.language.implicitConversions
-
 import play.api.cache.redis._
-
-import akka.actor.ActorSystem
 
 /**
   * Runtime info about the current cache instance. It includes
@@ -16,7 +15,7 @@ private[redis] trait RedisRuntime extends connector.RedisRuntime {
   implicit def policy: RecoveryPolicy
   implicit def invocation: InvocationPolicy
   implicit def prefix: RedisPrefix
-  implicit def timeout: akka.util.Timeout
+  implicit def timeout: org.apache.pekko.util.Timeout
 }
 
 private[redis] case class RedisRuntimeImpl(
@@ -25,7 +24,7 @@ private[redis] case class RedisRuntimeImpl(
   policy: RecoveryPolicy,
   invocation: InvocationPolicy,
   prefix: RedisPrefix,
-  timeout: akka.util.Timeout
+  timeout: org.apache.pekko.util.Timeout
 ) extends RedisRuntime
 
 private[redis] object RedisRuntime {
@@ -46,5 +45,5 @@ private[redis] object RedisRuntime {
     apply(instance.name, instance.timeout.sync, system.dispatchers.lookup(instance.invocationContext), recovery, invocation, prefix)
 
   def apply(name: String, syncTimeout: FiniteDuration, context: ExecutionContext, recovery: RecoveryPolicy, invocation: InvocationPolicy, prefix: RedisPrefix = RedisEmptyPrefix): RedisRuntime =
-    RedisRuntimeImpl(name, context, recovery, invocation, prefix, akka.util.Timeout(syncTimeout))
+    RedisRuntimeImpl(name, context, recovery, invocation, prefix, org.apache.pekko.util.Timeout(syncTimeout))
 }

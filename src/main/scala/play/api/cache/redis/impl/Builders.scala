@@ -1,5 +1,7 @@
 package play.api.cache.redis.impl
 
+import org.apache.pekko.pattern.AskTimeoutException
+
 import scala.concurrent.Future
 import scala.language.higherKinds
 
@@ -9,7 +11,7 @@ import scala.language.higherKinds
 object Builders {
   import dsl._
   import play.api.cache.redis._
-  import akka.pattern.AskTimeoutException
+  import org.apache.pekko.pattern.AskTimeoutException
 
   trait ResultBuilder[Result[X]] {
     /** name of the builder used for internal purposes */

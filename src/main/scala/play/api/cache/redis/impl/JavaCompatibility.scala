@@ -1,16 +1,15 @@
 package play.api.cache.redis.impl
 
+import org.apache.pekko.Done
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-
 import play.api.Environment
 import play.api.cache.redis.JavaCompatibilityBase
 
-import akka.Done
-
 private[impl] object JavaCompatibility extends JavaCompatibilityBase {
-  import scala.compat.java8.{FutureConverters, OptionConverters}
+  import scala.jdk.javaapi.{FutureConverters, OptionConverters}
 
   type CompletionStage[T] = java.util.concurrent.CompletionStage[T]
   type Callable[T] = java.util.concurrent.Callable[T]
@@ -28,7 +27,7 @@ private[impl] object JavaCompatibility extends JavaCompatibilityBase {
   }
 
   implicit class Java8Stage[T](val future: Future[T]) extends AnyVal {
-    @inline def asJava: CompletionStage[T] = FutureConverters.toJava(future)
+    @inline def asJava: CompletionStage[T] = FutureConverters.asJava(future)
     @inline def asDone(implicit ec: ExecutionContext): Future[Done] = future.map(_ => Done)
   }
 
@@ -43,11 +42,11 @@ private[impl] object JavaCompatibility extends JavaCompatibilityBase {
   }
 
   implicit class ScalaCompatibility[T](val future: CompletionStage[T]) extends AnyVal {
-    @inline def asScala: Future[T] = FutureConverters.toScala(future)
+    @inline def asScala: Future[T] = FutureConverters.asScala(future)
   }
 
   implicit class RichFuture(val future: Future.type) extends AnyVal {
-    @inline def from[T](futures: Future[T]*)(implicit ec: ExecutionContext): Future[Seq[T]] = future.sequence(futures.toSeq)
+    @inline def from[T](futures: Future[T]*)(implicit ec: ExecutionContext): Future[Seq[T]] = future.sequence(futures)
   }
 
   @inline implicit def class2tag[T](classOf: Class[T]): ClassTag[T] = ClassTag(classOf)

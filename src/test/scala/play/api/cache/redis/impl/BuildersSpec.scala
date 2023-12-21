@@ -1,11 +1,10 @@
 package play.api.cache.redis.impl
 
+import org.apache.pekko.pattern.AskTimeoutException
+
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-
 import play.api.cache.redis._
-
-import akka.pattern.AskTimeoutException
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
@@ -79,7 +78,7 @@ class BuildersSpec(implicit ee: ExecutionEnv) extends Specification with Reduced
       SynchronousBuilder.toResult(longTask, defaultTask) must throwA[TimeoutException]
     }
 
-    "recover from akka ask timeout" in new RuntimeMock {
+    "recover from pekko ask timeout" in new RuntimeMock {
       runtime.policy returns failThrough
       val actorFailure = Future.failed(new AskTimeoutException("Simulated actor ask timeout"))
       SynchronousBuilder.toResult(actorFailure, defaultTask) must throwA[TimeoutException]
@@ -97,7 +96,7 @@ object BuildersSpec {
 
     import MockitoImplicits._
 
-    private val timeout = akka.util.Timeout(1.second)
+    private val timeout = org.apache.pekko.util.Timeout(1.second)
     implicit protected val runtime: RedisRuntime = mock[RedisRuntime]
 
     runtime.timeout returns timeout

@@ -5,11 +5,11 @@ import scala.reflect.ClassTag
 object SerializerImplicits {
 
   implicit class ValueEncoder(val any: Any) extends AnyVal {
-    def encoded(implicit serializer: AkkaSerializer): String = serializer.encode(any).get
+    def encoded(implicit serializer: PekkoSerializer): String = serializer.encode(any).get
   }
 
   implicit class StringDecoder(val string: String) extends AnyVal {
-    def decoded[T: ClassTag](implicit serializer: AkkaSerializer): T = serializer.decode[T](string).get
+    def decoded[T: ClassTag](implicit serializer: PekkoSerializer): T = serializer.decode[T](string).get
   }
 
   implicit class StringOps(val string: String) extends AnyVal {

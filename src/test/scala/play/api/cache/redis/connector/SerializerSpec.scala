@@ -13,7 +13,7 @@ class SerializerSpec extends Specification with Mockito {
 
   private val system = GuiceApplicationBuilder().build().actorSystem
 
-  private implicit val serializer: AkkaSerializer = new AkkaSerializerImpl(system)
+  private implicit val serializer: PekkoSerializer = new AkkaSerializerImpl(system)
 
   "AkkaEncoder" should "encode" >> {
 

@@ -13,7 +13,7 @@ import redis.RedisCommands
 abstract class MockedConnector extends Around with Scope with WithRuntime with WithApplication {
   import MockitoImplicits._
 
-  protected val serializer = mock[AkkaSerializer]
+  protected val serializer = mock[PekkoSerializer]
 
   protected val commands = mock[RedisCommands]
 

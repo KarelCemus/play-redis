@@ -1,7 +1,7 @@
 package play.api.cache.redis.logging
 
-import akka.event.Logging.{InitializeLogger, LoggerInitialized}
-import akka.event.slf4j.Slf4jLogger
+import org.apache.pekko.event.Logging.{InitializeLogger, LoggerInitialized}
+import org.apache.pekko.event.slf4j.Slf4jLogger
 
 /**
   * This logger fixes initialization issues; it fixes race conditions between

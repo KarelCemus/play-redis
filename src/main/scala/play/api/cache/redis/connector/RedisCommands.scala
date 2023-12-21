@@ -1,14 +1,12 @@
 package play.api.cache.redis.connector
 
+import org.apache.pekko.actor.ActorSystem
+
 import javax.inject._
-
 import scala.concurrent.Future
-
 import play.api.Logger
 import play.api.cache.redis.configuration._
 import play.api.inject.ApplicationLifecycle
-
-import akka.actor.ActorSystem
 import redis.{RedisClient => RedisStandaloneClient, RedisCluster => RedisClusterClient, _}
 
 /**

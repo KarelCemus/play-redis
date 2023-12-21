@@ -1,6 +1,6 @@
 package play.api.cache.redis
 
-import akka.actor.{ActorSystem, CoordinatedShutdown}
+import org.apache.pekko.actor.{ActorSystem, CoordinatedShutdown}
 
 trait Shutdown extends RedisCacheComponents {
 
