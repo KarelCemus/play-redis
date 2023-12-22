@@ -13,9 +13,9 @@ class SerializerSpec extends Specification with Mockito {
 
   private val system = GuiceApplicationBuilder().build().actorSystem
 
-  private implicit val serializer: PekkoSerializer = new AkkaSerializerImpl(system)
+  private implicit val serializer: PekkoSerializer = new PekkoSerializerImpl(system)
 
-  "AkkaEncoder" should "encode" >> {
+  "PekkoEncoder" should "encode" >> {
 
     "byte" in {
       0xAB.toByte.encoded mustEqual "-85"
@@ -69,7 +69,7 @@ class SerializerSpec extends Specification with Mockito {
     }
   }
 
-  "AkkaDecoder" should "decode" >> {
+  "PekkoDecoder" should "decode" >> {
 
     "byte" in {
       "-85".decoded[Byte] mustEqual 0xAB.toByte

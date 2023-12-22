@@ -20,7 +20,7 @@ class RedisConnectorSpec(implicit ee: ExecutionEnv) extends Specification with W
 
   implicit private val runtime: RedisRuntime = RedisRuntime("connector", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
 
-  private val serializer = new AkkaSerializerImpl(system)
+  private val serializer = new PekkoSerializerImpl(system)
 
   private lazy val connector: RedisConnector = new RedisConnectorProvider(
     RedisStandalone(defaultCacheName, RedisHost(container.containerIpAddress, container.mappedPort(defaultPort)), defaults),

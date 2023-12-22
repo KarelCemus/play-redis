@@ -39,12 +39,12 @@ trait PekkoSerializer {
 }
 
 /**
-  * Akka encoder provides implementation of serialization using Akka serializer.
+  * Pekko encoder provides implementation of serialization using Pekko serializer.
   * The implementation considers all primitives, nulls, and refs. This enables
-  * us to use Akka settings to modify serializer mapping and use different serializers
+  * us to use Pekko settings to modify serializer mapping and use different serializers
   * for different objects.
   */
-private[connector] class AkkaEncoder(serializer: Serialization) {
+private[connector] class PekkoEncoder(serializer: Serialization) {
 
   /** Unsafe method encoding the given value into a string */
   def encode(value: Any): String = value match {
@@ -52,7 +52,7 @@ private[connector] class AkkaEncoder(serializer: Serialization) {
     case null                                => unsupported("Null is not supported by the redis cache connector.")
     // AnyVal is not supported by default, have to be implemented manually; also basic types are processed as primitives
     case primitive if isPrimitive(primitive) => primitive.toString
-    // AnyRef is supported by Akka serializers, but it does not consider classTag, thus it is done manually
+    // AnyRef is supported by Pekko serializers, but it does not consider classTag, thus it is done manually
     case anyRef: AnyRef                      => anyRefToString(anyRef)
     // $COVERAGE-OFF$
     // if no of the cases above matches, throw an exception
@@ -78,12 +78,12 @@ private[connector] class AkkaEncoder(serializer: Serialization) {
 }
 
 /**
-  * Akka decoder provides implementation of deserialization using Akka serializer.
+  * Pekko decoder provides implementation of deserialization using Pekko serializer.
   * The implementation considers all primitives, nulls, and refs. This enables
-  * us to use Akka settings to modify serializer mapping and use different serializers
+  * us to use Pekko settings to modify serializer mapping and use different serializers
   * for different objects.
   */
-private[connector] class AkkaDecoder(serializer: Serialization) {
+private[connector] class PekkoDecoder(serializer: Serialization) {
 
   import scala.reflect.{ClassTag => Scala}
 
@@ -126,19 +126,19 @@ private[connector] class AkkaDecoder(serializer: Serialization) {
 }
 
 @Singleton
-private[connector] class AkkaSerializerImpl @Inject() (system: ActorSystem) extends PekkoSerializer {
+private[connector] class PekkoSerializerImpl @Inject() (system: ActorSystem) extends PekkoSerializer {
 
   /**
     * serializer dispatcher used to serialize the objects into bytes;
-    * the instance is retrieved from Akka based on its configuration
+    * the instance is retrieved from Pekko based on its configuration
     */
   protected val serializer: Serialization = SerializationExtension(system)
 
-  /** value serializer based on Akka serialization */
-  private val encoder = new AkkaEncoder(serializer)
+  /** value serializer based on Pekko serialization */
+  private val encoder = new PekkoEncoder(serializer)
 
-  /** value decoder based on Akka serialization */
-  private val decoder = new AkkaDecoder(serializer)
+  /** value decoder based on Pekko serialization */
+  private val decoder = new PekkoDecoder(serializer)
 
   /**
     * Method accepts a value to be serialized into the string.
@@ -200,5 +200,5 @@ private[connector] object JavaClassTag {
 }
 
 class PekkoSerializerProvider @Inject() (implicit system: ActorSystem) extends Provider[PekkoSerializer] {
-  lazy val get = new AkkaSerializerImpl(system)
+  lazy val get = new PekkoSerializerImpl(system)
 }

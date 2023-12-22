@@ -24,7 +24,7 @@ class RedisSentinelSpec(implicit ee: ExecutionEnv) extends Specification with Be
 
   implicit private val runtime: RedisRuntime = RedisRuntime("sentinel", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
 
-  private val serializer = new AkkaSerializerImpl(system)
+  private val serializer = new PekkoSerializerImpl(system)
 
   private lazy val sentinelInstance = RedisSentinel(defaultCacheName, masterGroup = "sentinel5000", sentinels = RedisHost(dockerIp, 5000) :: RedisHost(dockerIp, 5001) :: RedisHost(dockerIp, 5002) :: Nil, defaults)
 

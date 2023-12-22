@@ -25,7 +25,7 @@ class RedisClusterSpec(implicit ee: ExecutionEnv) extends Specification with Wit
 
   implicit private val runtime: RedisRuntime = RedisRuntime("cluster", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
 
-  private val serializer = new AkkaSerializerImpl(system)
+  private val serializer = new PekkoSerializerImpl(system)
 
   private lazy val containerIpAddress = container.containerIpAddress
 
