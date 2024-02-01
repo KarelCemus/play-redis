@@ -1,321 +1,383 @@
 package play.api.cache.redis.impl
 
-import java.util.Optional
-
-import scala.concurrent.duration.Duration
-
 import play.api.cache.redis._
+import play.api.cache.redis.test._
+import play.api.{Environment, Mode}
 import play.cache.redis._
 
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
+import java.util.Optional
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.jdk.CollectionConverters.IterableHasAsScala
 
-class AsyncJavaRedisSpec(implicit ee: ExecutionEnv) extends Specification with ReducedMockito {
-  import Implicits._
-  import JavaCompatibility._
-  import RedisCacheImplicits._
+class AsyncJavaRedisSpec extends AsyncUnitSpec with AsyncRedisMock with RedisRuntimeMock {
+import Helpers._
 
-  import org.mockito.ArgumentMatchers._
+  private val expiration = 5.seconds
+  private val expirationLong = expiration.toSeconds
+  private val expirationInt = expirationLong.intValue
+  private val classTag = "java.lang.String"
 
-  "Java Redis Cache" should {
+  test("get and miss") { (async, cache) =>
+    for {
+      _ <- async.expect.getClassTag(cacheKey, None)
+      _ <- cache.get[String](cacheKey).assertingEqual(Optional.empty)
+    } yield Passed
+  }
 
-    "get and miss" in new MockedJavaRedis {
-      async.get[String](anyString)(anyClassTag) returns None
-      cache.get[String](key).asScala must beEqualTo(Optional.empty).await
+  test("get and hit") { (async, cache) =>
+    for {
+      _ <- async.expect.getClassTag(cacheKey, Some(classTag))
+      _ <- async.expect.get[String](cacheKey, Some(cacheValue))
+      _ <- cache.get[String](cacheKey).assertingEqual(Optional.of(cacheValue))
+    } yield Passed
+  }
+
+    test("get null") { (async, cache) =>
+      for {
+        _ <- async.expect.getClassTag(cacheKey, Some("null"))
+      _ <- cache.get[String](cacheKey).assertingEqual(Optional.empty)
+      } yield Passed
     }
 
-    "get and hit" in new MockedJavaRedis {
-      async.get[String](beEq(key))(anyClassTag) returns Some(value)
-      async.get[String](beEq(classTagKey))(anyClassTag) returns Some(classTag)
-      cache.get[String](key).asScala must beEqualTo(Optional.of(value)).await
+    test("set") { (async, cache) =>
+      for {
+      _ <- async.expect.set(cacheKey, cacheValue, Duration.Inf)
+      _ <- cache.set(cacheKey, cacheValue).assertingDone
+      } yield Passed
     }
 
-    "get null" in new MockedJavaRedis {
-      async.get[String](beEq(classTagKey))(anyClassTag) returns Some("null")
-      cache.get[String](key).asScala must beEqualTo(Optional.empty).await
-      there was one(async).get[String](classTagKey)
+    test("set with expiration") { (async, cache) =>
+      for {
+        _ <- async.expect.set(cacheKey, cacheValue, expiration)
+       _ <- cache.set(cacheKey, cacheValue, expiration.toSeconds.toInt).assertingDone
+      } yield Passed
     }
 
-    "set" in new MockedJavaRedis {
-      async.set(anyString, anyString, any[Duration]) returns execDone
-      cache.set(key, value).asScala must beDone.await
-      there was one(async).set(key, value, Duration.Inf)
-      there was one(async).set(classTagKey, classTag, Duration.Inf)
+  test("set null") { (async, cache) =>
+    for {
+      _ <- async.expect.set[AnyRef](cacheKey, null, Duration.Inf)
+      _ <- cache.set(cacheKey, null: AnyRef).assertingDone
+    } yield Passed
+  }
+
+  test("get or else (sync)") { (async, cache) =>
+    for {
+      _ <- async.expect.getClassTag(cacheKey, None)
+      _ <- async.expect.set(cacheKey, cacheValue, Duration.Inf)
+      _ <- async.expect.getClassTag(cacheKey, Some(classTag))
+      _ <- async.expect.get[String](cacheKey, Some(cacheValue))
+      orElse = probe.orElse.const(cacheValue)
+      _ <- cache.getOrElse(cacheKey, orElse.execute _).assertingEqual(cacheValue)
+      _ <- cache.getOrElse(cacheKey, orElse.execute _).assertingEqual(cacheValue)
+      _ = orElse.calls mustEqual 1
+    } yield Passed
+  }
+
+  test("get or else (async)") { (async, cache) =>
+    for {
+      _ <- async.expect.getClassTag(cacheKey, None)
+      _ <- async.expect.set(cacheKey, cacheValue, Duration.Inf)
+      _ <- async.expect.getClassTag(cacheKey, Some(classTag))
+      _ <- async.expect.get[String](cacheKey, Some(cacheValue))
+      orElse = probe.orElse.asyncJava(cacheValue)
+      _ <- cache.getOrElseUpdate(cacheKey, orElse.execute _).assertingEqual(cacheValue)
+      _ <- cache.getOrElseUpdate(cacheKey, orElse.execute _).assertingEqual(cacheValue)
+      _ = orElse.calls mustEqual 1
+    } yield Passed
+  }
+
+  test("get or else with expiration (sync)") { (async, cache) =>
+    for {
+      _ <- async.expect.getClassTag(cacheKey, None)
+      _ <- async.expect.set(cacheKey, cacheValue, expiration)
+      _ <- async.expect.getClassTag(cacheKey, Some(classTag))
+      _ <- async.expect.get[String](cacheKey, Some(cacheValue))
+      orElse = probe.orElse.const(cacheValue)
+      _ <- cache.getOrElse(cacheKey, orElse.execute _, expiration.toSeconds.toInt).assertingEqual(cacheValue)
+      _ <- cache.getOrElse(cacheKey, orElse.execute _, expiration.toSeconds.toInt).assertingEqual(cacheValue)
+      _ = orElse.calls mustEqual 1
+    } yield Passed
+  }
+
+  test("get or else with expiration (async)") { (async, cache) =>
+    for {
+      _ <- async.expect.getClassTag(cacheKey, None)
+      _ <- async.expect.set(cacheKey, cacheValue, expiration)
+      _ <- async.expect.getClassTag(cacheKey, Some(classTag))
+      _ <- async.expect.get[String](cacheKey, Some(cacheValue))
+      orElse = probe.orElse.asyncJava(cacheValue)
+      _ <- cache.getOrElseUpdate(cacheKey, orElse.execute _, expiration.toSeconds.toInt).assertingEqual(cacheValue)
+      _ <- cache.getOrElseUpdate(cacheKey, orElse.execute _, expiration.toSeconds.toInt).assertingEqual(cacheValue)
+      _ = orElse.calls mustEqual 1
+    } yield Passed
+  }
+
+  test("get optional (none)") { (async, cache) =>
+    for {
+      _ <- async.expect.getClassTag(cacheKey, None)
+      _ <- cache.getOptional[String](cacheKey).assertingEqual(Optional.ofNullable(null))
+    } yield Passed
+  }
+
+    test("get optional (some)") { (async, cache) =>
+      for {
+        _ <- async.expect.getClassTag(cacheKey, Some(classTag))
+        _ <- async.expect.get[String](cacheKey, Some(cacheValue))
+        _ <- cache.getOptional[String](cacheKey).assertingEqual(Optional.ofNullable(cacheValue))
+      } yield Passed
     }
 
-    "set with expiration" in new MockedJavaRedis {
-      async.set(anyString, anyString, any[Duration]) returns execDone
-      cache.set(key, value, expiration.toSeconds.toInt).asScala must beDone.await
-      there was one(async).set(key, value, expiration)
-      there was one(async).set(classTagKey, classTag, expiration)
-    }
+  test("remove") { (async, cache) =>
+    for {
+      _ <- async.expect.remove(cacheKey)
+      _ <- cache.remove(cacheKey).assertingDone
+    } yield Passed
+  }
 
-    "set null" in new MockedJavaRedis {
-      async.set(anyString, any, any[Duration]) returns execDone
-      cache.set(key, null: AnyRef).asScala must beDone.await
-      there was one(async).set(key, null, Duration.Inf)
-      there was one(async).set(classTagKey, "null", Duration.Inf)
-    }
-
-    "get or else (hit)" in new MockedJavaRedis with OrElse {
-      async.get[String](beEq(key))(anyClassTag) returns Some(value)
-      async.get[String](beEq(classTagKey))(anyClassTag) returns Some(classTag)
-      cache.getOrElse(key, doElse(value)).asScala must beEqualTo(value).await
-      cache.getOrElseUpdate(key, doFuture(value).asJava).asScala must beEqualTo(value).await
-      orElse mustEqual 0
-      there was two(async).get[String](key)
-      there was two(async).get[String](classTagKey)
-    }
-
-    "get or else (miss)" in new MockedJavaRedis with OrElse {
-      async.get[String](beEq(classTagKey))(anyClassTag) returns None
-      async.set(anyString, anyString, any[Duration]) returns execDone
-      cache.getOrElse(key, doElse(value)).asScala must beEqualTo(value).await
-      cache.getOrElseUpdate(key, doFuture(value).asJava).asScala must beEqualTo(value).await
-      orElse mustEqual 2
-      there was two(async).get[String](classTagKey)
-      there was two(async).set(key, value, Duration.Inf)
-      there was two(async).set(classTagKey, classTag, Duration.Inf)
-    }
-
-    "get or else with expiration (hit)" in new MockedJavaRedis with OrElse {
-      async.get[String](beEq(key))(anyClassTag) returns Some(value)
-      async.get[String](beEq(classTagKey))(anyClassTag) returns Some(classTag)
-      cache.getOrElse(key, doElse(value), expiration.toSeconds.toInt).asScala must beEqualTo(value).await
-      cache.getOrElseUpdate(key, doFuture(value).asJava, expiration.toSeconds.toInt).asScala must beEqualTo(value).await
-      orElse mustEqual 0
-      there was two(async).get[String](key)
-    }
-
-    "get or else with expiration (miss)" in new MockedJavaRedis with OrElse {
-      async.get[String](beEq(classTagKey))(anyClassTag) returns None
-      async.set(anyString, anyString, any[Duration]) returns execDone
-      cache.getOrElse(key, doElse(value), expiration.toSeconds.toInt).asScala must beEqualTo(value).await
-      cache.getOrElseUpdate(key, doFuture(value).asJava, expiration.toSeconds.toInt).asScala must beEqualTo(value).await
-      orElse mustEqual 2
-      there was two(async).get[String](classTagKey)
-      there was two(async).set(key, value, expiration)
-      there was two(async).set(classTagKey, classTag, expiration)
-    }
-
-    "get optional (none)" in new MockedJavaRedis {
-      async.get[String](anyString)(anyClassTag) returns None
-      cache.getOptional[String](key).asScala must beEqualTo(Optional.ofNullable(null)).await
-    }
-
-    "get optional (some)" in new MockedJavaRedis {
-      async.get[String](anyString)(anyClassTag) returns Some("value")
-      async.get[String](beEq(classTagKey))(anyClassTag) returns Some(classTag)
-      cache.getOptional[String](key).asScala must beEqualTo(Optional.ofNullable("value")).await
-    }
-
-    "remove" in new MockedJavaRedis {
-      async.remove(anyString) returns execDone
-      cache.remove(key).asScala must beDone.await
-      there was one(async).remove(key)
-      there was one(async).remove(classTagKey)
-    }
-
-    "remove all" in new MockedJavaRedis {
-      async.invalidate() returns execDone
-      cache.removeAll().asScala must beDone.await
-      there was one(async).invalidate()
-    }
-
-    "get and set 'byte'" in new MockedJavaRedis {
-      val byte = JavaTypes.byteValue
-
-      // set a value
-      // note: there should be hit on "byte" but the value is wrapped instead
-      async.set(anyString, beEq(byte), any[Duration]) returns execDone
-      async.set(anyString, beEq("byte"), any[Duration]) returns execDone
-      async.set(anyString, beEq("java.lang.Byte"), any[Duration]) returns execDone
-      cache.set(key, byte).asScala must beDone.await
-
+  test("get and set 'byte'") { (async, cache) =>
+    val byte = JavaTypes.byteValue
+    for {
+      // set a cacheValue
+      // note: there should be hit on "byte" but the cacheValue is wrapped instead
+      _ <- async.expect.setValue(cacheKey, byte, Duration.Inf)
+      _ <- async.expect.setClassTag(cacheKey, "java.lang.Byte", Duration.Inf)
+      _ <- cache.set(cacheKey, byte).assertingDone
       // hit on GET
-      async.get[Byte](beEq(key))(anyClassTag) returns Some(byte)
-      async.get[String](beEq(classTagKey))(anyClassTag) returns Some("java.lang.Byte")
-      cache.get[Byte](key).asScala must beEqualTo(Optional.ofNullable(byte)).await
-    }
+      _ <- async.expect.getClassTag(cacheKey, Some("java.lang.Byte"))
+      _ <- async.expect.get[java.lang.Byte](cacheKey, Some(byte))
+      _ <- cache.get[Byte](cacheKey).assertingEqual(Optional.ofNullable(byte))
+    } yield Passed
+  }
 
-    "get and set 'byte[]'" in new MockedJavaRedis {
-      val bytes = JavaTypes.bytesValue
-
-      // set a value
-      async.set(anyString, beEq(bytes), any[Duration]) returns execDone
-      async.set(anyString, beEq("byte[]"), any[Duration]) returns execDone
-      cache.set(key, bytes).asScala must beDone.await
-
+  test("get and set 'byte[]'") { (async, cache) =>
+    val scalaBytes = JavaTypes.bytesValue
+    val javaBytes = scalaBytes.map[java.lang.Byte](x => x)
+    for {
+      // set a cacheValue
+      _ <- async.expect.setValue(cacheKey, scalaBytes, Duration.Inf)
+      _ <- async.expect.setClassTag(cacheKey, "byte[]", Duration.Inf)
+      _ <- cache.set(cacheKey, scalaBytes).assertingDone
       // hit on GET
-      async.get[Array[Byte]](beEq(key))(anyClassTag) returns Some(bytes)
-      async.get[String](beEq(classTagKey))(anyClassTag) returns Some("byte[]")
-      cache.get[Array[Byte]](key).asScala must beEqualTo(Optional.ofNullable(bytes)).await
+      _ <- async.expect.getClassTag(cacheKey, Some("byte[]"))
+      _ <- async.expect.get[Array[java.lang.Byte]](cacheKey, Some(javaBytes))
+      _ <- cache.get[Array[java.lang.Byte]](cacheKey).assertingEqual(Optional.ofNullable(javaBytes))
+    } yield Passed
+  }
+
+  test("get all") { (async, cache) =>
+    for {
+      _ <- async.expect.getAllKeys[String](Iterable(cacheKey, cacheKey, cacheKey), Seq(Some(cacheValue), None, None))
+      _ <- cache
+        .getAll(classOf[String], cacheKey, cacheKey, cacheKey)
+        .asserting(_.asScala.toList mustEqual List(Optional.of(cacheValue), Optional.empty, Optional.empty))
+    } yield Passed
+  }
+
+  test("get all (keys in a collection)") { (async, cache) =>
+    import JavaCompatibility.JavaList
+    for {
+      _ <- async.expect.getAllKeys[String](Iterable(cacheKey, cacheKey, cacheKey), Seq(Some(cacheValue), None, None))
+      _ <- cache
+        .getAll(classOf[String], JavaList(cacheKey, cacheKey, cacheKey))
+        .asserting(_.asScala.toList mustEqual List(Optional.of(cacheValue), Optional.empty, Optional.empty))
+    } yield Passed
+  }
+
+  test("set if not exists (exists)") { (async, cache) =>
+    for {
+      _ <- async.expect.setIfNotExists(cacheKey, cacheValue, Duration.Inf, exists = false)
+      _ <- cache.setIfNotExists(cacheKey, cacheValue).assertingEqual(false)
+    } yield Passed
+  }
+
+  test("set if not exists (not exists)") { (async, cache) =>
+    for {
+      _ <- async.expect.setIfNotExists(cacheKey, cacheValue, Duration.Inf, exists = true)
+      _ <- cache.setIfNotExists(cacheKey, cacheValue).assertingEqual(true)
+    } yield Passed
+  }
+
+  test("set if not exists (exists) with expiration") { (async, cache) =>
+    for {
+      _ <- async.expect.setIfNotExists(cacheKey, cacheValue, expiration, exists = false)
+      _ <- cache.setIfNotExists(cacheKey, cacheValue, expirationInt).assertingEqual(false)
+    } yield Passed
+  }
+
+  test("set if not exists (not exists) with expiration") { (async, cache) =>
+    for {
+      _ <- async.expect.setIfNotExists(cacheKey, cacheValue, expiration, exists = true)
+      _ <- cache.setIfNotExists(cacheKey, cacheValue, expirationInt).assertingEqual(true)
+    } yield Passed
+  }
+
+  test("set all") { (async, cache) =>
+    val values = Seq((cacheKey, cacheValue), (otherKey, otherValue))
+    for {
+      _ <- async.expect.setAll(values: _*)
+      javaValues = values.map { case (k, v) => new KeyValue(k, v) }
+      _ <- cache.setAll(javaValues: _*).assertingDone
+    } yield Passed
+  }
+
+  test("set all if not exists (exists)") { (async, cache) =>
+    val values = Seq((cacheKey, cacheValue), (otherKey, otherValue))
+    for {
+      _ <- async.expect.setAllIfNotExist(values, exists = false)
+      javaValues = values.map { case (k, v) => new KeyValue(k, v) }
+      _ <- cache.setAllIfNotExist(javaValues: _*).assertingEqual(false)
+    } yield Passed
+  }
+
+  test("set all if not exists (not exists)") { (async, cache) =>
+    val values = Seq((cacheKey, cacheValue), (otherKey, otherValue))
+    for {
+      _ <- async.expect.setAllIfNotExist(values, exists = true)
+      javaValues = values.map { case (k, v) => new KeyValue(k, v) }
+      _ <- cache.setAllIfNotExist(javaValues: _*).assertingEqual(true)
+    } yield Passed
+  }
+
+  test("append") { (async, cache) =>
+    for {
+      _ <- async.expect.append(cacheKey, cacheValue, Duration.Inf)
+      _ <- async.expect.setClassTagIfNotExists(cacheKey, cacheValue, Duration.Inf, exists = false)
+      _ <- cache.append(cacheKey, cacheValue).assertingDone
+    } yield Passed
+  }
+
+  test("append with expiration") { (async, cache) =>
+    for {
+      _ <- async.expect.append(cacheKey, cacheValue, expiration)
+      _ <- async.expect.setClassTagIfNotExists(cacheKey, cacheValue, expiration, exists = false)
+      _ <- cache.append(cacheKey, cacheValue, expirationInt).assertingDone
+    } yield Passed
+  }
+
+  test("expire") { (async, cache) =>
+    for {
+      _ <- async.expect.expire(cacheKey, expiration)
+      _ <- cache.expire(cacheKey, expirationInt).assertingDone
+    } yield Passed
+  }
+
+  test("expires in (defined)") { (async, cache) =>
+    for {
+      _ <- async.expect.expiresIn(cacheKey, Some(expiration))
+      _ <- cache.expiresIn(cacheKey).assertingEqual(Optional.of(expirationLong))
+    } yield Passed
+  }
+
+  test("expires in (undefined)") { (async, cache) =>
+    for {
+      _ <- async.expect.expiresIn(cacheKey, None)
+      _ <- cache.expiresIn(cacheKey).assertingEqual(Optional.empty)
+    } yield Passed
+  }
+
+  test("matching") { (async, cache) =>
+    for {
+      _ <- async.expect.matching("pattern", Seq(cacheKey))
+      _ <- cache.matching("pattern").asserting(_.asScala.toList mustEqual List(cacheKey))
+    } yield Passed
+  }
+
+  test("remove multiple") { (async, cache) =>
+    for {
+      _ <- async.expect.removeAll(cacheKey, otherKey)
+      _ <- cache.remove(cacheKey, otherKey).assertingDone
+    } yield Passed
+  }
+
+  test("remove all (invalidate)") { (async, cache) =>
+    for {
+      _ <- async.expect.invalidate()
+      _ <- cache.removeAll().assertingDone
+    } yield Passed
+  }
+
+  test("remove all (some keys provided)") { (async, cache) =>
+    for {
+      _ <- async.expect.removeAll(cacheKey, otherKey)
+      _ <- cache.removeAllKeys(cacheKey, otherKey).assertingDone
+    } yield Passed
+  }
+
+    test("remove matching") { (async, cache) =>
+            for {
+              _ <- async.expect.removeMatching("pattern")
+              _ <- cache.removeMatching("pattern").assertingDone
+      } yield Passed
     }
 
-    "get all" in new MockedJavaRedis {
-      async.getAll[String](beEq(Iterable(key, key, key)))(anyClassTag) returns Seq(Some(value), None, None)
-      cache.getAll(classOf[String], key, key, key).asScala.map(_.asScala) must beEqualTo(Seq(Optional.of(value), Optional.empty, Optional.empty)).await
-    }
+  test("exists") { (async, cache) =>
+    for {
+      _ <- async.expect.exists(cacheKey, exists = true)
+      _ <- cache.exists(cacheKey).assertingEqual(true)
+    } yield Passed
+  }
 
-    "get all (keys in a collection)" in new MockedJavaRedis {
-      async.getAll[String](beEq(Iterable(key, key, key)))(anyClassTag) returns Seq(Some(value), None, None)
-      cache.getAll(classOf[String], JavaList(key, key, key)).asScala.map(_.asScala) must beEqualTo(Seq(Optional.of(value), Optional.empty, Optional.empty)).await
-    }
+  test("increment") { (async, cache) =>
+    for {
+      _ <- async.expect.increment(cacheKey, 1L, result = 10L)
+      _ <- async.expect.increment(cacheKey, 2L, result = 20L)
+      _ <- cache.increment(cacheKey).assertingEqual(10L)
+      _ <- cache.increment(cacheKey, 2L).assertingEqual(20L)
+    } yield Passed
+  }
 
-    "set if not exists (exists)" in new MockedJavaRedis {
-      async.setIfNotExists(beEq(key), beEq(value), any[Duration]) returns false
-      async.setIfNotExists(beEq(classTagKey), beEq(classTag), any[Duration]) returns false
-      cache.setIfNotExists(key, value).asScala.map(Boolean.unbox) must beFalse.await
-      there was one(async).setIfNotExists(key, value, null)
-      there was one(async).setIfNotExists(classTagKey, classTag, null)
-    }
+  test("decrement") { (async, cache) =>
+    for {
+      _ <- async.expect.decrement(cacheKey, 1L, result = 10L)
+      _ <- async.expect.decrement(cacheKey, 2L, result = 20L)
+      _ <- cache.decrement(cacheKey).assertingEqual(10L)
+      _ <- cache.decrement(cacheKey, 2L).assertingEqual(20L)
+    } yield Passed
+  }
 
-    "set if not exists (not exists)" in new MockedJavaRedis {
-      async.setIfNotExists(beEq(key), beEq(value), any[Duration]) returns true
-      async.setIfNotExists(beEq(classTagKey), beEq(classTag), any[Duration]) returns true
-      cache.setIfNotExists(key, value).asScala.map(Boolean.unbox) must beTrue.await
-      there was one(async).setIfNotExists(key, value, null)
-      there was one(async).setIfNotExists(classTagKey, classTag, null)
-    }
+  test("create list") { (async, cache) =>
+    trait RedisListMock extends RedisList[String, Future]
+    val list = mock[RedisListMock]
+    for {
+      _ <- async.expect.list[String](cacheKey, list)
+      _ <- cache.list(cacheKey, classOf[String]) mustBe a[AsyncRedisList[_]]
+    } yield Passed
+  }
 
-    "set if not exists (exists) with expiration" in new MockedJavaRedis {
-      async.setIfNotExists(beEq(key), beEq(value), any[Duration]) returns false
-      async.setIfNotExists(beEq(classTagKey), beEq(classTag), any[Duration]) returns false
-      cache.setIfNotExists(key, value, expirationInt).asScala.map(Boolean.unbox) must beFalse.await
-      there was one(async).setIfNotExists(key, value, expiration)
-      there was one(async).setIfNotExists(classTagKey, classTag, expiration)
-    }
+  test("create set") { (async, cache) =>
+    trait RedisSetMock extends RedisSet[String, Future]
+    val set = mock[RedisSetMock]
+    for {
+      _ <- async.expect.set[String](cacheKey, set)
+      _ <- cache.set(cacheKey, classOf[String]) mustBe a[AsyncRedisSet[_]]
+    } yield Passed
+  }
 
-    "set if not exists (not exists) with expiration" in new MockedJavaRedis {
-      async.setIfNotExists(beEq(key), beEq(value), any[Duration]) returns true
-      async.setIfNotExists(beEq(classTagKey), beEq(classTag), any[Duration]) returns true
-      cache.setIfNotExists(key, value, expirationInt).asScala.map(Boolean.unbox) must beTrue.await
-      there was one(async).setIfNotExists(key, value, expiration)
-      there was one(async).setIfNotExists(classTagKey, classTag, expiration)
-    }
+  test("create map") { (async, cache) =>
+    trait RedisMapMock extends RedisMap[String, Future]
+    val map = mock[RedisMapMock]
+    for {
+      _ <- async.expect.map[String](cacheKey, map)
+      _ <- cache.map(cacheKey, classOf[String]) mustBe a[AsyncRedisMap[_]]
+    } yield Passed
+  }
 
-    "set all" in new MockedJavaRedis {
-      async.setAll(anyVarArgs) returns Done
-      cache.setAll(new KeyValue(key, value), new KeyValue(other, value)).asScala must beDone.await
-      there was one(async).setAll((key, value), (classTagKey, classTag), (other, value), (classTagOther, classTag))
-    }
+  private def test(name: String)(f: (AsyncRedisMock, play.cache.redis.AsyncCacheApi) => Future[Assertion]): Unit = {
+    name in {
+      implicit val runtime: RedisRuntime = redisRuntime(
+        invocationPolicy = LazyInvocation,
+        recoveryPolicy = recoveryPolicy.default,
+      )
+      implicit val environment: Environment = Environment(
+        rootPath = new java.io.File("."),
+        classLoader = getClass.getClassLoader,
+        mode = Mode.Test
+      )
+      val async = mock[AsyncRedisMock]
+      val cache: play.cache.redis.AsyncCacheApi = new AsyncJavaRedis(async)
 
-    "set all if not exists (exists)" in new MockedJavaRedis {
-      async.setAllIfNotExist(anyVarArgs) returns false
-      cache.setAllIfNotExist(new KeyValue(key, value), new KeyValue(other, value)).asScala.map(Boolean.unbox) must beFalse.await
-      there was one(async).setAllIfNotExist((key, value), (classTagKey, classTag), (other, value), (classTagOther, classTag))
-    }
-
-    "set all if not exists (not exists)" in new MockedJavaRedis {
-      async.setAllIfNotExist(anyVarArgs) returns true
-      cache.setAllIfNotExist(new KeyValue(key, value), new KeyValue(other, value)).asScala.map(Boolean.unbox) must beTrue.await
-      there was one(async).setAllIfNotExist((key, value), (classTagKey, classTag), (other, value), (classTagOther, classTag))
-    }
-
-    "append" in new MockedJavaRedis {
-      async.append(anyString, anyString, any[Duration]) returns Done
-      async.setIfNotExists(anyString, anyString, any[Duration]) returns false
-      cache.append(key, value).asScala must beDone.await
-      there was one(async).append(key, value, null)
-      there was one(async).setIfNotExists(classTagKey, classTag, null)
-    }
-
-    "append with expiration" in new MockedJavaRedis {
-      async.append(anyString, anyString, any[Duration]) returns Done
-      async.setIfNotExists(anyString, anyString, any[Duration]) returns false
-      cache.append(key, value, expirationInt).asScala must beDone.await
-      there was one(async).append(key, value, expiration)
-      there was one(async).setIfNotExists(classTagKey, classTag, expiration)
-    }
-
-    "expire" in new MockedJavaRedis {
-      async.expire(anyString, any[Duration]) returns Done
-      cache.expire(key, expirationInt).asScala must beDone.await
-      there was one(async).expire(key, expiration)
-      there was one(async).expire(classTagKey, expiration)
-    }
-
-    "expires in (defined)" in new MockedJavaRedis {
-      async.expiresIn(anyString) returns Some(expiration)
-      cache.expiresIn(key).asScala must beEqualTo(Optional.of(expirationLong)).await
-      there was one(async).expiresIn(key)
-      there was no(async).expiresIn(classTagKey)
-    }
-
-    "expires in (undefined)" in new MockedJavaRedis {
-      async.expiresIn(anyString) returns None
-      cache.expiresIn(key).asScala must beEqualTo(Optional.empty).await
-      there was one(async).expiresIn(key)
-      there was no(async).expiresIn(classTagKey)
-    }
-
-    "matching" in new MockedJavaRedis {
-      async.matching(anyString) returns Seq(key)
-      cache.matching("pattern").asScala.map(_.asScala) must beEqualTo(Seq(key)).await
-      there was one(async).matching("pattern")
-    }
-
-    "remove multiple" in new MockedJavaRedis {
-      async.removeAll(anyVarArgs) returns Done
-      cache.remove(key, key, key, key).asScala must beDone.await
-      there was one(async).removeAll(key, classTagKey, key, classTagKey, key, classTagKey, key, classTagKey)
-    }
-
-    "remove all" in new MockedJavaRedis {
-      async.removeAll(anyVarArgs) returns Done
-      cache.removeAllKeys(key, key, key, key).asScala must beDone.await
-      there was one(async).removeAll(key, classTagKey, key, classTagKey, key, classTagKey, key, classTagKey)
-    }
-
-    "remove matching" in new MockedJavaRedis {
-      async.removeMatching(anyString) returns Done
-      cache.removeMatching("pattern").asScala must beDone.await
-      there was one(async).removeMatching("pattern")
-      there was one(async).removeMatching("classTag::pattern")
-    }
-
-    "exists" in new MockedJavaRedis {
-      async.exists(beEq(key)) returns true
-      cache.exists(key).asScala.map(Boolean.unbox) must beTrue.await
-      there was one(async).exists(key)
-      there was no(async).exists(classTagKey)
-    }
-
-    "increment" in new MockedJavaRedis {
-      async.increment(beEq(key), anyLong) returns 10L
-      cache.increment(key).asScala.map(Long.unbox) must beEqualTo(10L).await
-      cache.increment(key, 2L).asScala.map(Long.unbox) must beEqualTo(10L).await
-      there was one(async).increment(key, by = 1L)
-      there was one(async).increment(key, by = 2L)
-    }
-
-    "decrement" in new MockedJavaRedis {
-      async.decrement(beEq(key), anyLong) returns 10L
-      cache.decrement(key).asScala.map(Long.unbox) must beEqualTo(10L).await
-      cache.decrement(key, 2L).asScala.map(Long.unbox) must beEqualTo(10L).await
-      there was one(async).decrement(key, by = 1L)
-      there was one(async).decrement(key, by = 2L)
-    }
-
-    "create list" in new MockedJavaRedis {
-      private val list = mock[RedisList[String, Future]]
-      async.list(beEq(key))(anyClassTag[String]) returns list
-      cache.list(key, classOf[String]) must beAnInstanceOf[AsyncRedisList[String]]
-      there was one(async).list[String](key)
-    }
-
-    "create set" in new MockedJavaRedis {
-      private val set = mock[RedisSet[String, Future]]
-      async.set(beEq(key))(anyClassTag[String]) returns set
-      cache.set(key, classOf[String]) must beAnInstanceOf[AsyncRedisSet[String]]
-      there was one(async).set[String](key)
-    }
-
-    "create map" in new MockedJavaRedis {
-      private val map = mock[RedisMap[String, Future]]
-      async.map(beEq(key))(anyClassTag[String]) returns map
-      cache.map(key, classOf[String]) must beAnInstanceOf[AsyncRedisMap[String]]
-      there was one(async).map[String](key)
+      f(async, cache)
     }
   }
 }

@@ -1,13 +1,10 @@
 package play.api.cache.redis.connector
 
 import javax.inject._
-
 import scala.concurrent.Future
-
 import play.api.Logger
 import play.api.cache.redis.configuration._
 import play.api.inject.ApplicationLifecycle
-
 import akka.actor.ActorSystem
 import redis.{RedisClient => RedisStandaloneClient, RedisCluster => RedisClusterClient, _}
 
@@ -17,7 +14,7 @@ import redis.{RedisClient => RedisStandaloneClient, RedisCluster => RedisCluster
   */
 private[connector] class RedisCommandsProvider(instance: RedisInstance)(implicit system: ActorSystem, lifecycle: ApplicationLifecycle) extends Provider[RedisCommands] {
 
-  lazy val get = instance match {
+  lazy val get: RedisCommands = instance match {
     case cluster: RedisCluster       => new RedisCommandsCluster(cluster).get
     case standalone: RedisStandalone => new RedisCommandsStandalone(standalone).get
     case sentinel: RedisSentinel     => new RedisCommandsSentinel(sentinel).get
@@ -115,7 +112,7 @@ private[connector] class RedisCommandsCluster(configuration: RedisCluster)(impli
   }
 
   // $COVERAGE-OFF$
-  def start() = {
+  def start(): Unit = {
     def servers = nodes.map {
       case RedisHost(host, port, Some(database), _, _) => s" $host:$port?database=$database"
       case RedisHost(host, port, None, _, _)           => s" $host:$port"
@@ -126,7 +123,7 @@ private[connector] class RedisCommandsCluster(configuration: RedisCluster)(impli
 
   def stop(): Future[Unit] = Future successful {
     log.info("Stopping the redis cluster cache actor ...")
-    client.stop()
+    Option(client).foreach(_.stop())
     log.info("Redis cluster cache stopped.")
   }
   // $COVERAGE-ON$

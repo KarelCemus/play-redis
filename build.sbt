@@ -21,11 +21,12 @@ libraryDependencies ++= Seq(
   // redis connector
   "io.github.rediscala" %% "rediscala" % "1.14.0-akka",
   // test framework with mockito extension
-  "org.specs2" %% "specs2-mock" % "4.20.3" % Test,
+  "org.scalatest" %% "scalatest" % "3.2.17" % Test,
+  "org.scalamock" %% "scalamock" % "5.2.0" % Test,
   // test module for play framework
   "com.typesafe.play" %% "play-test" % playVersion.value % Test,
   // to run integration tests
-  "com.dimafeng" %% "testcontainers-scala-core" % "0.41.0" % Test
+  "com.dimafeng" %% "testcontainers-scala-core" % "0.41.2" % Test
 )
 
 resolvers ++= Seq(
@@ -40,3 +41,5 @@ enablePlugins(CustomReleasePlugin)
 
 // exclude from tests coverage
 coverageExcludedFiles := ".*exceptions.*"
+
+Test / test := (Test / testOnly).toTask(" * -- -l \"org.scalatest.Ignore\"").value

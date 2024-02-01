@@ -6,6 +6,14 @@
 Updated to Play `2.9.0` and dropped `Scala 2.12` since it was discontinued from the Play framework.
 Minimal supported Java version is now `11`. [#265](https://github.com/KarelCemus/play-redis/pull/265)
 
+Migrated from test framework `specs2` to `scalatest` because specs2 is not friendly to
+cross-compilation between Scala 2.13 and Scala 3. Test are uses `testcontainers` to run
+standalone, cluster or sentinel instance. However, current redis connector is not friendly
+and there are several significant limitations in the implementation, therefore the tests
+for cluster are using fixed port mapping and tests for sentinel are disabled since it seems
+that sentinel implementation is not fully reliable, therefore sentinel is not officially
+supported at this moment. [#273](https://github.com/KarelCemus/play-redis/pull/273)
+
 ### [:link: 2.7.0](https://github.com/KarelCemus/play-redis/tree/2.7.0)
 
 SET command supports milliseconds, previous versions used seconds [#247](https://github.com/KarelCemus/play-redis/issues/247)
@@ -30,17 +38,17 @@ Note: This should not be a breaking change since it was not possible to properly
 the value in Java without encountering the exception.
 
 Introduced another source `aws-cluster`, which is a cluster with nodes defined by DNS record. For example,
-Amazon AWS uses this kind of cluster definition. Therefore this type of a cluster resolves 
+Amazon AWS uses this kind of cluster definition. Therefore this type of a cluster resolves
 a domain main to extract all nodes. See [#221](https://github.com/KarelCemus/play-redis/pull/221) for more details.
 
 ### [:link: 2.5.0](https://github.com/KarelCemus/play-redis/tree/2.5.0)
 
-Added `expiresIn(key: String): Option[Duration]` implementing PTTL 
+Added `expiresIn(key: String): Option[Duration]` implementing PTTL
 command to get expiration of the given key. [#204](https://github.com/KarelCemus/play-redis/pull/204)
 
 Introduced asynchronous implementation of advanced Java API for redis cache. The API
 wraps the Scala version thus provides slightly worse performance and deals with
-the lack of `classTag` in Play's API design. **This API implementation is experimental 
+the lack of `classTag` in Play's API design. **This API implementation is experimental
 and may change in future.** Feedback will be welcome. [#206](https://github.com/KarelCemus/play-redis/issues/206)
 
 Added `getFields(fields: String*)` and `getFields(fields: Iterable[String])` into `RedisMap` API
@@ -55,7 +63,7 @@ Cross-compiled with Scala 2.13 [#211](https://github.com/KarelCemus/play-redis/i
 
 Update to Play `2.7.0` [#202](https://github.com/KarelCemus/play-redis/pull/202)
 
-Added `getAll[T: ClassTag](keys: Iterable[String]): Result[Seq[Option[T]]]` into `AbstractCacheApi` 
+Added `getAll[T: ClassTag](keys: Iterable[String]): Result[Seq[Option[T]]]` into `AbstractCacheApi`
 in order to also accept collections aside vararg. [#194](https://github.com/KarelCemus/play-redis/pull/194)
 
 Fixed `getOrElse` method in Synchronous API with non-empty cache prefix. [#196](https://github.com/KarelCemus/play-redis/pull/196)
@@ -71,7 +79,7 @@ Returned keys are automatically unprefixed. [#184](https://github.com/KarelCemus
 
 Support of plain arrays in JavaRedis [#176](https://github.com/KarelCemus/play-redis/pull/176).
 
-Connection timeout introduced in [#147](https://github.com/KarelCemus/play-redis/issues/147) 
+Connection timeout introduced in [#147](https://github.com/KarelCemus/play-redis/issues/147)
 is now configurable and can be disabled [#174](https://github.com/KarelCemus/play-redis/pull/174).
 
 Removed deprecations introduced in [2.0.0](https://github.com/KarelCemus/play-redis/tree/2.0.0)

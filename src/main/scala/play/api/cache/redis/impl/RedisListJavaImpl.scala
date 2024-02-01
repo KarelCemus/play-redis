@@ -10,6 +10,17 @@ class RedisListJavaImpl[Elem](internal: RedisList[Elem, Future])(implicit runtim
 
   def This = this
 
+  private lazy val modifier: AsyncRedisList.AsyncRedisListModification[Elem] = newModifier()
+  private lazy val viewer: AsyncRedisList.AsyncRedisListView[Elem] = newViewer()
+
+  protected def newViewer(): AsyncRedisList.AsyncRedisListView[Elem] = {
+    new AsyncRedisListViewJavaImpl(internal.view)
+  }
+
+  protected def newModifier(): AsyncRedisList.AsyncRedisListModification[Elem] = {
+    new AsyncRedisListModificationJavaImpl(internal.modify)
+  }
+
   def prepend(element: Elem): CompletionStage[AsyncRedisList[Elem]] = {
     async { implicit context =>
       internal.prepend(element).map(_ => this)
@@ -70,13 +81,9 @@ class RedisListJavaImpl[Elem](internal: RedisList[Elem, Future])(implicit runtim
     }
   }
 
-  def view(): AsyncRedisList.AsyncRedisListView[Elem] = {
-    new AsyncRedisListViewJavaImpl(internal.view)
-  }
+  def view(): AsyncRedisList.AsyncRedisListView[Elem] = viewer
 
-  def modify(): AsyncRedisList.AsyncRedisListModification[Elem] = {
-    new AsyncRedisListModificationJavaImpl(internal.modify)
-  }
+  def modify(): AsyncRedisList.AsyncRedisListModification[Elem] = modifier
 
   private class AsyncRedisListViewJavaImpl(view: internal.RedisListView) extends AsyncRedisList.AsyncRedisListView[Elem] {
 

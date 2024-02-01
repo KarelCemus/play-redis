@@ -1,8 +1,8 @@
 package play.api.cache.redis.configuration
 
-import org.specs2.mutable.Specification
+import play.api.cache.redis.test.UnitSpec
 
-class HostnameResolverSpec extends Specification {
+class HostnameResolverSpec extends UnitSpec {
   import HostnameResolver._
 
   "hostname is resolved to IP address" in {

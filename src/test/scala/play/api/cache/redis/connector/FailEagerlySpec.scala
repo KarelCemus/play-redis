@@ -1,45 +1,47 @@
 package play.api.cache.redis.connector
 
-import scala.concurrent.Future
+import akka.actor.{ActorSystem, Scheduler}
+import play.api.cache.redis.test._
+
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future, Promise}
 
-import play.api.cache.redis._
-
-import akka.actor.ActorSystem
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
-
-class FailEagerlySpec(implicit ee: ExecutionEnv) extends Specification with WithApplication {
-
+class FailEagerlySpec extends AsyncUnitSpec with ImplicitFutureMaterialization {
   import FailEagerlySpec._
-  import Implicits._
-  import MockitoImplicits._
 
-  "FailEagerly" should {
+  test("not fail regular requests when disconnected") { failEagerly =>
+    val cmd = mock[RedisCommandTest[String]]
+    (() => cmd.returning).expects().returns("response")
+    // run the test
+    failEagerly.isConnected mustEqual false
+    failEagerly.send(cmd).assertingEqual("response")
+  }
 
-    "not fail regular requests when disconnected" in {
-      val impl = new FailEagerlyImpl
-      val cmd = mock[RedisCommandTest].returning returns "response"
-      // run the test
-      impl.isConnected must beFalse
-      impl.send[String](cmd) must beEqualTo("response").await
-    }
+  test("do fail long running requests when disconnected") { failEagerly =>
+    val cmd = mock[RedisCommandTest[String]]
+    (() => cmd.returning).expects().returns(Promise[String]().future)
+    // run the test
+    failEagerly.isConnected mustEqual false
+    failEagerly.send(cmd).assertingFailure[redis.actors.NoConnectionException.type]
+  }
 
-    "do fail long running requests when disconnected" in {
-      val impl = new FailEagerlyImpl
-      val cmd = mock[RedisCommandTest].returning returns Future.after(seconds = 3, "response")
-      // run the test
-      impl.isConnected must beFalse
-      impl.send[String](cmd) must throwA[redis.actors.NoConnectionException.type].awaitFor(5.seconds)
-    }
+  test("not fail long running requests when connected ") { failEagerly =>
+    val cmd = mock[RedisCommandTest[String]]
+    (() => cmd.returning).expects().returns(Promise[String]().future)
+    failEagerly.markConnected()
+    // run the test
+    failEagerly.isConnected mustEqual true
+    failEagerly.send(cmd).assertTimeout(200.millis)
+  }
 
-    "not fail long running requests when connected " in {
-      val impl = new FailEagerlyImpl
-      val cmd = mock[RedisCommandTest].returning returns Future.after(seconds = 3, "response")
-      impl.markConnected()
-      // run the test
-      impl.isConnected must beTrue
-      impl.send[String](cmd) must beEqualTo("response").awaitFor(5.seconds)
+  def test(name: String)(f: FailEagerlyImpl => Future[Assertion]): Unit = {
+    name in {
+      val system = ActorSystem("test", classLoader = Some(getClass.getClassLoader))
+      val application = StoppableApplication(system)
+      application.runAsyncInApplication {
+        val impl = new FailEagerlyImpl()(system)
+        f(impl)
+      }
     }
   }
 }
@@ -49,27 +51,27 @@ object FailEagerlySpec {
   import redis.RedisCommand
   import redis.protocol.RedisReply
 
-  trait RedisCommandTest extends RedisCommand[RedisReply, String] {
-    def returning: Future[String]
+  trait RedisCommandTest[T] extends RedisCommand[RedisReply, T] {
+    def returning: Future[T]
   }
 
   class FailEagerlyBase(implicit system: ActorSystem) extends RequestTimeout {
-    protected implicit val scheduler = system.scheduler
-    implicit val executionContext = system.dispatcher
+    protected implicit val scheduler: Scheduler = system.scheduler
+    implicit val executionContext: ExecutionContext = system.dispatcher
 
-    def send[T](redisCommand: RedisCommand[_ <: RedisReply, T]) = {
-      redisCommand.asInstanceOf[RedisCommandTest].returning.asInstanceOf[Future[T]]
+    def send[T](redisCommand: RedisCommand[_ <: RedisReply, T]): Future[T] = {
+      redisCommand.asInstanceOf[RedisCommandTest[T]].returning
     }
   }
 
-  class FailEagerlyImpl(implicit system: ActorSystem) extends FailEagerlyBase with FailEagerly {
+  final class FailEagerlyImpl(implicit system: ActorSystem) extends FailEagerlyBase with FailEagerly {
 
-    def connectionTimeout = Some(300.millis)
+    def connectionTimeout: Option[FiniteDuration] = Some(100.millis)
 
-    def isConnected = connected
+    def isConnected: Boolean = connected
 
-    def markConnected() = connected = true
+    def markConnected(): Unit = connected = true
 
-    def markDisconnected() = connected = false
+    def markDisconnected(): Unit = connected = false
   }
 }

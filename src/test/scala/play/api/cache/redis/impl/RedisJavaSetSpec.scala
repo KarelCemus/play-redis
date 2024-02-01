@@ -1,39 +1,59 @@
 package play.api.cache.redis.impl
 
 import play.api.cache.redis._
+import play.api.cache.redis.test._
+import play.cache.redis.{AsyncRedisList, AsyncRedisSet}
 
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
+import scala.jdk.OptionConverters._
 
-class RedisJavaSetSpec(implicit ee: ExecutionEnv) extends Specification with ReducedMockito {
-  import Implicits._
-  import JavaCompatibility._
-  import RedisCacheImplicits._
+class RedisJavaSetSpec extends AsyncUnitSpec with RedisSetJavaMock with RedisRuntimeMock {
 
-  "Redis Set" should {
+  test("add") { (set, internal) =>
+    for {
+      _ <- internal.expect.add(cacheKey, cacheValue)
+      _ <- set.add(cacheKey, cacheValue).assertingEqual(set)
+    } yield Passed
+  }
 
-    "add" in new MockedJavaSet {
-      internal.add(anyVarArgs[String]) returns internal
-      set.add(key, value).asScala must beEqualTo(set).await
-      there were one(internal).add(key, value)
-    }
 
-    "contains" in new MockedJavaSet {
-      internal.contains(beEq(key)) returns true
-      set.contains(key).asScala.map(Boolean.unbox) must beTrue.await
-      there were one(internal).contains(key)
-    }
+  test("contains") { (set, internal) =>
+    for {
+      _ <- internal.expect.contains(cacheKey, result = true)
+      _ <- set.contains(cacheKey).assertingEqual(true)
+    } yield Passed
+  }
 
-    "remove" in new MockedJavaSet {
-      internal.remove(anyVarArgs[String]) returns internal
-      set.remove(key, value).asScala must beEqualTo(set).await
-      there were one(internal).remove(key, value)
-    }
+  test("remove") { (set, internal) =>
+    for {
+      _ <- internal.expect.remove(cacheKey, cacheValue)
+      _ <- set.remove(cacheKey, cacheValue).assertingEqual(set)
+    } yield Passed
+  }
 
-    "toSet" in new MockedJavaSet {
-      internal.toSet returns Set(key, value)
-      set.toSet.asScala must beEqualTo(Set(key, value).asJava).await
-      there were one(internal).toSet
+  test("toSet") { (set, internal) =>
+    for {
+      _ <- internal.expect.toSet(cacheKey, cacheValue)
+      _ <- set.toSet.assertingEqual(Set(cacheKey, cacheValue).asJava)
+    } yield Passed
+  }
+
+  private def test(
+    name: String,
+    policy: RecoveryPolicy = recoveryPolicy.default
+  )(
+    f: (AsyncRedisSet[String], RedisSetMock) => Future[Assertion]
+  ): Unit = {
+    name in {
+      implicit val runtime: RedisRuntime = redisRuntime(
+        invocationPolicy = LazyInvocation,
+        recoveryPolicy = policy,
+      )
+      val internal: RedisSetMock = mock[RedisSetMock]
+      val set: AsyncRedisSet[String] = new RedisSetJavaImpl(internal)
+
+      f(set, internal)
     }
   }
 }

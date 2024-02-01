@@ -1,6 +1,8 @@
-package play.api.cache.redis.configuration
+package play.api.cache.redis.test
 
-case class RedisSettingsTest(
+import play.api.cache.redis.configuration._
+
+final case class RedisSettingsTest(
   invocationContext: String,
   invocationPolicy: String,
   timeout: RedisTimeouts,

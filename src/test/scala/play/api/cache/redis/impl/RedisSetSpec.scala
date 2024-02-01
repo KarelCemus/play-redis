@@ -1,95 +1,131 @@
 package play.api.cache.redis.impl
 
 import play.api.cache.redis._
+import play.api.cache.redis.impl.Builders.AsynchronousBuilder
+import play.api.cache.redis.test._
 
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
+import scala.concurrent.Future
 
-class RedisSetSpec(implicit ee: ExecutionEnv) extends Specification with ReducedMockito {
-  import Implicits._
-  import RedisCacheImplicits._
+class RedisSetSpec extends AsyncUnitSpec  with RedisRuntimeMock with RedisConnectorMock with ImplicitFutureMaterialization {
 
-  import org.mockito.ArgumentMatchers._
+  test("add") { (set, connector) =>
+    for {
+      _ <- connector.expect.setAdd(cacheKey, Seq(cacheValue))
+      _ <- connector.expect.setAdd(cacheKey, Seq(cacheValue, otherValue))
+      _ <- set.add(cacheValue).assertingEqual(set)
+      _ <- set.add(cacheValue, otherValue).assertingEqual(set)
+    } yield Passed
+  }
 
-  "Redis Set" should {
+  test("add (failing)") { (set, connector) =>
+    for {
+      _ <- connector.expect.setAdd(cacheKey, Seq(cacheValue), result = failure)
+      _ <- set.add(cacheValue).assertingEqual(set)
+    } yield Passed
+  }
 
-    "add" in new MockedSet {
-      connector.setAdd(anyString, anyVarArgs) returns 5L
-      set.add(value) must beEqualTo(set).await
-      set.add(value, other) must beEqualTo(set).await
-      there were one(connector).setAdd(key, value)
-      there were one(connector).setAdd(key, value, other)
-    }
+  test("contains") { (set, connector) =>
+    for {
+      _ <- connector.expect.setIsMember(cacheKey, cacheValue, result = true)
+      _ <- connector.expect.setIsMember(cacheKey, otherValue, result = false)
+      _ <- set.contains(cacheValue).assertingEqual(true)
+      _ <- set.contains(otherValue).assertingEqual(false)
+    } yield Passed
+  }
 
-    "add (failing)" in new MockedSet {
-      connector.setAdd(anyString, anyVarArgs) returns ex
-      set.add(value) must beEqualTo(set).await
-      there were one(connector).setAdd(key, value)
-    }
+  test("contains (failing)") { (set, connector) =>
+    for {
+      _ <- connector.expect.setIsMember(cacheKey, cacheValue, result = failure)
+      _ <- set.contains(cacheValue).assertingEqual(false)
+    } yield Passed
+  }
 
-    "contains" in new MockedSet {
-      connector.setIsMember(anyString, beEq(value)) returns true
-      connector.setIsMember(anyString, beEq(other)) returns false
-      set.contains(value) must beTrue.await
-      set.contains(other) must beFalse.await
-    }
+  test("remove") { (set, connector) =>
+    for {
+      _ <- connector.expect.setRemove(cacheKey, Seq(cacheValue))
+      _ <- connector.expect.setRemove(cacheKey, Seq(otherValue, cacheValue))
+      _ <- set.remove(cacheValue).assertingEqual(set)
+      _ <- set.remove(otherValue, cacheValue).assertingEqual(set)
+    } yield Passed
+  }
 
-    "contains (failing)" in new MockedSet {
-      connector.setIsMember(anyString, anyString) returns ex
-      set.contains(value) must beFalse.await
-      there were one(connector).setIsMember(key, value)
-    }
+  test("remove (failing)") { (set, connector) =>
+    for {
+      _ <- connector.expect.setRemove(cacheKey, Seq(cacheValue), result = failure)
+      _ <- set.remove(cacheValue).assertingEqual(set)
+    } yield Passed
+  }
 
-    "remove" in new MockedSet {
-      connector.setRemove(anyString, anyVarArgs) returns 1L
-      set.remove(value) must beEqualTo(set).await
-      set.remove(other, value) must beEqualTo(set).await
-      there were one(connector).setRemove(key, value)
-      there were one(connector).setRemove(key, other, value)
-    }
+  test("toSet") { (set, connector) =>
+    for {
+      _ <- connector.expect.setMembers[String](cacheKey, result = Set[Any](cacheValue, otherValue))
+      _ <- set.toSet.assertingEqual(Set(cacheValue, otherValue))
+    } yield Passed
+  }
 
-    "remove (failing)" in new MockedSet {
-      connector.setRemove(anyString, anyVarArgs) returns ex
-      set.remove(value) must beEqualTo(set).await
-      there were one(connector).setRemove(key, value)
-    }
+  test("toSet (failing)") { (set, connector) =>
+    for {
+      _ <- connector.expect.setMembers[String](cacheKey, result = failure)
+      _ <- set.toSet.assertingEqual(Set.empty)
+    } yield Passed
+  }
 
-    "toSet" in new MockedSet {
-      connector.setMembers[String](anyString)(anyClassTag) returns (data.toSet: Set[String])
-      set.toSet must beEqualTo(data).await
-    }
+  test("size") { (set, connector) =>
+    for {
+      _ <- connector.expect.setSize(cacheKey, result = 2L)
+      _ <- set.size.assertingEqual(2L)
+    } yield Passed
+  }
 
-    "toSet (failing)" in new MockedSet {
-      connector.setMembers[String](anyString)(anyClassTag) returns ex
-      set.toSet must beEqualTo(Set.empty).await
-    }
+  test("size (failing)") { (set, connector) =>
+    for {
+      _ <- connector.expect.setSize(cacheKey, result = failure)
+      _ <- set.size.assertingEqual(0L)
+    } yield Passed
+  }
 
-    "size" in new MockedSet {
-      connector.setSize(key) returns 2L
-      set.size must beEqualTo(2L).await
-    }
+  test("empty set") { (set, connector) =>
+    for {
+      _ <- connector.expect.setSize(cacheKey, result = 0L)
+      _ <- connector.expect.setSize(cacheKey, result = 0L)
+      _ <- set.isEmpty.assertingEqual(true)
+      _ <- set.nonEmpty.assertingEqual(false)
+    } yield Passed
+  }
 
-    "size (failing)" in new MockedSet {
-      connector.setSize(key) returns ex
-      set.size must beEqualTo(0L).await
-    }
+  test("non-empty set") { (set, connector) =>
+    for {
+      _ <- connector.expect.setSize(cacheKey, result = 1L)
+      _ <- connector.expect.setSize(cacheKey, result = 1L)
+      _ <- set.isEmpty.assertingEqual(false)
+      _ <- set.nonEmpty.assertingEqual(true)
+    } yield Passed
+  }
 
-    "empty set" in new MockedSet {
-      connector.setSize(beEq(key)) returns 0L
-      set.isEmpty must beTrue.await
-      set.nonEmpty must beFalse.await
-    }
+  test("empty/non-empty set (failing)") { (set, connector) =>
+    for {
+      _ <- connector.expect.setSize(cacheKey, result = failure)
+      _ <- connector.expect.setSize(cacheKey, result = failure)
+      _ <- set.isEmpty.assertingEqual(true)
+      _ <- set.nonEmpty.assertingEqual(false)
+    } yield Passed
+  }
 
-    "non-empty set" in new MockedSet {
-      connector.setSize(beEq(key)) returns 1L
-      set.isEmpty must beFalse.await
-      set.nonEmpty must beTrue.await
-    }
-
-    "empty/non-empty set (failing)" in new MockedSet {
-      connector.setSize(beEq(key)) returns ex
-      set.isEmpty must beTrue.await
-      set.nonEmpty must beFalse.await
+  private def test(
+    name: String,
+    policy: RecoveryPolicy = recoveryPolicy.default
+  )(
+    f: (RedisSet[String, AsynchronousResult], RedisConnectorMock) => Future[Assertion]
+  ): Unit = {
+    name in {
+      implicit val runtime: RedisRuntime = redisRuntime(
+        invocationPolicy = LazyInvocation,
+        recoveryPolicy = policy,
+      )
+      implicit val builder: Builders.AsynchronousBuilder.type = AsynchronousBuilder
+      val connector: RedisConnectorMock = mock[RedisConnectorMock]
+      val set: RedisSet[String, AsynchronousResult] = new RedisSetImpl[String, AsynchronousResult](cacheKey, connector)
+      f(set, connector)
     }
   }
 }
