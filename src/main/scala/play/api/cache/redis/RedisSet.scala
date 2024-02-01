@@ -1,7 +1,5 @@
 package play.api.cache.redis
 
-import scala.language.higherKinds
-
 /**
   * Redis Sets are simply unsorted sets of objects. It is possible to add
   * elements to a Redis Set by adding new elements into the collection.

@@ -1,6 +1,6 @@
 package play.api.cache.redis.impl
 
-import scala.language.{higherKinds, implicitConversions}
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 import play.api.cache.redis._
@@ -14,27 +14,39 @@ private[impl] class RedisMapImpl[Elem: ClassTag, Result[_]](key: String, redis: 
   @inline
   private def This: This = this
 
-  def add(field: String, value: Elem) = redis.hashSet(key, field, value).map(_ => This).recoverWithDefault(This)
+  override def add(field: String, value: Elem): Result[This] =
+    redis.hashSet(key, field, value).map(_ => This).recoverWithDefault(This)
 
-  def get(field: String) = redis.hashGet[Elem](key, field).recoverWithDefault(None)
+  override def get(field: String): Result[Option[Elem]] =
+    redis.hashGet[Elem](key, field).recoverWithDefault(None)
 
-  def getFields(fields: Iterable[String]): Result[Seq[Option[Elem]]] = redis.hashGet[Elem](key, fields.toSeq).recoverWithDefault(Seq.fill(fields.size)(None))
+  override def getFields(fields: Iterable[String]): Result[Seq[Option[Elem]]] =
+    redis.hashGet[Elem](key, fields.toSeq).recoverWithDefault(Seq.fill(fields.size)(None))
 
-  def contains(field: String) = redis.hashExists(key, field).recoverWithDefault(false)
+  override def contains(field: String): Result[Boolean] =
+    redis.hashExists(key, field).recoverWithDefault(false)
 
-  def remove(fields: String*) = redis.hashRemove(key, fields: _*).map(_ => This).recoverWithDefault(This)
+  override def remove(fields: String*): Result[This] =
+    redis.hashRemove(key, fields: _*).map(_ => This).recoverWithDefault(This)
 
-  def increment(field: String, incrementBy: Long) = redis.hashIncrement(key, field, incrementBy).recoverWithDefault(incrementBy)
+  override def increment(field: String, incrementBy: Long): Result[Long] =
+    redis.hashIncrement(key, field, incrementBy).recoverWithDefault(incrementBy)
 
-  def toMap = redis.hashGetAll[Elem](key).recoverWithDefault(Map.empty)
+  override def toMap: Result[Map[String, Elem]] =
+    redis.hashGetAll[Elem](key).recoverWithDefault(Map.empty)
 
-  def keySet = redis.hashKeys(key).recoverWithDefault(Set.empty)
+  override def keySet: Result[Set[String]] =
+    redis.hashKeys(key).recoverWithDefault(Set.empty)
 
-  def values = redis.hashValues[Elem](key).recoverWithDefault(Set.empty)
+  override def values: Result[Set[Elem]] =
+    redis.hashValues[Elem](key).recoverWithDefault(Set.empty)
 
-  def size = redis.hashSize(key).recoverWithDefault(0)
+  override def size: Result[Long] =
+    redis.hashSize(key).recoverWithDefault(0)
 
-  def isEmpty = redis.hashSize(key).map(_ == 0).recoverWithDefault(true)
+  override def isEmpty: Result[Boolean] =
+    redis.hashSize(key).map(_ === 0).recoverWithDefault(true)
 
-  def nonEmpty = redis.hashSize(key).map(_ > 0).recoverWithDefault(false)
+  override def nonEmpty: Result[Boolean] =
+    redis.hashSize(key).map(_ > 0).recoverWithDefault(false)
 }

@@ -1,5 +1,7 @@
 package play.api.cache.redis.configuration
 
+import play.api.cache.redis._
+
 /**
   * Abstraction over clusters and standalone instances. This trait
   * encapsulates a common settings and simplifies pattern matching.
@@ -9,10 +11,10 @@ sealed trait RedisInstance extends RedisSettings {
   def name: String
   // $COVERAGE-OFF$
   /** trait-specific equals */
-  override def equals(obj: scala.Any) = equalsAsInstance(obj)
+  override def equals(obj: scala.Any): Boolean = equalsAsInstance(obj)
   /** trait-specific equals, invokable from children */
-  protected def equalsAsInstance(obj: scala.Any) = obj match {
-    case that: RedisInstance => this.name == that.name && equalsAsSettings(that)
+  protected def equalsAsInstance(obj: scala.Any): Boolean = obj match {
+    case that: RedisInstance => this.name === that.name && equalsAsSettings(that)
     case _                   => false
   }
   // $COVERAGE-ON$
@@ -22,13 +24,13 @@ sealed trait RedisInstance extends RedisSettings {
   * Type of Redis Instance - a cluster. It encapsulates common settings of the instance
   * and the list of cluster nodes.
   */
-trait RedisCluster extends RedisInstance {
+sealed trait RedisCluster extends RedisInstance {
   /** nodes definition when cluster is defined */
   def nodes: List[RedisHost]
   // $COVERAGE-OFF$
   /** trait-specific equals */
-  override def equals(obj: scala.Any) = obj match {
-    case that: RedisCluster => equalsAsInstance(that) && this.nodes == that.nodes
+  override def equals(obj: scala.Any): Boolean = obj match {
+    case that: RedisCluster => equalsAsInstance(that) && this.nodes === that.nodes
     case _                  => false
   }
   /** to string */
@@ -38,15 +40,15 @@ trait RedisCluster extends RedisInstance {
 
 object RedisCluster {
 
-  def apply(name: String, nodes: List[RedisHost], settings: RedisSettings) =
+  def apply(name: String, nodes: List[RedisHost], settings: RedisSettings): RedisCluster =
     create(name, nodes, settings)
 
   @inline
-  private def create(_name: String, _nodes: List[RedisHost], _settings: RedisSettings) =
+  private def create(_name: String, _nodes: List[RedisHost], _settings: RedisSettings): RedisCluster =
     new RedisCluster with RedisDelegatingSettings {
-      val name = _name
-      val nodes = _nodes
-      val settings = _settings
+      override val name: String = _name
+      override val nodes: List[RedisHost] = _nodes
+      override val settings: RedisSettings = _settings
     }
 }
 
@@ -54,15 +56,15 @@ object RedisCluster {
   * A type of Redis Instance - a standalone instance. It encapsulates
   * common settings of the instance and provides a connection settings.
   */
-trait RedisStandalone extends RedisInstance with RedisHost {
+sealed trait RedisStandalone extends RedisInstance with RedisHost {
   // $COVERAGE-OFF$
   /** trait-specific equals */
-  override def equals(obj: scala.Any) = obj match {
+  override def equals(obj: scala.Any): Boolean = obj match {
     case that: RedisStandalone => equalsAsInstance(that) && equalsAsHost(that)
     case _                     => false
   }
   /** to string */
-  override def toString = database match {
+  override def toString: String = database match {
     case Some(database) => s"Standalone($name@$host:$port?db=$database)"
     case None           => s"Standalone($name@$host:$port)"
   }
@@ -75,11 +77,11 @@ object RedisStandalone {
     create(name, host, settings)
 
   @inline
-  private def create(_name: String, _host: RedisHost, _settings: RedisSettings) =
+  private def create(_name: String, _host: RedisHost, _settings: RedisSettings): RedisStandalone =
     new RedisStandalone with RedisDelegatingSettings with RedisDelegatingHost {
-      val name = _name
-      val innerHost = _host
-      val settings = _settings
+      override val name: String = _name
+      override val innerHost: RedisHost = _host
+      override val settings: RedisSettings = _settings
     }
 }
 
@@ -87,7 +89,7 @@ object RedisStandalone {
   * Type of Redis Instance - a sentinel. It encapsulates common settings of
   * the instance, name of the master group, and the list of sentinel nodes.
   */
-trait RedisSentinel extends RedisInstance {
+sealed trait RedisSentinel extends RedisInstance {
 
   def sentinels: List[RedisHost]
   def masterGroup: String
@@ -96,7 +98,7 @@ trait RedisSentinel extends RedisInstance {
   def database: Option[Int]
 
   override def equals(obj: scala.Any): Boolean = obj match {
-    case that: RedisSentinel => equalsAsInstance(that) && this.sentinels == that.sentinels
+    case that: RedisSentinel => equalsAsInstance(that) && this.sentinels === that.sentinels
   }
   /** to string */
   override def toString = s"Sentinel[${sentinels mkString ","}]"
@@ -112,12 +114,12 @@ object RedisSentinel {
     username: Option[String] = None,
     password: Option[String] = None,
     database: Option[Int] = None
-  ): RedisSentinel with RedisDelegatingSettings =
+  ): RedisSentinel =
     create(name, masterGroup, username, password, database, sentinels, settings)
 
   @inline
   private def create(_name: String, _masterGroup: String, _username: Option[String], _password: Option[String], _database: Option[Int],
-      _sentinels: List[RedisHost], _settings: RedisSettings) =
+      _sentinels: List[RedisHost], _settings: RedisSettings): RedisSentinel =
     new RedisSentinel with RedisDelegatingSettings {
       override val name: String = _name
       override val masterGroup: String = _masterGroup

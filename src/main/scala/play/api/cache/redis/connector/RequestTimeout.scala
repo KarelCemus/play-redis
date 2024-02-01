@@ -22,7 +22,7 @@ object RequestTimeout {
 
   // fails
   @inline
-  def fail(failAfter: FiniteDuration)(implicit scheduler: Scheduler, context: ExecutionContext) = {
+  def fail(failAfter: FiniteDuration)(implicit scheduler: Scheduler, context: ExecutionContext): Future[Nothing] = {
     after(failAfter, scheduler)(Future.failed(redis.actors.NoConnectionException))
   }
 
@@ -48,9 +48,9 @@ trait FailEagerly extends RequestTimeout {
   @inline
   protected def connectionTimeout: Option[FiniteDuration]
 
-  abstract override def send[T](redisCommand: RedisCommand[_ <: protocol.RedisReply, T]) = {
+  abstract override def send[T](redisCommand: RedisCommand[_ <: protocol.RedisReply, T]): Future[T] = {
     // proceed with the command
-    @inline def continue = super.send(redisCommand)
+    @inline def continue: Future[T] = super.send(redisCommand)
     // based on connection status
     if (connected) continue else connectionTimeout.fold(continue)(invokeOrFail(continue, _))
   }
@@ -69,9 +69,9 @@ trait RedisRequestTimeout extends RequestTimeout {
   /** indicates the timeout on the redis request */
   protected def timeout: Option[FiniteDuration]
 
-  abstract override def send[T](redisCommand: RedisCommand[_ <: protocol.RedisReply, T]) = {
+  abstract override def send[T](redisCommand: RedisCommand[_ <: protocol.RedisReply, T]): Future[T] = {
     // proceed with the command
-    @inline def continue = super.send(redisCommand)
+    @inline def continue: Future[T] = super.send(redisCommand)
     // based on connection status
     if (initialized) timeout.fold(continue)(invokeOrFail(continue, _)) else continue
   }

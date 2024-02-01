@@ -30,6 +30,7 @@ trait RedisClusterContainer extends RedisContainer { this: Suite =>
       ),
     )
 
+  @SuppressWarnings(Array("org.wartremover.warts.ThreadSleep"))
   override def beforeAll(): Unit = {
     super.beforeAll()
     log.info(s"Waiting for Redis Cluster to start on ${container.containerIpAddress}, will wait for $waitForStart")

@@ -10,11 +10,11 @@ package object connector {
   implicit class TupleHelper[+A, +B](val tuple: (A, B)) extends AnyVal {
     @inline def key: A = tuple._1
     @inline def value: B = tuple._2
-    @inline def asString = s"$key $value"
-    @inline def isNull = value == null
+    @inline def asString: String = s"$key $value"
+    @inline def isNull: Boolean = Option(value).isEmpty
   }
 
-  implicit class StringWhen(val value: String) extends AnyVal {
-    def when(condition: Boolean) = if (condition) value else ""
+  implicit class StringWhen(private val value: String) extends AnyVal {
+    def when(condition: Boolean): String = if (condition) value else ""
   }
 }

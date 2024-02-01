@@ -13,7 +13,7 @@ private[impl] trait AsyncRedis extends play.api.cache.AsyncCacheApi with CacheAs
 
 private[impl] class AsyncRedisImpl(redis: RedisConnector)(implicit runtime: RedisRuntime) extends RedisCache(redis, Builders.AsynchronousBuilder) with AsyncRedis {
 
-  def getOrElseUpdate[T: ClassTag](key: String, expiration: Duration)(orElse: => Future[T]) =
+  def getOrElseUpdate[T: ClassTag](key: String, expiration: Duration)(orElse: => Future[T]): Future[T] =
     getOrFuture[T](key, expiration)(orElse)
 
   def removeAll(): Future[Done] = invalidate()

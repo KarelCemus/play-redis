@@ -44,21 +44,22 @@ trait RecoveryPolicy {
 trait Reports extends RecoveryPolicy {
 
   /** logger instance */
-  protected val log = Logger("play.api.cache.redis")
+  protected val log: Logger = Logger("play.api.cache.redis")
 
-  protected def message(failure: RedisException): String = failure match {
-    case TimeoutException(cause)                                        => s"Command execution timed out."
-    case SerializationException(key, message, cause)                    => s"$message for key '$key'."
-    case ExecutionFailedException(Some(key), command, statement, cause) => s"Command $command for key '$key' failed."
-    case ExecutionFailedException(None, command, statement, cause)      => s"Command $command failed."
-    case UnexpectedResponseException(Some(key), command)                => s"Command $command for key '$key' returned unexpected response."
-    case UnexpectedResponseException(None, command)                     => s"Command $command returned unexpected response."
-  }
+  protected def message(failure: RedisException): String =
+    failure match {
+      case TimeoutException(_)                                        => s"Command execution timed out."
+      case SerializationException(key, message, _)                    => s"$message for key '$key'."
+      case ExecutionFailedException(Some(key), command, _, _) => s"Command $command for key '$key' failed."
+      case ExecutionFailedException(None, command, _, _)      => s"Command $command failed."
+      case UnexpectedResponseException(Some(key), command)                => s"Command $command for key '$key' returned unexpected response."
+      case UnexpectedResponseException(None, command)                     => s"Command $command returned unexpected response."
+    }
 
   protected def doLog(message: String, cause: Option[Throwable]): Unit
 
   /** reports a failure into logs */
-  protected def report(failure: RedisException) = {
+  private def report(failure: RedisException): Unit = {
     // create a failure report and report a failure
     doLog(message(failure), Option(failure.getCause))
   }
@@ -115,14 +116,14 @@ trait RecoverWithDefault extends RecoveryPolicy {
 /**
   * When the command fails, it logs the failure and fails the whole operation.
   */
-private[redis] class LogAndFailPolicy @Inject() () extends FailThrough with DetailedReports
+private[redis] class LogAndFailPolicy @Inject() extends FailThrough with DetailedReports
 
 /**
   * When the command fails, it logs the failure and returns default value
   * to prevent application failure. The returned value is neutral to the
   * operation and it should behave like there is no cache
   */
-private[redis] class LogAndDefaultPolicy @Inject() () extends RecoverWithDefault with DetailedReports
+private[redis] class LogAndDefaultPolicy @Inject() extends RecoverWithDefault with DetailedReports
 
 /**
   * When the command fails, it logs the failure and returns default value
@@ -132,7 +133,7 @@ private[redis] class LogAndDefaultPolicy @Inject() () extends RecoverWithDefault
   * LogCondensed produces condensed messages without a stacktrace to avoid
   * extensive logs
   */
-private[redis] class LogCondensedAndDefaultPolicy @Inject() () extends RecoverWithDefault with CondensedReports
+private[redis] class LogCondensedAndDefaultPolicy @Inject() extends RecoverWithDefault with CondensedReports
 
 /**
   * When the command fails, it logs the failure and fails the whole operation.
@@ -140,7 +141,7 @@ private[redis] class LogCondensedAndDefaultPolicy @Inject() () extends RecoverWi
   * LogCondensed produces condensed messages without a stacktrace to avoid
   * extensive logs
   */
-private[redis] class LogCondensedAndFailPolicy @Inject() () extends FailThrough with CondensedReports
+private[redis] class LogCondensedAndFailPolicy @Inject() extends FailThrough with CondensedReports
 
 /**
   * This resolver represents an abstraction over translation
@@ -154,7 +155,7 @@ trait RecoveryPolicyResolver {
 // $COVERAGE-OFF$
 
 class RecoveryPolicyResolverImpl extends RecoveryPolicyResolver {
-  val resolve: PartialFunction[String, RecoveryPolicy] = {
+  override val resolve: PartialFunction[String, RecoveryPolicy] = {
     case "log-and-fail"              => new LogAndFailPolicy
     case "log-and-default"           => new LogAndDefaultPolicy
     case "log-condensed-and-fail"    => new LogCondensedAndFailPolicy
@@ -164,7 +165,7 @@ class RecoveryPolicyResolverImpl extends RecoveryPolicyResolver {
 
 object RecoveryPolicyResolver {
 
-  def bindings = Seq(
+  def bindings: Seq[Binding[_]] = Seq(
     bind[RecoveryPolicy].qualifiedWith("log-and-fail").to[LogAndFailPolicy],
     bind[RecoveryPolicy].qualifiedWith("log-and-default").to[LogAndDefaultPolicy],
     bind[RecoveryPolicy].qualifiedWith("log-condensed-and-fail").to[LogCondensedAndFailPolicy],
@@ -177,7 +178,7 @@ object RecoveryPolicyResolver {
 /** resolves a policies with guice enabled */
 class RecoveryPolicyResolverGuice @Inject() (injector: Injector) extends RecoveryPolicyResolver {
 
-  def resolve = {
+  override def resolve: PartialFunction[String, RecoveryPolicy] = {
     case name => injector instanceOf bind[RecoveryPolicy].qualifiedWith(name)
   }
 }

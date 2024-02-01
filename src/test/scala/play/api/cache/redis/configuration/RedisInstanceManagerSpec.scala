@@ -267,9 +267,9 @@ class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterializati
 
       override def caches: Set[String] = providers.map(_.name).toSet
 
-      override def instanceOfOption(name: String): Option[RedisInstanceProvider] = providers.find(_.name == name)
+      override def instanceOfOption(name: String): Option[RedisInstanceProvider] = providers.find(_.name === name)
 
-      override def defaultInstance: RedisInstanceProvider = providers.find(_.name == default) getOrElse {
+      override def defaultInstance: RedisInstanceProvider = providers.find(_.name === default) getOrElse {
         throw new RuntimeException("Default instance is not defined.")
       }
 

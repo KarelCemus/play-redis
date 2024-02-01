@@ -1,7 +1,7 @@
 package play.api.cache.redis.impl
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.language.{higherKinds, implicitConversions}
+import scala.language.implicitConversions
 
 import play.api.cache.redis._
 
@@ -23,7 +23,7 @@ private[impl] object dsl {
   implicit class RecoveryFuture[T](future: => Future[T]) {
 
     /** Transforms the promise into desired builder results, possibly recovers with provided default value */
-    @inline def recoverWithDefault[Result[X]](default: => T)(implicit builder: Builders.ResultBuilder[Result], runtime: RedisRuntime): Result[T] =
+    @inline def recoverWithDefault[Result[_]](default: => T)(implicit builder: Builders.ResultBuilder[Result], runtime: RedisRuntime): Result[T] =
       builder.toResult(future, Future.successful(default))
 
     /** recovers from the execution but returns future, not Result */
@@ -37,12 +37,12 @@ private[impl] object dsl {
   /** helper function enabling us to recover from command execution */
   implicit class RecoveryUnitFuture(val future: Future[Unit]) extends AnyVal {
     /** Transforms the promise into desired builder results, possibly recovers with provided default value */
-    @inline def recoverWithDone[Result[X]](implicit builder: Builders.ResultBuilder[Result], runtime: RedisRuntime): Result[Done] =
+    @inline def recoverWithDone[Result[_]](implicit builder: Builders.ResultBuilder[Result], runtime: RedisRuntime): Result[Done] =
       builder.toResult(future.map(unitAsDone), Future.successful(Done))
   }
 
   /** maps units into akka.Done */
-  @inline private def unitAsDone(unit: Unit) = Done
+  @inline private def unitAsDone(unit: Unit): Done = Done
 
   /** applies prefixer to produce final cache key */
   implicit class CacheKey(val key: String) extends AnyVal {

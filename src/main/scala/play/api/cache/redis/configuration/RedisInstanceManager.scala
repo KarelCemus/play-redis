@@ -1,8 +1,7 @@
 package play.api.cache.redis.configuration
 
 import play.api.ConfigLoader
-import play.api.cache.redis.JavaCompatibilityBase
-
+import play.api.cache.redis._
 import com.typesafe.config.Config
 
 /**
@@ -34,7 +33,7 @@ trait RedisInstanceManager extends Iterable[RedisInstanceProvider] {
   def iterator: Iterator[RedisInstanceProvider] = caches.view.flatMap(instanceOfOption).iterator
 
   // $COVERAGE-OFF$
-  override def equals(obj: scala.Any) = obj match {
+  override def equals(obj: scala.Any): Boolean = obj match {
     case that: RedisInstanceManager => Equals.check(this, that)(_.caches, _.defaultInstance, _.toSet)
     case _                          => false
   }
@@ -44,9 +43,9 @@ trait RedisInstanceManager extends Iterable[RedisInstanceProvider] {
 private[redis] object RedisInstanceManager extends ConfigLoader[RedisInstanceManager] {
   import RedisConfigLoader._
 
-  def load(config: Config, path: String) = {
+  override def load(config: Config, path: String): RedisInstanceManager = {
     // read default settings
-    implicit val defaults = RedisSettings.load(config, path)
+    implicit val defaults: RedisSettings = RedisSettings.load(config, path)
     // check if the list of instances is defined or whether to use
     // a fallback definition directly under the configuration root
     val hasInstances = config.hasPath(path / "instances")
@@ -63,17 +62,19 @@ class RedisInstanceManagerImpl(config: Config, path: String)(implicit defaults: 
   import RedisConfigLoader._
 
   /** names of all known redis caches */
-  def caches: Set[String] = config.getObject(path / "instances").keySet.asScala.toSet
+  override def caches: Set[String] = config.getObject(path / "instances").keySet.asScala.toSet
 
-  def defaultCacheName = config.getString(path / "default-cache")
+  def defaultCacheName: String = config.getString(path / "default-cache")
 
-  def defaultInstance = instanceOfOption(defaultCacheName) getOrElse {
-    throw new IllegalArgumentException(s"Default cache '$defaultCacheName' is not defined.")
-  }
+  override def defaultInstance: RedisInstanceProvider =
+    instanceOfOption(defaultCacheName) getOrElse {
+      throw new IllegalArgumentException(s"Default cache '$defaultCacheName' is not defined.")
+    }
 
   /** returns a configuration of a single named redis instance */
-  def instanceOfOption(name: String): Option[RedisInstanceProvider] =
-    if (config hasPath (path / "instances" / name)) Some(RedisInstanceProvider.load(config, path / "instances" / name, name)) else None
+  override def instanceOfOption(name: String): Option[RedisInstanceProvider] =
+    if (config hasPath (path / "instances" / name)) Some(RedisInstanceProvider.load(config, path / "instances" / name, name))
+    else None
 }
 
 /**
@@ -85,11 +86,11 @@ class RedisInstanceManagerFallback(config: Config, path: String)(implicit defaul
   private val name = config.getString(path / "default-cache")
 
   /** names of all known redis caches */
-  def caches: Set[String] = Set(name)
+  override def caches: Set[String] = Set(name)
 
-  def defaultInstance = RedisInstanceProvider.load(config, path, name)
+  override def defaultInstance: RedisInstanceProvider = RedisInstanceProvider.load(config, path, name)
 
   /** returns a configuration of a single named redis instance */
-  def instanceOfOption(name: String): Option[RedisInstanceProvider] =
-    if (name == this.name) Some(defaultInstance) else None
+  override def instanceOfOption(name: String): Option[RedisInstanceProvider] =
+    if (name === this.name) Some(defaultInstance) else None
 }

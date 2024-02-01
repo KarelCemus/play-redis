@@ -1,7 +1,5 @@
 package play.api.cache.redis
 
-import scala.language.higherKinds
-
 private[redis] trait RedisCollection[Collection, Result[_]] {
 
   type This >: this.type

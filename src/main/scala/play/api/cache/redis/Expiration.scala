@@ -28,8 +28,8 @@ private[redis] trait ExpirationImplicits {
 class Expiration(val expireAt: Long) extends AnyVal {
 
   /** returns now in milliseconds */
-  private def now = System.currentTimeMillis()
+  private def now: Long = System.currentTimeMillis()
 
   /** converts given timestamp indication expiration date into duration from now */
-  def asExpiration = (expireAt - now).milliseconds
+  def asExpiration: FiniteDuration = (expireAt - now).milliseconds
 }

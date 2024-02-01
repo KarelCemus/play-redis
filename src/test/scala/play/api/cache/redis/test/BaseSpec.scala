@@ -86,7 +86,7 @@ trait TimeLimitedSpec extends AsyncTestSuiteMixin with AsyncUtilities {
 trait AsyncUtilities { this: AsyncTestSuite =>
 
   implicit class FutureAsyncUtilities(future: Future.type) {
-    def after[T](duration: FiniteDuration, value: T): Future[T] =
+    def after[T](duration: FiniteDuration, value: => T): Future[T] =
       Future(Await.result(Future.never, duration)).recover(_ => value)
 
     def waitFor(duration: FiniteDuration): Future[Unit] =
@@ -95,7 +95,7 @@ trait AsyncUtilities { this: AsyncTestSuite =>
 
 }
 
-trait FutureAssertions { this: BaseSpec =>
+trait FutureAssertions extends AsyncUtilities { this: BaseSpec =>
   import scala.jdk.FutureConverters._
 
   implicit def completionStageToFutureOps[T](future: CompletionStage[T]): FutureAssertionOps[T] =
@@ -136,7 +136,7 @@ trait FutureAssertions { this: BaseSpec =>
     def assertTimeout(timeout: FiniteDuration): Future[Assertion] = {
       Future.firstCompletedOf(
         Seq(
-          Future(Thread.sleep(timeout.toMillis)).map(_ => throw new TimeoutException(s"Expected timeout after $timeout")),
+          Future.after(timeout, throw new TimeoutException(s"Expected timeout after $timeout")),
           future.map(value => fail(s"Expected timeout but got $value"))
         )
       ).assertingFailure[TimeoutException]

@@ -1,10 +1,8 @@
 package play.api.cache.redis
 
 import javax.inject._
-
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-
 import play.api.inject._
 import play.cache._
 
@@ -15,7 +13,7 @@ import play.cache._
 @Singleton
 class RedisCacheModule extends Module {
 
-  override def bindings(environment: play.api.Environment, config: play.api.Configuration) = {
+  override def bindings(environment: play.api.Environment, config: play.api.Configuration): Seq[Binding[_]] = {
     def bindDefault = config.get[Boolean]("play.cache.redis.bind-default")
 
     // read the config and get the configuration of the redis
@@ -44,7 +42,7 @@ trait ProviderImplicits {
 }
 
 private[redis] class RichBindingKey[T](val key: BindingKey[T]) extends AnyVal {
-  @inline def named(name: String) = key.qualifiedWith(new NamedCacheImpl(name))
+  @inline def named(name: String): BindingKey[T] = key.qualifiedWith(new NamedCacheImpl(name))
 }
 
 trait GuiceProviderImplicits extends ProviderImplicits {
@@ -61,8 +59,8 @@ object GuiceProvider extends ProviderImplicits {
 
   private def namedBinding[T: ClassTag](f: impl.RedisCaches => T) = new QualifiedBindingKey(bind[T], f)
 
-  def bindings(instance: RedisInstanceProvider) = {
-    implicit val name = new CacheName(instance.name)
+  def bindings(instance: RedisInstanceProvider): Seq[Binding[_]] = {
+    implicit val name: CacheName = new CacheName(instance.name)
 
     Seq[Binding[_]](
       // bind implementation of all caches
@@ -80,9 +78,9 @@ object GuiceProvider extends ProviderImplicits {
       ).map(_.toBindings)
   }
 
-  def defaults(instance: RedisInstanceProvider) = {
-    implicit val name = new CacheName(instance.name)
-    @inline def defaultBinding[T: ClassTag](implicit cacheName: CacheName): Binding[T] = bind[T].to(bind[T].named(name))
+  def defaults(instance: RedisInstanceProvider): Seq[Binding[_]] = {
+    implicit val name: CacheName = new CacheName(instance.name)
+    @inline def defaultBinding[T: ClassTag]: Binding[T] = bind[T].to(bind[T].named(name))
 
     Seq(
       // bind implementation of all caches
@@ -105,7 +103,7 @@ object GuiceProvider extends ProviderImplicits {
 
 class GuiceRedisCacheProvider(instance: RedisInstanceProvider) extends Provider[RedisCaches] with GuiceProviderImplicits {
   @Inject() var injector: Injector = _
-  lazy val get: RedisCaches = new impl.RedisCachesProvider(
+  override lazy val get: RedisCaches = new impl.RedisCachesProvider(
     instance = instance.resolved(bind[configuration.RedisInstanceResolver]),
     serializer = bind[connector.AkkaSerializer],
     environment = bind[play.api.Environment]
@@ -118,17 +116,18 @@ class GuiceRedisCacheProvider(instance: RedisInstanceProvider) extends Provider[
 
 class NamedCacheInstanceProvider[T](f: RedisCaches => T)(implicit name: CacheName) extends Provider[T] with GuiceProviderImplicits {
   @Inject() var injector: Injector = _
-  lazy val get = f(bind[RedisCaches].named(name))
+  override lazy val get: T = f(bind[RedisCaches].named(name))
 }
 
 class CacheName(val name: String) extends AnyVal
+
 object CacheName {
   implicit def name2string(name: CacheName): String = name.name
 }
 
 @Singleton
 class GuiceRedisInstanceResolver @Inject() (val injector: Injector) extends configuration.RedisInstanceResolver with GuiceProviderImplicits {
-  def resolve = {
+  override def resolve: PartialFunction[String, RedisInstance] = {
     case name => bind[RedisInstance].named(name)
   }
 }

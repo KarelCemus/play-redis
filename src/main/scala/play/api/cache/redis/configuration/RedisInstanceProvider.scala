@@ -15,32 +15,32 @@ sealed trait RedisInstanceProvider extends Any {
   def resolved(implicit resolver: RedisInstanceResolver): RedisInstance
 }
 
-class ResolvedRedisInstance(val instance: RedisInstance) extends RedisInstanceProvider {
-  def name: String = instance.name
-  def resolved(implicit resolver: RedisInstanceResolver) = instance
+final class ResolvedRedisInstance(val instance: RedisInstance) extends RedisInstanceProvider {
+  override def name: String = instance.name
+  override def resolved(implicit resolver: RedisInstanceResolver): RedisInstance = instance
 
   // $COVERAGE-OFF$
-  override def equals(obj: scala.Any) = obj match {
-    case that: ResolvedRedisInstance => this.name == that.name && this.instance == that.instance
+  override def equals(obj: scala.Any): Boolean = obj match {
+    case that: ResolvedRedisInstance => this.name === that.name && this.instance === that.instance
     case _                           => false
   }
 
-  override def hashCode() = name.hashCode
+  override def hashCode(): Int = name.hashCode
 
   override def toString = s"ResolvedRedisInstance($name@$instance)"
   // $COVERAGE-ON$
 }
 
-class UnresolvedRedisInstance(val name: String) extends RedisInstanceProvider {
-  def resolved(implicit resolver: RedisInstanceResolver) = resolver resolve name
+final class UnresolvedRedisInstance(val name: String) extends RedisInstanceProvider {
+  override def resolved(implicit resolver: RedisInstanceResolver): RedisInstance = resolver resolve name
 
   // $COVERAGE-OFF$
-  override def equals(obj: scala.Any) = obj match {
-    case that: UnresolvedRedisInstance => this.name == that.name
+  override def equals(obj: scala.Any): Boolean = obj match {
+    case that: UnresolvedRedisInstance => this.name === that.name
     case _                             => false
   }
 
-  override def hashCode() = name.hashCode
+  override def hashCode(): Int = name.hashCode
 
   override def toString = s"UnresolvedRedisInstance($name)"
   // $COVERAGE-ON$
@@ -49,7 +49,7 @@ class UnresolvedRedisInstance(val name: String) extends RedisInstanceProvider {
 private[configuration] object RedisInstanceProvider extends RedisConfigInstanceLoader[RedisInstanceProvider] {
   import RedisConfigLoader._
 
-  def load(config: Config, path: String, name: String)(implicit defaults: RedisSettings) = {
+  override def load(config: Config, path: String, name: String)(implicit defaults: RedisSettings): RedisInstanceProvider = {
     config.getOption(path / "source", _.getString) getOrElse defaults.source match {
       // required static configuration of the standalone instance using application.conf
       case "standalone"        => RedisInstanceStandalone
@@ -79,13 +79,14 @@ private[configuration] object RedisInstanceProvider extends RedisConfigInstanceL
   * Statically configured single standalone redis instance
   */
 private[configuration] object RedisInstanceStandalone extends RedisConfigInstanceLoader[RedisInstanceProvider] {
-  def load(config: Config, path: String, instanceName: String)(implicit defaults: RedisSettings) = new ResolvedRedisInstance(
-    RedisStandalone.apply(
-      name = instanceName,
-      host = RedisHost.load(config, path),
-      settings = RedisSettings.withFallback(defaults).load(config, path)
+  override def load(config: Config, path: String, instanceName: String)(implicit defaults: RedisSettings) =
+    new ResolvedRedisInstance(
+      RedisStandalone.apply(
+        name = instanceName,
+        host = RedisHost.load(config, path),
+        settings = RedisSettings.withFallback(defaults).load(config, path)
+      )
     )
-  )
 }
 
 /**
@@ -95,13 +96,14 @@ private[configuration] object RedisInstanceCluster extends RedisConfigInstanceLo
   import JavaCompatibilityBase._
   import RedisConfigLoader._
 
-  def load(config: Config, path: String, instanceName: String)(implicit defaults: RedisSettings) = new ResolvedRedisInstance(
-    RedisCluster.apply(
-      name = instanceName,
-      nodes = config.getConfigList(path / "cluster").asScala.map(config => RedisHost.load(config)).toList,
-      settings = RedisSettings.withFallback(defaults).load(config, path)
+  override def load(config: Config, path: String, instanceName: String)(implicit defaults: RedisSettings) =
+    new ResolvedRedisInstance(
+      RedisCluster.apply(
+        name = instanceName,
+        nodes = config.getConfigList(path / "cluster").asScala.map(config => RedisHost.load(config)).toList,
+        settings = RedisSettings.withFallback(defaults).load(config, path)
+      )
     )
-  )
 }
 
 /**
@@ -110,13 +112,14 @@ private[configuration] object RedisInstanceCluster extends RedisConfigInstanceLo
 private[configuration] object RedisInstanceAwsCluster extends RedisConfigInstanceLoader[RedisInstanceProvider] {
   import RedisConfigLoader._
 
-  def load(config: Config, path: String, instanceName: String)(implicit defaults: RedisSettings) = new ResolvedRedisInstance(
-    RedisCluster.apply(
-      name = instanceName,
-      nodes = InetAddress.getAllByName(config.getString(path / "host")).map(address => RedisHost(address.getHostAddress, 6379)).toList,
-      settings = RedisSettings.withFallback(defaults).load(config, path)
+  override def load(config: Config, path: String, instanceName: String)(implicit defaults: RedisSettings) =
+    new ResolvedRedisInstance(
+      RedisCluster.apply(
+        name = instanceName,
+        nodes = InetAddress.getAllByName(config.getString(path / "host")).map(address => RedisHost(address.getHostAddress, 6379)).toList,
+        settings = RedisSettings.withFallback(defaults).load(config, path)
+      )
     )
-  )
 }
 
 /**
@@ -126,13 +129,14 @@ private[configuration] object RedisInstanceAwsCluster extends RedisConfigInstanc
 private[configuration] object RedisInstanceEnvironmental extends RedisConfigInstanceLoader[RedisInstanceProvider] {
   import RedisConfigLoader._
 
-  def load(config: Config, path: String, instanceName: String)(implicit defaults: RedisSettings) = new ResolvedRedisInstance(
-    RedisStandalone.apply(
-      name = instanceName,
-      host = RedisHost.fromConnectionString(config getString path./("connection-string")),
-      settings = RedisSettings.withFallback(defaults).load(config, path)
+  override def load(config: Config, path: String, instanceName: String)(implicit defaults: RedisSettings) =
+    new ResolvedRedisInstance(
+      RedisStandalone.apply(
+        name = instanceName,
+        host = RedisHost.fromConnectionString(config getString path./("connection-string")),
+        settings = RedisSettings.withFallback(defaults).load(config, path)
+      )
     )
-  )
 }
 
 /**
@@ -142,23 +146,25 @@ private[configuration] object RedisInstanceSentinel extends RedisConfigInstanceL
   import JavaCompatibilityBase._
   import RedisConfigLoader._
 
-  def load(config: Config, path: String, instanceName: String)(implicit defaults: RedisSettings) = new ResolvedRedisInstance(
-    RedisSentinel.apply(
-      name = instanceName,
-      sentinels = config.getConfigList(path / "sentinels").asScala.map(config => RedisHost.load(config)).toList,
-      masterGroup = config.getString(path / "master-group"),
-      password = config.getOption(path / "password", _.getString),
-      database = config.getOption(path / "database", _.getInt),
-      settings = RedisSettings.withFallback(defaults).load(config, path)
+  override def load(config: Config, path: String, instanceName: String)(implicit defaults: RedisSettings) =
+    new ResolvedRedisInstance(
+      RedisSentinel.apply(
+        name = instanceName,
+        sentinels = config.getConfigList(path / "sentinels").asScala.map(config => RedisHost.load(config)).toList,
+        masterGroup = config.getString(path / "master-group"),
+        password = config.getOption(path / "password", _.getString),
+        database = config.getOption(path / "database", _.getInt),
+        settings = RedisSettings.withFallback(defaults).load(config, path)
+      )
     )
-  )
 }
 
 /**
   * This binder indicates that the user provides his own configuration of this named cache.
   */
 private[configuration] object RedisInstanceCustom extends RedisConfigInstanceLoader[RedisInstanceProvider] {
-  def load(config: Config, path: String, instanceName: String)(implicit defaults: RedisSettings) = new UnresolvedRedisInstance(
-    name = instanceName
-  )
+  override def load(config: Config, path: String, instanceName: String)(implicit defaults: RedisSettings) =
+    new UnresolvedRedisInstance(
+      name = instanceName
+    )
 }

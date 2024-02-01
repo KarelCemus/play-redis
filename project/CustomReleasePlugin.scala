@@ -1,15 +1,15 @@
 import com.github.sbt.git.{GitVersioning, SbtGit}
-import sbt.*
-import sbt.Keys.*
-import sbtrelease.*
+import sbt._
+import sbt.Keys._
+import sbtrelease._
 import xerial.sbt.Sonatype
 
 object CustomReleasePlugin extends AutoPlugin {
 
-  import ReleasePlugin.autoImport.*
-  import ReleaseStateTransformations.*
-  import ReleaseUtilities.*
-  import Sonatype.autoImport.*
+  import ReleasePlugin.autoImport._
+  import ReleaseStateTransformations._
+  import ReleaseUtilities._
+  import Sonatype.autoImport._
 
   object autoImport {
     val playVersion = settingKey[String]("Version of Play framework")
@@ -27,7 +27,7 @@ object CustomReleasePlugin extends AutoPlugin {
     )
   }
 
-  override def projectSettings = Seq[Setting[_]](
+  override def projectSettings: Seq[Setting[_]] = Seq[Setting[_]](
     publishMavenStyle := true,
     pomIncludeRepository := { _ => false },
     // customized release process

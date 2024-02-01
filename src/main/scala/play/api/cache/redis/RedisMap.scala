@@ -1,7 +1,5 @@
 package play.api.cache.redis
 
-import scala.language.higherKinds
-
 /**
   * Redis Hashes are simply hash maps with strings as keys. It is possible to add
   * elements to a Redis Hashes by adding new elements into the collection.

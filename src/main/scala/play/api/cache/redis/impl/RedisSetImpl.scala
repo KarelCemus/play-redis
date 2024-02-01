@@ -1,9 +1,9 @@
 package play.api.cache.redis.impl
 
-import scala.language.{higherKinds, implicitConversions}
-import scala.reflect.ClassTag
-
 import play.api.cache.redis._
+
+import scala.language.implicitConversions
+import scala.reflect.ClassTag
 
 /** <p>Implementation of Set API using redis-server cache implementation.</p> */
 private[impl] class RedisSetImpl[Elem: ClassTag, Result[_]](key: String, redis: RedisConnector)(implicit builder: Builders.ResultBuilder[Result], runtime: RedisRuntime) extends RedisSet[Elem, Result] {
@@ -14,31 +14,31 @@ private[impl] class RedisSetImpl[Elem: ClassTag, Result[_]](key: String, redis: 
   @inline
   private def This: This = this
 
-  def add(elements: Elem*) = {
+  override def add(elements: Elem*): Result[RedisSet[Elem, Result]] = {
     redis.setAdd(key, elements: _*).map(_ => This).recoverWithDefault(This)
   }
 
-  def contains(element: Elem) = {
+  override def contains(element: Elem): Result[Boolean] = {
     redis.setIsMember(key, element).recoverWithDefault(false)
   }
 
-  def remove(element: Elem*) = {
+  override def remove(element: Elem*): Result[RedisSet[Elem, Result]] = {
     redis.setRemove(key, element: _*).map(_ => This).recoverWithDefault(This)
   }
 
-  def toSet = {
+  override def toSet: Result[Set[Elem]] = {
     redis.setMembers[Elem](key).recoverWithDefault(Set.empty)
   }
 
-  def size = {
+  override def size: Result[Long] = {
     redis.setSize(key).recoverWithDefault(0)
   }
 
-  def isEmpty = {
-    redis.setSize(key).map(_ == 0).recoverWithDefault(true)
+  override def isEmpty: Result[Boolean] = {
+    redis.setSize(key).map(_ === 0).recoverWithDefault(true)
   }
 
-  def nonEmpty = {
+  override def nonEmpty: Result[Boolean] = {
     redis.setSize(key).map(_ > 0).recoverWithDefault(false)
   }
 }
