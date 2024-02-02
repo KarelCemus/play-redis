@@ -1,7 +1,5 @@
 package play.api.cache.redis
 
-import scala.language.higherKinds
-
 /**
   * Redis Lists are simply lists of strings, sorted by insertion order.
   * It is possible to add elements to a Redis List pushing new elements

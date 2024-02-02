@@ -20,9 +20,9 @@ trait RedisHost {
   def password: Option[String]
   // $COVERAGE-OFF$
   /** trait-specific equals */
-  override def equals(obj: scala.Any) = equalsAsHost(obj)
+  override def equals(obj: scala.Any): Boolean = equalsAsHost(obj)
   /** trait-specific equals, invokable from children */
-  protected def equalsAsHost(obj: scala.Any) = obj match {
+  protected def equalsAsHost(obj: scala.Any): Boolean = obj match {
     case that: RedisHost => Equals.check(this, that)(_.host, _.port, _.username, _.database, _.password)
     case _               => false
   }
@@ -40,7 +40,7 @@ object RedisHost extends ConfigLoader[RedisHost] {
   import RedisConfigLoader._
 
   /** expected format of the environment variable */
-  private val ConnectionString = "redis://((?<username>[^:]+):(?<password>[^@]+)@)?(?<host>[^:]+):(?<port>[0-9]+)".r("auth", "username", "password", "host", "port")
+  private val ConnectionString = "redis://((?<username>[^:]+):(?<password>[^@]+)@)?(?<host>[^:]+):(?<port>[0-9]+)".r
 
   def load(config: Config, path: String): RedisHost = apply(
     host = config.getString(path / "host"),

@@ -16,7 +16,7 @@ sealed trait InvocationPolicy {
 
 object EagerInvocation extends InvocationPolicy {
   override def invoke[T](f: => Future[Any], thenReturn: T)(implicit context: ExecutionContext): Future[T] = {
-    f
+    f: Unit
     Future successful thenReturn
   }
 }

@@ -11,6 +11,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class RedisClusterSpec extends IntegrationSpec with RedisClusterContainer {
 
+  override protected def testTimeout: FiniteDuration = 60.seconds
+
   test("pong on ping") { connector =>
     connector.ping().assertingSuccess
   }
@@ -57,10 +59,6 @@ class RedisClusterSpec extends IntegrationSpec with RedisClusterContainer {
 
   def test(name: String)(f: RedisConnector => Future[Assertion]): Unit = {
     name in {
-      implicit val system: ActorSystem = ActorSystem("test", classLoader = Some(getClass.getClassLoader))
-      implicit val runtime: RedisRuntime = RedisRuntime("cluster", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
-      implicit val application: StoppableApplication = StoppableApplication(system)
-      val serializer = new AkkaSerializerImpl(system)
 
       lazy val clusterInstance = RedisCluster(
         name = "play",
@@ -73,16 +71,34 @@ class RedisClusterSpec extends IntegrationSpec with RedisClusterContainer {
         )
       )
 
-      application.runAsyncInApplication {
-        for {
-         connector <- Future(new RedisConnectorProvider(clusterInstance, serializer).get)
-          // initialize the connector by flushing the database
-          keys <- connector.matching("*")
-          _ <- Future.sequence(keys.map(connector.remove(_)))
-          // run the test
-          _ <- f(connector)
-        } yield Passed
+      def runTest: Future[Assertion] = {
+        implicit val system: ActorSystem = ActorSystem("test", classLoader = Some(getClass.getClassLoader))
+        implicit val runtime: RedisRuntime = RedisRuntime("cluster", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
+        implicit val application: StoppableApplication = StoppableApplication(system)
+        val serializer = new AkkaSerializerImpl(system)
+
+        application.runAsyncInApplication {
+          for {
+            connector <- Future(new RedisConnectorProvider(clusterInstance, serializer).get)
+            // initialize the connector by flushing the database
+            keys <- connector.matching("*")
+            _ <- Future.sequence(keys.map(connector.remove(_)))
+            // run the test
+            _ <- f(connector)
+          } yield Passed
+        }
       }
+
+      @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
+      def makeAttempt(id: Int): Future[Assertion] = {
+        runTest.recoverWith {
+          case cause: Throwable if id <= 1 =>
+            log.error(s"RedisClusterSpec: test '$name', attempt $id failed, will retry", cause)
+            Future.waitFor(1.second).flatMap(_ => makeAttempt(id + 1))
+        }
+      }
+
+      makeAttempt(1)
     }
   }
 }

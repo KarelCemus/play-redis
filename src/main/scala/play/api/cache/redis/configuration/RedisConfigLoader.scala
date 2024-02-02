@@ -1,6 +1,7 @@
 package play.api.cache.redis.configuration
 
 import com.typesafe.config.Config
+import play.api.cache.redis._
 
 /**
   * Config loader helper, provides some useful methods
@@ -19,7 +20,7 @@ private[configuration] object RedisConfigLoader {
   }
 
   implicit class ConfigPath(val path: String) extends AnyVal {
-    def /(suffix: String): String = if (path == "") suffix else s"$path.$suffix"
+    def /(suffix: String): String = if (path === "") suffix else s"$path.$suffix"
   }
 
   def required(path: String) = throw new IllegalStateException(s"Configuration key '$path' is missing.")

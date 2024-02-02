@@ -1,12 +1,10 @@
 package play.api.cache.redis.connector
 
 import java.util.Base64
-
 import javax.inject._
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util._
-
 import play.api.cache.redis._
 import akka.actor.ActorSystem
 import akka.serialization._
@@ -62,19 +60,19 @@ private[connector] class AkkaEncoder(serializer: Serialization) {
   }
 
   /** determines whether the given value is a primitive */
-  protected def isPrimitive(candidate: Any): Boolean =
+  private def isPrimitive(candidate: Any): Boolean =
     candidate.getClass.isPrimitive || Primitives.primitives.contains(candidate.getClass)
 
   /** unsafe method converting AnyRef into bytes */
-  protected def anyRefToBinary(anyRef: AnyRef): Array[Byte] =
+  private def anyRefToBinary(anyRef: AnyRef): Array[Byte] =
     serializer.findSerializerFor(anyRef).toBinary(anyRef)
 
   /** Produces BASE64 encoded string from an array of bytes */
-  protected def binaryToString(bytes: Array[Byte]): String =
+  private def binaryToString(bytes: Array[Byte]): String =
     Base64.getEncoder.encodeToString(bytes)
 
   /** unsafe method converting AnyRef into BASE64 string */
-  protected def anyRefToString(value: AnyRef): String =
+  private def anyRefToString(value: AnyRef): String =
     (anyRefToBinary _ andThen binaryToString)(value)
 }
 
@@ -97,32 +95,32 @@ private[connector] class AkkaDecoder(serializer: Serialization) {
     untypedDecode[T](value).asInstanceOf[T]
 
   /** unsafe method decoding a string into an object. It directly throws exceptions. It does not perform type cast */
-  protected def untypedDecode[T](value: String)(implicit tag: ClassTag[T]): Any = value match {
+  private def untypedDecode[T](value: String)(implicit tag: ClassTag[T]): Any = value match {
     // AnyVal is not supported by default, have to be implemented manually
     case "" => null
-    case _ if tag == Nothing => throw new IllegalArgumentException("Type Nothing is not supported. You have probably forgot to specify expected data type.")
-    case string if tag == Java.String => string
-    case boolean if tag == Java.Boolean || tag == Scala.Boolean => boolean.toBoolean
-    case byte if tag == Java.Byte || tag == Scala.Byte => byte.toByte
-    case char if tag == Java.Char || tag == Scala.Char => char.charAt(0)
-    case short if tag == Java.Short || tag == Scala.Short => short.toShort
-    case int if tag == Java.Int || tag == Scala.Int => int.toInt
-    case long if tag == Java.Long || tag == Scala.Long => long.toLong
-    case float if tag == Java.Float || tag == Scala.Float => float.toFloat
-    case double if tag == Java.Double || tag == Scala.Double => double.toDouble
+    case _ if tag  =~=  Nothing => throw new IllegalArgumentException("Type Nothing is not supported. You have probably forgot to specify expected data type.")
+    case string if tag  =~=  Java.String => string
+    case boolean if tag  =~=  Java.Boolean || tag  =~=  Scala.Boolean => boolean.toBoolean
+    case byte if tag  =~=  Java.Byte || tag  =~=  Scala.Byte => byte.toByte
+    case char if tag  =~=  Java.Char || tag  =~=  Scala.Char => char.charAt(0)
+    case short if tag  =~=  Java.Short || tag  =~=  Scala.Short => short.toShort
+    case int if tag  =~=  Java.Int || tag  =~=  Scala.Int => int.toInt
+    case long if tag  =~=  Java.Long || tag  =~=  Scala.Long => long.toLong
+    case float if tag  =~=  Java.Float || tag  =~=  Scala.Float => float.toFloat
+    case double if tag  =~=  Java.Double || tag  =~=  Scala.Double => double.toDouble
     case anyRef => stringToAnyRef[T](anyRef)
   }
 
   /** consumes BASE64 string and returns array of bytes */
-  protected def stringToBinary(base64: String): Array[Byte] =
+  private def stringToBinary(base64: String): Array[Byte] =
     Base64.getDecoder.decode(base64)
 
   /** deserializes the binary stream into the object */
-  protected def binaryToAnyRef[T](binary: Array[Byte])(implicit classTag: ClassTag[T]): AnyRef =
+  private def binaryToAnyRef[T](binary: Array[Byte])(implicit classTag: ClassTag[T]): AnyRef =
     serializer.deserialize(binary, classTag.runtimeClass.asInstanceOf[Class[_ <: AnyRef]]).get
 
   /** converts BASE64 string directly into the object */
-  protected def stringToAnyRef[T: ClassTag](base64: String): AnyRef =
+  private def stringToAnyRef[T: ClassTag](base64: String): AnyRef =
     (stringToBinary _ andThen binaryToAnyRef[T])(base64)
 }
 
@@ -171,7 +169,7 @@ private[connector] class AkkaSerializerImpl @Inject() (system: ActorSystem) exte
 private[connector] object Primitives {
 
   /** primitive types with simplified encoding */
-  val primitives = Seq(
+  val primitives: Seq[Class[_]] = Seq(
     classOf[Boolean], classOf[java.lang.Boolean],
     classOf[Byte], classOf[java.lang.Byte],
     classOf[Char], classOf[java.lang.Character],
@@ -189,15 +187,15 @@ private[connector] object Primitives {
   */
 private[connector] object JavaClassTag {
 
-  val Byte = ClassTag(classOf[java.lang.Byte])
-  val Short = ClassTag(classOf[java.lang.Short])
-  val Char = ClassTag(classOf[java.lang.Character])
-  val Int = ClassTag(classOf[java.lang.Integer])
-  val Long = ClassTag(classOf[java.lang.Long])
-  val Float = ClassTag(classOf[java.lang.Float])
-  val Double = ClassTag(classOf[java.lang.Double])
-  val Boolean = ClassTag(classOf[java.lang.Boolean])
-  val String = ClassTag(classOf[String])
+  val Byte: ClassTag[Byte] = ClassTag(classOf[java.lang.Byte])
+  val Short: ClassTag[Short] = ClassTag(classOf[java.lang.Short])
+  val Char: ClassTag[Char] = ClassTag(classOf[java.lang.Character])
+  val Int: ClassTag[Int] = ClassTag(classOf[java.lang.Integer])
+  val Long: ClassTag[Long] = ClassTag(classOf[java.lang.Long])
+  val Float: ClassTag[Float] = ClassTag(classOf[java.lang.Float])
+  val Double: ClassTag[Double] = ClassTag(classOf[java.lang.Double])
+  val Boolean: ClassTag[Boolean] = ClassTag(classOf[java.lang.Boolean])
+  val String: ClassTag[String] = ClassTag(classOf[String])
 }
 
 class AkkaSerializerProvider @Inject() (implicit system: ActorSystem) extends Provider[AkkaSerializer] {

@@ -43,3 +43,26 @@ enablePlugins(CustomReleasePlugin)
 coverageExcludedFiles := ".*exceptions.*"
 
 Test / test := (Test / testOnly).toTask(" * -- -l \"org.scalatest.Ignore\"").value
+
+wartremoverWarnings ++= Warts.allBut(
+  Wart.Any,
+  Wart.AnyVal,
+  Wart.AsInstanceOf,
+  Wart.AutoUnboxing,
+  Wart.DefaultArguments,
+  Wart.GlobalExecutionContext,
+  Wart.ImplicitConversion,
+  Wart.ImplicitParameter,
+  Wart.IterableOps,
+  Wart.NonUnitStatements,
+  Wart.Nothing,
+  Wart.Null,
+  Wart.OptionPartial,
+  Wart.Overloading,
+  Wart.PlatformDefault,
+  Wart.StringPlusAny,
+  Wart.Throw,
+  Wart.ToString,
+  Wart.TryPartial,
+  Wart.Var,
+)

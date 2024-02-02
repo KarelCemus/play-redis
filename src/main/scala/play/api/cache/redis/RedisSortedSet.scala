@@ -1,7 +1,6 @@
 package play.api.cache.redis
 
 import scala.collection.immutable.TreeSet
-import scala.language.higherKinds
 
 trait RedisSortedSet[Elem, Result[_]] extends RedisCollection[TreeSet[Elem], Result] {
   override type This = RedisSortedSet[Elem, Result]

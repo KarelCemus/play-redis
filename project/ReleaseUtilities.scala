@@ -2,6 +2,7 @@ import scala.sys.process.ProcessLogger
 
 import sbt._
 import sbtrelease._
+import scala.language.implicitConversions
 
 object ReleaseUtilities {
 

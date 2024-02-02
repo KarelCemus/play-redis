@@ -32,6 +32,7 @@ trait RedisSentinelContainer extends RedisContainer {
       ),
     )
 
+  @SuppressWarnings(Array("org.wartremover.warts.ThreadSleep"))
   override def beforeAll(): Unit = {
     super.beforeAll()
     log.info(s"Waiting for Redis Sentinel to start on ${container.containerIpAddress}, will wait for $waitForStart")

@@ -52,9 +52,6 @@ private[impl] class AsyncJavaRedis(internal: CacheAsyncApi)(implicit environment
     }
   }
 
-  @deprecated(message = "Method `getOptional` was deprecated in Play 2.8. Use `get` instead.", since = "2.6.0")
-  override def getOptional[T](key: String): CompletionStage[Optional[T]] = get(key)
-
   def getOrElse[T](key: String, block: Callable[T]): CompletionStage[T] =
     getOrElseUpdate[T](key, (() => Future.successful(block.call()).asJava).asJava)
 

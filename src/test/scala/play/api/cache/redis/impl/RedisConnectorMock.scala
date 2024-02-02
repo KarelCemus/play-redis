@@ -115,7 +115,7 @@ private[impl] trait RedisConnectorMock { this: AsyncMockFactoryBase =>
     def set[T](key: String, value: T, duration: Duration = Duration.Inf, setIfNotExists: Boolean = false, result: Future[Boolean]): Future[Unit] =
       Future.successful {
         (connector.set(_: String, _: Any, _: Duration, _: Boolean))
-          .expects(key, if (value == null) * else value, duration, setIfNotExists)
+          .expects(key, if (Option(value).isEmpty) * else value, duration, setIfNotExists)
           .returning(result)
           .once()
       }

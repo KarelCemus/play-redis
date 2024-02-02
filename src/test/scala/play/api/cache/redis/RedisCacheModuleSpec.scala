@@ -1,7 +1,7 @@
 package play.api.cache.redis
 
 import akka.actor.ActorSystem
-import play.api.cache.redis.configuration.{RedisStandalone, RedisTimeouts}
+import play.api.cache.redis.configuration.{RedisHost, RedisSettings, RedisStandalone, RedisTimeouts}
 import play.api.cache.redis.test._
 import play.api.inject._
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -122,20 +122,25 @@ import Helpers._
     injector.checkBinding[CacheAsyncApi]
   }
 
-  private object MyRedisInstance extends RedisStandalone {
-    override lazy val name: String = defaultCacheName
-    override lazy val invocationContext: String = "akka.actor.default-dispatcher"
-    override lazy val invocationPolicy: String = "lazy"
-    override lazy val timeout: RedisTimeouts = RedisTimeouts(1.second)
-    override lazy val recovery: String = "log-and-default"
-    override lazy val source: String = "my-instance"
-    override lazy val prefix: Option[String] = None
-    override lazy val host: String = container.host
-    override lazy val port: Int = container.mappedPort(defaultPort)
-    override lazy val database: Option[Int] = None
-    override lazy val username: Option[String] = None
-    override lazy val password: Option[String] = None
-  }
+  private lazy val MyRedisInstance: RedisStandalone =
+    RedisStandalone(
+      name = defaultCacheName,
+      host = RedisHost(
+        host = container.host,
+        port = container.mappedPort(defaultPort),
+        database = None,
+        username = None,
+        password = None,
+      ),
+      settings = RedisSettings(
+        dispatcher = "akka.actor.default-dispatcher",
+        invocationPolicy = "lazy",
+        timeout = RedisTimeouts(1.second),
+        recovery = "log-and-default",
+        source = "my-instance",
+        prefix = None,
+      )
+    )
 
   private def binding[T: ClassTag]: BindingKey[T] =
     BindingKey(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])

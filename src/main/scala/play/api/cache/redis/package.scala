@@ -14,4 +14,14 @@ package object redis extends AnyRef with ExpirationImplicits with ExceptionImpli
 
   private[redis] type RedisInstance = configuration.RedisInstance
   private[redis] type RedisInstanceProvider = configuration.RedisInstanceProvider
+
+  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
+  implicit final class AnyOps[A](private val self: A) extends AnyVal {
+    def ===(other: A): Boolean = self == other
+  }
+
+  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
+  implicit final class HigherKindedAnyOps[F[_]](private val self: F[_]) extends AnyVal {
+    def =~=(other: F[_]): Boolean = self == other
+  }
 }

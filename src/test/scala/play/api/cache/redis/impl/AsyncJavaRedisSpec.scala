@@ -113,21 +113,6 @@ import Helpers._
     } yield Passed
   }
 
-  test("get optional (none)") { (async, cache) =>
-    for {
-      _ <- async.expect.getClassTag(cacheKey, None)
-      _ <- cache.getOptional[String](cacheKey).assertingEqual(Optional.ofNullable(null))
-    } yield Passed
-  }
-
-    test("get optional (some)") { (async, cache) =>
-      for {
-        _ <- async.expect.getClassTag(cacheKey, Some(classTag))
-        _ <- async.expect.get[String](cacheKey, Some(cacheValue))
-        _ <- cache.getOptional[String](cacheKey).assertingEqual(Optional.ofNullable(cacheValue))
-      } yield Passed
-    }
-
   test("remove") { (async, cache) =>
     for {
       _ <- async.expect.remove(cacheKey)

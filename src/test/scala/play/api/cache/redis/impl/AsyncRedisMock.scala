@@ -34,7 +34,7 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
     private def classTagValue: Any => String = {
       case null => "null"
-      case v if v.getClass == classOf[String] => "java.lang.String"
+      case v if v.getClass =~= classOf[String] => "java.lang.String"
       case other => throw new IllegalArgumentException(s"Unexpected value for classTag: ${other.getClass.getSimpleName}")
     }
 
@@ -60,7 +60,7 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
     def setValue[T](key: String, value: T, duration: Duration): Future[Unit] =
       Future.successful {
         (async.set(_: String, _: Any, _: Duration))
-          .expects(key, if (value == null) * else value, duration)
+          .expects(key, if (Option(value).isEmpty) * else value, duration)
           .returning(Future.successful(Done))
           .once()
       }
@@ -77,7 +77,7 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
     def setValueIfNotExists[T: ClassTag](key: String, value: T, duration: Duration, exists: Boolean): Future[Unit] =
       Future.successful {
         (async.setIfNotExists(_: String, _: Any, _: Duration))
-          .expects(key, if (value == null) * else value, duration)
+          .expects(key, if (Option(value).isEmpty) * else value, duration)
           .returning(Future.successful(exists))
           .once()
       }

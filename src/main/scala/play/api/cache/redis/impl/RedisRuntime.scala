@@ -19,7 +19,7 @@ private[redis] trait RedisRuntime extends connector.RedisRuntime {
   implicit def timeout: akka.util.Timeout
 }
 
-private[redis] case class RedisRuntimeImpl(
+private[redis] final case class RedisRuntimeImpl(
   name: String,
   context: ExecutionContext,
   policy: RecoveryPolicy,

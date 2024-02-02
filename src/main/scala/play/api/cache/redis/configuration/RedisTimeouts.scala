@@ -1,12 +1,9 @@
 package play.api.cache.redis.configuration
 
 import java.util.concurrent.TimeUnit
-
 import scala.concurrent.duration.FiniteDuration
-
-import play.api.Logger
-
 import com.typesafe.config.Config
+import play.api.cache.redis._
 
 /**
   * Aggregates the timeout configuration settings
@@ -23,7 +20,7 @@ trait RedisTimeouts {
   def connection: Option[FiniteDuration]
 }
 
-case class RedisTimeoutsImpl(
+final case class RedisTimeoutsImpl(
   /** sync timeout applies in sync API and indicates how long to wait before the future is resolved */
   sync: FiniteDuration,
 
@@ -36,8 +33,8 @@ case class RedisTimeoutsImpl(
 ) extends RedisTimeouts {
 
   // $COVERAGE-OFF$
-  override def equals(obj: scala.Any) = obj match {
-    case that: RedisTimeouts => this.sync == that.sync && this.redis == that.redis && this.connection == that.connection
+  override def equals(obj: scala.Any): Boolean = obj match {
+    case that: RedisTimeouts => this.sync === that.sync && this.redis === that.redis && this.connection === that.connection
     case _                   => false
   }
   // $COVERAGE-ON$
@@ -47,16 +44,16 @@ object RedisTimeouts {
   import RedisConfigLoader._
 
   def requiredDefault: RedisTimeouts = new RedisTimeouts {
-    def sync = required("sync-timeout")
-    def redis = None
-    def connection = None
+    override def sync: FiniteDuration = required("sync-timeout")
+    override def redis: Option[FiniteDuration] = None
+    override def connection: Option[FiniteDuration] = None
   }
 
   @inline
   def apply(sync: FiniteDuration, redis: Option[FiniteDuration] = None, connection: Option[FiniteDuration] = None): RedisTimeouts =
     RedisTimeoutsImpl(sync, redis, connection)
 
-  def load(config: Config, path: String)(default: RedisTimeouts) = RedisTimeouts(
+  def load(config: Config, path: String)(default: RedisTimeouts): RedisTimeouts = RedisTimeouts(
     sync = loadSyncTimeout(config, path) getOrElse default.sync,
     redis = loadRedisTimeout(config, path) getOrElse default.redis,
     connection = loadConnectionTimeout(config, path) getOrElse default.connection

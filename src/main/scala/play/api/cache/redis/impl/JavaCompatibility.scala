@@ -5,7 +5,7 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 import play.api.Environment
-import play.api.cache.redis.JavaCompatibilityBase
+import play.api.cache.redis._
 
 import akka.Done
 
@@ -22,7 +22,7 @@ private[impl] object JavaCompatibility extends JavaCompatibilityBase {
   object JavaList {
     def apply[T](values: T*): JavaList[T] = {
       val list = new java.util.ArrayList[T]()
-      list.addAll(values.asJava)
+      list.addAll(values.asJava): Unit
       list
     }
   }
@@ -33,9 +33,7 @@ private[impl] object JavaCompatibility extends JavaCompatibilityBase {
   }
 
   implicit class Java8Callable[T](val f: () => T) extends AnyVal {
-    @inline def asJava: Callable[T] = new Callable[T] {
-      def call(): T = f()
-    }
+    @inline def asJava: Callable[T] = () => f()
   }
 
   implicit class Java8Optional[T](val option: Option[T]) extends AnyVal {
@@ -47,7 +45,7 @@ private[impl] object JavaCompatibility extends JavaCompatibilityBase {
   }
 
   implicit class RichFuture(val future: Future.type) extends AnyVal {
-    @inline def from[T](futures: Future[T]*)(implicit ec: ExecutionContext): Future[Seq[T]] = future.sequence(futures.toSeq)
+    @inline def from[T](futures: Future[T]*)(implicit ec: ExecutionContext): Future[Seq[T]] = future.sequence(futures)
   }
 
   @inline implicit def class2tag[T](classOf: Class[T]): ClassTag[T] = ClassTag(classOf)
@@ -55,18 +53,18 @@ private[impl] object JavaCompatibility extends JavaCompatibilityBase {
   @inline def async[T](doAsync: ExecutionContext => Future[T])(implicit runtime: RedisRuntime): CompletionStage[T] = {
     doAsync {
       // save the HTTP context if any and restore it later for orElse clause
-      play.core.j.HttpExecutionContext.fromThread(runtime.context)
+      play.core.j.ClassLoaderExecutionContext.fromThread(runtime.context)
     }.asJava
   }
 
   @inline def classTagKey(key: String): String = s"classTag::$key"
 
   @inline def classTagOf(value: Any): String = {
-    if (value == null) "null" else value.getClass.getCanonicalName
+    if (Option(value).isEmpty) "null" else value.getClass.getCanonicalName
   }
 
   @inline def classTagFrom[T](tag: String)(implicit environment: Environment): ClassTag[T] = {
-    if (tag == "null") ClassTag.Null.asInstanceOf[ClassTag[T]]
+    if (tag === "null") ClassTag.Null.asInstanceOf[ClassTag[T]]
     else ClassTag(classTagNameToClass(tag, environment))
   }
 
@@ -76,7 +74,7 @@ private[impl] object JavaCompatibility extends JavaCompatibilityBase {
 
   // $COVERAGE-OFF$
   /** java primitives are serialized into their type names instead of classes */
-  def classTagNameToClass(name: String, environment: Environment): Class[_] = name match {
+  private def classTagNameToClass(name: String, environment: Environment): Class[_] = name match {
     case "boolean[]" => classOf[Array[java.lang.Boolean]]
     case "byte[]"    => classOf[Array[java.lang.Byte]]
     case "char[]"    => classOf[Array[java.lang.Character]]

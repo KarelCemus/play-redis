@@ -9,23 +9,27 @@ sealed abstract class RedisException(message: String, cause: Throwable) extends 
 
 /**
   * Request timeouts
-  */
-case class TimeoutException(cause: Throwable) extends RedisException("Command execution timed out", cause)
+*/
+final case class TimeoutException(
+                                   cause: Throwable) extends RedisException("Command execution timed out", cause)
 
 /**
-  * Command execution failed with exception
-  */
-case class ExecutionFailedException(key: Option[String], command: String, statement: String, cause: Throwable) extends RedisException(s"Execution of '$command'${key.map(key => s" for key '$key'") getOrElse ""} failed", cause)
+ * Command execution failed with exception
+ */
+final case class ExecutionFailedException(
+                                           key: Option[String], command: String, statement: String, cause: Throwable) extends RedisException(s"Execution of '$command'${key.map(key => s" for key '$key'") getOrElse ""} failed", cause)
 
 /**
-  * Request succeeded but returned unexpected value
-  */
-case class UnexpectedResponseException(key: Option[String], command: String) extends RedisException(s"Command '$command'${key.map(key => s" for key '$key'") getOrElse ""} returned unexpected response")
+ * Request succeeded but returned unexpected value
+ */
+final case class UnexpectedResponseException(
+                                              key: Option[String], command: String) extends RedisException(s"Command '$command'${key.map(key => s" for key '$key'") getOrElse ""} returned unexpected response")
 
 /**
-  * Value serialization or deserialization failed.
-  */
-case class SerializationException(key: String, message: String, cause: Throwable) extends RedisException(s"$message for $key", cause)
+ * Value serialization or deserialization failed.
+ */
+final case class SerializationException(
+                                         key: String, message: String, cause: Throwable) extends RedisException(s"$message for $key", cause)
 
 /**
   * Helper trait providing simplified and unified API to exception handling in play-redis
@@ -39,12 +43,12 @@ trait ExceptionImplicits {
 
   /** helper indicating serialization failure, it throws an exception */
   @throws[SerializationException]
-  def serializationFailed(key: String, message: String, cause: Throwable) =
+  def serializationFailed(key: String, message: String, cause: Throwable): Nothing =
     throw SerializationException(key, message, cause)
 
   /** helper indicating  command execution timed out */
   @throws[TimeoutException]
-  def timedOut(cause: Throwable) =
+  def timedOut(cause: Throwable): Nothing =
     throw TimeoutException(cause)
 
   /** helper indicating the command execution returned unexpected exception */

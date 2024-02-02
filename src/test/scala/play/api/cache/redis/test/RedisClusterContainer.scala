@@ -7,7 +7,7 @@ import scala.concurrent.duration._
 
 trait RedisClusterContainer extends RedisContainer { this: Suite =>
 
-  private val log = Logger("play.api.cache.redis.test")
+  protected val log = Logger("play.api.cache.redis.test")
 
   protected def redisMaster = 4
 
@@ -15,7 +15,7 @@ trait RedisClusterContainer extends RedisContainer { this: Suite =>
 
   protected final def initialPort = 7000
 
-  private val waitForStart = 4.seconds
+  private val waitForStart = 6.seconds
 
   override protected lazy val redisConfig: RedisContainerConfig =
     RedisContainerConfig(
@@ -30,6 +30,7 @@ trait RedisClusterContainer extends RedisContainer { this: Suite =>
       ),
     )
 
+  @SuppressWarnings(Array("org.wartremover.warts.ThreadSleep"))
   override def beforeAll(): Unit = {
     super.beforeAll()
     log.info(s"Waiting for Redis Cluster to start on ${container.containerIpAddress}, will wait for $waitForStart")

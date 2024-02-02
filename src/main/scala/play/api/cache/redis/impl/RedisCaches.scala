@@ -28,7 +28,7 @@ private[redis] class RedisCachesProvider(instance: RedisInstance, serializer: co
 
   private implicit def implicitEnvironment: Environment = environment
 
-  lazy val get = new RedisCaches {
+  lazy val get: RedisCaches = new RedisCaches {
     lazy val redisConnector: RedisConnector = new connector.RedisConnectorProvider(instance, serializer).get
     lazy val async: AsyncRedis = new AsyncRedisImpl(redisConnector)
     lazy val sync: CacheApi = new SyncRedis(redisConnector)

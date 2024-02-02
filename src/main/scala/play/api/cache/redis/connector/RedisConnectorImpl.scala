@@ -1,14 +1,11 @@
 package play.api.cache.redis.connector
 
 import java.util.concurrent.TimeUnit
-
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
-
 import play.api.Logger
 import play.api.cache.redis._
-
 import redis._
 
 /**
@@ -25,9 +22,9 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
   import runtime._
 
   /** logger instance */
-  protected val log = Logger("play.api.cache.redis")
+  protected val log: Logger = Logger("play.api.cache.redis")
 
-  def get[T: ClassTag](key: String): Future[Option[T]] =
+  override def get[T: ClassTag](key: String): Future[Option[T]] =
     redis.get[String](key) executing "GET" withKey key expects {
       case Some(response: String) =>
         log.trace(s"Hit on key '$key'.")
@@ -37,7 +34,7 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
         None
     }
 
-  def mGet[T: ClassTag](keys: String*): Future[Seq[Option[T]]] =
+  override def mGet[T: ClassTag](keys: String*): Future[Seq[Option[T]]] =
     redis.mget[String](keys: _*) executing "MGET" withKeys keys expects {
       // list is always returned
       case list => keys.zip(list).map {
@@ -56,9 +53,9 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
       case ex => serializationFailed(key, "Deserialization failed", ex)
     }.get
 
-  def set(key: String, value: Any, expiration: Duration, ifNotExists: Boolean): Future[Boolean] =
+  override def set(key: String, value: Any, expiration: Duration, ifNotExists: Boolean): Future[Boolean] =
     // no value to set
-    if (value == null) remove(key).map(_ => true)
+    if (Option(value).isEmpty) remove(key).map(_ => true)
     // set the value
     else encode(key, value) flatMap (doSet(key, _, expiration, ifNotExists))
 
@@ -71,7 +68,7 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
 
   /** implements the advanced set operation storing already encoded value into the storage */
   private def doSet(key: String, value: String, expiration: Duration, ifNotExists: Boolean): Future[Boolean] =
-    redis.set(
+    redis.set[String](
       key,
       value,
       pxMilliseconds = if (expiration.isFinite) Some(expiration.toMillis) else None,
@@ -82,9 +79,9 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
       case false                       => log.debug(s"Set on key '$key' ignored. Condition was not met.")
     }
 
-  def mSet(keyValues: (String, Any)*): Future[Unit] = mSetUsing(mSetEternally, (), keyValues: _*)
+  override def mSet(keyValues: (String, Any)*): Future[Unit] = mSetUsing(mSetEternally, (), keyValues: _*)
 
-  def mSetIfNotExist(keyValues: (String, Any)*): Future[Boolean] = mSetUsing(mSetEternallyIfNotExist, true, keyValues: _*)
+  override def mSetIfNotExist(keyValues: (String, Any)*): Future[Boolean] = mSetUsing(mSetEternallyIfNotExist, true, keyValues: _*)
 
   /** eternally stores or removes all given values, using the given mSet implementation */
   private def mSetUsing[T](mSet: Seq[(String, String)] => Future[T], default: T, keyValues: (String, Any)*): Future[T] = {
@@ -110,13 +107,13 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
       case false => log.debug(s"Set if not exists on keys ${keyValues.map(_.key) mkString " "} ignored. Some value already exists.")
     }
 
-  def expire(key: String, expiration: Duration): Future[Unit] =
+  override def expire(key: String, expiration: Duration): Future[Unit] =
     redis.expire(key, expiration.toSeconds.toInt) executing "EXPIRE" withKey key andParameter s"$expiration" logging {
       case true  => log.debug(s"Expiration set on key '$key'.") // expiration was set
       case false => log.debug(s"Expiration set on key '$key' failed. Key does not exist.") // Nothing was removed
     }
 
-  def expiresIn(key: String): Future[Option[Duration]] =
+  override def expiresIn(key: String): Future[Option[Duration]] =
     redis.pttl(key) executing "PTTL" withKey key expects {
       case -2 =>
         log.debug(s"PTTL on key '$key' returns -2, it does not exist.")
@@ -129,7 +126,7 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
         Some(Duration(expiration, TimeUnit.MILLISECONDS))
     }
 
-  def matching(pattern: String): Future[Seq[String]] =
+  override def matching(pattern: String): Future[Seq[String]] =
     redis.keys(pattern) executing "KEYS" withKey pattern logging {
       case keys => log.debug(s"KEYS on '$pattern' responded '${keys.mkString(", ")}'.")
     }
@@ -138,19 +135,19 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
   // either a mock or would clear a redis while
   // the tests are in progress
   // $COVERAGE-OFF$
-  def invalidate(): Future[Unit] =
+  override def invalidate(): Future[Unit] =
     redis.flushdb() executing "FLUSHDB" logging {
       case _ => log.info("Invalidated.") // cache was invalidated
     }
   // $COVERAGE-ON$
 
-  def exists(key: String): Future[Boolean] =
+  override def exists(key: String): Future[Boolean] =
     redis.exists(key) executing "EXISTS" withKey key logging {
       case true  => log.debug(s"Key '$key' exists.")
       case false => log.debug(s"Key '$key' doesn't exist.")
     }
 
-  def remove(keys: String*): Future[Unit] =
+  override def remove(keys: String*): Future[Unit] =
     if (keys.nonEmpty) { // if any key to remove do it
       redis.del(keys: _*) executing "DEL" withKeys keys logging {
         // Nothing was removed
@@ -162,45 +159,45 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
       Future.successful(()) // otherwise return immediately
     }
 
-  def ping(): Future[Unit] =
+  override def ping(): Future[Unit] =
     redis.ping() executing "PING" logging {
       case "PONG" => ()
     }
 
-  def increment(key: String, by: Long): Future[Long] =
+  override def increment(key: String, by: Long): Future[Long] =
     redis.incrby(key, by) executing "INCRBY" withKey key andParameter s"$by" logging {
       case value => log.debug(s"The value at key '$key' was incremented by $by to $value.")
     }
 
-  def append(key: String, value: String): Future[Long] =
+  override def append(key: String, value: String): Future[Long] =
     redis.append(key, value) executing "APPEND" withKey key andParameter value logging {
       case length => log.debug(s"The value was appended to key '$key'.")
     }
 
-  def listPrepend(key: String, values: Any*): Future[Long] =
+  override def listPrepend(key: String, values: Any*): Future[Long] =
     Future.sequence(values.map(encode(key, _))).flatMap(redis.lpush(key, _: _*)) executing "LPUSH" withKey key andParameters values logging {
       case length => log.debug(s"The $length values was prepended to key '$key'.")
     } recover {
       case ExecutionFailedException(_, _, _, ex) if ex.getMessage startsWith "WRONGTYPE" =>
-        log.warn(s"Value at '$key' is not a list.")
+        log.warn(s"Value at '$key' is not a list to be prepended.")
         throw new IllegalArgumentException(s"Value at '$key' is not a list.")
     }
 
-  def listAppend(key: String, values: Any*) =
+  override def listAppend(key: String, values: Any*): Future[Long] =
     Future.sequence(values.map(encode(key, _))).flatMap(redis.rpush(key, _: _*)) executing "RPUSH" withKey key andParameters values logging {
       case length => log.debug(s"The $length values was appended to key '$key'.")
     } recover {
       case ExecutionFailedException(_, _, _, ex) if ex.getMessage startsWith "WRONGTYPE" =>
-        log.warn(s"Value at '$key' is not a list.")
+        log.warn(s"Value at '$key' is not a list to be appended.")
         throw new IllegalArgumentException(s"Value at '$key' is not a list.")
     }
 
-  def listSize(key: String) =
+  override def listSize(key: String): Future[Long] =
     redis.llen(key) executing "LLEN" withKey key logging {
       case length => log.debug(s"The collection at '$key' has $length items.")
     }
 
-  def listSetAt(key: String, position: Int, value: Any) =
+  override def listSetAt(key: String, position: Int, value: Any): Future[Unit] =
     encode(key, value).flatMap(redis.lset(key, position, _)) executing "LSET" withKey key andParameter value logging {
       case _ => log.debug(s"Updated value at $position in '$key' to $value.")
     } recover {
@@ -209,7 +206,7 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
         throw new IndexOutOfBoundsException("Index out of range")
     }
 
-  def listHeadPop[T: ClassTag](key: String) =
+  override def listHeadPop[T: ClassTag](key: String): Future[Option[T]] =
     redis.lpop[String](key) executing "LPOP" withKey key expects {
       case Some(encoded) =>
         log.trace(s"Hit on head in key '$key'.")
@@ -219,24 +216,24 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
         None
     }
 
-  def listSlice[T: ClassTag](key: String, start: Int, end: Int) =
+  override def listSlice[T: ClassTag](key: String, start: Int, end: Int): Future[Seq[T]] =
     redis.lrange[String](key, start, end) executing "LRANGE" withKey key andParameters s"$start $end" expects {
       case values =>
         log.debug(s"The range on '$key' from $start to $end included returned ${values.size} values.")
         values.map(decode[T](key, _))
     }
 
-  def listRemove(key: String, value: Any, count: Int) =
+  override def listRemove(key: String, value: Any, count: Int): Future[Long] =
     encode(key, value).flatMap(redis.lrem(key, count, _)) executing "LREM" withKey key andParameters s"$value $count" logging {
       case removed => log.debug(s"Removed $removed occurrences of $value in '$key'.")
     }
 
-  def listTrim(key: String, start: Int, end: Int) =
+  override def listTrim(key: String, start: Int, end: Int): Future[Unit] =
     redis.ltrim(key, start, end) executing "LTRIM" withKey key andParameter s"$start $end" logging {
       case _ => log.debug(s"Trimmed collection at '$key' to $start:$end ")
     }
 
-  def listInsert(key: String, pivot: Any, value: Any) = for {
+  override def listInsert(key: String, pivot: Any, value: Any): Future[Option[Long]] = for {
     pivot <- encode(key, pivot)
     value <- encode(key, value)
     result <- redis.linsert(key, api.BEFORE, pivot, value) executing "LINSERT" withKey key andParameter s"$pivot $value" expects {
@@ -246,14 +243,14 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
       case length =>
         log.debug(s"Inserted $value into the list at '$key'. New size is $length.")
         Some(length)
-    } recover {
+    } recover[Option[Long]] {
       case ExecutionFailedException(_, _, _, ex) if ex.getMessage startsWith "WRONGTYPE" =>
         log.warn(s"Value at '$key' is not a list.")
         throw new IllegalArgumentException(s"Value at '$key' is not a list.")
     }
   } yield result
 
-  def setAdd(key: String, values: Any*) = {
+  override def setAdd(key: String, values: Any*): Future[Long] = {
     // encodes the value
     def toEncoded(value: Any) = encode(key, value)
     Future.sequence(values map toEncoded).flatMap(redis.sadd(key, _: _*)) executing "SADD" withKey key andParameters values expects {
@@ -267,34 +264,34 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
     }
   }
 
-  def setSize(key: String) =
+  override def setSize(key: String): Future[Long] =
     redis.scard(key) executing "SCARD" withKey key logging {
       case length => log.debug(s"The collection at '$key' has $length items.")
     }
 
-  def setMembers[T: ClassTag](key: String) =
+  override def setMembers[T: ClassTag](key: String): Future[Set[T]] =
     redis.smembers[String](key) executing "SMEMBERS" withKey key expects {
       case items =>
         log.debug(s"Returned ${items.size} items from the collection at '$key'.")
         items.map(decode[T](key, _)).toSet
     }
 
-  def setIsMember(key: String, value: Any) =
+  override def setIsMember(key: String, value: Any): Future[Boolean] =
     encode(key, value).flatMap(redis.sismember(key, _)) executing "SISMEMBER" withKey key andParameter value logging {
       case true  => log.debug(s"Item $value exists in the collection at '$key'.")
       case false => log.debug(s"Item $value does not exist in the collection at '$key'")
     }
 
-  def setRemove(key: String, values: Any*) = {
+  override def setRemove(key: String, values: Any*): Future[Long] = {
     // encodes the value
-    def toEncoded(value: Any) = encode(key, value)
+    def toEncoded(value: Any): Future[String] = encode(key, value)
 
     Future.sequence(values map toEncoded).flatMap(redis.srem(key, _: _*)) executing "SREM" withKey key andParameters values logging {
       case removed => log.debug(s"Removed $removed elements from the collection at '$key'.")
     }
   }
 
-  def sortedSetAdd(key: String, scoreValues: (Double, Any)*) = {
+  override def sortedSetAdd(key: String, scoreValues: (Double, Any)*): Future[Long] = {
     // encodes the value
     def toEncoded(scoreValue: (Double, Any)) = encode(key, scoreValue._2).map((scoreValue._1, _))
 
@@ -309,19 +306,19 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
     }
   }
 
-  def sortedSetSize(key: String) =
+  override def sortedSetSize(key: String): Future[Long] =
     redis.zcard(key) executing "ZCARD" withKey key logging {
       case length => log.debug(s"The zset at '$key' has $length items.")
     }
 
-  def sortedSetScore(key: String, value: Any) = {
+  override def sortedSetScore(key: String, value: Any): Future[Option[Double]] = {
     encode(key, value) flatMap (redis.zscore(key, _)) executing "ZSCORE" withKey key andParameter value logging {
       case Some(score) => log.debug(s"The score of item: $value is $score in the collection at '$key'.")
       case None        => log.debug(s"Item $value does not exist in the collection at '$key'")
     }
   }
 
-  def sortedSetRemove(key: String, values: Any*) = {
+  override def sortedSetRemove(key: String, values: Any*): Future[Long] = {
     // encodes the value
     def toEncoded(value: Any) = encode(key, value)
 
@@ -330,7 +327,7 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
     }
   }
 
-  def sortedSetRange[T: ClassTag](key: String, start: Long, stop: Long) = {
+  override def sortedSetRange[T: ClassTag](key: String, start: Long, stop: Long): Future[Seq[T]] = {
     redis.zrange[String](key, start, stop) executing "ZRANGE" withKey key andParameter s"$start $stop" expects {
       case encodedSeq =>
         log.debug(s"Got range from $start to $stop in the zset at '$key'.")
@@ -338,7 +335,7 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
     }
   }
 
-  def sortedSetReverseRange[T: ClassTag](key: String, start: Long, stop: Long) = {
+  override def sortedSetReverseRange[T: ClassTag](key: String, start: Long, stop: Long): Future[Seq[T]] = {
     redis.zrevrange[String](key, start, stop) executing "ZREVRANGE" withKey key andParameter s"$start $stop" expects {
       case encodedSeq =>
         log.debug(s"Got reverse range from $start to $stop in the zset at '$key'.")
@@ -346,23 +343,23 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
     }
   }
 
-  def hashRemove(key: String, fields: String*) =
+  override def hashRemove(key: String, fields: String*): Future[Long] =
     redis.hdel(key, fields: _*) executing "HDEL" withKey key andParameters fields logging {
       case removed => log.debug(s"Removed $removed elements from the collection at '$key'.")
     }
 
-  def hashIncrement(key: String, field: String, incrementBy: Long) =
+  override def hashIncrement(key: String, field: String, incrementBy: Long): Future[Long] =
     redis.hincrby(key, field, incrementBy) executing "HINCRBY" withKey key andParameters s"$field $incrementBy" logging {
       case value => log.debug(s"Field '$field' in '$key' was incremented to $value.")
     }
 
-  def hashExists(key: String, field: String) =
+  override def hashExists(key: String, field: String): Future[Boolean] =
     redis.hexists(key, field) executing "HEXISTS" withKey key andParameter field logging {
       case true  => log.debug(s"Item $field exists in the collection at '$key'.")
       case false => log.debug(s"Item $field does not exist in the collection at '$key'")
     }
 
-  def hashGet[T: ClassTag](key: String, field: String) =
+  override def hashGet[T: ClassTag](key: String, field: String): Future[Option[T]] =
     redis.hget[String](key, field) executing "HGET" withKey key andParameter field expects {
       case Some(encoded) =>
         log.debug(s"Item $field exists in the collection at '$key'.")
@@ -372,36 +369,36 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
         None
     }
 
-  def hashGet[T: ClassTag](key: String, fields: Seq[String]): Future[Seq[Option[T]]] =
+  override def hashGet[T: ClassTag](key: String, fields: Seq[String]): Future[Seq[Option[T]]] =
     redis.hmget[String](key, fields: _*) executing "HMGET" withKey key andParameters fields expects {
       case encoded =>
         log.debug(s"Collection at '$key' with fields '$fields' has returned ${encoded.size} items.")
         encoded.map(_.map(decode[T](key, _)))
     }
 
-  def hashGetAll[T: ClassTag](key: String) =
+  override def hashGetAll[T: ClassTag](key: String): Future[Map[String, T]] =
     redis.hgetall[String](key) executing "HGETALL" withKey key expects {
       case empty if empty.isEmpty =>
         log.debug(s"Collection at '$key' is empty.")
-        Map.empty
+        Map.empty[String, T]
       case encoded =>
         log.debug(s"Collection at '$key' has ${encoded.size} items.")
         encoded.map { case (itemKey, value) => itemKey -> decode[T](itemKey, value) }
     }
 
-  def hashSize(key: String) =
+  override def hashSize(key: String): Future[Long] =
     redis.hlen(key) executing "HLEN" withKey key logging {
       case length => log.debug(s"The collection at '$key' has $length items.")
     }
 
-  def hashKeys(key: String) =
+  override def hashKeys(key: String): Future[Set[String]] =
     redis.hkeys(key) executing "HKEYS" withKey key expects {
       case keys =>
         log.debug(s"The collection at '$key' defines: ${keys mkString " "}.")
         keys.toSet
     }
 
-  def hashSet(key: String, field: String, value: Any) =
+  override def hashSet(key: String, field: String, value: Any): Future[Boolean] =
     encode(key, value).flatMap(redis.hset(key, field, _)) executing "HSET" withKey key andParameters s"$field $value" logging {
       case true  => log.debug(s"Item $field in the collection at '$key' was inserted.")
       case false => log.debug(s"Item $field in the collection at '$key' was updated.")
@@ -411,7 +408,7 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
         throw new IllegalArgumentException(s"Value at '$key' is not a map.")
     }
 
-  def hashValues[T: ClassTag](key: String) =
+  override def hashValues[T: ClassTag](key: String): Future[Set[T]] =
     redis.hvals[String](key) executing "HVALS" withKey key expects {
       case values =>
         log.debug(s"The collection at '$key' contains ${values.size} values.")

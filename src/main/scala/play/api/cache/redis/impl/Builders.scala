@@ -1,7 +1,6 @@
 package play.api.cache.redis.impl
 
 import scala.concurrent.Future
-import scala.language.higherKinds
 
 /**
   * Transforms future result produced by redis implementation to the result of the desired type
@@ -51,7 +50,7 @@ object Builders {
       Try {
         // wait for the result
         Await.result(run, runtime.timeout.duration)
-      }.recover {
+      }.recover[T] {
         // it timed out, produce an expected exception
         case cause: AskTimeoutException                   => timedOut(cause)
         case cause: java.util.concurrent.TimeoutException => timedOut(cause)

@@ -1,6 +1,6 @@
 package play.api.cache.redis.impl
 
-import scala.language.{higherKinds, implicitConversions}
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 import play.api.cache.redis._
@@ -14,76 +14,76 @@ private[impl] class RedisListImpl[Elem: ClassTag, Result[_]](key: String, redis:
   @inline
   private def This: This = this
 
-  def prepend(element: Elem) = prependAll(element)
+  override def prepend(element: Elem): Result[This] = prependAll(element)
 
-  def append(element: Elem) = appendAll(element)
+  override def append(element: Elem): Result[This] = appendAll(element)
 
-  def +:(element: Elem) = prependAll(element)
+  override def +:(element: Elem): Result[This] = prependAll(element)
 
-  def :+(element: Elem) = appendAll(element)
+  override def :+(element: Elem): Result[This] = appendAll(element)
 
-  def ++:(elements: Iterable[Elem]) = prependAll(elements.toSeq: _*)
+  override def ++:(elements: Iterable[Elem]): Result[This] = prependAll(elements.toSeq: _*)
 
-  def :++(elements: Iterable[Elem]) = appendAll(elements.toSeq: _*)
+  override def :++(elements: Iterable[Elem]): Result[This] = appendAll(elements.toSeq: _*)
 
-  private def prependAll(elements: Elem*) =
+  private def prependAll(elements: Elem*): Result[This] =
     redis.listPrepend(key, elements: _*).map(_ => This).recoverWithDefault(This)
 
-  private def appendAll(elements: Elem*) =
+  private def appendAll(elements: Elem*): Result[This] =
     redis.listAppend(key, elements: _*).map(_ => This).recoverWithDefault(This)
 
-  def apply(index: Int) = redis.listSlice[Elem](key, index, index).map {
+  override def apply(index: Int): Result[Elem] = redis.listSlice[Elem](key, index, index).map {
     _.headOption getOrElse (throw new NoSuchElementException(s"Element at index $index is missing."))
   }.recoverWithDefault {
     throw new NoSuchElementException(s"Element at index $index is missing.")
   }
 
-  def get(index: Int) =
+  override def get(index: Int): Result[Option[Elem]] =
     redis.listSlice[Elem](key, index, index).map(_.headOption).recoverWithDefault(None)
 
-  def headPop = redis.listHeadPop[Elem](key).recoverWithDefault(None)
+  override def headPop: Result[Option[Elem]] = redis.listHeadPop[Elem](key).recoverWithDefault(None)
 
-  def size = redis.listSize(key).recoverWithDefault(0)
+  override def size: Result[Long] = redis.listSize(key).recoverWithDefault(0)
 
-  def insertBefore(pivot: Elem, element: Elem) =
+  override def insertBefore(pivot: Elem, element: Elem): Result[Option[Long]] =
     redis.listInsert(key, pivot, element).recoverWithDefault(None)
 
-  def set(position: Int, element: Elem) =
+  override def set(position: Int, element: Elem): Result[This] =
     redis.listSetAt(key, position, element).map(_ => This).recoverWithDefault(This)
 
-  def isEmpty =
-    redis.listSize(key).map(_ == 0).recoverWithDefault(true)
+  override def isEmpty: Result[Boolean] =
+    redis.listSize(key).map(_ === 0).recoverWithDefault(true)
 
-  def nonEmpty =
+  override def nonEmpty: Result[Boolean] =
     redis.listSize(key).map(_ > 0).recoverWithDefault(false)
 
-  def view = ListView
+  override def view: RedisListView = ListView
 
-  object ListView extends RedisListView {
-    def slice(start: Int, end: Int) = redis.listSlice[Elem](key, start, end).recoverWithDefault(Seq.empty)
+  private object ListView extends RedisListView {
+    override def slice(start: Int, end: Int): Result[Seq[Elem]] = redis.listSlice[Elem](key, start, end).recoverWithDefault(Seq.empty)
   }
 
-  def modify = ListModifier
+  override def modify: RedisListModification = ListModifier
 
-  object ListModifier extends RedisListModification {
+  private object ListModifier extends RedisListModification {
 
-    def collection = This
+    override def collection: This = This
 
-    def clear() =
+    override  def clear(): Result[RedisListModification] =
       redis.remove(key).map {
         _ => this: RedisListModification
       }.recoverWithDefault(this)
 
-    def slice(start: Int, end: Int) =
+    override def slice(start: Int, end: Int): Result[RedisListModification] =
       redis.listTrim(key, start, end).map {
         _ => this: RedisListModification
       }.recoverWithDefault(this)
   }
 
-  def remove(element: Elem, count: Int) =
+  override def remove(element: Elem, count: Int): Result[This] =
     redis.listRemove(key, element, count).map(_ => This).recoverWithDefault(This)
 
-  def removeAt(position: Int) =
+  override def removeAt(position: Int): Result[This] =
     redis.listSetAt(key, position, "play-redis:DELETED").flatMap {
       _ => redis.listRemove(key, "play-redis:DELETED", count = 0)
     }.map(_ => This).recoverWithDefault(This)

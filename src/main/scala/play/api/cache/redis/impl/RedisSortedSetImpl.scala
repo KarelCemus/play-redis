@@ -2,7 +2,7 @@ package play.api.cache.redis.impl
 
 import play.api.cache.redis._
 
-import scala.language.{higherKinds, implicitConversions}
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 /** <p>Implementation of Set API using redis-server cache implementation.</p> */
@@ -42,7 +42,7 @@ private[impl] class RedisSortedSetImpl[Elem: ClassTag, Result[_]](
     redis.sortedSetSize(key).recoverWithDefault(0)
 
   override def isEmpty: Result[Boolean] =
-    builder.map(size)(_ == 0)
+    builder.map(size)(_ === 0)
 
   override def nonEmpty: Result[Boolean] =
     builder.map(isEmpty)(x => !x)
