@@ -1,5 +1,7 @@
+import org.typelevel.sbt.tpolecat.DevMode
 import sbt.Keys._
 import sbt._
+import org.typelevel.scalacoptions._
 
 normalizedName := "play-redis"
 
@@ -71,3 +73,17 @@ wartremoverWarnings ++= Warts.allBut(
   Wart.TryPartial,
   Wart.Var,
 )
+
+tpolecatDevModeOptions ~= { opts =>
+  opts.filterNot(Set(ScalacOptions.warnError))
+}
+Test / tpolecatExcludeOptions ++= Set(
+  ScalacOptions.warnValueDiscard,
+  ScalacOptions.warnNonUnitStatement
+)
+
+ThisBuild / tpolecatCiModeEnvVar := "CI"
+ThisBuild / tpolecatDefaultOptionsMode := DevMode
+
+addCommandAlias("fix", "; scalafixAll; scalafmtAll; scalafmtSbt")
+addCommandAlias("lint", "; scalafmtSbtCheck; scalafmtCheckAll; scalafixAll --check")

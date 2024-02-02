@@ -3,7 +3,6 @@ package play.api.cache.redis.connector
 import play.api.cache.redis._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.language.implicitConversions
 
 /**
   * The extended future implements advanced response handling.

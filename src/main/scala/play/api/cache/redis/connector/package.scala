@@ -1,7 +1,6 @@
 package play.api.cache.redis
 
 import scala.concurrent.Future
-import scala.language.implicitConversions
 
 package object connector {
 

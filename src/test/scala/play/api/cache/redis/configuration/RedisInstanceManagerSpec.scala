@@ -4,7 +4,6 @@ import play.api.cache.redis.test._
 import play.api.{ConfigLoader, Configuration}
 
 import scala.concurrent.duration._
-import scala.language.implicitConversions
 
 class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterialization{
 

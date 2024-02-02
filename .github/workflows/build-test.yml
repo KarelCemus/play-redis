@@ -35,4 +35,4 @@ jobs:
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          sbt --client "+clean; +compile; +Test/compile; +coverage; +test; +coverageReport; +coveralls;"
+          sbt --client "+clean; +compile; +Test/compile; lint; +coverage; +test; +coverageReport; +coveralls;"

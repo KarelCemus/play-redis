@@ -5,12 +5,12 @@ import scala.concurrent.Future
 /**
   * Transforms future result produced by redis implementation to the result of the desired type
   */
-object Builders {
+private object Builders {
   import dsl._
   import play.api.cache.redis._
   import akka.pattern.AskTimeoutException
 
-  trait ResultBuilder[Result[X]] {
+  trait ResultBuilder[Result[_]] {
     /** name of the builder used for internal purposes */
     def name: String
     /** converts future result produced by Redis to the result of desired type */

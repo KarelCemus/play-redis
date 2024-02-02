@@ -4,7 +4,6 @@ import play.api.inject._
 import play.cache._
 
 import javax.inject._
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 /**

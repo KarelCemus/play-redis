@@ -150,9 +150,7 @@ class RedisStandaloneSpec extends IntegrationSpec with RedisStandaloneContainer 
   }
 
   test("remove with empty args") { (_, connector) =>
-    for {
-      _ <- connector.remove(List.empty: _*).assertingSuccess
-    } yield Passed
+      connector.remove().assertingSuccess
   }
 
   test("clear with setting null") { (cacheKey, connector) =>

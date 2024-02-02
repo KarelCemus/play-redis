@@ -211,7 +211,7 @@ private[impl] trait RedisConnectorMock { this: AsyncMockFactoryBase =>
           .once()
       }
 
-    def listAppend[T:ClassTag](key: String, values: Seq[T], result: Future[Long] = Future.successful(5L)): Future[Unit] =
+    def listAppend[T](key: String, values: Seq[T], result: Future[Long] = Future.successful(5L)): Future[Unit] =
       Future.successful {
         (connector.listAppendValues(_: String, _: Seq[Any]))
           .expects(key, values)
@@ -219,9 +219,9 @@ private[impl] trait RedisConnectorMock { this: AsyncMockFactoryBase =>
           .once()
       }
 
-    def listSlice[T: ClassTag](key: String, start: Int, end: Int, result: Future[Seq[T]]): Future[Unit] =
+    def listSlice[T: ClassTag](key: String, start: Long, end: Long, result: Future[Seq[T]]): Future[Unit] =
       Future.successful {
-        (connector.listSlice(_: String, _: Int, _: Int)(_: ClassTag[_]))
+        (connector.listSlice(_: String, _: Long, _: Long)(_: ClassTag[_]))
           .expects(key, start, end, implicitly[ClassTag[T]])
           .returning(result)
           .once()
@@ -251,37 +251,37 @@ private[impl] trait RedisConnectorMock { this: AsyncMockFactoryBase =>
           .once()
       }
 
-    def listSetAt(key: String, index: Int, value: String, result: Future[Unit]): Future[Unit] =
+    def listSetAt(key: String, index: Long, value: String, result: Future[Unit]): Future[Unit] =
       Future.successful {
-        (connector.listSetAt(_: String, _: Int, _: Any))
+        (connector.listSetAt(_: String, _: Long, _: Any))
           .expects(key, index, value)
           .returning(result)
           .once()
       }
 
-    def listRemove(key: String, value: String, count: Int, result: Future[Long]): Future[Unit] =
+    def listRemove(key: String, value: String, count: Long, result: Future[Long]): Future[Unit] =
       Future.successful {
-        (connector.listRemove(_: String, _:Any, _: Int))
+        (connector.listRemove(_: String, _:Any, _: Long))
           .expects(key, value, count)
           .returning(result)
           .once()
       }
 
-    def listRemoveAt(key: String, index: Int, result: Future[Long]): Future[Unit] =
+    def listRemoveAt(key: String, index: Long, result: Future[Long]): Future[Unit] =
       Future.successful {
-        (connector.listSetAt(_: String, _: Int, _: Any))
+        (connector.listSetAt(_: String, _: Long, _: Any))
           .expects(key, index, "play-redis:DELETED")
           .returning(Future.unit)
           .once()
-        (connector.listRemove(_: String, _: Any, _: Int))
+        (connector.listRemove(_: String, _: Any, _: Long))
           .expects(key, "play-redis:DELETED", 0)
           .returning(result)
           .once()
       }
 
-    def listTrim(key: String, start: Int, end: Int, result: Future[Unit] = Future.unit): Future[Unit] =
+    def listTrim(key: String, start: Long, end: Long, result: Future[Unit] = Future.unit): Future[Unit] =
       Future.successful {
-        (connector.listTrim(_: String, _: Int, _: Int))
+        (connector.listTrim(_: String, _: Long, _: Long))
           .expects(key, start, end)
           .returning(result)
           .once()

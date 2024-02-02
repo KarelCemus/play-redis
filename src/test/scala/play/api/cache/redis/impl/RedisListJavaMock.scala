@@ -16,9 +16,9 @@ private[impl] trait RedisListJavaMock { this: AsyncMockFactoryBase =>
 
   protected final class RedisListExpectation(list: RedisListMock) {
 
-    def apply(index: Int, value: Option[String]): Future[Unit] =
+    def apply(index: Long, value: Option[String]): Future[Unit] =
       Future.successful {
-        (list.apply(_: Int))
+        (list.apply(_: Long))
           .expects(index)
           .returning(
             value.fold[Future[String]](
@@ -30,9 +30,9 @@ private[impl] trait RedisListJavaMock { this: AsyncMockFactoryBase =>
           .once()
       }
 
-    def get(index: Int, value: Option[String]): Future[Unit] =
+    def get(index: Long, value: Option[String]): Future[Unit] =
       Future.successful {
-        (list.get(_: Int))
+        (list.get(_: Long))
           .expects(index)
           .returning(Future.successful(value))
           .once()
@@ -70,25 +70,25 @@ private[impl] trait RedisListJavaMock { this: AsyncMockFactoryBase =>
           .once()
       }
 
-    def set(index: Int, value: String): Future[Unit] =
+    def set(index: Long, value: String): Future[Unit] =
       Future.successful {
-        (list.set(_: Int, _: String))
+        (list.set(_: Long, _: String))
           .expects(index, value)
           .returning(Future.successful(list))
           .once()
       }
 
-    def remove(value: String, count: Int = 1): Future[Unit] =
+    def remove(value: String, count: Long = 1): Future[Unit] =
       Future.successful {
-        (list.remove(_: String, _: Int))
+        (list.remove(_: String, _: Long))
           .expects(value, count)
           .returning(Future.successful(list))
           .once()
       }
 
-    def removeAt(index: Int): Future[Unit] =
+    def removeAt(index: Long): Future[Unit] =
       Future.successful {
-        (list.removeAt(_: Int))
+        (list.removeAt(_: Long))
           .expects(index)
           .returning(Future.successful(list))
           .once()
@@ -101,9 +101,9 @@ private[impl] trait RedisListJavaMock { this: AsyncMockFactoryBase =>
 
   protected final class RedisListViewExpectation(list: RedisListMock) {
 
-    def slice(from: Int, to: Int, value: List[String]): Future[Unit] =
+    def slice(from: Long, to: Long, value: List[String]): Future[Unit] =
       Future.successful {
-        (list.view.slice(_: Int, _: Int))
+        (list.view.slice(_: Long, _: Long))
           .expects(from, to)
           .returning(Future.successful(value))
           .once()
@@ -120,9 +120,9 @@ private[impl] trait RedisListJavaMock { this: AsyncMockFactoryBase =>
           .once()
       }
 
-    def slice(from: Int, to: Int): Future[Unit] =
+    def slice(from: Long, to: Long): Future[Unit] =
       Future.successful {
-        (list.modify.slice(_: Int, _: Int))
+        (list.modify.slice(_: Long, _: Long))
           .expects(from, to)
           .returning(Future.successful(list.modify))
           .once()

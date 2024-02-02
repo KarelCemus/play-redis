@@ -5,7 +5,6 @@ import play.api.cache.redis._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
-import scala.language.implicitConversions
 
 /**
   * Runtime info about the current cache instance. It includes

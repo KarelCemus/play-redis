@@ -5,7 +5,6 @@ import play.api.Environment
 import play.api.cache.redis._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 private[impl] object JavaCompatibility extends JavaCompatibilityBase {

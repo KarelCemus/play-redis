@@ -109,7 +109,7 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
     }
 
   override def expire(key: String, expiration: Duration): Future[Unit] =
-    redis.expire(key, expiration.toSeconds.toInt) executing "EXPIRE" withKey key andParameter s"$expiration" logging {
+    redis.expire(key, expiration.toSeconds) executing "EXPIRE" withKey key andParameter s"$expiration" logging {
       case true  => log.debug(s"Expiration set on key '$key'.") // expiration was set
       case false => log.debug(s"Expiration set on key '$key' failed. Key does not exist.") // Nothing was removed
     }
@@ -198,10 +198,10 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
       case length => log.debug(s"The collection at '$key' has $length items.")
     }
 
-  override def listSetAt(key: String, position: Int, value: Any): Future[Unit] =
+  override def listSetAt(key: String, position: Long, value: Any): Future[Unit] =
     encode(key, value).flatMap(redis.lset(key, position, _)) executing "LSET" withKey key andParameter value logging {
       case _ => log.debug(s"Updated value at $position in '$key' to $value.")
-    } recover {
+    } map (_ => ()) recover {
       case ExecutionFailedException(_, _, _, actors.ReplyErrorException("ERR index out of range")) =>
         log.debug(s"Update of the value at $position in '$key' failed due to index out of range.")
         throw new IndexOutOfBoundsException("Index out of range")
@@ -217,19 +217,19 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
         None
     }
 
-  override def listSlice[T: ClassTag](key: String, start: Int, end: Int): Future[Seq[T]] =
+  override def listSlice[T: ClassTag](key: String, start: Long, end: Long): Future[Seq[T]] =
     redis.lrange[String](key, start, end) executing "LRANGE" withKey key andParameters s"$start $end" expects {
       case values =>
         log.debug(s"The range on '$key' from $start to $end included returned ${values.size} values.")
         values.map(decode[T](key, _))
     }
 
-  override def listRemove(key: String, value: Any, count: Int): Future[Long] =
+  override def listRemove(key: String, value: Any, count: Long): Future[Long] =
     encode(key, value).flatMap(redis.lrem(key, count, _)) executing "LREM" withKey key andParameters s"$value $count" logging {
       case removed => log.debug(s"Removed $removed occurrences of $value in '$key'.")
     }
 
-  override def listTrim(key: String, start: Int, end: Int): Future[Unit] =
+  override def listTrim(key: String, start: Long, end: Long): Future[Unit] =
     redis.ltrim(key, start, end) executing "LTRIM" withKey key andParameter s"$start $end" logging {
       case _ => log.debug(s"Trimmed collection at '$key' to $start:$end ")
     }

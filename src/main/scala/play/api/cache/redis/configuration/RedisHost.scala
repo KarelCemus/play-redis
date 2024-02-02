@@ -76,7 +76,7 @@ object RedisHost extends ConfigLoader[RedisHost] {
   }
 
   // $COVERAGE-OFF$
-  def unapply(host: RedisHost): Option[(String, Int, Option[Int],Option[String], Option[String])] = {
+  def unapply(host: RedisHost): Some[(String, Int, Option[Int], Option[String], Option[String])] = {
     Some((host.host, host.port, host.database, host.username, host.password))
   }
   // $COVERAGE-ON$

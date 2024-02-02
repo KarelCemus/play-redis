@@ -135,7 +135,7 @@ trait RedisList[Elem, Result[_]] extends RedisCollection[List[Elem], Result] {
     * @return element at the index or exception
     *
     */
-  def apply(index: Int): Result[Elem]
+  def apply(index: Long): Result[Elem]
 
   /**
     * Returns the element at index index in the list stored at key.
@@ -153,7 +153,7 @@ trait RedisList[Elem, Result[_]] extends RedisCollection[List[Elem], Result] {
     * @return Some( element ) at the index, None if no element exists,
     *         or exception when the value is not a list
     */
-  def get(index: Int): Result[Option[Elem]]
+  def get(index: Long): Result[Option[Elem]]
 
   /**
     * @return first element of the collection or an exception
@@ -214,7 +214,7 @@ trait RedisList[Elem, Result[_]] extends RedisCollection[List[Elem], Result] {
     * @param element  elements to be inserted
     * @return this collection to chain commands
     */
-  def set(position: Int, element: Elem): Result[This]
+  def set(position: Long, element: Elem): Result[This]
 
   /**
     * Removes first N values equal to the given value from the list.
@@ -229,7 +229,7 @@ trait RedisList[Elem, Result[_]] extends RedisCollection[List[Elem], Result] {
     * @param count   first N occurrences
     * @return this collection to chain commands
     */
-  def remove(element: Elem, count: Int = 1): Result[This]
+  def remove(element: Elem, count: Long = 1L): Result[This]
 
   /**
     * Removes the element at the given position. If the index
@@ -240,7 +240,7 @@ trait RedisList[Elem, Result[_]] extends RedisCollection[List[Elem], Result] {
     * @param position element index to be removed
     * @return this collection to chain commands
     */
-  def removeAt(position: Int): Result[This]
+  def removeAt(position: Long): Result[This]
 
   /**
     * @return read-only operations over the collection, does not modify data
@@ -260,7 +260,7 @@ trait RedisList[Elem, Result[_]] extends RedisCollection[List[Elem], Result] {
       * @param n takes initial N elements
       * @return first N elements of the collection if exist
       */
-    def take(n: Int): Result[Seq[Elem]] = slice(0, n - 1)
+    def take(n: Long): Result[Seq[Elem]] = slice(0, n - 1)
 
     /**
       * Helper method of slice. For more details see that method.
@@ -268,7 +268,7 @@ trait RedisList[Elem, Result[_]] extends RedisCollection[List[Elem], Result] {
       * @param n ignore initial N elements
       * @return rest of the collection ignoring initial N elements
       */
-    def drop(n: Int): Result[Seq[Elem]] = slice(n, -1)
+    def drop(n: Long): Result[Seq[Elem]] = slice(n, -1)
 
     /**
       * Helper method of slice. For more details see that method.
@@ -300,7 +300,7 @@ trait RedisList[Elem, Result[_]] extends RedisCollection[List[Elem], Result] {
       * @param end  index of the last element included
       * @return collection at the specified range
       */
-    def slice(from: Int, end: Int): Result[Seq[Elem]]
+    def slice(from: Long, end: Long): Result[Seq[Elem]]
   }
 
   trait RedisListModification {
@@ -316,7 +316,7 @@ trait RedisList[Elem, Result[_]] extends RedisCollection[List[Elem], Result] {
       * @param n takes initial N elements
       * @return this object to chain commands
       */
-    def take(n: Int): Result[RedisListModification] = slice(0, n - 1)
+    def take(n: Long): Result[RedisListModification] = slice(0, n - 1)
 
     /**
       * Helper method of slice. For more details see that method.
@@ -324,7 +324,7 @@ trait RedisList[Elem, Result[_]] extends RedisCollection[List[Elem], Result] {
       * @param n ignore initial N elements
       * @return this object to chain commands
       */
-    def drop(n: Int): Result[RedisListModification] = slice(n, -1)
+    def drop(n: Long): Result[RedisListModification] = slice(n, -1)
 
     /**
       * Helper method of slice. Wiping the whole collection
@@ -354,7 +354,7 @@ trait RedisList[Elem, Result[_]] extends RedisCollection[List[Elem], Result] {
       * @param end  index of the last element included
       * @return this object to chain commands
       */
-    def slice(from: Int, end: Int): Result[RedisListModification]
+    def slice(from: Long, end: Long): Result[RedisListModification]
   }
 
 }

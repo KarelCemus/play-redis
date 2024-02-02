@@ -153,7 +153,7 @@ private[impl] class AsyncJavaRedis(internal: CacheAsyncApi)(implicit environment
     async { implicit context =>
       Future.from(
         internal.append(key, value),
-        internal.setIfNotExists(classTagKey(key), classTagOf(value))
+        internal.setIfNotExists(classTagKey(key), classTagOf(value)).asDone
       ).asDone
     }
   }
@@ -162,7 +162,7 @@ private[impl] class AsyncJavaRedis(internal: CacheAsyncApi)(implicit environment
     async { implicit context =>
       Future.from(
         internal.append(key, value, expiration.seconds),
-        internal.setIfNotExists(classTagKey(key), classTagOf(value), expiration.seconds)
+        internal.setIfNotExists(classTagKey(key), classTagOf(value), expiration.seconds).asDone
       ).asDone
     }
   }

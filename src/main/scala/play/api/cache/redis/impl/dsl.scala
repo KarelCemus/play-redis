@@ -41,7 +41,7 @@ private[impl] object dsl {
   }
 
   /** maps units into akka.Done */
-  @inline private def unitAsDone(unit: Unit): Done = Done
+  @inline private val unitAsDone: Any => Done = _ => Done
 
   /** applies prefixer to produce final cache key */
   implicit class CacheKey(private val key: String) extends AnyVal {

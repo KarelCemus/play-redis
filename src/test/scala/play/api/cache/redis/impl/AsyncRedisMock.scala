@@ -20,7 +20,7 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
     final override def getAll[T: ClassTag](keys: Iterable[String]): AsynchronousResult[Seq[Option[T]]] =
       getAllKeys(keys)
 
-    def getAllKeys[T: ClassTag](keys: Iterable[String]): AsynchronousResult[Seq[Option[T]]]
+    def getAllKeys[T](keys: Iterable[String]): AsynchronousResult[Seq[Option[T]]]
   }
 
   final protected implicit class AsyncRedisOps(async: AsyncRedisMock) {
@@ -49,10 +49,10 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
           .once()
       }
 
-    def getAllKeys[T: ClassTag](keys: Iterable[String], values: Seq[Option[T]]): Future[Unit] =
+    def getAllKeys[T](keys: Iterable[String], values: Seq[Option[T]]): Future[Unit] =
       Future.successful {
-        (async.getAllKeys(_: Iterable[String])(_: ClassTag[_]))
-          .expects(keys, implicitly[ClassTag[T]])
+        (async.getAllKeys[T](_: Iterable[String]))
+          .expects(keys)
           .returning(Future.successful(values))
           .once()
       }
@@ -65,16 +65,16 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
           .once()
       }
 
-    def setClassTag[T: ClassTag](key: String, value: T, duration: Duration): Future[Unit] =
+    def setClassTag[T](key: String, value: T, duration: Duration): Future[Unit] =
       setValue(classTagKey(key), value, duration)
 
-    def set[T: ClassTag](key: String, value: T, duration: Duration): Future[Unit] =
+    def set[T](key: String, value: T, duration: Duration): Future[Unit] =
       for {
         _ <- setValue(key, value, duration)
         _ <- setClassTag(key, classTagValue(value), duration)
       } yield ()
 
-    def setValueIfNotExists[T: ClassTag](key: String, value: T, duration: Duration, exists: Boolean): Future[Unit] =
+    def setValueIfNotExists[T](key: String, value: T, duration: Duration, exists: Boolean): Future[Unit] =
       Future.successful {
         (async.setIfNotExists(_: String, _: Any, _: Duration))
           .expects(key, if (Option(value).isEmpty) * else value, duration)
@@ -82,16 +82,16 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
           .once()
       }
 
-    def setClassTagIfNotExists[T: ClassTag](key: String, value: T, duration: Duration, exists: Boolean): Future[Unit] =
+    def setClassTagIfNotExists[T](key: String, value: T, duration: Duration, exists: Boolean): Future[Unit] =
       setValueIfNotExists(classTagKey(key), classTagValue(value), duration, exists)
 
-    def setIfNotExists[T: ClassTag](key: String, value: T, duration: Duration, exists: Boolean): Future[Unit] =
+    def setIfNotExists[T](key: String, value: T, duration: Duration, exists: Boolean): Future[Unit] =
       for {
         _ <- setValueIfNotExists(key, value, duration, exists)
         _ <- setClassTagIfNotExists(key, value, duration, exists)
       } yield ()
 
-    def setAll[T: ClassTag](values: (String, Any)*): Future[Unit] =
+    def setAll(values: (String, Any)*): Future[Unit] =
       Future.successful {
         val valuesWithClassTags = values.flatMap {
           case (k, v) => Seq((k, v), (classTagKey(k), classTagValue(v)))
@@ -102,7 +102,7 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
           .once()
       }
 
-    def setAllIfNotExist[T: ClassTag](values: Seq[(String, Any)], exists: Boolean): Future[Unit] =
+    def setAllIfNotExist(values: Seq[(String, Any)], exists: Boolean): Future[Unit] =
       Future.successful {
         val valuesWithClassTags = values.flatMap {
           case (k, v) => Seq((k, v), (classTagKey(k), classTagValue(v)))
@@ -142,7 +142,7 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
       }
 
     def removeMatching(pattern: String): Future[Unit] = {
-      def removePattern(patternToRemove: String) =
+      def removePattern(patternToRemove: String): Unit =
         (async.removeMatching(_: String))
           .expects(patternToRemove)
           .returning(Future.successful(Done))

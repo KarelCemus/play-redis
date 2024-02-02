@@ -33,13 +33,13 @@ class RedisListJavaImpl[Elem](internal: RedisList[Elem, Future])(implicit runtim
     }
   }
 
-  override def apply(index: Int): CompletionStage[Elem] = {
+  override def apply(index: Long): CompletionStage[Elem] = {
     async { _ =>
       internal.apply(index)
     }
   }
 
-  override def get(index: Int): CompletionStage[Optional[Elem]] = {
+  override def get(index: Long): CompletionStage[Optional[Elem]] = {
     async { implicit context =>
       internal.get(index).map(_.asJava)
     }
@@ -57,7 +57,7 @@ class RedisListJavaImpl[Elem](internal: RedisList[Elem, Future])(implicit runtim
     }
   }
 
-  override def set(position: Int, element: Elem): CompletionStage[AsyncRedisList[Elem]] = {
+  override def set(position: Long, element: Elem): CompletionStage[AsyncRedisList[Elem]] = {
     async { implicit context =>
       internal.set(position, element).map(_ => this)
     }
@@ -69,13 +69,13 @@ class RedisListJavaImpl[Elem](internal: RedisList[Elem, Future])(implicit runtim
     }
   }
 
-  override def remove(element: Elem, count: Int): CompletionStage[AsyncRedisList[Elem]] = {
+  override def remove(element: Elem, count: Long): CompletionStage[AsyncRedisList[Elem]] = {
     async { implicit context =>
       internal.remove(element, count).map(_ => this)
     }
   }
 
-  override def removeAt(position: Int): CompletionStage[AsyncRedisList[Elem]] = {
+  override def removeAt(position: Long): CompletionStage[AsyncRedisList[Elem]] = {
     async { implicit context =>
       internal.removeAt(position).map(_ => this)
     }
@@ -87,7 +87,7 @@ class RedisListJavaImpl[Elem](internal: RedisList[Elem, Future])(implicit runtim
 
   private class AsyncRedisListViewJavaImpl(view: internal.RedisListView) extends AsyncRedisList.AsyncRedisListView[Elem] {
 
-    override def slice(from: Int, end: Int): CompletionStage[JavaList[Elem]] = {
+    override def slice(from: Long, end: Long): CompletionStage[JavaList[Elem]] = {
       async { implicit context =>
         view.slice(from, end).map(_.asJava)
       }
@@ -104,7 +104,7 @@ class RedisListJavaImpl[Elem](internal: RedisList[Elem, Future])(implicit runtim
       }
     }
 
-    override def slice(from: Int, end: Int): CompletionStage[AsyncRedisList.AsyncRedisListModification[Elem]] = {
+    override def slice(from: Long, end: Long): CompletionStage[AsyncRedisList.AsyncRedisListModification[Elem]] = {
       async { implicit context =>
         modification.slice(from, end).map(_ => this)
       }

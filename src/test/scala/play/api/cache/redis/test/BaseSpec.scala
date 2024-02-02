@@ -12,7 +12,6 @@ import play.api.cache.redis.configuration._
 import java.util.concurrent.{CompletionStage, TimeoutException}
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 

@@ -328,7 +328,7 @@ private[redis] trait ListCommands {
     * @param value    value to be set
     * @return promise
     */
-  def listSetAt(key: String, position: Int, value: Any): Future[Unit]
+  def listSetAt(key: String, position: Long, value: Any): Future[Unit]
 
   /**
     * Removes and returns the first element of the list stored at key (LPOP).
@@ -357,7 +357,7 @@ private[redis] trait ListCommands {
     * @tparam T type of the values
     * @return subset of existing set
     */
-  def listSlice[T: ClassTag](key: String, start: Int, end: Int): Future[Seq[T]]
+  def listSlice[T: ClassTag](key: String, start: Long, end: Long): Future[Seq[T]]
 
   /**
     * Removes (LREM) the first count occurrences of elements equal to value from the list stored at key. The count
@@ -371,7 +371,7 @@ private[redis] trait ListCommands {
     * @param count number of elements to be removed
     * @return number of removed elements
     */
-  def listRemove(key: String, value: Any, count: Int): Future[Long]
+  def listRemove(key: String, value: Any, count: Long): Future[Long]
 
   /**
     * Trim an existing list so that it will contain only the specified range of elements specified. Both start and stop
@@ -388,7 +388,7 @@ private[redis] trait ListCommands {
     * @param end   last index of preserved subset (included)
     * @return promise
     */
-  def listTrim(key: String, start: Int, end: Int): Future[Unit]
+  def listTrim(key: String, start: Long, end: Long): Future[Unit]
 }
 
 /**

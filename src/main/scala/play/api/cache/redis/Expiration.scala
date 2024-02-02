@@ -1,7 +1,6 @@
 package play.api.cache.redis
 
 import scala.concurrent.duration._
-import scala.language.implicitConversions
 
 /**
   * Provides implicit converters to convert expiration date into duration, which is accepted by CacheApi.
