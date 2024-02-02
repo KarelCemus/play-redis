@@ -1,12 +1,11 @@
 package play.api.cache.redis.impl
 
+import akka.actor.ActorSystem
+import play.api.cache.redis._
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 import scala.language.implicitConversions
-
-import play.api.cache.redis._
-
-import akka.actor.ActorSystem
 
 /**
   * Runtime info about the current cache instance. It includes
@@ -39,7 +38,7 @@ private[redis] object RedisRuntime {
   implicit def string2invocation(invocation: String): InvocationPolicy = invocation.toLowerCase.trim match {
     case "lazy"  => LazyInvocation
     case "eager" => EagerInvocation
-    case other   => throw new IllegalArgumentException("Illegal invocation policy. Valid values are 'lazy' and 'eager'. See the documentation for more details.")
+    case _   => throw new IllegalArgumentException("Illegal invocation policy. Valid values are 'lazy' and 'eager'. See the documentation for more details.")
   }
 
   def apply(instance: RedisInstance, recovery: RecoveryPolicy, invocation: InvocationPolicy, prefix: RedisPrefix)(implicit system: ActorSystem): RedisRuntime =

@@ -4,8 +4,8 @@ import akka.util.Timeout
 import org.scalamock.scalatest.AsyncMockFactoryBase
 import play.api.cache.redis.{FailThrough, RecoverWithDefault, RecoveryPolicy, RedisException}
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 private[impl] trait RedisRuntimeMock { outer: AsyncMockFactoryBase =>
 

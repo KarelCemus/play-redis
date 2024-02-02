@@ -2,11 +2,10 @@ package play.api.cache.redis.impl
 
 import play.api.cache.redis._
 import play.api.cache.redis.test._
-import play.cache.redis.{AsyncRedisList, AsyncRedisSet}
+import play.cache.redis.AsyncRedisSet
 
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
-import scala.jdk.OptionConverters._
 
 class RedisJavaSetSpec extends AsyncUnitSpec with RedisSetJavaMock with RedisRuntimeMock {
 

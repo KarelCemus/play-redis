@@ -44,7 +44,7 @@ class ExpectedFutureSpec extends AsyncUnitSpec {
     Future.successful("expected").executing(cmd).withKey("key").andParameters("SET").andParameter(1).toString mustEqual s"ExpectedFuture($cmd key SET 1)"
     Future.successful("expected").executing(cmd).withKeys(Seq("key1", "key2")).andParameters(Seq("SET", 1)).toString mustEqual s"ExpectedFuture($cmd key1 key2 SET 1)"
 
-    Future.successful("expected").executing(cmd).withKey("key").asCommand("other 2").toString mustEqual s"ExpectedFuture(TEST CMD other 2)"
+    Future.successful("expected").executing(cmd).withKey("key").asCommand("other 2").toString mustEqual "ExpectedFuture(TEST CMD other 2)"
   }
 }
 

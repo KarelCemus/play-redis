@@ -1,8 +1,8 @@
 package play.api.cache.redis.configuration
 
-import scala.concurrent.duration._
-import play.api.cache.redis._
 import play.api.cache.redis.test.{Helpers, ImplicitOptionMaterialization, UnitSpec}
+
+import scala.concurrent.duration._
 
 class RedisTimeoutsSpec extends UnitSpec  with ImplicitOptionMaterialization{
 

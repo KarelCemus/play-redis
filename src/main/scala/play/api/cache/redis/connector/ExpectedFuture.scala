@@ -1,9 +1,9 @@
 package play.api.cache.redis.connector
 
+import play.api.cache.redis._
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
-
-import play.api.cache.redis._
 
 /**
   * The extended future implements advanced response handling.
@@ -57,7 +57,7 @@ private[connector] class ExpectedFutureWithoutKey[T](protected val future: Futur
 
   def withKeys(keys: Iterable[String]): ExpectedFutureWithKey[T] = withKey(keys mkString " ")
 
-  override def toString = s"ExpectedFuture($cmd)"
+  override def toString: String = s"ExpectedFuture($cmd)"
 }
 
 private[connector] class ExpectedFutureWithKey[T](protected val future: Future[T], protected val cmd: String, key: String, statement: => String) extends ExpectedFuture[T] {
@@ -77,7 +77,7 @@ private[connector] class ExpectedFutureWithKey[T](protected val future: Future[T
 
   def asCommand(commandOverride: => String) = new ExpectedFutureWithKey(future, cmd, key, s"$cmd $commandOverride")
 
-  override def toString = s"ExpectedFuture($statement)"
+  override def toString: String = s"ExpectedFuture($statement)"
 }
 
 /**

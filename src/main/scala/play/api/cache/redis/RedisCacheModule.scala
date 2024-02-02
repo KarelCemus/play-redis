@@ -1,10 +1,11 @@
 package play.api.cache.redis
 
+import play.api.inject._
+import play.cache._
+
 import javax.inject._
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import play.api.inject._
-import play.cache._
 
 /**
   * Play framework module implementing play.api.cache.CacheApi for redis-server key/value storage. For more details

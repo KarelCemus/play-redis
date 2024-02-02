@@ -1,7 +1,5 @@
 package play.api.cache.redis
 
-import scala.language.implicitConversions
-
 import play.api.inject.ApplicationLifecycle
 import play.api.{Configuration, Environment}
 

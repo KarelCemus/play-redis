@@ -1,11 +1,10 @@
 package play.api.cache.redis
 
-import javax.inject.Inject
-
-import scala.concurrent.Future
-
 import play.api.Logger
 import play.api.inject._
+
+import javax.inject.Inject
+import scala.concurrent.Future
 
 /**
   * Recovery policy triggers when a request fails. Based on the implementation,
@@ -32,7 +31,7 @@ trait RecoveryPolicy {
   /** name of the policy used for internal purposes */
   def name: String = this.getClass.getSimpleName
 
-  override def toString = s"RecoveryPolicy($name)"
+  override def toString: String = s"RecoveryPolicy($name)"
   // $COVERAGE-ON$
 }
 
@@ -48,7 +47,7 @@ trait Reports extends RecoveryPolicy {
 
   protected def message(failure: RedisException): String =
     failure match {
-      case TimeoutException(_)                                        => s"Command execution timed out."
+      case TimeoutException(_)                                        => "Command execution timed out."
       case SerializationException(key, message, _)                    => s"$message for key '$key'."
       case ExecutionFailedException(Some(key), command, _, _) => s"Command $command for key '$key' failed."
       case ExecutionFailedException(None, command, _, _)      => s"Command $command failed."

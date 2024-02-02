@@ -1,8 +1,8 @@
 package play.api.cache.redis.configuration
 
+import com.typesafe.config.Config
 import play.api.ConfigLoader
 import play.api.cache.redis._
-import com.typesafe.config.Config
 
 /**
   * Cache manager maintains a list of the redis caches in the application.

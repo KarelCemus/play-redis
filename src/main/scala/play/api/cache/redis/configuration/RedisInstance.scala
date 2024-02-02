@@ -34,7 +34,7 @@ sealed trait RedisCluster extends RedisInstance {
     case _                  => false
   }
   /** to string */
-  override def toString = s"Cluster[${nodes mkString ","}]"
+  override def toString: String = s"Cluster[${nodes mkString ","}]"
   // $COVERAGE-ON$
 }
 
@@ -101,7 +101,7 @@ sealed trait RedisSentinel extends RedisInstance {
     case that: RedisSentinel => equalsAsInstance(that) && this.sentinels === that.sentinels
   }
   /** to string */
-  override def toString = s"Sentinel[${sentinels mkString ","}]"
+  override def toString: String = s"Sentinel[${sentinels mkString ","}]"
 }
 
 object RedisSentinel {

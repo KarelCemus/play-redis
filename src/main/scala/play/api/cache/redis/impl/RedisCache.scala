@@ -1,11 +1,10 @@
 package play.api.cache.redis.impl
 
+import play.api.cache.redis._
+
 import scala.concurrent._
 import scala.concurrent.duration.Duration
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
-
-import play.api.cache.redis._
 
 /** <p>Implementation of plain API using redis-server cache and Brando connector implementation.</p> */
 private[impl] class RedisCache[Result[_]](redis: RedisConnector, builder: Builders.ResultBuilder[Result])(implicit runtime: RedisRuntime) extends AbstractCacheApi[Result] {
@@ -149,6 +148,6 @@ private[impl] class RedisCache[Result[_]](redis: RedisConnector, builder: Builde
     }
 
   // $COVERAGE-OFF$
-  override def toString = s"RedisCache(name=${runtime.name})"
+  override def toString: String = s"RedisCache(name=${runtime.name})"
   // $COVERAGE-ON$
 }

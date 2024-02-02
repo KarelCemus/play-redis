@@ -2,7 +2,6 @@ package play.api.cache.redis.impl
 
 import play.api.cache.redis._
 
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 /** <p>Implementation of Set API using redis-server cache implementation.</p> */

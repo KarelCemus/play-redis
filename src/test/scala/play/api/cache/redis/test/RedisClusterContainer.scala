@@ -7,7 +7,7 @@ import scala.concurrent.duration._
 
 trait RedisClusterContainer extends RedisContainer { this: Suite =>
 
-  protected val log = Logger("play.api.cache.redis.test")
+  protected val log: Logger = Logger("play.api.cache.redis.test")
 
   protected def redisMaster = 4
 

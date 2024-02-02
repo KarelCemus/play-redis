@@ -208,7 +208,7 @@ class RedisCacheSpec extends AsyncUnitSpec  with RedisRuntimeMock with RedisConn
 
   test("matching with a prefix", prefix = Some("the-prefix")) { (cache, connector) =>
     for {
-      _ <- connector.expect.matching(s"the-prefix:pattern", result = Seq(s"the-prefix:$cacheKey"))
+      _ <- connector.expect.matching("the-prefix:pattern", result = Seq(s"the-prefix:$cacheKey"))
       _ <- cache.matching("pattern").assertingEqual(Seq(cacheKey))
     } yield Passed
   }

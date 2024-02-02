@@ -1,11 +1,11 @@
 package play.api.cache.redis.impl
 
-import javax.inject.Provider
+import akka.actor.ActorSystem
 import play.api.Environment
 import play.api.cache.redis._
 import play.api.inject.ApplicationLifecycle
-import akka.actor.ActorSystem
-import play.api.cache.{AsyncCacheApi, DefaultSyncCacheApi}
+
+import javax.inject.Provider
 
 /**
   * Aggregates all available redis APIs into a single handler. This simplifies

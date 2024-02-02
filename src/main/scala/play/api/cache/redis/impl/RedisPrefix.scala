@@ -12,7 +12,7 @@ sealed trait RedisPrefix extends Any {
 }
 
 final class RedisPrefixImpl(val prefix: String) extends AnyVal with RedisPrefix {
-  @inline override def prefixed(key: String) = s"$prefix:$key"
+  @inline override def prefixed(key: String): String = s"$prefix:$key"
   @inline override def unprefixed(key: String): String = key.drop(prefix.length + 1)
   @inline override def prefixed(keys: Seq[String]): Seq[String] = keys.map(prefixed)
   @inline override def unprefixed(keys: Seq[String]): Seq[String] = keys.map(unprefixed)

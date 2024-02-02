@@ -1,8 +1,7 @@
 package play.api.cache.redis.configuration
 
-import play.api.ConfigLoader
-
 import com.typesafe.config.Config
+import play.api.ConfigLoader
 
 /**
   * Configures a single node either a standalone or within a cluster.

@@ -1,10 +1,9 @@
 package play.api.cache.redis.configuration
 
-import java.net.InetAddress
-
+import com.typesafe.config.Config
 import play.api.cache.redis._
 
-import com.typesafe.config.Config
+import java.net.InetAddress
 
 trait RedisInstanceResolver {
   def resolve: PartialFunction[String, RedisInstance]
@@ -27,7 +26,7 @@ final class ResolvedRedisInstance(val instance: RedisInstance) extends RedisInst
 
   override def hashCode(): Int = name.hashCode
 
-  override def toString = s"ResolvedRedisInstance($name@$instance)"
+  override def toString: String = s"ResolvedRedisInstance($name@$instance)"
   // $COVERAGE-ON$
 }
 
@@ -42,7 +41,7 @@ final class UnresolvedRedisInstance(val name: String) extends RedisInstanceProvi
 
   override def hashCode(): Int = name.hashCode
 
-  override def toString = s"UnresolvedRedisInstance($name)"
+  override def toString: String = s"UnresolvedRedisInstance($name)"
   // $COVERAGE-ON$
 }
 

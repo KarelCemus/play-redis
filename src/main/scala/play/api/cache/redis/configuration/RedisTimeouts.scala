@@ -1,9 +1,10 @@
 package play.api.cache.redis.configuration
 
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
 import com.typesafe.config.Config
 import play.api.cache.redis._
+
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * Aggregates the timeout configuration settings

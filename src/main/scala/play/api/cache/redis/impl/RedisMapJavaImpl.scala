@@ -1,9 +1,9 @@
 package play.api.cache.redis.impl
 
-import scala.concurrent.Future
-
 import play.api.cache.redis.RedisMap
 import play.cache.redis.AsyncRedisMap
+
+import scala.concurrent.Future
 
 class RedisMapJavaImpl[Elem](internal: RedisMap[Elem, Future])(implicit runtime: RedisRuntime) extends AsyncRedisMap[Elem] {
   import JavaCompatibility._

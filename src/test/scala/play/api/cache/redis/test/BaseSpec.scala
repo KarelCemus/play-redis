@@ -3,9 +3,9 @@ package play.api.cache.redis.test
 import akka.Done
 import org.scalactic.source.Position
 import org.scalamock.scalatest.AsyncMockFactory
+import org.scalatest._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.{AnyWordSpecLike, AsyncWordSpecLike}
-import org.scalatest._
 import play.api.cache.redis.RedisException
 import play.api.cache.redis.configuration._
 
@@ -131,7 +131,7 @@ trait FutureAssertions extends AsyncUtilities { this: BaseSpec =>
       future.map(value => fail(s"Expected exception but got $value")).recover { case ex => ex mustEqual cause }
 
     def assertingSuccess: Future[Assertion] =
-      future.recover(cause => fail(s"Got unexpected exception", cause)).map(_ => Passed)
+      future.recover(cause => fail("Got unexpected exception", cause)).map(_ => Passed)
 
     def assertTimeout(timeout: FiniteDuration): Future[Assertion] = {
       Future.firstCompletedOf(

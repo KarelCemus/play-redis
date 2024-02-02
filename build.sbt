@@ -35,7 +35,7 @@ resolvers ++= Seq(
 
 javacOptions ++= Seq("-Xlint:unchecked", "-encoding", "UTF-8")
 
-scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked")
+scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-Ywarn-unused")
 
 enablePlugins(CustomReleasePlugin)
 
@@ -43,6 +43,11 @@ enablePlugins(CustomReleasePlugin)
 coverageExcludedFiles := ".*exceptions.*"
 
 Test / test := (Test / testOnly).toTask(" * -- -l \"org.scalatest.Ignore\"").value
+
+semanticdbEnabled := true
+semanticdbOptions += "-P:semanticdb:synthetics:on"
+semanticdbVersion := scalafixSemanticdb.revision
+ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value)
 
 wartremoverWarnings ++= Warts.allBut(
   Wart.Any,

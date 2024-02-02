@@ -1,12 +1,12 @@
 package play.api.cache.redis.impl
 
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.ClassTag
-
 import play.api.Environment
 import play.api.cache.redis._
 import play.cache.redis._
+
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 
 /**
   * Implements Play Java version of play.api.CacheApi
@@ -132,7 +132,7 @@ private[impl] class AsyncJavaRedis(internal: CacheAsyncApi)(implicit environment
   }
 
   def setAll(keyValues: KeyValue*): CompletionStage[Done] = {
-    async { implicit context =>
+    async { _ =>
       internal.setAll(
         keyValues.flatMap { kv =>
           Iterable((kv.key, kv.value), (classTagKey(kv.key), classTagOf(kv.value)))
@@ -187,7 +187,7 @@ private[impl] class AsyncJavaRedis(internal: CacheAsyncApi)(implicit environment
   }
 
   def removeAllKeys(keys: String*): CompletionStage[Done] = {
-    async { implicit context =>
+    async { _ =>
       internal.removeAll(keys.flatMap(_.withClassTag): _*)
     }
   }

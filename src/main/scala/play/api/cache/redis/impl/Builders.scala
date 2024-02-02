@@ -19,7 +19,7 @@ object Builders {
     def map[T, U](result: Result[T])(f: T => U)(implicit runtime: RedisRuntime): Result[U]
     // $COVERAGE-OFF$
     /** show the builder name */
-    override def toString = s"ResultBuilder($name)"
+    override def toString: String = s"ResultBuilder($name)"
     // $COVERAGE-ON$
   }
 

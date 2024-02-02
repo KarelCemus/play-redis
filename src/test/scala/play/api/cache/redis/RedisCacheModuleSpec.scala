@@ -16,7 +16,7 @@ import Helpers._
   private final val defaultCacheName: String = "play"
 
   test("bind defaults") {
-    _.bindings(new RedisCacheModule).configure(s"play.cache.redis.port" -> container.mappedPort(defaultPort))
+    _.bindings(new RedisCacheModule).configure("play.cache.redis.port" -> container.mappedPort(defaultPort))
   } { injector =>
     injector.checkBinding[RedisConnector]
     injector.checkBinding[CacheApi]
@@ -31,7 +31,7 @@ import Helpers._
   test("not bind defaults") {
     _.bindings(new RedisCacheModule)
       .configure("play.cache.redis.bind-default" -> false)
-      .configure(s"play.cache.redis.port" -> container.mappedPort(defaultPort))
+      .configure("play.cache.redis.port" -> container.mappedPort(defaultPort))
   } { injector =>
     // bind named caches
     injector.checkNamedBinding[CacheApi]

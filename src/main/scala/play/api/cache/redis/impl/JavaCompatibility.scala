@@ -1,13 +1,12 @@
 package play.api.cache.redis.impl
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.language.implicitConversions
-import scala.reflect.ClassTag
-
+import akka.Done
 import play.api.Environment
 import play.api.cache.redis._
 
-import akka.Done
+import scala.concurrent.{ExecutionContext, Future}
+import scala.language.implicitConversions
+import scala.reflect.ClassTag
 
 private[impl] object JavaCompatibility extends JavaCompatibilityBase {
   import scala.compat.java8.{FutureConverters, OptionConverters}
@@ -27,24 +26,24 @@ private[impl] object JavaCompatibility extends JavaCompatibilityBase {
     }
   }
 
-  implicit class Java8Stage[T](val future: Future[T]) extends AnyVal {
+  implicit class Java8Stage[T](private val future: Future[T]) extends AnyVal {
     @inline def asJava: CompletionStage[T] = FutureConverters.toJava(future)
     @inline def asDone(implicit ec: ExecutionContext): Future[Done] = future.map(_ => Done)
   }
 
-  implicit class Java8Callable[T](val f: () => T) extends AnyVal {
+  implicit class Java8Callable[T](private val f: () => T) extends AnyVal {
     @inline def asJava: Callable[T] = () => f()
   }
 
-  implicit class Java8Optional[T](val option: Option[T]) extends AnyVal {
+  implicit class Java8Optional[T](private val option: Option[T]) extends AnyVal {
     @inline def asJava: Optional[T] = OptionConverters.toJava(option)
   }
 
-  implicit class ScalaCompatibility[T](val future: CompletionStage[T]) extends AnyVal {
+  implicit class ScalaCompatibility[T](private val future: CompletionStage[T]) extends AnyVal {
     @inline def asScala: Future[T] = FutureConverters.toScala(future)
   }
 
-  implicit class RichFuture(val future: Future.type) extends AnyVal {
+  implicit class RichFuture(private val future: Future.type) extends AnyVal {
     @inline def from[T](futures: Future[T]*)(implicit ec: ExecutionContext): Future[Seq[T]] = future.sequence(futures)
   }
 
@@ -68,7 +67,7 @@ private[impl] object JavaCompatibility extends JavaCompatibilityBase {
     else ClassTag(classTagNameToClass(tag, environment))
   }
 
-  implicit class CacheKey(val key: String) extends AnyVal {
+  implicit class CacheKey(private val key: String) extends AnyVal {
     @inline def withClassTag: Seq[String] = Seq(key, classTagKey(key))
   }
 

@@ -1,9 +1,8 @@
 package play.api.cache.redis.impl
 
-import scala.language.implicitConversions
-import scala.reflect.ClassTag
-
 import play.api.cache.redis._
+
+import scala.reflect.ClassTag
 
 /** <p>Implementation of Set API using redis-server cache implementation.</p> */
 private[impl] class RedisMapImpl[Elem: ClassTag, Result[_]](key: String, redis: RedisConnector)(implicit builder: Builders.ResultBuilder[Result], runtime: RedisRuntime) extends RedisMap[Elem, Result] {

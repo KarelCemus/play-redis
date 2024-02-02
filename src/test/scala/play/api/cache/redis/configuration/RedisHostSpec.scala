@@ -3,8 +3,6 @@ package play.api.cache.redis.configuration
 import play.api.ConfigLoader
 import play.api.cache.redis.test._
 
-import scala.language.implicitConversions
-
 class RedisHostSpec extends UnitSpec with ImplicitOptionMaterialization {
 
   private implicit val loader: ConfigLoader[RedisHost] = RedisHost

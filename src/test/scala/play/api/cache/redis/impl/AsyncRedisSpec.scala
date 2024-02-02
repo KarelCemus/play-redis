@@ -1,10 +1,10 @@
 package play.api.cache.redis.impl
 
-import scala.concurrent.duration._
 import play.api.cache.redis._
 import play.api.cache.redis.test._
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 
 class AsyncRedisSpec extends AsyncUnitSpec with RedisConnectorMock with RedisRuntimeMock with ImplicitFutureMaterialization {

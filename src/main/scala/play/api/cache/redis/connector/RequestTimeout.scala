@@ -1,11 +1,11 @@
 package play.api.cache.redis.connector
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
-
 import akka.actor.Scheduler
 import akka.pattern.after
 import redis._
+
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
   *

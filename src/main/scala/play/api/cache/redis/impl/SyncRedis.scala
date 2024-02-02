@@ -1,9 +1,9 @@
 package play.api.cache.redis.impl
 
+import play.api.cache.redis._
+
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
-
-import play.api.cache.redis._
 
 /**
   * Implementation of **synchronous** and **blocking** Redis API. It also implements standard Play Scala CacheApi

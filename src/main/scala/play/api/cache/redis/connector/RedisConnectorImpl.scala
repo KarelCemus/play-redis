@@ -1,12 +1,13 @@
 package play.api.cache.redis.connector
 
+import play.api.Logger
+import play.api.cache.redis._
+import redis._
+
 import java.util.concurrent.TimeUnit
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
-import play.api.Logger
-import play.api.cache.redis._
-import redis._
 
 /**
   * The connector directly connects with the REDIS instance, implements protocol commands
@@ -171,7 +172,7 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
 
   override def append(key: String, value: String): Future[Long] =
     redis.append(key, value) executing "APPEND" withKey key andParameter value logging {
-      case length => log.debug(s"The value was appended to key '$key'.")
+      case _ => log.debug(s"The value was appended to key '$key'.")
     }
 
   override def listPrepend(key: String, values: Any*): Future[Long] =
@@ -416,6 +417,6 @@ private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: R
     }
 
   // $COVERAGE-OFF$
-  override def toString = s"RedisConnector(name=$name)"
+  override def toString: String = s"RedisConnector(name=$name)"
   // $COVERAGE-ON$
 }

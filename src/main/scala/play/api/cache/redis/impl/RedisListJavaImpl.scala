@@ -1,9 +1,9 @@
 package play.api.cache.redis.impl
 
-import scala.concurrent.Future
-
 import play.api.cache.redis.RedisList
 import play.cache.redis.AsyncRedisList
+
+import scala.concurrent.Future
 
 class RedisListJavaImpl[Elem](internal: RedisList[Elem, Future])(implicit runtime: RedisRuntime) extends AsyncRedisList[Elem] {
   import JavaCompatibility._
@@ -34,7 +34,7 @@ class RedisListJavaImpl[Elem](internal: RedisList[Elem, Future])(implicit runtim
   }
 
   override def apply(index: Int): CompletionStage[Elem] = {
-    async { implicit context =>
+    async { _ =>
       internal.apply(index)
     }
   }

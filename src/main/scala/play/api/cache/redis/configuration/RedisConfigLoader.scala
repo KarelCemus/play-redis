@@ -9,7 +9,7 @@ import play.api.cache.redis._
   */
 private[configuration] object RedisConfigLoader {
 
-  implicit class ConfigOption(val config: Config) extends AnyVal {
+  implicit class ConfigOption(private val config: Config) extends AnyVal {
     def getOption[T](path: String, f: Config => String => T): Option[T] = {
       if (config hasPath path) Some(f(config)(path)) else None
     }
@@ -19,11 +19,11 @@ private[configuration] object RedisConfigLoader {
     }
   }
 
-  implicit class ConfigPath(val path: String) extends AnyVal {
+  implicit class ConfigPath(private val path: String) extends AnyVal {
     def /(suffix: String): String = if (path === "") suffix else s"$path.$suffix"
   }
 
-  def required(path: String) = throw new IllegalStateException(s"Configuration key '$path' is missing.")
+  def required(path: String): Nothing = throw new IllegalStateException(s"Configuration key '$path' is missing.")
 }
 
 /**

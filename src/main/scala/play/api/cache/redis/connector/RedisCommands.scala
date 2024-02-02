@@ -1,13 +1,13 @@
 package play.api.cache.redis.connector
 
-import javax.inject._
-import scala.concurrent.Future
+import akka.actor.{ActorSystem, Scheduler}
 import play.api.Logger
 import play.api.cache.redis.configuration._
 import play.api.inject.ApplicationLifecycle
-import akka.actor.{ActorSystem, Scheduler}
 import redis.{RedisClient => RedisStandaloneClient, RedisCluster => RedisClusterClient, _}
 
+import javax.inject._
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 /**

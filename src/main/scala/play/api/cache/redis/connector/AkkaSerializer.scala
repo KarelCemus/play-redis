@@ -1,13 +1,13 @@
 package play.api.cache.redis.connector
 
-import java.util.Base64
-import javax.inject._
-import scala.language.implicitConversions
-import scala.reflect.ClassTag
-import scala.util._
-import play.api.cache.redis._
 import akka.actor.ActorSystem
 import akka.serialization._
+import play.api.cache.redis._
+
+import java.util.Base64
+import javax.inject._
+import scala.reflect.ClassTag
+import scala.util._
 
 /**
   * Provides a encode and decode methods to serialize objects into strings
