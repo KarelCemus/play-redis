@@ -6,7 +6,10 @@ import scala.concurrent._
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 
-/** <p>Implementation of plain API using redis-server cache and Brando connector implementation.</p> */
+/**
+  * <p>Implementation of plain API using redis-server cache and Brando connector
+  * implementation.</p>
+  */
 private[impl] class RedisCache[Result[_]](redis: RedisConnector, builder: Builders.ResultBuilder[Result])(implicit runtime: RedisRuntime) extends AbstractCacheApi[Result] {
 
   // implicit ask timeout and execution context
@@ -46,11 +49,14 @@ private[impl] class RedisCache[Result[_]](redis: RedisConnector, builder: Builde
 
   override def append(key: String, value: String, expiration: Duration): Result[Done] =
     key.prefixed { key =>
-      redis.append(key, value).flatMap { result =>
-        // if the new string length is equal to the appended string, it means they should equal
-        // when the finite duration is required, set it
-        if (result === value.length.toLong && expiration.isFinite) redis.expire(key, expiration) else Future.successful[Unit](())
-      }.recoverWithDone
+      redis
+        .append(key, value)
+        .flatMap { result =>
+          // if the new string length is equal to the appended string, it means they should equal
+          // when the finite duration is required, set it
+          if (result === value.length.toLong && expiration.isFinite) redis.expire(key, expiration) else Future.successful[Unit](())
+        }
+        .recoverWithDone
     }
 
   override def expire(key: String, expiration: Duration): Result[Done] =
@@ -59,14 +65,15 @@ private[impl] class RedisCache[Result[_]](redis: RedisConnector, builder: Builde
     }
 
   /**
-   * cached implementation of the matching function
-   *
-   * - when a prefix is empty, it simply delegates the invocation to the connector
-   * - when a prefix is defined, it unprefixes the keys when returned
-   */
+    * cached implementation of the matching function
+    *
+    *   - when a prefix is empty, it simply delegates the invocation to the
+    *     connector
+    *   - when a prefix is defined, it unprefixes the keys when returned
+    */
   private val doMatching = runtime.prefix match {
     case RedisEmptyPrefix => (pattern: String) => redis.matching(pattern)
-    case _ => (pattern: String) => redis.matching(pattern).map(_.unprefixed)
+    case _                => (pattern: String) => redis.matching(pattern).map(_.unprefixed)
   }
 
   override def matching(pattern: String): Result[Seq[String]] = pattern.prefixed { pattern =>
@@ -78,12 +85,15 @@ private[impl] class RedisCache[Result[_]](redis: RedisConnector, builder: Builde
 
   override def getOrFuture[T: ClassTag](key: String, expiration: Duration)(orElse: => Future[T]): Future[T] =
     key.prefixed { key =>
-      redis.get[T](key).flatMap {
-        // cache hit, return the unwrapped value
-        case Some(value) => value.toFuture
-        // cache miss, compute the value, store it into the cache but do not wait for the result and ignore it, directly return the value
-        case None => orElse flatMap { value => runtime.invocation.invoke(redis.set(key, value, expiration), thenReturn = value) }
-      }.recoverWithFuture(orElse)
+      redis
+        .get[T](key)
+        .flatMap {
+          // cache hit, return the unwrapped value
+          case Some(value) => value.toFuture
+          // cache miss, compute the value, store it into the cache but do not wait for the result and ignore it, directly return the value
+          case None        => orElse flatMap { value => runtime.invocation.invoke(redis.set(key, value, expiration), thenReturn = value) }
+        }
+        .recoverWithFuture(orElse)
     }
 
   override def remove(key: String): Result[Done] =

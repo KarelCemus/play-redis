@@ -21,6 +21,7 @@ private[connector] class RedisCommandsProvider(instance: RedisInstance)(implicit
     case standalone: RedisStandalone => new RedisCommandsStandalone(standalone).get
     case sentinel: RedisSentinel     => new RedisCommandsSentinel(sentinel).get
   }
+
 }
 
 private[connector] trait AbstractRedisCommands {
@@ -50,9 +51,12 @@ private[connector] trait AbstractRedisCommands {
 /**
   * Creates a connection to the single instance of redis
   *
-  * @param lifecycle     application lifecycle to trigger on stop hook
-  * @param configuration configures clusters
-  * @param system        actor system
+  * @param lifecycle
+  *   application lifecycle to trigger on stop hook
+  * @param configuration
+  *   configures clusters
+  * @param system
+  *   actor system
   */
 private[connector] class RedisCommandsStandalone(configuration: RedisStandalone)(implicit system: ActorSystem, val lifecycle: ApplicationLifecycle) extends Provider[RedisCommands] with AbstractRedisCommands {
   import configuration._
@@ -62,16 +66,16 @@ private[connector] class RedisCommandsStandalone(configuration: RedisStandalone)
     port = port,
     db = database,
     username = username,
-    password = password
+    password = password,
   ) with FailEagerly with RedisRequestTimeout {
 
     protected val connectionTimeout: Option[FiniteDuration] = configuration.timeout.connection
 
     protected val timeout: Option[FiniteDuration] = configuration.timeout.redis
 
-    protected implicit val scheduler: Scheduler = system.scheduler
+    implicit protected val scheduler: Scheduler = system.scheduler
 
-    override def send[T](redisCommand: RedisCommand[_ <: protocol.RedisReply, T]): Future[T] = super.send(redisCommand)
+    override def send[T](redisCommand: RedisCommand[? <: protocol.RedisReply, T]): Future[T] = super.send(redisCommand)
 
     override def onConnectStatus: Boolean => Unit = (status: Boolean) => connected = status
   }
@@ -79,8 +83,8 @@ private[connector] class RedisCommandsStandalone(configuration: RedisStandalone)
   // $COVERAGE-OFF$
   override def start(): Unit = database.fold {
     log.info(s"Redis cache actor started. It is connected to $host:$port")
-  } {
-    database => log.info(s"Redis cache actor started. It is connected to $host:$port?database=$database")
+  } { database =>
+    log.info(s"Redis cache actor started. It is connected to $host:$port?database=$database")
   }
 
   override def stop(): Future[Unit] = Future successful {
@@ -89,28 +93,34 @@ private[connector] class RedisCommandsStandalone(configuration: RedisStandalone)
     log.info("Redis cache stopped.")
   }
   // $COVERAGE-ON$
+
 }
 
 /**
   * Creates a connection to the redis cluster.
   *
-  * @param lifecycle     application lifecycle to trigger on stop hook
-  * @param configuration configures clusters
-  * @param system        actor system
+  * @param lifecycle
+  *   application lifecycle to trigger on stop hook
+  * @param configuration
+  *   configures clusters
+  * @param system
+  *   actor system
   */
 private[connector] class RedisCommandsCluster(configuration: RedisCluster)(implicit system: ActorSystem, val lifecycle: ApplicationLifecycle) extends Provider[RedisCommands] with AbstractRedisCommands {
+
   import HostnameResolver._
 
   import configuration._
 
   val client: RedisClusterClient = new RedisClusterClient(
-    nodes.map {
-      case RedisHost(host, port, database, username, password) => RedisServer(host.resolvedIpAddress, port, username, password, database)
-    }
+    nodes.map { case RedisHost(host, port, database, username, password) =>
+      RedisServer(host.resolvedIpAddress, port, username, password, database)
+    },
   ) with RedisRequestTimeout {
+
     protected val timeout: Option[FiniteDuration] = configuration.timeout.redis
 
-    protected implicit val scheduler: Scheduler = system.scheduler
+    implicit protected val scheduler: Scheduler = system.scheduler
   }
 
   // $COVERAGE-OFF$
@@ -129,39 +139,42 @@ private[connector] class RedisCommandsCluster(configuration: RedisCluster)(impli
     log.info("Redis cluster cache stopped.")
   }
   // $COVERAGE-ON$
+
 }
 
 /**
   * Creates a connection to multiple redis sentinels.
   *
-  * @param lifecycle     application lifecycle to trigger on stop hook
-  * @param configuration configures sentinels
-  * @param system        actor system
+  * @param lifecycle
+  *   application lifecycle to trigger on stop hook
+  * @param configuration
+  *   configures sentinels
+  * @param system
+  *   actor system
   */
 private[connector] class RedisCommandsSentinel(configuration: RedisSentinel)(implicit system: ActorSystem, val lifecycle: ApplicationLifecycle) extends Provider[RedisCommands] with AbstractRedisCommands {
   import HostnameResolver._
 
   val client: SentinelMonitoredRedisClient with RedisRequestTimeout = new SentinelMonitoredRedisClient(
-    configuration.sentinels.map {
-      case RedisHost(host, port, _, _, _) => (host.resolvedIpAddress, port)
+    configuration.sentinels.map { case RedisHost(host, port, _, _, _) =>
+      (host.resolvedIpAddress, port)
     },
     master = configuration.masterGroup,
     username = configuration.username,
     password = configuration.password,
-    db = configuration.database
+    db = configuration.database,
   ) with RedisRequestTimeout {
 
     protected val timeout: Option[FiniteDuration] = configuration.timeout.redis
 
-    protected implicit val scheduler: Scheduler = system.scheduler
+    implicit protected val scheduler: Scheduler = system.scheduler
 
-    override def send[T](redisCommand: RedisCommand[_ <: protocol.RedisReply, T]): Future[T] = super.send(redisCommand)
+    override def send[T](redisCommand: RedisCommand[? <: protocol.RedisReply, T]): Future[T] = super.send(redisCommand)
   }
 
   // $COVERAGE-OFF$
-  override def start(): Unit = {
+  override def start(): Unit =
     log.info(s"Redis sentinel cache actor started. It is connected to ${configuration.toString}")
-  }
 
   override def stop(): Future[Unit] = Future successful {
     log.info("Stopping the redis sentinel cache actor ...")
@@ -169,4 +182,5 @@ private[connector] class RedisCommandsSentinel(configuration: RedisSentinel)(imp
     log.info("Redis sentinel cache stopped.")
   }
   // $COVERAGE-ON$
+
 }

@@ -5,7 +5,6 @@ import play.api.cache.redis.test.{AsyncUnitSpec, SimulatedException}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-
 class ExpectedFutureSpec extends AsyncUnitSpec {
   import ExpectedFutureSpec._
 
@@ -33,6 +32,7 @@ class ExpectedFutureSpec extends AsyncUnitSpec {
         Future.failed[String](SimulatedException).asExpected.assertingFailure[ExecutionFailedException]
       }
     }
+
   }
 
   new TestSuite("Execution without the key")((future: Future[String]) => future.executing(cmd))
@@ -46,6 +46,7 @@ class ExpectedFutureSpec extends AsyncUnitSpec {
 
     Future.successful("expected").executing(cmd).withKey("key").asCommand("other 2").toString mustEqual "ExpectedFuture(TEST CMD other 2)"
   }
+
 }
 
 object ExpectedFutureSpec {
@@ -53,14 +54,15 @@ object ExpectedFutureSpec {
   private val cmd = "TEST CMD"
 
   private val expectation: PartialFunction[Any, String] = {
-    case "failing" => throw SimulatedException
+    case "failing"  => throw SimulatedException
     case "expected" => "ok"
   }
 
   private type ExpectationBuilder[T] = Future[T] => ExpectedFuture[String]
 
-  private implicit class FutureBuilder[T](private val future: Future[T]) extends AnyVal {
+  implicit private class FutureBuilder[T](private val future: Future[T]) extends AnyVal {
     def asExpected(implicit ev: ExpectationBuilder[T], context: ExecutionContext): Future[String] = ev(future).expects(expectation)
     def asCommand(implicit ev: ExpectationBuilder[T]): String = ev(future).toString
   }
+
 }

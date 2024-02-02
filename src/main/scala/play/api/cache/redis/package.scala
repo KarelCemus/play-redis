@@ -21,7 +21,8 @@ package object redis extends AnyRef with ExpirationImplicits with ExceptionImpli
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
-  implicit final class HigherKindedAnyOps[F[_]](private val self: F[_]) extends AnyVal {
-    def =~=(other: F[_]): Boolean = self == other
+  implicit final class HigherKindedAnyOps[F[_]](private val self: F[?]) extends AnyVal {
+    def =~=(other: F[?]): Boolean = self == other
   }
+
 }

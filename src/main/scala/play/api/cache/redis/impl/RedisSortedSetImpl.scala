@@ -7,10 +7,10 @@ import scala.reflect.ClassTag
 /** <p>Implementation of Set API using redis-server cache implementation.</p> */
 private[impl] class RedisSortedSetImpl[Elem: ClassTag, Result[_]](
   key: String,
-  redis: RedisConnector
+  redis: RedisConnector,
 )(implicit
   builder: Builders.ResultBuilder[Result],
-  runtime: RedisRuntime
+  runtime: RedisRuntime,
 ) extends RedisSortedSet[Elem, Result] {
 
   // implicit ask timeout and execution context
@@ -25,17 +25,15 @@ private[impl] class RedisSortedSetImpl[Elem: ClassTag, Result[_]](
   override def contains(element: Elem): Result[Boolean] =
     redis.sortedSetScore(key, element).map(_.isDefined).recoverWithDefault(false)
 
-  override def remove(element: Elem*): Result[RedisSortedSet[Elem, Result]] = {
+  override def remove(element: Elem*): Result[RedisSortedSet[Elem, Result]] =
     redis.sortedSetRemove(key, element: _*).map(_ => This).recoverWithDefault(This)
-  }
 
-  override def range(start: Long, stop: Long, isReverse: Boolean = false): Result[Seq[Elem]] = {
+  override def range(start: Long, stop: Long, isReverse: Boolean = false): Result[Seq[Elem]] =
     if (isReverse) {
       redis.sortedSetReverseRange[Elem](key, start, stop).recoverWithDefault(Seq.empty)
     } else {
       redis.sortedSetRange[Elem](key, start, stop).recoverWithDefault(Seq.empty)
     }
-  }
 
   override def size: Result[Long] =
     redis.sortedSetSize(key).recoverWithDefault(0)
@@ -45,4 +43,5 @@ private[impl] class RedisSortedSetImpl[Elem: ClassTag, Result[_]](
 
   override def nonEmpty: Result[Boolean] =
     builder.map(isEmpty)(x => !x)
+
 }

@@ -5,8 +5,8 @@ import play.api.cache.redis._
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
-  * Implicit helpers used within the redis cache implementation. These
-  * handful tools simplifies code readability but has no major function.
+  * Implicit helpers used within the redis cache implementation. These handful
+  * tools simplifies code readability but has no major function.
   */
 private[impl] object dsl {
 
@@ -21,7 +21,10 @@ private[impl] object dsl {
   /** helper function enabling us to recover from command execution */
   implicit class RecoveryFuture[T](future: => Future[T]) {
 
-    /** Transforms the promise into desired builder results, possibly recovers with provided default value */
+    /**
+      * Transforms the promise into desired builder results, possibly recovers
+      * with provided default value
+      */
     @inline def recoverWithDefault[Result[_]](default: => T)(implicit builder: Builders.ResultBuilder[Result], runtime: RedisRuntime): Result[T] =
       builder.toResult(future, Future.successful(default))
 
@@ -31,13 +34,19 @@ private[impl] object dsl {
         // recover from known exceptions
         case failure: RedisException => runtime.policy.recoverFrom(future, default, failure)
       }
+
   }
 
   /** helper function enabling us to recover from command execution */
   implicit class RecoveryUnitFuture(private val future: Future[Unit]) extends AnyVal {
-    /** Transforms the promise into desired builder results, possibly recovers with provided default value */
+
+    /**
+      * Transforms the promise into desired builder results, possibly recovers
+      * with provided default value
+      */
     @inline def recoverWithDone[Result[_]](implicit builder: Builders.ResultBuilder[Result], runtime: RedisRuntime): Result[Done] =
       builder.toResult(future.map(unitAsDone), Future.successful(Done))
+
   }
 
   /** maps units into akka.Done */
@@ -56,8 +65,11 @@ private[impl] object dsl {
 
   /** applies prefixer to produce final cache key */
   implicit class CacheKeyValues[X](private val keys: Seq[(String, X)]) extends AnyVal {
+
     def prefixed[T](f: Seq[(String, X)] => T)(implicit prefixer: RedisPrefix): T = f {
       keys.map { case (key, value) => prefixer.prefixed(key) -> value }
     }
+
   }
+
 }

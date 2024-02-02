@@ -75,10 +75,10 @@ class RedisJavaMapSpec extends AsyncUnitSpec with RedisMapJavaMock with RedisRun
 
   private def test(
     name: String,
-    policy: RecoveryPolicy = recoveryPolicy.default
+    policy: RecoveryPolicy = recoveryPolicy.default,
   )(
-    f: (AsyncRedisMap[String], RedisMapMock) => Future[Assertion]
-  ): Unit = {
+    f: (AsyncRedisMap[String], RedisMapMock) => Future[Assertion],
+  ): Unit =
     name in {
       implicit val runtime: RedisRuntime = redisRuntime(
         invocationPolicy = LazyInvocation,
@@ -86,8 +86,8 @@ class RedisJavaMapSpec extends AsyncUnitSpec with RedisMapJavaMock with RedisRun
       )
       val internal: RedisMapMock = mock[RedisMapMock]
       val map: AsyncRedisMap[String] = new RedisMapJavaImpl(internal)
-  
+
       f(map, internal)
     }
-  }
+
 }

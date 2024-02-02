@@ -4,7 +4,9 @@ import play.api.cache.redis._
 
 import scala.reflect.ClassTag
 
-/** <p>Implementation of List API using redis-server cache implementation.</p> */
+/**
+  * <p>Implementation of List API using redis-server cache implementation.</p>
+  */
 private[impl] class RedisListImpl[Elem: ClassTag, Result[_]](key: String, redis: RedisConnector)(implicit builder: Builders.ResultBuilder[Result], runtime: RedisRuntime) extends RedisList[Elem, Result] {
 
   // implicit ask timeout and execution context
@@ -31,11 +33,14 @@ private[impl] class RedisListImpl[Elem: ClassTag, Result[_]](key: String, redis:
   private def appendAll(elements: Elem*): Result[This] =
     redis.listAppend(key, elements: _*).map(_ => This).recoverWithDefault(This)
 
-  override def apply(index: Long): Result[Elem] = redis.listSlice[Elem](key, index, index).map {
-    _.headOption getOrElse (throw new NoSuchElementException(s"Element at index $index is missing."))
-  }.recoverWithDefault {
-    throw new NoSuchElementException(s"Element at index $index is missing.")
-  }
+  override def apply(index: Long): Result[Elem] = redis
+    .listSlice[Elem](key, index, index)
+    .map {
+      _.headOption getOrElse (throw new NoSuchElementException(s"Element at index $index is missing."))
+    }
+    .recoverWithDefault {
+      throw new NoSuchElementException(s"Element at index $index is missing.")
+    }
 
   override def get(index: Long): Result[Option[Elem]] =
     redis.listSlice[Elem](key, index, index).map(_.headOption).recoverWithDefault(None)
@@ -68,22 +73,34 @@ private[impl] class RedisListImpl[Elem: ClassTag, Result[_]](key: String, redis:
 
     override def collection: This = This
 
-    override  def clear(): Result[RedisListModification] =
-      redis.remove(key).map {
-        _ => this: RedisListModification
-      }.recoverWithDefault(this)
+    override def clear(): Result[RedisListModification] =
+      redis
+        .remove(key)
+        .map { _ =>
+          this: RedisListModification
+        }
+        .recoverWithDefault(this)
 
     override def slice(start: Long, end: Long): Result[RedisListModification] =
-      redis.listTrim(key, start, end).map {
-        _ => this: RedisListModification
-      }.recoverWithDefault(this)
+      redis
+        .listTrim(key, start, end)
+        .map { _ =>
+          this: RedisListModification
+        }
+        .recoverWithDefault(this)
+
   }
 
   override def remove(element: Elem, count: Long): Result[This] =
     redis.listRemove(key, element, count).map(_ => This).recoverWithDefault(This)
 
   override def removeAt(position: Long): Result[This] =
-    redis.listSetAt(key, position, "play-redis:DELETED").flatMap {
-      _ => redis.listRemove(key, "play-redis:DELETED", count = 0)
-    }.map(_ => This).recoverWithDefault(This)
+    redis
+      .listSetAt(key, position, "play-redis:DELETED")
+      .flatMap { _ =>
+        redis.listRemove(key, "play-redis:DELETED", count = 0)
+      }
+      .map(_ => This)
+      .recoverWithDefault(This)
+
 }

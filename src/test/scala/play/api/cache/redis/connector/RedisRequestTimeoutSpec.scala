@@ -30,17 +30,19 @@ class RedisRequestTimeoutSpec extends AsyncUnitSpec {
   }
 
   private class RequestTimeoutBase(implicit system: ActorSystem) extends RequestTimeout {
-    protected implicit val scheduler: Scheduler = system.scheduler
+    implicit protected val scheduler: Scheduler = system.scheduler
     implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
-    def send[T](redisCommand: RedisCommand[_ <: RedisReply, T]): Future[T] = {
+    def send[T](redisCommand: RedisCommand[? <: RedisReply, T]): Future[T] =
       redisCommand.asInstanceOf[RedisCommandTest[T]].returning
-    }
+
   }
 
   private class RedisRequestTimeoutImpl(
-     override val timeout: Option[FiniteDuration]
-   )(implicit
-     system: ActorSystem
-   ) extends RequestTimeoutBase with RedisRequestTimeout
+    override val timeout: Option[FiniteDuration],
+  )(implicit
+    system: ActorSystem,
+  ) extends RequestTimeoutBase
+    with RedisRequestTimeout
+
 }

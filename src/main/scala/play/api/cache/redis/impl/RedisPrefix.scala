@@ -1,8 +1,8 @@
 package play.api.cache.redis.impl
 
 /**
-  * Each instance can apply its own prefix, e.g., to use multiple instances
-  * with the same redis database.
+  * Each instance can apply its own prefix, e.g., to use multiple instances with
+  * the same redis database.
   */
 sealed trait RedisPrefix extends Any {
   @inline def prefixed(key: String): String

@@ -10,29 +10,35 @@ import scala.reflect.ClassTag
 import scala.util._
 
 /**
-  * Provides a encode and decode methods to serialize objects into strings
-  * and vise versa.
+  * Provides a encode and decode methods to serialize objects into strings and
+  * vise versa.
   */
 trait AkkaSerializer {
 
   /**
-    * Method accepts a value to be serialized into the string.
-    * Based on the implementation, it returns a string representing the value or
-    * provides an exception, if the computation fails.
+    * Method accepts a value to be serialized into the string. Based on the
+    * implementation, it returns a string representing the value or provides an
+    * exception, if the computation fails.
     *
-    * @param value value to be serialized
-    * @return serialized string or exception
+    * @param value
+    *   value to be serialized
+    * @return
+    *   serialized string or exception
     */
   def encode(value: Any): Try[String]
 
   /**
-    * Method accepts a valid serialized string and based on the accepted class it deserializes it.
-    * If the expected class does not match expectations, deserialization fails with an exception.
-    * Also, if the string is not valid representation, it also fails.
+    * Method accepts a valid serialized string and based on the accepted class
+    * it deserializes it. If the expected class does not match expectations,
+    * deserialization fails with an exception. Also, if the string is not valid
+    * representation, it also fails.
     *
-    * @param value valid serialized entity
-    * @tparam T expected class
-    * @return deserialized object or exception
+    * @param value
+    *   valid serialized entity
+    * @tparam T
+    *   expected class
+    * @return
+    *   deserialized object or exception
     */
   def decode[T: ClassTag](value: String): Try[T]
 }
@@ -40,8 +46,8 @@ trait AkkaSerializer {
 /**
   * Akka encoder provides implementation of serialization using Akka serializer.
   * The implementation considers all primitives, nulls, and refs. This enables
-  * us to use Akka settings to modify serializer mapping and use different serializers
-  * for different objects.
+  * us to use Akka settings to modify serializer mapping and use different
+  * serializers for different objects.
   */
 private[connector] class AkkaEncoder(serializer: Serialization) {
 
@@ -74,13 +80,14 @@ private[connector] class AkkaEncoder(serializer: Serialization) {
   /** unsafe method converting AnyRef into BASE64 string */
   private def anyRefToString(value: AnyRef): String =
     (anyRefToBinary _ andThen binaryToString)(value)
+
 }
 
 /**
-  * Akka decoder provides implementation of deserialization using Akka serializer.
-  * The implementation considers all primitives, nulls, and refs. This enables
-  * us to use Akka settings to modify serializer mapping and use different serializers
-  * for different objects.
+  * Akka decoder provides implementation of deserialization using Akka
+  * serializer. The implementation considers all primitives, nulls, and refs.
+  * This enables us to use Akka settings to modify serializer mapping and use
+  * different serializers for different objects.
   */
 private[connector] class AkkaDecoder(serializer: Serialization) {
 
@@ -90,25 +97,31 @@ private[connector] class AkkaDecoder(serializer: Serialization) {
 
   private val Nothing = ClassTag(classOf[Nothing])
 
-  /** unsafe method decoding a string into an object. It directly throws exceptions */
+  /**
+    * unsafe method decoding a string into an object. It directly throws
+    * exceptions
+    */
   def decode[T](value: String)(implicit classTag: ClassTag[T]): T =
     untypedDecode[T](value).asInstanceOf[T]
 
-  /** unsafe method decoding a string into an object. It directly throws exceptions. It does not perform type cast */
+  /**
+    * unsafe method decoding a string into an object. It directly throws
+    * exceptions. It does not perform type cast
+    */
   private def untypedDecode[T](value: String)(implicit tag: ClassTag[T]): Any = value match {
     // AnyVal is not supported by default, have to be implemented manually
-    case "" => null
-    case _ if tag  =~=  Nothing => throw new IllegalArgumentException("Type Nothing is not supported. You have probably forgot to specify expected data type.")
-    case string if tag  =~=  Java.String => string
-    case boolean if tag  =~=  Java.Boolean || tag  =~=  Scala.Boolean => boolean.toBoolean
-    case byte if tag  =~=  Java.Byte || tag  =~=  Scala.Byte => byte.toByte
-    case char if tag  =~=  Java.Char || tag  =~=  Scala.Char => char.charAt(0)
-    case short if tag  =~=  Java.Short || tag  =~=  Scala.Short => short.toShort
-    case int if tag  =~=  Java.Int || tag  =~=  Scala.Int => int.toInt
-    case long if tag  =~=  Java.Long || tag  =~=  Scala.Long => long.toLong
-    case float if tag  =~=  Java.Float || tag  =~=  Scala.Float => float.toFloat
-    case double if tag  =~=  Java.Double || tag  =~=  Scala.Double => double.toDouble
-    case anyRef => stringToAnyRef[T](anyRef)
+    case ""                                                       => null
+    case _ if tag =~= Nothing                                     => throw new IllegalArgumentException("Type Nothing is not supported. You have probably forgot to specify expected data type.")
+    case string if tag =~= Java.String                            => string
+    case boolean if tag =~= Java.Boolean || tag =~= Scala.Boolean => boolean.toBoolean
+    case byte if tag =~= Java.Byte || tag =~= Scala.Byte          => byte.toByte
+    case char if tag =~= Java.Char || tag =~= Scala.Char          => char.charAt(0)
+    case short if tag =~= Java.Short || tag =~= Scala.Short       => short.toShort
+    case int if tag =~= Java.Int || tag =~= Scala.Int             => int.toInt
+    case long if tag =~= Java.Long || tag =~= Scala.Long          => long.toLong
+    case float if tag =~= Java.Float || tag =~= Scala.Float       => float.toFloat
+    case double if tag =~= Java.Double || tag =~= Scala.Double    => double.toDouble
+    case anyRef                                                   => stringToAnyRef[T](anyRef)
   }
 
   /** consumes BASE64 string and returns array of bytes */
@@ -117,19 +130,20 @@ private[connector] class AkkaDecoder(serializer: Serialization) {
 
   /** deserializes the binary stream into the object */
   private def binaryToAnyRef[T](binary: Array[Byte])(implicit classTag: ClassTag[T]): AnyRef =
-    serializer.deserialize(binary, classTag.runtimeClass.asInstanceOf[Class[_ <: AnyRef]]).get
+    serializer.deserialize(binary, classTag.runtimeClass.asInstanceOf[Class[? <: AnyRef]]).get
 
   /** converts BASE64 string directly into the object */
   private def stringToAnyRef[T: ClassTag](base64: String): AnyRef =
     (stringToBinary _ andThen binaryToAnyRef[T])(base64)
+
 }
 
 @Singleton
 private[connector] class AkkaSerializerImpl @Inject() (system: ActorSystem) extends AkkaSerializer {
 
   /**
-    * serializer dispatcher used to serialize the objects into bytes;
-    * the instance is retrieved from Akka based on its configuration
+    * serializer dispatcher used to serialize the objects into bytes; the
+    * instance is retrieved from Akka based on its configuration
     */
   protected val serializer: Serialization = SerializationExtension(system)
 
@@ -140,51 +154,63 @@ private[connector] class AkkaSerializerImpl @Inject() (system: ActorSystem) exte
   private val decoder = new AkkaDecoder(serializer)
 
   /**
-    * Method accepts a value to be serialized into the string.
-    * Based on the implementation, it returns a string representing the value or
-    * provides an exception, if the computation fails.
+    * Method accepts a value to be serialized into the string. Based on the
+    * implementation, it returns a string representing the value or provides an
+    * exception, if the computation fails.
     *
-    * @param value value to be serialized
-    * @return serialized string or exception
+    * @param value
+    *   value to be serialized
+    * @return
+    *   serialized string or exception
     */
   override def encode(value: Any): Try[String] =
     Try(encoder.encode(value))
 
   /**
-    * Method accepts a valid serialized string and based on the accepted class it deserializes it.
-    * If the expected class does not match expectations, deserialization fails with an exception.
-    * Also, if the string is not valid representation, it also fails.
+    * Method accepts a valid serialized string and based on the accepted class
+    * it deserializes it. If the expected class does not match expectations,
+    * deserialization fails with an exception. Also, if the string is not valid
+    * representation, it also fails.
     *
-    * @param value valid serialized entity
-    * @tparam T expected class
-    * @return deserialized object or exception
+    * @param value
+    *   valid serialized entity
+    * @tparam T
+    *   expected class
+    * @return
+    *   deserialized object or exception
     */
   override def decode[T: ClassTag](value: String): Try[T] =
     Try(decoder.decode[T](value))
+
 }
 
-/**
-  * Registry of known Scala and Java primitives
-  */
+/** Registry of known Scala and Java primitives */
 private[connector] object Primitives {
 
   /** primitive types with simplified encoding */
-  val primitives: Seq[Class[_]] = Seq(
-    classOf[Boolean], classOf[java.lang.Boolean],
-    classOf[Byte], classOf[java.lang.Byte],
-    classOf[Char], classOf[java.lang.Character],
-    classOf[Short], classOf[java.lang.Short],
-    classOf[Int], classOf[java.lang.Integer],
-    classOf[Long], classOf[java.lang.Long],
-    classOf[Float], classOf[java.lang.Float],
-    classOf[Double], classOf[java.lang.Double],
-    classOf[String]
+  val primitives: Seq[Class[?]] = Seq(
+    classOf[Boolean],
+    classOf[java.lang.Boolean],
+    classOf[Byte],
+    classOf[java.lang.Byte],
+    classOf[Char],
+    classOf[java.lang.Character],
+    classOf[Short],
+    classOf[java.lang.Short],
+    classOf[Int],
+    classOf[java.lang.Integer],
+    classOf[Long],
+    classOf[java.lang.Long],
+    classOf[Float],
+    classOf[java.lang.Float],
+    classOf[Double],
+    classOf[java.lang.Double],
+    classOf[String],
   )
+
 }
 
-/**
-  * Registry of class tags for Java primitives
-  */
+/** Registry of class tags for Java primitives */
 private[connector] object JavaClassTag {
 
   val Byte: ClassTag[Byte] = ClassTag(classOf[java.lang.Byte])

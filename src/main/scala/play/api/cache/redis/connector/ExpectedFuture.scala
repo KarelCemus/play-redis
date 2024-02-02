@@ -5,8 +5,8 @@ import play.api.cache.redis._
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
-  * The extended future implements advanced response handling.
-  * It unifies maintenance of unexpected responses
+  * The extended future implements advanced response handling. It unifies
+  * maintenance of unexpected responses
   */
 private[connector] trait ExpectedFuture[T] {
 
@@ -32,9 +32,9 @@ private[connector] trait ExpectedFuture[T] {
   }
 
   /** handles both expected and unexpected responses and failure recovery */
-  def expects[U](expected: PartialFunction[T, U])(implicit context: ExecutionContext): Future[U] = {
+  def expects[U](expected: PartialFunction[T, U])(implicit context: ExecutionContext): Future[U] =
     future map (expected orElse onUnexpected) recover onException
-  }
+
 }
 
 private[connector] object ExpectedFuture {
@@ -45,8 +45,8 @@ private[connector] object ExpectedFuture {
 
 private[connector] class ExpectedFutureWithoutKey[T](protected val future: Future[T], protected val cmd: String) extends ExpectedFuture[T] {
 
-  protected def onUnexpected: PartialFunction[Any, Nothing] = {
-    case _ => unexpected(None, cmd)
+  protected def onUnexpected: PartialFunction[Any, Nothing] = { case _ =>
+    unexpected(None, cmd)
   }
 
   protected def onFailed(ex: Throwable): Nothing =
@@ -61,8 +61,8 @@ private[connector] class ExpectedFutureWithoutKey[T](protected val future: Futur
 
 private[connector] class ExpectedFutureWithKey[T](protected val future: Future[T], protected val cmd: String, key: String, statement: => String) extends ExpectedFuture[T] {
 
-  protected def onUnexpected: PartialFunction[Any, Nothing] = {
-    case _ => unexpected(Some(key), cmd)
+  protected def onUnexpected: PartialFunction[Any, Nothing] = { case _ =>
+    unexpected(Some(key), cmd)
   }
 
   protected def onFailed(ex: Throwable): Nothing =
@@ -80,7 +80,8 @@ private[connector] class ExpectedFutureWithKey[T](protected val future: Future[T
 }
 
 /**
-  * Constructs expected future from provided parameters, this serves as syntax sugar
+  * Constructs expected future from provided parameters, this serves as syntax
+  * sugar
   */
 private[connector] class ExpectedFutureBuilder[T](val future: Future[T]) extends AnyVal {
 

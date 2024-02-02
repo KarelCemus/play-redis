@@ -16,7 +16,6 @@ class RedisJavaSetSpec extends AsyncUnitSpec with RedisSetJavaMock with RedisRun
     } yield Passed
   }
 
-
   test("contains") { (set, internal) =>
     for {
       _ <- internal.expect.contains(cacheKey, result = true)
@@ -40,10 +39,10 @@ class RedisJavaSetSpec extends AsyncUnitSpec with RedisSetJavaMock with RedisRun
 
   private def test(
     name: String,
-    policy: RecoveryPolicy = recoveryPolicy.default
+    policy: RecoveryPolicy = recoveryPolicy.default,
   )(
-    f: (AsyncRedisSet[String], RedisSetMock) => Future[Assertion]
-  ): Unit = {
+    f: (AsyncRedisSet[String], RedisSetMock) => Future[Assertion],
+  ): Unit =
     name in {
       implicit val runtime: RedisRuntime = redisRuntime(
         invocationPolicy = LazyInvocation,
@@ -54,5 +53,5 @@ class RedisJavaSetSpec extends AsyncUnitSpec with RedisSetJavaMock with RedisRun
 
       f(set, internal)
     }
-  }
+
 }

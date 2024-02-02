@@ -16,4 +16,5 @@ package object connector {
   implicit class StringWhen(private val value: String) extends AnyVal {
     def when(condition: Boolean): String = if (condition) value else ""
   }
+
 }

@@ -5,14 +5,13 @@ import play.api.ConfigLoader
 import play.api.cache.redis._
 
 /**
-  * Cache manager maintains a list of the redis caches in the application.
-  * It also provides a configuration of the instance based on the name
-  * of the cache.
+  * Cache manager maintains a list of the redis caches in the application. It
+  * also provides a configuration of the instance based on the name of the
+  * cache.
   *
-  * This object should be used only during the configuration phase to
-  * simplify binding creation and application configuration. While
-  * the application is running, there should be no need to use this
-  * manager.
+  * This object should be used only during the configuration phase to simplify
+  * binding creation and application configuration. While the application is
+  * running, there should be no need to use this manager.
   */
 trait RedisInstanceManager extends Iterable[RedisInstanceProvider] {
 
@@ -38,6 +37,7 @@ trait RedisInstanceManager extends Iterable[RedisInstanceProvider] {
     case _                          => false
   }
   // $COVERAGE-ON$
+
 }
 
 private[redis] object RedisInstanceManager extends ConfigLoader[RedisInstanceManager] {
@@ -52,12 +52,15 @@ private[redis] object RedisInstanceManager extends ConfigLoader[RedisInstanceMan
     // construct a manager
     if (hasInstances) new RedisInstanceManagerImpl(config, path) else new RedisInstanceManagerFallback(config, path)
   }
+
 }
 
 /**
-  * Redis manager reading 'play.cache.redis.instances' tree for cache definitions.
+  * Redis manager reading 'play.cache.redis.instances' tree for cache
+  * definitions.
   */
 class RedisInstanceManagerImpl(config: Config, path: String)(implicit defaults: RedisSettings) extends RedisInstanceManager {
+
   import JavaCompatibilityBase._
   import RedisConfigLoader._
 
@@ -75,10 +78,12 @@ class RedisInstanceManagerImpl(config: Config, path: String)(implicit defaults: 
   override def instanceOfOption(name: String): Option[RedisInstanceProvider] =
     if (config hasPath (path / "instances" / name)) Some(RedisInstanceProvider.load(config, path / "instances" / name, name))
     else None
+
 }
 
 /**
-  * Redis manager reading 'play.cache.redis' root for a single fallback default cache.
+  * Redis manager reading 'play.cache.redis' root for a single fallback default
+  * cache.
   */
 class RedisInstanceManagerFallback(config: Config, path: String)(implicit defaults: RedisSettings) extends RedisInstanceManager {
   import RedisConfigLoader._
@@ -93,4 +98,5 @@ class RedisInstanceManagerFallback(config: Config, path: String)(implicit defaul
   /** returns a configuration of a single named redis instance */
   override def instanceOfOption(name: String): Option[RedisInstanceProvider] =
     if (name === this.name) Some(defaultInstance) else None
+
 }

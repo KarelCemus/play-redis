@@ -12,4 +12,5 @@ class HostnameResolverSpec extends UnitSpec {
   "resolving IP address remains an address" in {
     "127.0.0.1".resolvedIpAddress mustEqual "127.0.0.1"
   }
+
 }

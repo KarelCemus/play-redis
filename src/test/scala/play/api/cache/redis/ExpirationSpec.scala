@@ -6,9 +6,7 @@ import java.time.Instant
 import java.util.Date
 import scala.concurrent.duration._
 
-/**
-  * <p>This specification tests expiration conversion</p>
-  */
+/** <p>This specification tests expiration conversion</p> */
 class ExpirationSpec extends UnitSpec {
 
   "Expiration" should {
@@ -32,4 +30,5 @@ class ExpirationSpec extends UnitSpec {
       expiration mustBe <=(expirationTo)
     }
   }
+
 }

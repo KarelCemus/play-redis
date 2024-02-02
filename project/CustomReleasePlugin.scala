@@ -19,38 +19,37 @@ object CustomReleasePlugin extends AutoPlugin {
 
   override def requires: Plugins = ReleasePlugin && GitVersioning && Sonatype
 
-  private def customizedReleaseProcess: Seq[ReleaseStep] = {
+  private def customizedReleaseProcess: Seq[ReleaseStep] =
     Seq[ReleaseStep](
       checkSnapshotDependencies,
       inquireVersions,
       DocumentationUpdate.updateDocumentation,
     )
-  }
 
-  override def projectSettings: Seq[Setting[_]] = Seq[Setting[_]](
-    publishMavenStyle := true,
-    pomIncludeRepository := { _ => false },
+  override def projectSettings: Seq[Setting[?]] = Seq[Setting[?]](
+    publishMavenStyle                := true,
+    pomIncludeRepository             := { _ => false },
     // customized release process
-    releaseProcess := customizedReleaseProcess,
+    releaseProcess                   := customizedReleaseProcess,
     // release details
-    homepage := Some(url("https://github.com/karelcemus/play-redis")),
-    licenses := Seq("Apache 2" -> url("https://www.apache.org/licenses/LICENSE-2.0")),
-    scmInfo := Some(
+    homepage                         := Some(url("https://github.com/karelcemus/play-redis")),
+    licenses                         := Seq("Apache 2" -> url("https://www.apache.org/licenses/LICENSE-2.0")),
+    scmInfo                          := Some(
       ScmInfo(
         url("https://github.com/KarelCemus/play-i18n.git"),
-        "scm:git@github.com:KarelCemus/play-i18n.git"
-      )
+        "scm:git@github.com:KarelCemus/play-i18n.git",
+      ),
     ),
-    developers := List(
-      Developer(id = "karel.cemus", name = "Karel Cemus", email = "", url = url("https://github.com/KarelCemus/"))
+    developers                       := List(
+      Developer(id = "karel.cemus", name = "Karel Cemus", email = "", url = url("https://github.com/KarelCemus/")),
     ),
     // Publish settings
-    publishTo := sonatypePublishToBundle.value,
+    publishTo                        := sonatypePublishToBundle.value,
     // git tags without "v" prefix
     SbtGit.git.gitTagToVersionNumber := { tag: String =>
       if (tag matches "[0-9]+\\..*") Some(tag)
       else None
-    }
+    },
   )
 
   private lazy val inquireVersions: ReleaseStep = { implicit st: State =>
@@ -65,9 +64,10 @@ object CustomReleasePlugin extends AutoPlugin {
 
     st.log.info("Press enter to use the default value")
 
-    //flatten the Option[Option[String]] as the get returns an Option, and the value inside is an Option
+    // flatten the Option[Option[String]] as the get returns an Option, and the value inside is an Option
     val releaseV = readVersion(suggestedReleaseV, "Release version [%s] : ", useDefs, st.get(ReleaseKeys.commandLineReleaseVersion).flatten)
 
     st.put(ReleaseKeys.versions, (releaseV, releaseV))
   }
+
 }

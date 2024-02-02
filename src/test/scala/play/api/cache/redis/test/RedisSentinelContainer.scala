@@ -12,9 +12,9 @@ trait RedisSentinelContainer extends RedisContainer {
 
   protected def nodes: Int = 3
 
-  protected final def initialPort: Int = 7000
+  final protected def initialPort: Int = 7000
 
-  protected final def sentinelPort: Int = initialPort - 2000
+  final protected def sentinelPort: Int = initialPort - 2000
 
   protected def master: String = s"sentinel$initialPort"
 
@@ -23,12 +23,12 @@ trait RedisSentinelContainer extends RedisContainer {
   override protected lazy val redisConfig: RedisContainerConfig =
     RedisContainerConfig(
       redisDockerImage = "grokzen/redis-cluster:7.0.10",
-       redisMappedPorts = Seq.empty,
+      redisMappedPorts = Seq.empty,
       redisFixedPorts = 0.until(nodes).flatMap(i => Seq(initialPort + i, sentinelPort + i)),
       redisEnvironment = Map(
-        "IP" -> "0.0.0.0",
+        "IP"           -> "0.0.0.0",
         "INITIAL_PORT" -> initialPort.toString,
-        "SENTINEL" -> "true"
+        "SENTINEL"     -> "true",
       ),
     )
 
@@ -39,4 +39,5 @@ trait RedisSentinelContainer extends RedisContainer {
     Thread.sleep(waitForStart.toMillis)
     log.info(s"Finished waiting for Redis Sentinel to start on ${container.containerIpAddress}")
   }
+
 }

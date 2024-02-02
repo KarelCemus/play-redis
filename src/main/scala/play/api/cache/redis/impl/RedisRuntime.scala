@@ -7,8 +7,8 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
 /**
-  * Runtime info about the current cache instance. It includes
-  * a configuration, recovery policy, and the execution context.
+  * Runtime info about the current cache instance. It includes a configuration,
+  * recovery policy, and the execution context.
   */
 private[redis] trait RedisRuntime extends connector.RedisRuntime {
   implicit def policy: RecoveryPolicy
@@ -17,13 +17,13 @@ private[redis] trait RedisRuntime extends connector.RedisRuntime {
   implicit def timeout: akka.util.Timeout
 }
 
-private[redis] final case class RedisRuntimeImpl(
+final private[redis] case class RedisRuntimeImpl(
   name: String,
   context: ExecutionContext,
   policy: RecoveryPolicy,
   invocation: InvocationPolicy,
   prefix: RedisPrefix,
-  timeout: akka.util.Timeout
+  timeout: akka.util.Timeout,
 ) extends RedisRuntime
 
 private[redis] object RedisRuntime {
@@ -37,7 +37,7 @@ private[redis] object RedisRuntime {
   implicit def string2invocation(invocation: String): InvocationPolicy = invocation.toLowerCase.trim match {
     case "lazy"  => LazyInvocation
     case "eager" => EagerInvocation
-    case _   => throw new IllegalArgumentException("Illegal invocation policy. Valid values are 'lazy' and 'eager'. See the documentation for more details.")
+    case _       => throw new IllegalArgumentException("Illegal invocation policy. Valid values are 'lazy' and 'eager'. See the documentation for more details.")
   }
 
   def apply(instance: RedisInstance, recovery: RecoveryPolicy, invocation: InvocationPolicy, prefix: RedisPrefix)(implicit system: ActorSystem): RedisRuntime =
@@ -45,4 +45,5 @@ private[redis] object RedisRuntime {
 
   def apply(name: String, syncTimeout: FiniteDuration, context: ExecutionContext, recovery: RecoveryPolicy, invocation: InvocationPolicy, prefix: RedisPrefix = RedisEmptyPrefix): RedisRuntime =
     RedisRuntimeImpl(name, context, recovery, invocation, prefix, akka.util.Timeout(syncTimeout))
+
 }

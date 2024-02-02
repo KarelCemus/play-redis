@@ -3,28 +3,33 @@ package play.api.cache.redis.configuration
 import com.typesafe.config.Config
 import play.api.ConfigLoader
 
-/**
-  * Configures a single node either a standalone or within a cluster.
-  */
+/** Configures a single node either a standalone or within a cluster. */
 trait RedisHost {
+
   /** host with redis server */
   def host: String
+
   /** port redis listens on */
   def port: Int
+
   /** redis database identifier to work with */
   def database: Option[Int]
+
   /** when enabled security, this returns username for the AUTH command */
   def username: Option[String]
+
   /** when enabled security, this returns password for the AUTH command */
   def password: Option[String]
   // $COVERAGE-OFF$
   /** trait-specific equals */
   override def equals(obj: scala.Any): Boolean = equalsAsHost(obj)
+
   /** trait-specific equals, invokable from children */
   protected def equalsAsHost(obj: scala.Any): Boolean = obj match {
     case that: RedisHost => Equals.check(this, that)(_.host, _.port, _.username, _.database, _.password)
     case _               => false
   }
+
   /** to string */
   override def toString: String = (password, database) match {
     case (Some(password), Some(database)) => s"redis://${username.getOrElse("redis")}:$password@$host:$port?db=$database"
@@ -33,6 +38,7 @@ trait RedisHost {
     case (None, None)                     => s"redis://$host:$port"
   }
   // $COVERAGE-ON$
+
 }
 
 object RedisHost extends ConfigLoader[RedisHost] {
@@ -46,21 +52,22 @@ object RedisHost extends ConfigLoader[RedisHost] {
     port = config.getInt(path / "port"),
     database = config.getOption(path / "database", _.getInt),
     username = config.getOption(path / "username", _.getString),
-    password = config.getOption(path / "password", _.getString)
+    password = config.getOption(path / "password", _.getString),
   )
 
   /** read environment url or throw an exception */
   def fromConnectionString(connectionString: String): RedisHost = ConnectionString findFirstMatchIn connectionString match {
     // read the environment variable and fill missing information from the local configuration file
-    case Some(matcher) => new RedisHost {
-      override val host: String = matcher.group("host")
-      override val port: Int = matcher.group("port").toInt
-      override val database: Option[Nothing] = None
-      override val username: Option[String] = Option(matcher.group("username"))
-      override val password: Option[String] = Option(matcher.group("password"))
-    }
+    case Some(matcher) =>
+      new RedisHost {
+        override val host: String = matcher.group("host")
+        override val port: Int = matcher.group("port").toInt
+        override val database: Option[Nothing] = None
+        override val username: Option[String] = Option(matcher.group("username"))
+        override val password: Option[String] = Option(matcher.group("password"))
+      }
     // unexpected format
-    case None => throw new IllegalArgumentException(s"Unexpected format of the connection string: '$connectionString'. Expected format is 'redis://[user:password@]host:port'.")
+    case None          => throw new IllegalArgumentException(s"Unexpected format of the connection string: '$connectionString'. Expected format is 'redis://[user:password@]host:port'.")
   }
 
   def apply(host: String, port: Int, database: Option[Int] = None, username: Option[String] = None, password: Option[String] = None): RedisHost =
@@ -76,16 +83,13 @@ object RedisHost extends ConfigLoader[RedisHost] {
   }
 
   // $COVERAGE-OFF$
-  def unapply(host: RedisHost): Some[(String, Int, Option[Int], Option[String], Option[String])] = {
+  def unapply(host: RedisHost): Some[(String, Int, Option[Int], Option[String], Option[String])] =
     Some((host.host, host.port, host.database, host.username, host.password))
-  }
   // $COVERAGE-ON$
+
 }
 
-/**
-  *
-  * A helper trait delegating properties into the inner settings object
-  */
+/** A helper trait delegating properties into the inner settings object */
 trait RedisDelegatingHost extends RedisHost {
   def innerHost: RedisHost
   override def host: String = innerHost.host

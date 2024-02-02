@@ -9,11 +9,11 @@ import akka.event.slf4j.Slf4jLogger
   */
 class RedisLogger extends Slf4jLogger {
 
-  private val doReceive: PartialFunction[Any, Unit] = {
-    case InitializeLogger(_) => sender() ! LoggerInitialized
+  private val doReceive: PartialFunction[Any, Unit] = { case InitializeLogger(_) =>
+    sender() ! LoggerInitialized
   }
 
-  override def receive: PartialFunction[Any, Unit] = {
+  override def receive: PartialFunction[Any, Unit] =
     doReceive.orElse(super.receive)
-  }
+
 }

@@ -34,7 +34,7 @@ class FailEagerlySpec extends AsyncUnitSpec with ImplicitFutureMaterialization {
     failEagerly.send(cmd).assertTimeout(200.millis)
   }
 
-  def test(name: String)(f: FailEagerlyImpl => Future[Assertion]): Unit = {
+  def test(name: String)(f: FailEagerlyImpl => Future[Assertion]): Unit =
     name in {
       val system = ActorSystem("test", classLoader = Some(getClass.getClassLoader))
       val application = StoppableApplication(system)
@@ -43,7 +43,7 @@ class FailEagerlySpec extends AsyncUnitSpec with ImplicitFutureMaterialization {
         f(impl)
       }
     }
-  }
+
 }
 
 object FailEagerlySpec {
@@ -56,12 +56,12 @@ object FailEagerlySpec {
   }
 
   class FailEagerlyBase(implicit system: ActorSystem) extends RequestTimeout {
-    protected implicit val scheduler: Scheduler = system.scheduler
+    implicit protected val scheduler: Scheduler = system.scheduler
     implicit val executionContext: ExecutionContext = system.dispatcher
 
-    def send[T](redisCommand: RedisCommand[_ <: RedisReply, T]): Future[T] = {
+    def send[T](redisCommand: RedisCommand[? <: RedisReply, T]): Future[T] =
       redisCommand.asInstanceOf[RedisCommandTest[T]].returning
-    }
+
   }
 
   final class FailEagerlyImpl(implicit system: ActorSystem) extends FailEagerlyBase with FailEagerly {
@@ -74,4 +74,5 @@ object FailEagerlySpec {
 
     def markDisconnected(): Unit = connected = false
   }
+
 }

@@ -6,7 +6,7 @@ import play.api.cache.redis.test._
 
 import scala.concurrent.Future
 
-class RedisListSpec extends AsyncUnitSpec  with RedisRuntimeMock with RedisConnectorMock with ImplicitFutureMaterialization {
+class RedisListSpec extends AsyncUnitSpec with RedisRuntimeMock with RedisConnectorMock with ImplicitFutureMaterialization {
 
   test("prepend (all variants)") { (list, connector) =>
     for {
@@ -28,9 +28,9 @@ class RedisListSpec extends AsyncUnitSpec  with RedisRuntimeMock with RedisConne
 
   test("append (all variants)") { (list, connector) =>
     for {
-      _ <- connector.expect.listAppend(otherKey,Seq( cacheValue))
-      _ <- connector.expect.listAppend(otherKey,Seq( cacheValue))
-      _ <- connector.expect.listAppend(otherKey,Seq( cacheValue, cacheValue))
+      _ <- connector.expect.listAppend(otherKey, Seq(cacheValue))
+      _ <- connector.expect.listAppend(otherKey, Seq(cacheValue))
+      _ <- connector.expect.listAppend(otherKey, Seq(cacheValue, cacheValue))
       _ <- list.append(cacheValue).assertingEqual(list)
       _ <- (list :+ cacheValue).assertingEqual(list)
       _ <- (list :++ Seq(cacheValue, cacheValue)).assertingEqual(list)
@@ -44,12 +44,12 @@ class RedisListSpec extends AsyncUnitSpec  with RedisRuntimeMock with RedisConne
     } yield Passed
   }
 
-    test("get (miss)") { (list, connector) =>
-      for {
-        _ <- connector.expect.listSlice(otherKey, 5, 5, Seq(cacheValue))
-        _ <- list.get(5).assertingEqual(Some(cacheValue))
-      } yield Passed
-    }
+  test("get (miss)") { (list, connector) =>
+    for {
+      _ <- connector.expect.listSlice(otherKey, 5, 5, Seq(cacheValue))
+      _ <- list.get(5).assertingEqual(Some(cacheValue))
+    } yield Passed
+  }
 
   test("get (hit)") { (list, connector) =>
     for {
@@ -336,10 +336,10 @@ class RedisListSpec extends AsyncUnitSpec  with RedisRuntimeMock with RedisConne
 
   private def test(
     name: String,
-    policy: RecoveryPolicy = recoveryPolicy.default
+    policy: RecoveryPolicy = recoveryPolicy.default,
   )(
-    f: (RedisList[String, AsynchronousResult], RedisConnectorMock) => Future[Assertion]
-  ): Unit = {
+    f: (RedisList[String, AsynchronousResult], RedisConnectorMock) => Future[Assertion],
+  ): Unit =
     name in {
       implicit val runtime: RedisRuntime = redisRuntime(
         invocationPolicy = LazyInvocation,
@@ -350,5 +350,5 @@ class RedisListSpec extends AsyncUnitSpec  with RedisRuntimeMock with RedisConne
       val list: RedisList[String, AsynchronousResult] = new RedisListImpl[String, AsynchronousResult](otherKey, connector)
       f(list, connector)
     }
-  }
+
 }

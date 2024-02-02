@@ -30,9 +30,8 @@ object DocumentationUpdate {
   private def artifactId(implicit st: State) = st.extracted.get(normalizedName)
 
   /** SBT dependency definition */
-  private def sbtDependency(version: String)(implicit st: State) = {
+  private def sbtDependency(version: String)(implicit st: State) =
     s""" "$groupId" %% "$artifactId" % "$version" """.trim
-  }
 
   /** Major and minor version of Play framework */
   private def playMinorVersion(implicit st: State) = {
@@ -45,16 +44,16 @@ object DocumentationUpdate {
     def replacement(version: String)(implicit st: State) = s"<!-- Play $playMinorVersion -->$version<!-- / -->"
   }
 
-  def updateDocumentation: ReleaseStep = ReleaseStep({ implicit st: State =>
+  def updateDocumentation: ReleaseStep = ReleaseStep { implicit st: State =>
     val commitMessage = s"Documentation updated to version $next"
     val program = List[State => State](
       bumpVersionInDoc(_),
       bumpLatestVersionInReadme(_),
-      commitVersion(commitMessage)(_)
+      commitVersion(commitMessage)(_),
     ).reduce(_ andThen _)
 
     program(st)
-  })
+  }
 
   private def bumpVersionInDoc(implicit st: State): State = {
     val latest = vcs.latest
@@ -99,4 +98,5 @@ object DocumentationUpdate {
     }
     newState
   }
+
 }

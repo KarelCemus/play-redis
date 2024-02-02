@@ -48,4 +48,5 @@ private[impl] class RedisMapImpl[Elem: ClassTag, Result[_]](key: String, redis: 
 
   override def nonEmpty: Result[Boolean] =
     redis.hashSize(key).map(_ > 0).recoverWithDefault(false)
+
 }

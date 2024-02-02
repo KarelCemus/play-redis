@@ -29,16 +29,16 @@ class RedisPrefixSpec extends AsyncUnitSpec with RedisRuntimeMock with RedisConn
   }
 
   private def test(
-                    name: String,
-                    prefix: RedisPrefix
-                  )(
-    f: (RedisConnectorMock, AsyncRedis) => Future[Assertion]
-  ): Unit = {
+    name: String,
+    prefix: RedisPrefix,
+  )(
+    f: (RedisConnectorMock, AsyncRedis) => Future[Assertion],
+  ): Unit =
     name in {
       implicit val runtime: RedisRuntime = redisRuntime(prefix = prefix)
       val connector = mock[RedisConnectorMock]
       val cache: AsyncRedis = new AsyncRedisImpl(connector)
       f(connector, cache)
     }
-  }
+
 }

@@ -6,7 +6,7 @@ import play.api.cache.redis.test._
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
-class RedisCacheSpec extends AsyncUnitSpec  with RedisRuntimeMock with RedisConnectorMock with ImplicitFutureMaterialization {
+class RedisCacheSpec extends AsyncUnitSpec with RedisRuntimeMock with RedisConnectorMock with ImplicitFutureMaterialization {
   import Helpers._
 
   test("get and miss") { (cache, connector) =>
@@ -51,12 +51,12 @@ class RedisCacheSpec extends AsyncUnitSpec  with RedisRuntimeMock with RedisConn
     } yield Passed
   }
 
-    test("set") { (cache, connector) =>
-      for {
-        _ <- connector.expect.set(cacheKey, cacheValue, result = true)
-        _ <- cache.set(cacheKey, cacheValue).assertingDone
-      } yield Passed
-    }
+  test("set") { (cache, connector) =>
+    for {
+      _ <- connector.expect.set(cacheKey, cacheValue, result = true)
+      _ <- cache.set(cacheKey, cacheValue).assertingDone
+    } yield Passed
+  }
 
   test("set recover with default") { (cache, connector) =>
     for {
@@ -67,7 +67,7 @@ class RedisCacheSpec extends AsyncUnitSpec  with RedisRuntimeMock with RedisConn
 
   test("set if not exists (exists)") { (cache, connector) =>
     for {
-      _ <- connector.expect.set(cacheKey, cacheValue, setIfNotExists=true,result = false)
+      _ <- connector.expect.set(cacheKey, cacheValue, setIfNotExists = true, result = false)
       _ <- cache.setIfNotExists(cacheKey, cacheValue).assertingEqual(false)
     } yield Passed
   }
@@ -417,8 +417,8 @@ class RedisCacheSpec extends AsyncUnitSpec  with RedisRuntimeMock with RedisConn
     policy: RecoveryPolicy = recoveryPolicy.default,
     prefix: Option[String] = None,
   )(
-    f: (RedisCache[AsynchronousResult], RedisConnectorMock) => Future[Assertion]
-  ): Unit = {
+    f: (RedisCache[AsynchronousResult], RedisConnectorMock) => Future[Assertion],
+  ): Unit =
     name in {
       implicit val runtime: RedisRuntime = redisRuntime(
         invocationPolicy = LazyInvocation,
@@ -429,5 +429,5 @@ class RedisCacheSpec extends AsyncUnitSpec  with RedisRuntimeMock with RedisConn
       val cache: RedisCache[AsynchronousResult] = new RedisCache[AsynchronousResult](connector, Builders.AsynchronousBuilder)
       f(cache, connector)
     }
-  }
- }
+
+}

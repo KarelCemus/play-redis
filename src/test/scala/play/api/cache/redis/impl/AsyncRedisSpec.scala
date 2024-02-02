@@ -6,7 +6,6 @@ import play.api.cache.redis.test._
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-
 class AsyncRedisSpec extends AsyncUnitSpec with RedisConnectorMock with RedisRuntimeMock with ImplicitFutureMaterialization {
   import Helpers._
 
@@ -59,16 +58,18 @@ class AsyncRedisSpec extends AsyncUnitSpec with RedisConnectorMock with RedisRun
       _ <- connector.expect.get[String](cacheKey, None)
       _ <- connector.expect.get[String](cacheKey, None)
       _ <- connector.expect.set(cacheKey, cacheValue, Duration.Inf, result = true)
-      orElse = probe.orElse.generic(
-        Future.failed(SimulatedException.asRedis),
-        Future.successful(cacheValue),
-      )
+      orElse = probe
+                 .orElse
+                 .generic(
+                   Future.failed(SimulatedException.asRedis),
+                   Future.successful(cacheValue),
+                 )
       _ <- cache.getOrElseUpdate[String](cacheKey)(orElse.execute()).assertingEqual(cacheValue)
       _ = orElse.calls mustEqual 2
     } yield Passed
   }
 
-  private def test(name: String, policy: RecoveryPolicy = recoveryPolicy.default)(f: (RedisConnectorMock, AsyncRedis) => Future[Assertion]): Unit = {
+  private def test(name: String, policy: RecoveryPolicy = recoveryPolicy.default)(f: (RedisConnectorMock, AsyncRedis) => Future[Assertion]): Unit =
     name in {
       implicit val runtime: RedisRuntime = redisRuntime(
         invocationPolicy = LazyInvocation,
@@ -79,5 +80,5 @@ class AsyncRedisSpec extends AsyncUnitSpec with RedisConnectorMock with RedisRun
 
       f(connector, cache)
     }
-  }
+
 }

@@ -9,22 +9,22 @@ import play.api.cache.redis.test.UnitSpec
 class RedisRuntimeSpec extends UnitSpec {
   import RedisRuntime._
 
-  private implicit val recoveryResolver: RecoveryPolicyResolver =
+  implicit private val recoveryResolver: RecoveryPolicyResolver =
     new RecoveryPolicyResolverImpl
 
-  private implicit val system: ActorSystem = ActorSystem("test")
+  implicit private val system: ActorSystem = ActorSystem("test")
 
   "be build from config (A)" in {
     val instance = RedisStandalone(
       name = "standalone",
       host = RedisHost(localhost, defaultPort),
-      settings = defaultsSettings
+      settings = defaultsSettings,
     )
     val runtime = RedisRuntime(
       instance = instance,
       recovery = "log-and-fail",
       invocation = "eager",
-      prefix = None
+      prefix = None,
     )
     runtime.timeout mustEqual Timeout(instance.timeout.sync)
     runtime.policy mustBe a[LogAndFailPolicy]
@@ -32,36 +32,37 @@ class RedisRuntimeSpec extends UnitSpec {
     runtime.prefix mustEqual RedisEmptyPrefix
   }
 
-    "be build from config (B)" in {
-      val instance = RedisStandalone(
-        name = "standalone",
-        host = RedisHost(localhost, defaultPort),
-        settings = defaultsSettings
-      )
-      val runtime = RedisRuntime(
+  "be build from config (B)" in {
+    val instance = RedisStandalone(
+      name = "standalone",
+      host = RedisHost(localhost, defaultPort),
+      settings = defaultsSettings,
+    )
+    val runtime = RedisRuntime(
+      instance = instance,
+      recovery = "log-and-default",
+      invocation = "lazy",
+      prefix = Some("prefix"),
+    )
+    runtime.policy mustBe a[LogAndDefaultPolicy]
+    runtime.invocation mustEqual LazyInvocation
+    runtime.prefix mustEqual new RedisPrefixImpl("prefix")
+  }
+
+  "be build from config (C)" in {
+    val instance = RedisStandalone(
+      name = "standalone",
+      host = RedisHost(localhost, defaultPort),
+      settings = defaultsSettings,
+    )
+    assertThrows[IllegalArgumentException] {
+      RedisRuntime(
         instance = instance,
         recovery = "log-and-default",
-        invocation = "lazy",
-        prefix = Some("prefix")
+        invocation = "other",
+        prefix = Some("prefix"),
       )
-      runtime.policy mustBe a[LogAndDefaultPolicy]
-      runtime.invocation mustEqual LazyInvocation
-      runtime.prefix mustEqual new RedisPrefixImpl("prefix")
     }
+  }
 
-    "be build from config (C)" in {
-      val instance = RedisStandalone(
-        name = "standalone",
-        host = RedisHost(localhost, defaultPort),
-        settings = defaultsSettings
-      )
-      assertThrows[IllegalArgumentException] {
-        RedisRuntime(
-          instance = instance,
-          recovery = "log-and-default",
-          invocation = "other",
-          prefix = Some("prefix")
-        )
-      }
-    }
 }

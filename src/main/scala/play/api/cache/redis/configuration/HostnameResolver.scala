@@ -7,4 +7,5 @@ object HostnameResolver {
   implicit class HostNameResolver(private val name: String) extends AnyVal {
     def resolvedIpAddress: String = InetAddress.getByName(name).getHostAddress
   }
+
 }

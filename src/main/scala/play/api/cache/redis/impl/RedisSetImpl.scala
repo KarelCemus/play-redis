@@ -13,31 +13,25 @@ private[impl] class RedisSetImpl[Elem: ClassTag, Result[_]](key: String, redis: 
   @inline
   private def This: This = this
 
-  override def add(elements: Elem*): Result[RedisSet[Elem, Result]] = {
+  override def add(elements: Elem*): Result[RedisSet[Elem, Result]] =
     redis.setAdd(key, elements: _*).map(_ => This).recoverWithDefault(This)
-  }
 
-  override def contains(element: Elem): Result[Boolean] = {
+  override def contains(element: Elem): Result[Boolean] =
     redis.setIsMember(key, element).recoverWithDefault(false)
-  }
 
-  override def remove(element: Elem*): Result[RedisSet[Elem, Result]] = {
+  override def remove(element: Elem*): Result[RedisSet[Elem, Result]] =
     redis.setRemove(key, element: _*).map(_ => This).recoverWithDefault(This)
-  }
 
-  override def toSet: Result[Set[Elem]] = {
+  override def toSet: Result[Set[Elem]] =
     redis.setMembers[Elem](key).recoverWithDefault(Set.empty)
-  }
 
-  override def size: Result[Long] = {
+  override def size: Result[Long] =
     redis.setSize(key).recoverWithDefault(0)
-  }
 
-  override def isEmpty: Result[Boolean] = {
+  override def isEmpty: Result[Boolean] =
     redis.setSize(key).map(_ === 0).recoverWithDefault(true)
-  }
 
-  override def nonEmpty: Result[Boolean] = {
+  override def nonEmpty: Result[Boolean] =
     redis.setSize(key).map(_ > 0).recoverWithDefault(false)
-  }
+
 }

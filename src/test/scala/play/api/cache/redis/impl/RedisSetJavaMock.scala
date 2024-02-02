@@ -9,27 +9,30 @@ private[impl] trait RedisSetJavaMock { this: AsyncMockFactoryBase =>
 
   protected[impl] trait RedisSetMock extends RedisSet[String, Future] {
 
-    override final def add(values: String*): Future[RedisSet[String, Future]] =
+    final override def add(values: String*): Future[RedisSet[String, Future]] =
       addValues(values)
 
     def addValues(value: Seq[String]): Future[RedisSet[String, Future]]
 
-    override final def remove(values: String*): Future[RedisSet[String, Future]] =
+    final override def remove(values: String*): Future[RedisSet[String, Future]] =
       removeValues(values)
 
     def removeValues(value: Seq[String]): Future[RedisSet[String, Future]]
   }
 
-  final protected implicit class RedisSetOps(set: RedisSetMock) {
+  implicit final protected class RedisSetOps(set: RedisSetMock) {
+
     def expect: RedisSetExpectation =
       new RedisSetExpectation(set)
+
   }
 
-  protected final class RedisSetExpectation(set: RedisSetMock) {
+  final protected class RedisSetExpectation(set: RedisSetMock) {
 
     def add(value: String*): Future[Unit] =
       Future.successful {
-        (set.addValues(_: Seq[String]))
+        (set
+          .addValues(_: Seq[String]))
           .expects(value)
           .returning(Future.successful(set))
           .once()
@@ -37,7 +40,8 @@ private[impl] trait RedisSetJavaMock { this: AsyncMockFactoryBase =>
 
     def contains(value: String, result: Boolean): Future[Unit] =
       Future.successful {
-        (set.contains(_: String))
+        (set
+          .contains(_: String))
           .expects(value)
           .returning(Future.successful(result))
           .once()
@@ -45,7 +49,8 @@ private[impl] trait RedisSetJavaMock { this: AsyncMockFactoryBase =>
 
     def remove(value: String*): Future[Unit] =
       Future.successful {
-        (set.removeValues(_: Seq[String]))
+        (set
+          .removeValues(_: Seq[String]))
           .expects(value)
           .returning(Future.successful(set))
           .once()
@@ -58,5 +63,7 @@ private[impl] trait RedisSetJavaMock { this: AsyncMockFactoryBase =>
           .returning(Future.successful(values.toSet))
           .once()
       }
+
   }
+
 }

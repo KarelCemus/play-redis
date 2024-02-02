@@ -29,7 +29,7 @@ class RedisSortedSetSpec extends AsyncUnitSpec with RedisRuntimeMock with RedisC
 
   test("contains (hit)") { (set, connector) =>
     for {
-      _ <- connector.expect.sortedSetScore(cacheKey, otherValue, result = Some(1D))
+      _ <- connector.expect.sortedSetScore(cacheKey, otherValue, result = Some(1d))
       _ <- set.contains(otherValue).assertingEqual(true)
     } yield Passed
   }
@@ -116,10 +116,10 @@ class RedisSortedSetSpec extends AsyncUnitSpec with RedisRuntimeMock with RedisC
 
   private def test(
     name: String,
-    policy: RecoveryPolicy = recoveryPolicy.default
+    policy: RecoveryPolicy = recoveryPolicy.default,
   )(
-    f: (RedisSortedSet[String, AsynchronousResult], RedisConnectorMock) => Future[Assertion]
-  ): Unit = {
+    f: (RedisSortedSet[String, AsynchronousResult], RedisConnectorMock) => Future[Assertion],
+  ): Unit =
     name in {
       implicit val runtime: RedisRuntime = redisRuntime(
         invocationPolicy = LazyInvocation,
@@ -130,5 +130,5 @@ class RedisSortedSetSpec extends AsyncUnitSpec with RedisRuntimeMock with RedisC
       val set: RedisSortedSet[String, AsynchronousResult] = new RedisSortedSetImpl[String, AsynchronousResult](cacheKey, connector)
       f(set, connector)
     }
-  }
- }
+
+}

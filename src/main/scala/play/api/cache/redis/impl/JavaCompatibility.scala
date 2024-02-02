@@ -18,11 +18,13 @@ private[impl] object JavaCompatibility extends JavaCompatibilityBase {
   type JavaSet[T] = java.util.Set[T]
 
   object JavaList {
+
     def apply[T](values: T*): JavaList[T] = {
       val list = new java.util.ArrayList[T]()
       list.addAll(values.asJava): Unit
       list
     }
+
   }
 
   implicit class Java8Stage[T](private val future: Future[T]) extends AnyVal {
@@ -48,23 +50,20 @@ private[impl] object JavaCompatibility extends JavaCompatibilityBase {
 
   @inline implicit def class2tag[T](classOf: Class[T]): ClassTag[T] = ClassTag(classOf)
 
-  @inline def async[T](doAsync: ExecutionContext => Future[T])(implicit runtime: RedisRuntime): CompletionStage[T] = {
+  @inline def async[T](doAsync: ExecutionContext => Future[T])(implicit runtime: RedisRuntime): CompletionStage[T] =
     doAsync {
       // save the HTTP context if any and restore it later for orElse clause
       play.core.j.ClassLoaderExecutionContext.fromThread(runtime.context)
     }.asJava
-  }
 
   @inline def classTagKey(key: String): String = s"classTag::$key"
 
-  @inline def classTagOf(value: Any): String = {
+  @inline def classTagOf(value: Any): String =
     if (Option(value).isEmpty) "null" else value.getClass.getCanonicalName
-  }
 
-  @inline def classTagFrom[T](tag: String)(implicit environment: Environment): ClassTag[T] = {
+  @inline def classTagFrom[T](tag: String)(implicit environment: Environment): ClassTag[T] =
     if (tag === "null") ClassTag.Null.asInstanceOf[ClassTag[T]]
     else ClassTag(classTagNameToClass(tag, environment))
-  }
 
   implicit class CacheKey(private val key: String) extends AnyVal {
     @inline def withClassTag: Seq[String] = Seq(key, classTagKey(key))
@@ -72,7 +71,7 @@ private[impl] object JavaCompatibility extends JavaCompatibilityBase {
 
   // $COVERAGE-OFF$
   /** java primitives are serialized into their type names instead of classes */
-  private def classTagNameToClass(name: String, environment: Environment): Class[_] = name match {
+  private def classTagNameToClass(name: String, environment: Environment): Class[?] = name match {
     case "boolean[]" => classOf[Array[java.lang.Boolean]]
     case "byte[]"    => classOf[Array[java.lang.Byte]]
     case "char[]"    => classOf[Array[java.lang.Character]]

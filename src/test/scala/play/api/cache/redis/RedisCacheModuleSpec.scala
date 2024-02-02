@@ -11,9 +11,9 @@ import scala.concurrent.duration.DurationInt
 import scala.reflect.ClassTag
 
 class RedisCacheModuleSpec extends IntegrationSpec with RedisStandaloneContainer {
-import Helpers._
+  import Helpers._
 
-  private final val defaultCacheName: String = "play"
+  final private val defaultCacheName: String = "play"
 
   test("bind defaults") {
     _.bindings(new RedisCacheModule).configure("play.cache.redis.port" -> container.mappedPort(defaultPort))
@@ -62,24 +62,24 @@ import Helpers._
     _.bindings(new RedisCacheModule).configure(
       configuration.fromHocon(
         s"""
-          |play.cache.redis {
-          |  instances {
-          |    play {
-          |      host:     ${container.host}
-          |      port:     ${container.mappedPort(defaultPort)}
-          |      database: 1
-          |    }
-          |    other {
-          |      host:     ${container.host}
-          |      port:     ${container.mappedPort(defaultPort)}
-          |      database: 2
-          |      password: something
-          |    }
-          |  }
-          |  default-cache: other
-          |}
-        """.stripMargin
-      )
+           |play.cache.redis {
+           |  instances {
+           |    play {
+           |      host:     ${container.host}
+           |      port:     ${container.mappedPort(defaultPort)}
+           |      database: 1
+           |    }
+           |    other {
+           |      host:     ${container.host}
+           |      port:     ${container.mappedPort(defaultPort)}
+           |      database: 2
+           |      password: something
+           |    }
+           |  }
+           |  default-cache: other
+           |}
+        """.stripMargin,
+      ),
     )
   } { injector =>
     val other = "other"
@@ -139,33 +139,30 @@ import Helpers._
         recovery = "log-and-default",
         source = "my-instance",
         prefix = None,
-      )
+      ),
     )
 
   private def binding[T: ClassTag]: BindingKey[T] =
     BindingKey(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
 
-  private implicit class RichBindingKey[T](private val key: BindingKey[T]) {
+  implicit private class RichBindingKey[T](private val key: BindingKey[T]) {
     def namedCache(name: String): BindingKey[T] = key.qualifiedWith(new NamedCacheImpl(name))
   }
 
-  private implicit class InjectorAssertions(private val injector: Injector) {
+  implicit private class InjectorAssertions(private val injector: Injector) {
 
-    def checkBinding[T <: AnyRef : ClassTag]: Assertion = {
+    def checkBinding[T <: AnyRef: ClassTag]: Assertion =
       injector.instanceOf(binding[T]) mustBe a[T]
-    }
 
-    def checkNamedBinding[T <: AnyRef : ClassTag]: Assertion = {
+    def checkNamedBinding[T <: AnyRef: ClassTag]: Assertion =
       checkNamedBinding(defaultCacheName)
-    }
 
-    def checkNamedBinding[T <: AnyRef : ClassTag](name: String): Assertion = {
+    def checkNamedBinding[T <: AnyRef: ClassTag](name: String): Assertion =
       injector.instanceOf(binding[T].namedCache(name)) mustBe a[T]
-    }
+
   }
 
-
-  private def test(name: String)(createBuilder: GuiceApplicationBuilder => GuiceApplicationBuilder)(f: Injector => Assertion): Unit = {
+  private def test(name: String)(createBuilder: GuiceApplicationBuilder => GuiceApplicationBuilder)(f: Injector => Assertion): Unit =
     s"should $name" in {
 
       val builder = createBuilder(new GuiceApplicationBuilder)
@@ -176,5 +173,5 @@ import Helpers._
         f(injector)
       }
     }
-  }
+
 }

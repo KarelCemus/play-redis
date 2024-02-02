@@ -23,19 +23,21 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
     def getAllKeys[T](keys: Iterable[String]): AsynchronousResult[Seq[Option[T]]]
   }
 
-  final protected implicit class AsyncRedisOps(async: AsyncRedisMock) {
+  implicit final protected class AsyncRedisOps(async: AsyncRedisMock) {
+
     def expect: AsyncRedisExpectation =
       new AsyncRedisExpectation(async)
+
   }
 
-  protected final class AsyncRedisExpectation(async: AsyncRedisMock) {
+  final protected class AsyncRedisExpectation(async: AsyncRedisMock) {
 
     private def classTagKey(key: String): String = s"classTag::$key"
 
     private def classTagValue: Any => String = {
-      case null => "null"
+      case null                                => "null"
       case v if v.getClass =~= classOf[String] => "java.lang.String"
-      case other => throw new IllegalArgumentException(s"Unexpected value for classTag: ${other.getClass.getSimpleName}")
+      case other                               => throw new IllegalArgumentException(s"Unexpected value for classTag: ${other.getClass.getSimpleName}")
     }
 
     def getClassTag(key: String, value: Option[String]): Future[Unit] =
@@ -43,7 +45,8 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
     def get[T: ClassTag](key: String, value: Option[T]): Future[Unit] =
       Future.successful {
-        (async.get(_: String)(_: ClassTag[_]))
+        (async
+          .get(_: String)(_: ClassTag[?]))
           .expects(key, implicitly[ClassTag[T]])
           .returning(Future.successful(value))
           .once()
@@ -51,7 +54,8 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
     def getAllKeys[T](keys: Iterable[String], values: Seq[Option[T]]): Future[Unit] =
       Future.successful {
-        (async.getAllKeys[T](_: Iterable[String]))
+        (async
+          .getAllKeys[T](_: Iterable[String]))
           .expects(keys)
           .returning(Future.successful(values))
           .once()
@@ -59,7 +63,8 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
     def setValue[T](key: String, value: T, duration: Duration): Future[Unit] =
       Future.successful {
-        (async.set(_: String, _: Any, _: Duration))
+        (async
+          .set(_: String, _: Any, _: Duration))
           .expects(key, if (Option(value).isEmpty) * else value, duration)
           .returning(Future.successful(Done))
           .once()
@@ -76,7 +81,8 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
     def setValueIfNotExists[T](key: String, value: T, duration: Duration, exists: Boolean): Future[Unit] =
       Future.successful {
-        (async.setIfNotExists(_: String, _: Any, _: Duration))
+        (async
+          .setIfNotExists(_: String, _: Any, _: Duration))
           .expects(key, if (Option(value).isEmpty) * else value, duration)
           .returning(Future.successful(exists))
           .once()
@@ -93,8 +99,8 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
     def setAll(values: (String, Any)*): Future[Unit] =
       Future.successful {
-        val valuesWithClassTags = values.flatMap {
-          case (k, v) => Seq((k, v), (classTagKey(k), classTagValue(v)))
+        val valuesWithClassTags = values.flatMap { case (k, v) =>
+          Seq((k, v), (classTagKey(k), classTagValue(v)))
         }
         (async.setAll _)
           .expects(valuesWithClassTags)
@@ -104,8 +110,8 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
     def setAllIfNotExist(values: Seq[(String, Any)], exists: Boolean): Future[Unit] =
       Future.successful {
-        val valuesWithClassTags = values.flatMap {
-          case (k, v) => Seq((k, v), (classTagKey(k), classTagValue(v)))
+        val valuesWithClassTags = values.flatMap { case (k, v) =>
+          Seq((k, v), (classTagKey(k), classTagValue(v)))
         }
         (async.setAllIfNotExist _)
           .expects(valuesWithClassTags)
@@ -115,11 +121,13 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
     def expire(key: String, duration: Duration): Future[Unit] =
       Future.successful {
-        (async.expire(_: String, _: Duration))
+        (async
+          .expire(_: String, _: Duration))
           .expects(classTagKey(key), duration)
           .returning(Future.successful(Done))
           .once()
-        (async.expire(_: String, _: Duration))
+        (async
+          .expire(_: String, _: Duration))
           .expects(key, duration)
           .returning(Future.successful(Done))
           .once()
@@ -127,7 +135,8 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
     def expiresIn(key: String, duration: Option[Duration]): Future[Unit] =
       Future.successful {
-        (async.expiresIn(_: String))
+        (async
+          .expiresIn(_: String))
           .expects(key)
           .returning(Future.successful(duration))
           .once()
@@ -135,7 +144,8 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
     def matching(pattern: String, keys: Seq[String]): Future[Unit] =
       Future.successful {
-        (async.matching(_: String))
+        (async
+          .matching(_: String))
           .expects(pattern)
           .returning(Future.successful(keys))
           .once()
@@ -143,7 +153,8 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
     def removeMatching(pattern: String): Future[Unit] = {
       def removePattern(patternToRemove: String): Unit =
-        (async.removeMatching(_: String))
+        (async
+          .removeMatching(_: String))
           .expects(patternToRemove)
           .returning(Future.successful(Done))
           .once()
@@ -156,7 +167,8 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
     def exists(key: String, exists: Boolean): Future[Unit] =
       Future.successful {
-        (async.exists(_: String))
+        (async
+          .exists(_: String))
           .expects(key)
           .returning(Future.successful(exists))
           .once()
@@ -164,15 +176,17 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
     def increment(key: String, by: Long, result: Long): Future[Unit] =
       Future.successful {
-        (async.increment(_: String, _: Long))
+        (async
+          .increment(_: String, _: Long))
           .expects(key, by)
           .returning(Future.successful(result))
           .once()
       }
 
-    def decrement(key: String, by:Long, result:Long): Future[Unit] =
+    def decrement(key: String, by: Long, result: Long): Future[Unit] =
       Future.successful {
-        (async.decrement(_: String, _:Long))
+        (async
+          .decrement(_: String, _: Long))
           .expects(key, by)
           .returning(Future.successful(result))
           .once()
@@ -180,11 +194,13 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
     def remove(key: String): Future[Unit] =
       Future.successful {
-        (async.remove(_: String))
+        (async
+          .remove(_: String))
           .expects(classTagKey(key))
           .returning(Future.successful(Done))
           .once()
-        (async.remove(_: String))
+        (async
+          .remove(_: String))
           .expects(key)
           .returning(Future.successful(Done))
           .once()
@@ -192,8 +208,8 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
     def removeAll(keys: String*): Future[Unit] =
       Future.successful {
-        val keysWithClassTags = keys.flatMap {
-          key => Seq(key, classTagKey(key))
+        val keysWithClassTags = keys.flatMap { key =>
+          Seq(key, classTagKey(key))
         }
         (async.removeAllKeys _)
           .expects(keysWithClassTags)
@@ -203,7 +219,8 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
     def append(key: String, value: String, expiration: Duration): Future[Unit] =
       Future.successful {
-        (async.append(_: String, _: String, _: Duration))
+        (async
+          .append(_: String, _: String, _: Duration))
           .expects(key, value, expiration)
           .returning(Future.successful(Done))
           .once()
@@ -219,7 +236,8 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
     def list[T: ClassTag](key: String, mock: RedisList[T, AsynchronousResult]): Future[Unit] =
       Future.successful {
-        (async.list[T](_: String)(_: ClassTag[T]))
+        (async
+          .list[T](_: String)(_: ClassTag[T]))
           .expects(key, implicitly[ClassTag[T]])
           .returning(mock)
           .once()
@@ -227,7 +245,8 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
     def set[T: ClassTag](key: String, mock: RedisSet[T, AsynchronousResult]): Future[Unit] =
       Future.successful {
-        (async.set[T](_: String)(_: ClassTag[T]))
+        (async
+          .set[T](_: String)(_: ClassTag[T]))
           .expects(key, implicitly[ClassTag[T]])
           .returning(mock)
           .once()
@@ -235,10 +254,13 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
     def map[T: ClassTag](key: String, mock: RedisMap[T, AsynchronousResult]): Future[Unit] =
       Future.successful {
-        (async.map[T](_: String)(_: ClassTag[T]))
+        (async
+          .map[T](_: String)(_: ClassTag[T]))
           .expects(key, implicitly[ClassTag[T]])
           .returning(mock)
           .once()
       }
+
   }
+
 }
