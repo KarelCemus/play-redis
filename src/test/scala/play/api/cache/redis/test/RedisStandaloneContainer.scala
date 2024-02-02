@@ -11,6 +11,7 @@ trait RedisStandaloneContainer extends RedisContainer { this: Suite =>
       redisDockerImage = "redis:latest",
       redisMappedPorts = Seq(defaultPort),
       redisFixedPorts = Seq.empty,
-      redisEnvironment = Map.empty
+      redisEnvironment = Map.empty,
     )
+
 }

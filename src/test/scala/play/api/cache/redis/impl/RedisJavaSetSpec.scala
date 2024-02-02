@@ -2,11 +2,10 @@ package play.api.cache.redis.impl
 
 import play.api.cache.redis._
 import play.api.cache.redis.test._
-import play.cache.redis.{AsyncRedisList, AsyncRedisSet}
+import play.cache.redis.AsyncRedisSet
 
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
-import scala.jdk.OptionConverters._
 
 class RedisJavaSetSpec extends AsyncUnitSpec with RedisSetJavaMock with RedisRuntimeMock {
 
@@ -16,7 +15,6 @@ class RedisJavaSetSpec extends AsyncUnitSpec with RedisSetJavaMock with RedisRun
       _ <- set.add(cacheKey, cacheValue).assertingEqual(set)
     } yield Passed
   }
-
 
   test("contains") { (set, internal) =>
     for {
@@ -41,10 +39,10 @@ class RedisJavaSetSpec extends AsyncUnitSpec with RedisSetJavaMock with RedisRun
 
   private def test(
     name: String,
-    policy: RecoveryPolicy = recoveryPolicy.default
+    policy: RecoveryPolicy = recoveryPolicy.default,
   )(
-    f: (AsyncRedisSet[String], RedisSetMock) => Future[Assertion]
-  ): Unit = {
+    f: (AsyncRedisSet[String], RedisSetMock) => Future[Assertion],
+  ): Unit =
     name in {
       implicit val runtime: RedisRuntime = redisRuntime(
         invocationPolicy = LazyInvocation,
@@ -55,5 +53,5 @@ class RedisJavaSetSpec extends AsyncUnitSpec with RedisSetJavaMock with RedisRun
 
       f(set, internal)
     }
-  }
+
 }

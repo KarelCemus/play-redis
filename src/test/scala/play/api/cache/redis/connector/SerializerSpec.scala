@@ -15,7 +15,7 @@ class SerializerSpec extends AsyncUnitSpec {
   "encode" when {
 
     test("byte") { implicit serializer =>
-      0xAB.toByte.encoded mustEqual "-85"
+      0xab.toByte.encoded mustEqual "-85"
       JavaTypes.byteValue.encoded mustEqual "5"
     }
 
@@ -94,7 +94,7 @@ class SerializerSpec extends AsyncUnitSpec {
   "decode" when {
 
     test("byte") { implicit serializer =>
-      "-85".decoded[Byte] mustEqual 0xAB.toByte
+      "-85".decoded[Byte] mustEqual 0xab.toByte
     }
 
     test("byte[]") { implicit serializer =>
@@ -171,31 +171,30 @@ class SerializerSpec extends AsyncUnitSpec {
     }
   }
 
-  private def test(name: String)(f: AkkaSerializer => Unit): Unit = {
+  private def test(name: String)(f: AkkaSerializer => Unit): Unit =
     name in {
       val system = ActorSystem.apply(s"test-${Random.nextInt()}", classLoader = Some(getClass.getClassLoader))
       val serializer: AkkaSerializer = new AkkaSerializerImpl(system)
       f(serializer)
       system.terminate().map(_ => Passed)
     }
-  }
+
 }
 
 object SerializerSpec {
 
-  private implicit class ValueEncoder(private val any: Any) extends AnyVal {
+  implicit private class ValueEncoder(private val any: Any) extends AnyVal {
     def encoded(implicit s: AkkaSerializer): String = s.encode(any).get
   }
 
-  private implicit class StringDecoder(private val string: String) extends AnyVal {
+  implicit private class StringDecoder(private val string: String) extends AnyVal {
     def decoded[T: ClassTag](implicit s: AkkaSerializer): T = s.decode[T](string).get
   }
 
-  private implicit class StringOps(private val string: String) extends AnyVal {
+  implicit private class StringOps(private val string: String) extends AnyVal {
     def withoutWhitespaces: String = string.replaceAll("\\s", "")
   }
 
   /** Plain test object to be cached */
-  private final case class SimpleObject(key: String, value: Int)
+  final private case class SimpleObject(key: String, value: Int)
 }
-

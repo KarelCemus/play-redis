@@ -57,18 +57,21 @@ class RedisClusterSpec extends IntegrationSpec with RedisClusterContainer {
     } yield Passed
   }
 
-  def test(name: String)(f: RedisConnector => Future[Assertion]): Unit = {
+  def test(name: String)(f: RedisConnector => Future[Assertion]): Unit =
     name in {
 
       lazy val clusterInstance = RedisCluster(
         name = "play",
-        nodes = 0.until(redisMaster).map { i =>
-          RedisHost(container.containerIpAddress, container.mappedPort(initialPort + i))
-        }.toList,
+        nodes = 0
+          .until(redisMaster)
+          .map { i =>
+            RedisHost(container.containerIpAddress, container.mappedPort(initialPort + i))
+          }
+          .toList,
         settings = RedisSettings.load(
           config = Helpers.configuration.default.underlying,
-          path = "play.cache.redis"
-        )
+          path = "play.cache.redis",
+        ),
       )
 
       def runTest: Future[Assertion] = {
@@ -81,24 +84,23 @@ class RedisClusterSpec extends IntegrationSpec with RedisClusterContainer {
           for {
             connector <- Future(new RedisConnectorProvider(clusterInstance, serializer).get)
             // initialize the connector by flushing the database
-            keys <- connector.matching("*")
-            _ <- Future.sequence(keys.map(connector.remove(_)))
+            keys      <- connector.matching("*")
+            _         <- Future.sequence(keys.map(connector.remove(_)))
             // run the test
-            _ <- f(connector)
+            _         <- f(connector)
           } yield Passed
         }
       }
 
       @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
-      def makeAttempt(id: Int): Future[Assertion] = {
+      def makeAttempt(id: Int): Future[Assertion] =
         runTest.recoverWith {
           case cause: Throwable if id <= 1 =>
             log.error(s"RedisClusterSpec: test '$name', attempt $id failed, will retry", cause)
             Future.waitFor(1.second).flatMap(_ => makeAttempt(id + 1))
         }
-      }
 
       makeAttempt(1)
     }
-  }
+
 }

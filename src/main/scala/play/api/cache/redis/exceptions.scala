@@ -1,38 +1,25 @@
 package play.api.cache.redis
 
-/**
-  * Generic exception produced by the library indicating internal failure
-  */
+/** Generic exception produced by the library indicating internal failure */
 sealed abstract class RedisException(message: String, cause: Throwable) extends RuntimeException(message, cause) {
   def this(message: String) = this(message, null)
 }
 
-/**
-  * Request timeouts
-*/
-final case class TimeoutException(
-                                   cause: Throwable) extends RedisException("Command execution timed out", cause)
+/** Request timeouts */
+final case class TimeoutException(cause: Throwable) extends RedisException("Command execution timed out", cause)
+
+/** Command execution failed with exception */
+final case class ExecutionFailedException(key: Option[String], command: String, statement: String, cause: Throwable) extends RedisException(s"Execution of '$command'${key.map(key => s" for key '$key'") getOrElse ""} failed", cause)
+
+/** Request succeeded but returned unexpected value */
+final case class UnexpectedResponseException(key: Option[String], command: String) extends RedisException(s"Command '$command'${key.map(key => s" for key '$key'") getOrElse ""} returned unexpected response")
+
+/** Value serialization or deserialization failed. */
+final case class SerializationException(key: String, message: String, cause: Throwable) extends RedisException(s"$message for $key", cause)
 
 /**
- * Command execution failed with exception
- */
-final case class ExecutionFailedException(
-                                           key: Option[String], command: String, statement: String, cause: Throwable) extends RedisException(s"Execution of '$command'${key.map(key => s" for key '$key'") getOrElse ""} failed", cause)
-
-/**
- * Request succeeded but returned unexpected value
- */
-final case class UnexpectedResponseException(
-                                              key: Option[String], command: String) extends RedisException(s"Command '$command'${key.map(key => s" for key '$key'") getOrElse ""} returned unexpected response")
-
-/**
- * Value serialization or deserialization failed.
- */
-final case class SerializationException(
-                                         key: String, message: String, cause: Throwable) extends RedisException(s"$message for $key", cause)
-
-/**
-  * Helper trait providing simplified and unified API to exception handling in play-redis
+  * Helper trait providing simplified and unified API to exception handling in
+  * play-redis
   */
 trait ExceptionImplicits {
 
@@ -65,4 +52,5 @@ trait ExceptionImplicits {
   @throws[IllegalStateException]
   def invalidConfiguration(message: String): Nothing =
     throw new IllegalStateException(message)
+
 }

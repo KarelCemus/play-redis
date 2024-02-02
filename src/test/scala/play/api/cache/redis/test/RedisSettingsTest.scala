@@ -8,6 +8,5 @@ final case class RedisSettingsTest(
   timeout: RedisTimeouts,
   recovery: String,
   source: String,
-  prefix: Option[String] = None
-
+  prefix: Option[String] = None,
 ) extends RedisSettings

@@ -8,7 +8,7 @@ import scala.util.Success
 
 class InvocationPolicySpec extends UnitSpec {
 
-  private implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.parasitic
+  implicit private val ec: ExecutionContext = scala.concurrent.ExecutionContext.parasitic
 
   private class Probe {
     private val promise = Promise[Unit]()
@@ -31,4 +31,5 @@ class InvocationPolicySpec extends UnitSpec {
     probe.resolve()
     outcome.isCompleted mustEqual true
   }
+
 }

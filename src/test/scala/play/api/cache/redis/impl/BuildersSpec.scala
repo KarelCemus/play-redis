@@ -11,8 +11,8 @@ class BuildersSpec extends AsyncUnitSpec with RedisRuntimeMock {
   import Builders._
 
   private case class Task(
-     response: String,
-     execution: () => Future[String],
+    response: String,
+    execution: () => Future[String],
   ) extends (() => Future[String]) {
 
     def this(response: String)(f: String => Future[String]) =
@@ -36,25 +36,25 @@ class BuildersSpec extends AsyncUnitSpec with RedisRuntimeMock {
 
     "run regular task" in {
       implicit val runtime: RedisRuntime = redisRuntime()
-       AsynchronousBuilder.toResult(Task.regular(), Task.resolved()).assertingEqual(Task.regular.response)
+      AsynchronousBuilder.toResult(Task.regular(), Task.resolved()).assertingEqual(Task.regular.response)
     }
 
     "run resolved task" in {
       implicit val runtime: RedisRuntime = redisRuntime()
-       AsynchronousBuilder.toResult(Task.resolved(),Task.regular()).assertingEqual(Task.resolved.response)
+      AsynchronousBuilder.toResult(Task.resolved(), Task.regular()).assertingEqual(Task.resolved.response)
     }
 
     "recover with default policy" in {
       implicit val runtime: RedisRuntime = redisRuntime(recoveryPolicy = recoveryPolicy.default)
-      AsynchronousBuilder.toResult(Task.failing(),Task.resolved()).assertingEqual(Task.resolved.response)
+      AsynchronousBuilder.toResult(Task.failing(), Task.resolved()).assertingEqual(Task.resolved.response)
     }
 
-    "recover with fail through policy" in  {
+    "recover with fail through policy" in {
       implicit val runtime: RedisRuntime = redisRuntime(recoveryPolicy = recoveryPolicy.failThrough)
-      AsynchronousBuilder.toResult(Task.failing(),Task.resolved()).assertingFailure[TimeoutException]
+      AsynchronousBuilder.toResult(Task.failing(), Task.resolved()).assertingFailure[TimeoutException]
     }
 
-    "map value" in  {
+    "map value" in {
       implicit val runtime: RedisRuntime = redisRuntime(recoveryPolicy = recoveryPolicy.failThrough)
       AsynchronousBuilder.map(Future(5))(_ + 5).assertingEqual(10)
     }
@@ -66,22 +66,22 @@ class BuildersSpec extends AsyncUnitSpec with RedisRuntimeMock {
       SynchronousBuilder.name mustEqual "SynchronousBuilder"
     }
 
-    "run regular task" in  {
+    "run regular task" in {
       implicit val runtime: RedisRuntime = redisRuntime()
       SynchronousBuilder.toResult(Task.regular(), Task.resolved()) mustEqual Task.regular.response
     }
 
-    "run resolved task" in  {
+    "run resolved task" in {
       implicit val runtime: RedisRuntime = redisRuntime()
       SynchronousBuilder.toResult(Task.resolved(), Task.regular()) mustEqual Task.resolved.response
     }
 
-    "recover from failure with default policy" in  {
+    "recover from failure with default policy" in {
       implicit val runtime: RedisRuntime = redisRuntime(recoveryPolicy = recoveryPolicy.default)
       SynchronousBuilder.toResult(Task.failing(), Task.resolved()) mustEqual Task.resolved.response
     }
 
-    "don't recover from failure with fail through policy" in  {
+    "don't recover from failure with fail through policy" in {
       implicit val runtime: RedisRuntime = redisRuntime(recoveryPolicy = recoveryPolicy.failThrough)
       assertThrows[TimeoutException] {
         SynchronousBuilder.toResult(Task.failing(), Task.resolved())
@@ -91,30 +91,31 @@ class BuildersSpec extends AsyncUnitSpec with RedisRuntimeMock {
     "don't recover on timeout due to long running task with fail through policy" in {
       implicit val runtime: RedisRuntime = redisRuntime(
         recoveryPolicy = recoveryPolicy.failThrough,
-        timeout = 1.millis
+        timeout = 1.millis,
       )
       assertThrows[TimeoutException] {
         SynchronousBuilder.toResult(Task.infinite(), Task.resolved())
       }
     }
 
-    "recover from timeout due to long running task with default policy" in  {
+    "recover from timeout due to long running task with default policy" in {
       implicit val runtime: RedisRuntime = redisRuntime(
         recoveryPolicy = recoveryPolicy.default,
-        timeout = 1.millis
+        timeout = 1.millis,
       )
       SynchronousBuilder.toResult(Task.infinite(), Task.resolved()) mustEqual Task.resolved.response
     }
 
-    "recover from akka ask timeout" in  {
+    "recover from akka ask timeout" in {
       implicit val runtime: RedisRuntime = redisRuntime(recoveryPolicy = recoveryPolicy.default)
       val actorFailure = Future.failed(new AskTimeoutException("Simulated actor ask timeout"))
       SynchronousBuilder.toResult(actorFailure, Task.resolved()) mustEqual Task.resolved.response
     }
 
-    "map value" in  {
+    "map value" in {
       implicit val runtime: RedisRuntime = redisRuntime()
       SynchronousBuilder.map(5)(_ + 5) mustEqual 10
     }
   }
+
 }

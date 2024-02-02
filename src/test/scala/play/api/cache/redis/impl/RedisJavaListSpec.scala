@@ -201,10 +201,10 @@ class RedisJavaListSpec extends AsyncUnitSpec with RedisListJavaMock with RedisR
 
   private def test(
     name: String,
-    policy: RecoveryPolicy = recoveryPolicy.default
+    policy: RecoveryPolicy = recoveryPolicy.default,
   )(
-    f: (AsyncRedisList[String], RedisListMock) => Future[Assertion]
-  ): Unit = {
+    f: (AsyncRedisList[String], RedisListMock) => Future[Assertion],
+  ): Unit =
     name in {
       implicit val runtime: RedisRuntime = redisRuntime(
         invocationPolicy = LazyInvocation,
@@ -220,5 +220,5 @@ class RedisJavaListSpec extends AsyncUnitSpec with RedisListJavaMock with RedisR
 
       f(list, internal)
     }
-  }
+
 }

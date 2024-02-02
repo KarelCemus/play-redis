@@ -1,12 +1,13 @@
 package play.api.cache.redis.impl
 
+import play.api.cache.redis._
+
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 
-import play.api.cache.redis._
-
 /**
-  * Implementation of **synchronous** and **blocking** Redis API. It also implements standard Play Scala CacheApi
+  * Implementation of **synchronous** and **blocking** Redis API. It also
+  * implements standard Play Scala CacheApi
   */
 private[impl] class SyncRedis(redis: RedisConnector)(implicit runtime: RedisRuntime) extends RedisCache[SynchronousResult](redis, Builders.SynchronousBuilder) with CacheApi {
   // helpers for dsl
@@ -25,4 +26,5 @@ private[impl] class SyncRedis(redis: RedisConnector)(implicit runtime: RedisRunt
       // try to hit the cache, return on hit, set and return orElse on miss or failure
       redis.get[T](key).recoverWithDefault(Some(computeAndSet)).getOrElse(computeAndSet)
     }
+
 }

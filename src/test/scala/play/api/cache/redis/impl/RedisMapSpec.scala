@@ -6,7 +6,7 @@ import play.api.cache.redis.test._
 
 import scala.concurrent.Future
 
-class RedisMapSpec extends AsyncUnitSpec  with RedisRuntimeMock with RedisConnectorMock with ImplicitFutureMaterialization {
+class RedisMapSpec extends AsyncUnitSpec with RedisRuntimeMock with RedisConnectorMock with ImplicitFutureMaterialization {
 
   test("set") { (map, connector) =>
     for {
@@ -187,10 +187,10 @@ class RedisMapSpec extends AsyncUnitSpec  with RedisRuntimeMock with RedisConnec
 
   private def test(
     name: String,
-    policy: RecoveryPolicy = recoveryPolicy.default
+    policy: RecoveryPolicy = recoveryPolicy.default,
   )(
-    f: (RedisMap[String, AsynchronousResult], RedisConnectorMock) => Future[Assertion]
-  ): Unit = {
+    f: (RedisMap[String, AsynchronousResult], RedisConnectorMock) => Future[Assertion],
+  ): Unit =
     name in {
       implicit val runtime: RedisRuntime = redisRuntime(
         invocationPolicy = LazyInvocation,
@@ -201,5 +201,5 @@ class RedisMapSpec extends AsyncUnitSpec  with RedisRuntimeMock with RedisConnec
       val map: RedisMap[String, AsynchronousResult] = new RedisMapImpl[String, AsynchronousResult](cacheKey, connector)
       f(map, connector)
     }
-  }
- }
+
+}

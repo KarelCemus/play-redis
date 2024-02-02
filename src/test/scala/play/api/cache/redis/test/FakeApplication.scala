@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import play.api.inject.Injector
 
 trait FakeApplication extends StoppableApplication {
+
   import play.api.Application
   import play.api.inject.guice.GuiceApplicationBuilder
 

@@ -3,11 +3,9 @@ package play.api.cache.redis.configuration
 import play.api.ConfigLoader
 import play.api.cache.redis.test._
 
-import scala.language.implicitConversions
-
 class RedisHostSpec extends UnitSpec with ImplicitOptionMaterialization {
 
-  private implicit val loader: ConfigLoader[RedisHost] = RedisHost
+  implicit private val loader: ConfigLoader[RedisHost] = RedisHost
 
   "host with database, username, and password" in {
     val configuration = Helpers.configuration.fromHocon {
@@ -21,7 +19,11 @@ class RedisHostSpec extends UnitSpec with ImplicitOptionMaterialization {
       """.stripMargin
     }
     configuration.get[RedisHost]("play.cache.redis") mustEqual RedisHost(
-      host = "localhost", port = 6378, database = 1, username = "my-user", password = "something"
+      host = "localhost",
+      port = 6378,
+      database = 1,
+      username = "my-user",
+      password = "something",
     )
   }
 
@@ -36,7 +38,11 @@ class RedisHostSpec extends UnitSpec with ImplicitOptionMaterialization {
       """.stripMargin
     }
     configuration.get[RedisHost]("play.cache.redis") mustEqual RedisHost(
-      host = "localhost", port = 6378, database = 1, username = None, password = "something"
+      host = "localhost",
+      port = 6378,
+      database = 1,
+      username = None,
+      password = "something",
     )
   }
 
@@ -59,4 +65,5 @@ class RedisHostSpec extends UnitSpec with ImplicitOptionMaterialization {
       RedisHost.fromConnectionString("redis:/localhost:6378")
     }
   }
+
 }

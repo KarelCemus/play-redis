@@ -3,23 +3,30 @@ package play.api.cache.redis.impl
 import scala.concurrent.Future
 
 /**
-  * Transforms future result produced by redis implementation to the result of the desired type
+  * Transforms future result produced by redis implementation to the result of
+  * the desired type
   */
-object Builders {
+private object Builders {
+
   import dsl._
   import play.api.cache.redis._
   import akka.pattern.AskTimeoutException
 
-  trait ResultBuilder[Result[X]] {
+  trait ResultBuilder[Result[_]] {
+
     /** name of the builder used for internal purposes */
     def name: String
-    /** converts future result produced by Redis to the result of desired type */
+
+    /**
+      * converts future result produced by Redis to the result of desired type
+      */
     def toResult[T](run: => Future[T], default: => Future[T])(implicit runtime: RedisRuntime): Result[T]
+
     /** maps the value */
     def map[T, U](result: Result[T])(f: T => U)(implicit runtime: RedisRuntime): Result[U]
     // $COVERAGE-OFF$
     /** show the builder name */
-    override def toString = s"ResultBuilder($name)"
+    override def toString: String = s"ResultBuilder($name)"
     // $COVERAGE-ON$
   }
 
@@ -36,6 +43,7 @@ object Builders {
 
     override def map[T, U](result: AsynchronousResult[T])(f: T => U)(implicit runtime: RedisRuntime): AsynchronousResult[U] =
       result.map(f)
+
   }
 
   /** converts the future into the value */
@@ -61,5 +69,7 @@ object Builders {
 
     override def map[T, U](result: SynchronousResult[T])(f: T => U)(implicit runtime: RedisRuntime): SynchronousResult[U] =
       f(result)
+
   }
+
 }

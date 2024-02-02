@@ -24,7 +24,7 @@ class RecoveryPolicySpec extends AsyncUnitSpec {
   "Recovery Policy" should {
 
     "log detailed report" in {
-      val policy = new RecoverWithDefault  with DetailedReports {
+      val policy = new RecoverWithDefault with DetailedReports {
         override val log: Logger = Logger(getClass)
       }
 
@@ -52,7 +52,7 @@ class RecoveryPolicySpec extends AsyncUnitSpec {
     }
 
     "fail through" in {
-      val policy = new  FailThrough {}
+      val policy = new FailThrough {}
       policy.recoverFrom(rerun, default, ex.any).assertingFailure(ex.any)
     }
 
@@ -61,4 +61,5 @@ class RecoveryPolicySpec extends AsyncUnitSpec {
       policy.recoverFrom(rerun, default, ex.any) mustEqual default
     }
   }
+
 }

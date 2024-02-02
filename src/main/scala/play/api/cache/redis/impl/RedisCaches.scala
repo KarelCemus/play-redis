@@ -1,11 +1,11 @@
 package play.api.cache.redis.impl
 
-import javax.inject.Provider
+import akka.actor.ActorSystem
 import play.api.Environment
 import play.api.cache.redis._
 import play.api.inject.ApplicationLifecycle
-import akka.actor.ActorSystem
-import play.api.cache.{AsyncCacheApi, DefaultSyncCacheApi}
+
+import javax.inject.Provider
 
 /**
   * Aggregates all available redis APIs into a single handler. This simplifies
@@ -24,9 +24,9 @@ trait RedisCaches {
 private[redis] class RedisCachesProvider(instance: RedisInstance, serializer: connector.AkkaSerializer, environment: Environment)(implicit system: ActorSystem, lifecycle: ApplicationLifecycle, recovery: RecoveryPolicyResolver) extends Provider[RedisCaches] {
   import RedisRuntime._
 
-  private implicit lazy val runtime: RedisRuntime = RedisRuntime(instance, instance.recovery, instance.invocationPolicy, instance.prefix)(system)
+  implicit private lazy val runtime: RedisRuntime = RedisRuntime(instance, instance.recovery, instance.invocationPolicy, instance.prefix)(system)
 
-  private implicit def implicitEnvironment: Environment = environment
+  implicit private def implicitEnvironment: Environment = environment
 
   lazy val get: RedisCaches = new RedisCaches {
     lazy val redisConnector: RedisConnector = new connector.RedisConnectorProvider(instance, serializer).get
@@ -38,4 +38,5 @@ private[redis] class RedisCachesProvider(instance: RedisInstance, serializer: co
     lazy val javaAsync: play.cache.redis.AsyncCacheApi = java
     lazy val javaSync: play.cache.SyncCacheApi = new play.cache.DefaultSyncCacheApi(java)
   }
+
 }

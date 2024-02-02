@@ -7,13 +7,13 @@ import scala.concurrent.duration._
 
 trait RedisClusterContainer extends RedisContainer { this: Suite =>
 
-  protected val log = Logger("play.api.cache.redis.test")
+  protected val log: Logger = Logger("play.api.cache.redis.test")
 
   protected def redisMaster = 4
 
   protected def redisSlaves = 1
 
-  protected final def initialPort = 7000
+  final protected def initialPort = 7000
 
   private val waitForStart = 6.seconds
 
@@ -23,9 +23,9 @@ trait RedisClusterContainer extends RedisContainer { this: Suite =>
       redisMappedPorts = Seq.empty,
       redisFixedPorts = 0.until(redisMaster * (redisSlaves + 1)).map(initialPort + _),
       redisEnvironment = Map(
-        "IP" -> "0.0.0.0",
-        "INITIAL_PORT" -> initialPort.toString,
-        "MASTERS" -> redisMaster.toString,
+        "IP"                -> "0.0.0.0",
+        "INITIAL_PORT"      -> initialPort.toString,
+        "MASTERS"           -> redisMaster.toString,
         "SLAVES_PER_MASTER" -> redisSlaves.toString,
       ),
     )
@@ -37,4 +37,5 @@ trait RedisClusterContainer extends RedisContainer { this: Suite =>
     Thread.sleep(waitForStart.toMillis)
     log.info(s"Finished waiting for Redis Cluster to start on ${container.containerIpAddress}")
   }
+
 }

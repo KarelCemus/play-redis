@@ -11,7 +11,7 @@ import scala.concurrent.duration._
 import scala.jdk.CollectionConverters.IterableHasAsScala
 
 class AsyncJavaRedisSpec extends AsyncUnitSpec with AsyncRedisMock with RedisRuntimeMock {
-import Helpers._
+  import Helpers._
 
   private val expiration = 5.seconds
   private val expirationLong = expiration.toSeconds
@@ -33,26 +33,26 @@ import Helpers._
     } yield Passed
   }
 
-    test("get null") { (async, cache) =>
-      for {
-        _ <- async.expect.getClassTag(cacheKey, Some("null"))
+  test("get null") { (async, cache) =>
+    for {
+      _ <- async.expect.getClassTag(cacheKey, Some("null"))
       _ <- cache.get[String](cacheKey).assertingEqual(Optional.empty)
-      } yield Passed
-    }
+    } yield Passed
+  }
 
-    test("set") { (async, cache) =>
-      for {
+  test("set") { (async, cache) =>
+    for {
       _ <- async.expect.set(cacheKey, cacheValue, Duration.Inf)
       _ <- cache.set(cacheKey, cacheValue).assertingDone
-      } yield Passed
-    }
+    } yield Passed
+  }
 
-    test("set with expiration") { (async, cache) =>
-      for {
-        _ <- async.expect.set(cacheKey, cacheValue, expiration)
-       _ <- cache.set(cacheKey, cacheValue, expiration.toSeconds.toInt).assertingDone
-      } yield Passed
-    }
+  test("set with expiration") { (async, cache) =>
+    for {
+      _ <- async.expect.set(cacheKey, cacheValue, expiration)
+      _ <- cache.set(cacheKey, cacheValue, expiration.toSeconds.toInt).assertingDone
+    } yield Passed
+  }
 
   test("set null") { (async, cache) =>
     for {
@@ -154,8 +154,8 @@ import Helpers._
     for {
       _ <- async.expect.getAllKeys[String](Iterable(cacheKey, cacheKey, cacheKey), Seq(Some(cacheValue), None, None))
       _ <- cache
-        .getAll(classOf[String], cacheKey, cacheKey, cacheKey)
-        .asserting(_.asScala.toList mustEqual List(Optional.of(cacheValue), Optional.empty, Optional.empty))
+             .getAll(classOf[String], cacheKey, cacheKey, cacheKey)
+             .asserting(_.asScala.toList mustEqual List(Optional.of(cacheValue), Optional.empty, Optional.empty))
     } yield Passed
   }
 
@@ -164,8 +164,8 @@ import Helpers._
     for {
       _ <- async.expect.getAllKeys[String](Iterable(cacheKey, cacheKey, cacheKey), Seq(Some(cacheValue), None, None))
       _ <- cache
-        .getAll(classOf[String], JavaList(cacheKey, cacheKey, cacheKey))
-        .asserting(_.asScala.toList mustEqual List(Optional.of(cacheValue), Optional.empty, Optional.empty))
+             .getAll(classOf[String], JavaList(cacheKey, cacheKey, cacheKey))
+             .asserting(_.asScala.toList mustEqual List(Optional.of(cacheValue), Optional.empty, Optional.empty))
     } yield Passed
   }
 
@@ -289,12 +289,12 @@ import Helpers._
     } yield Passed
   }
 
-    test("remove matching") { (async, cache) =>
-            for {
-              _ <- async.expect.removeMatching("pattern")
-              _ <- cache.removeMatching("pattern").assertingDone
-      } yield Passed
-    }
+  test("remove matching") { (async, cache) =>
+    for {
+      _ <- async.expect.removeMatching("pattern")
+      _ <- cache.removeMatching("pattern").assertingDone
+    } yield Passed
+  }
 
   test("exists") { (async, cache) =>
     for {
@@ -326,7 +326,7 @@ import Helpers._
     val list = mock[RedisListMock]
     for {
       _ <- async.expect.list[String](cacheKey, list)
-      _ <- cache.list(cacheKey, classOf[String]) mustBe a[AsyncRedisList[_]]
+      _ <- cache.list(cacheKey, classOf[String]) mustBe a[AsyncRedisList[?]]
     } yield Passed
   }
 
@@ -335,7 +335,7 @@ import Helpers._
     val set = mock[RedisSetMock]
     for {
       _ <- async.expect.set[String](cacheKey, set)
-      _ <- cache.set(cacheKey, classOf[String]) mustBe a[AsyncRedisSet[_]]
+      _ <- cache.set(cacheKey, classOf[String]) mustBe a[AsyncRedisSet[?]]
     } yield Passed
   }
 
@@ -344,11 +344,11 @@ import Helpers._
     val map = mock[RedisMapMock]
     for {
       _ <- async.expect.map[String](cacheKey, map)
-      _ <- cache.map(cacheKey, classOf[String]) mustBe a[AsyncRedisMap[_]]
+      _ <- cache.map(cacheKey, classOf[String]) mustBe a[AsyncRedisMap[?]]
     } yield Passed
   }
 
-  private def test(name: String)(f: (AsyncRedisMock, play.cache.redis.AsyncCacheApi) => Future[Assertion]): Unit = {
+  private def test(name: String)(f: (AsyncRedisMock, play.cache.redis.AsyncCacheApi) => Future[Assertion]): Unit =
     name in {
       implicit val runtime: RedisRuntime = redisRuntime(
         invocationPolicy = LazyInvocation,
@@ -357,12 +357,12 @@ import Helpers._
       implicit val environment: Environment = Environment(
         rootPath = new java.io.File("."),
         classLoader = getClass.getClassLoader,
-        mode = Mode.Test
+        mode = Mode.Test,
       )
       val async = mock[AsyncRedisMock]
       val cache: play.cache.redis.AsyncCacheApi = new AsyncJavaRedis(async)
 
       f(async, cache)
     }
-  }
+
 }

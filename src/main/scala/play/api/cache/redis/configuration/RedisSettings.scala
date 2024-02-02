@@ -1,35 +1,42 @@
 package play.api.cache.redis.configuration
 
+import com.typesafe.config.Config
 import play.api.ConfigLoader
 
-import com.typesafe.config.Config
-
 /**
-  * Configures non-connection related settings of redis instance,
-  * e.g., synchronization timeout, Akka dispatcher, and recovery policy.
+  * Configures non-connection related settings of redis instance, e.g.,
+  * synchronization timeout, Akka dispatcher, and recovery policy.
   */
 trait RedisSettings {
+
   /** the name of the invocation context executing all commands to Redis */
   def invocationContext: String
+
   /** the name of the invocation policy used in getOrElse methods */
   def invocationPolicy: String
+
   /** timeout configuration */
   def timeout: RedisTimeouts
+
   /** recovery policy used with the instance */
   def recovery: String
+
   /** configuration source */
   def source: String
+
   /** instance prefix */
   def prefix: Option[String]
   // $COVERAGE-OFF$
   /** trait-specific equals */
   override def equals(obj: scala.Any): Boolean = equalsAsSettings(obj)
+
   /** trait-specific equals, invokable from children */
   protected def equalsAsSettings(obj: scala.Any): Boolean = obj match {
     case that: RedisSettings => Equals.check(this, that)(_.invocationContext, _.invocationPolicy, _.timeout, _.recovery, _.source, _.prefix)
     case _                   => false
   }
   // $COVERAGE-ON$
+
 }
 
 object RedisSettings extends ConfigLoader[RedisSettings] {
@@ -41,18 +48,19 @@ object RedisSettings extends ConfigLoader[RedisSettings] {
     recovery = loadRecovery(config, path).get,
     timeout = loadTimeouts(config, path)(RedisTimeouts.requiredDefault),
     source = loadSource(config, path).get,
-    prefix = loadPrefix(config, path)
+    prefix = loadPrefix(config, path),
   )
 
   def withFallback(fallback: RedisSettings): ConfigLoader[RedisSettings] =
-    (config: Config, path: String) => apply(
-      dispatcher = loadInvocationContext(config, path) getOrElse fallback.invocationContext,
-      invocationPolicy = loadInvocationPolicy(config, path) getOrElse fallback.invocationPolicy,
-      recovery = loadRecovery(config, path) getOrElse fallback.recovery,
-      timeout = loadTimeouts(config, path)(fallback.timeout),
-      source = loadSource(config, path) getOrElse fallback.source,
-      prefix = loadPrefix(config, path) orElse fallback.prefix
-    )
+    (config: Config, path: String) =>
+      apply(
+        dispatcher = loadInvocationContext(config, path) getOrElse fallback.invocationContext,
+        invocationPolicy = loadInvocationPolicy(config, path) getOrElse fallback.invocationPolicy,
+        recovery = loadRecovery(config, path) getOrElse fallback.recovery,
+        timeout = loadTimeouts(config, path)(fallback.timeout),
+        source = loadSource(config, path) getOrElse fallback.source,
+        prefix = loadPrefix(config, path) orElse fallback.prefix,
+      )
 
   def apply(dispatcher: String, invocationPolicy: String, timeout: RedisTimeouts, recovery: String, source: String, prefix: Option[String] = None): RedisSettings =
     create(dispatcher, invocationPolicy, prefix, timeout, recovery, source)
@@ -84,11 +92,10 @@ object RedisSettings extends ConfigLoader[RedisSettings] {
 
   private def loadTimeouts(config: Config, path: String)(defaults: RedisTimeouts): RedisTimeouts =
     RedisTimeouts.load(config, path)(defaults)
+
 }
 
-/**
-  * A helper trait delegating properties into the inner settings object
-  */
+/** A helper trait delegating properties into the inner settings object */
 trait RedisDelegatingSettings extends RedisSettings {
   def settings: RedisSettings
   override def prefix: Option[String] = settings.prefix

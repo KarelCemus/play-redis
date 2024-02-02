@@ -4,19 +4,21 @@ import akka.util.Timeout
 import org.scalamock.scalatest.AsyncMockFactoryBase
 import play.api.cache.redis.{FailThrough, RecoverWithDefault, RecoveryPolicy, RedisException}
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 private[impl] trait RedisRuntimeMock { outer: AsyncMockFactoryBase =>
 
   protected object recoveryPolicy {
 
     private class RerunPolicy extends RecoveryPolicy {
+
       override def recoverFrom[T](
-         rerun: => Future[T],
-         default: => Future[T],
-         failure: RedisException
-       ): Future[T] = rerun
+        rerun: => Future[T],
+        default: => Future[T],
+        failure: RedisException,
+      ): Future[T] = rerun
+
     }
 
     val failThrough: RecoveryPolicy = new FailThrough {}
@@ -38,4 +40,5 @@ private[impl] trait RedisRuntimeMock { outer: AsyncMockFactoryBase =>
     (() => runtime.timeout).expects().returns(Timeout(timeout)).anyNumberOfTimes()
     runtime
   }
+
 }

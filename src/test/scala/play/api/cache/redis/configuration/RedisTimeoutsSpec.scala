@@ -1,10 +1,10 @@
 package play.api.cache.redis.configuration
 
-import scala.concurrent.duration._
-import play.api.cache.redis._
 import play.api.cache.redis.test.{Helpers, ImplicitOptionMaterialization, UnitSpec}
 
-class RedisTimeoutsSpec extends UnitSpec  with ImplicitOptionMaterialization{
+import scala.concurrent.duration._
+
+class RedisTimeoutsSpec extends UnitSpec with ImplicitOptionMaterialization {
 
   private def orDefault = RedisTimeouts(1.second, None, 500.millis)
 
@@ -63,7 +63,7 @@ class RedisTimeoutsSpec extends UnitSpec  with ImplicitOptionMaterialization{
     }
     val expected = RedisTimeouts(sync = 1.second, redis = None, connection = None)
     val actual = RedisTimeouts.load(configuration.underlying, "play.cache.redis")(orDefault)
-     actual mustEqual expected
+    actual mustEqual expected
   }
 
   "load defaults" in {
@@ -71,4 +71,5 @@ class RedisTimeoutsSpec extends UnitSpec  with ImplicitOptionMaterialization{
     RedisTimeouts.requiredDefault.redis mustEqual None
     RedisTimeouts.requiredDefault.connection mustEqual None
   }
+
 }

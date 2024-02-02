@@ -4,7 +4,6 @@ import java.util.concurrent.CompletionStage
 import scala.concurrent.Future
 import scala.jdk.FutureConverters.FutureOps
 
-
 final class OrElseProbe[T](queue: LazyList[T]) {
 
   private var called: Int = 0
@@ -18,6 +17,7 @@ final class OrElseProbe[T](queue: LazyList[T]) {
     next = next.tail
     result
   }
+
 }
 
 object OrElseProbe {
@@ -36,4 +36,5 @@ object OrElseProbe {
 
   def generic[T](values: T*): OrElseProbe[T] =
     new OrElseProbe(LazyList(values: _*))
+
 }

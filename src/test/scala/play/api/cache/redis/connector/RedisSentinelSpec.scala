@@ -61,7 +61,7 @@ class RedisSentinelSpec extends IntegrationSpec with RedisSentinelContainer {
     } yield Passed
   }
 
-  def test(name: String)(f: RedisConnector => Future[Assertion]): Unit = {
+  def test(name: String)(f: RedisConnector => Future[Assertion]): Unit =
     name in {
       implicit val system: ActorSystem = ActorSystem("test", classLoader = Some(getClass.getClassLoader))
       implicit val runtime: RedisRuntime = RedisRuntime("sentinel", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
@@ -71,13 +71,16 @@ class RedisSentinelSpec extends IntegrationSpec with RedisSentinelContainer {
       lazy val sentinelInstance = RedisSentinel(
         name = "sentinel",
         masterGroup = master,
-        sentinels = 0.until(nodes).map { i =>
-          RedisHost(container.containerIpAddress, container.mappedPort(sentinelPort + i))
-        }.toList,
+        sentinels = 0
+          .until(nodes)
+          .map { i =>
+            RedisHost(container.containerIpAddress, container.mappedPort(sentinelPort + i))
+          }
+          .toList,
         settings = RedisSettings.load(
           config = Helpers.configuration.default.underlying,
-          path = "play.cache.redis"
-        )
+          path = "play.cache.redis",
+        ),
       )
 
       application.runAsyncInApplication {
@@ -85,11 +88,11 @@ class RedisSentinelSpec extends IntegrationSpec with RedisSentinelContainer {
         for {
           // initialize the connector by flushing the database
           keys <- connector.matching("*")
-          _ <- Future.sequence(keys.map(connector.remove(_)))
+          _    <- Future.sequence(keys.map(connector.remove(_)))
           // run the test
-          _ <- f(connector)
+          _    <- f(connector)
         } yield Passed
       }
     }
-  }
+
 }

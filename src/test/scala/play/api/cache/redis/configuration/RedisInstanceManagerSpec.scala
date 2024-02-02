@@ -4,13 +4,12 @@ import play.api.cache.redis.test._
 import play.api.{ConfigLoader, Configuration}
 
 import scala.concurrent.duration._
-import scala.language.implicitConversions
 
-class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterialization{
+class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterialization {
 
   "default configuration" in new TestCase {
 
-    protected override def hocon: String =
+    override protected def hocon: String =
       """
           |play.cache.redis {}
         """
@@ -19,7 +18,7 @@ class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterializati
       RedisStandalone(
         name = defaultCacheName,
         host = RedisHost(localhost, defaultPort, database = 0),
-        settings = defaultsSettings
+        settings = defaultsSettings,
       )
 
     manager mustEqual RedisInstanceManagerTest(defaultCacheName)(defaultCache)
@@ -32,8 +31,9 @@ class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterializati
   }
 
   "single default instance" in new TestCase {
-    protected override def hocon: String =
-    """
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  host:          redis.localhost.cz
       |  port:          6378
@@ -50,16 +50,26 @@ class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterializati
       |  recovery:      log-and-fail
       |}
     """
-    private val settings: RedisSettings = RedisSettingsTest(invocationContext = "my-dispatcher", invocationPolicy = "eager", timeout = RedisTimeouts(5.minutes, 5.seconds, 300.millis), recovery = "log-and-fail", source = "standalone", prefix = "redis.")
+
+    private val settings: RedisSettings = RedisSettingsTest(
+      invocationContext = "my-dispatcher",
+      invocationPolicy = "eager",
+      timeout = RedisTimeouts(5.minutes, 5.seconds, 300.millis),
+      recovery = "log-and-fail",
+      source = "standalone",
+      prefix = "redis.",
+    )
 
     manager mustEqual RedisInstanceManagerTest(defaultCacheName)(
-      RedisStandalone(defaultCacheName, RedisHost("redis.localhost.cz", 6378, database = 2, password = "something"), settings)
+      RedisStandalone(defaultCacheName, RedisHost("redis.localhost.cz", 6378, database = 2, password = "something"), settings),
     )
+
   }
 
   "named caches" in new TestCase {
-    protected override def hocon: String =
-    """
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  instances {
       |
@@ -90,8 +100,14 @@ class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterializati
       |}
     """
 
-    private   val otherSettings: RedisSettings = RedisSettingsTest(
-      invocationContext = "my-dispatcher", invocationPolicy = "eager", timeout = RedisTimeouts(5.minutes, 5.seconds, 300.millis), recovery = "log-and-fail", source = "standalone", prefix = "redis.")
+    private val otherSettings: RedisSettings = RedisSettingsTest(
+      invocationContext = "my-dispatcher",
+      invocationPolicy = "eager",
+      timeout = RedisTimeouts(5.minutes, 5.seconds, 300.millis),
+      recovery = "log-and-fail",
+      source = "standalone",
+      prefix = "redis.",
+    )
 
     private val defaultCache: RedisInstanceProvider = RedisStandalone(defaultCacheName, RedisHost(localhost, defaultPort, database = 1), otherSettings)
     private val otherCache: RedisInstanceProvider = RedisStandalone("other", RedisHost("redis.localhost.cz", 6378, database = 2, password = "something"), defaultsSettings)
@@ -103,8 +119,9 @@ class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterializati
   }
 
   "cluster mode" in new TestCase {
-    protected override def hocon: String =
-    """
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  instances {
       |    play {
@@ -119,17 +136,19 @@ class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterializati
       |  }
       |}
     """
-    private  def node(port: Int) = RedisHost(localhost, port)
+
+    private def node(port: Int) = RedisHost(localhost, port)
 
     manager mustEqual RedisInstanceManagerTest(defaultCacheName)(
-      RedisCluster(
-        name = defaultCacheName, nodes = node(6380) :: node(6381) :: node(6382) :: node(6383) :: Nil, settings = defaultsSettings.copy(source = "cluster"))
+      RedisCluster(name = defaultCacheName, nodes = node(6380) :: node(6381) :: node(6382) :: node(6383) :: Nil, settings = defaultsSettings.copy(source = "cluster")),
     )
+
   }
 
   "AWS cluster mode" in new TestCase {
-      protected override def hocon: String =
-    """
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  instances {
       |    play {
@@ -139,14 +158,16 @@ class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterializati
       |  }
       |}
     """
+
     private val provider = manager.defaultInstance.asInstanceOf[ResolvedRedisInstance]
     private val instance = provider.instance.asInstanceOf[RedisCluster]
     instance.nodes must contain(RedisHost("127.0.0.1", 6379))
   }
 
   "sentinel mode" in new TestCase {
-    protected override def hocon: String =
-    """
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  instances {
       |    play {
@@ -164,31 +185,41 @@ class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterializati
       |}
     """
 
-      private def node(port: Int) = RedisHost(localhost, port)
+    private def node(port: Int) = RedisHost(localhost, port)
 
     manager mustEqual RedisInstanceManagerTest(defaultCacheName)(
       RedisSentinel(
-        name = defaultCacheName, masterGroup = "primary", sentinels = node(6380) :: node(6381) :: node(6382) :: Nil, settings = defaultsSettings.copy(source = "sentinel"), password = "my-password", database = 1)
+        name = defaultCacheName,
+        masterGroup = "primary",
+        sentinels = node(6380) :: node(6381) :: node(6382) :: Nil,
+        settings = defaultsSettings.copy(source = "sentinel"),
+        password = "my-password",
+        database = 1,
+      ),
     )
+
   }
 
   "connection string mode" in new TestCase {
-      protected override def hocon: String =
-    """
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  source:            "connection-string"
       |  connection-string: "redis://localhost:6379"
       |}
     """
 
-        manager mustEqual RedisInstanceManagerTest(defaultCacheName)(
-      RedisStandalone(defaultCacheName, RedisHost(localhost, defaultPort), defaultsSettings.copy(source = "connection-string"))
+    manager mustEqual RedisInstanceManagerTest(defaultCacheName)(
+      RedisStandalone(defaultCacheName, RedisHost(localhost, defaultPort), defaultsSettings.copy(source = "connection-string")),
     )
+
   }
 
   "custom mode" in new TestCase {
-      protected override def hocon: String =
-    """
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  source: custom
       |}
@@ -198,8 +229,9 @@ class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterializati
   }
 
   "typo in mode with simple syntax" in new TestCase {
-      protected override def hocon: String =
-    """
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  source: typo
       |}
@@ -209,8 +241,9 @@ class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterializati
   }
 
   "typo in mode with advanced syntax" in new TestCase {
-      protected override def hocon: String =
-    """
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  instances {
       |    play {
@@ -224,8 +257,9 @@ class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterializati
   }
 
   "fail when requesting undefined cache" in new TestCase {
-      protected override def hocon: String =
-    """
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  instances {
       |    play {
@@ -237,7 +271,7 @@ class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterializati
       |}
     """
 
-    manager.instanceOfOption(defaultCacheName) mustBe  a[Some[_]]
+    manager.instanceOfOption(defaultCacheName) mustBe a[Some[?]]
     manager.instanceOfOption("other") mustEqual None
 
     the[IllegalArgumentException] thrownBy manager.instanceOf("other")
@@ -246,7 +280,7 @@ class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterializati
 
   private trait TestCase {
 
-      private implicit val loader: ConfigLoader[RedisInstanceManager] = RedisInstanceManager
+    implicit private val loader: ConfigLoader[RedisInstanceManager] = RedisInstanceManager
 
     private val configuration: Configuration = Helpers.configuration.fromHocon(hocon)
 
@@ -254,16 +288,17 @@ class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterializati
 
     protected def hocon: String
 
-      protected implicit def implicitlyInstance2resolved(instance: RedisInstance): RedisInstanceProvider =
-        new ResolvedRedisInstance(instance)
+    implicit protected def implicitlyInstance2resolved(instance: RedisInstance): RedisInstanceProvider =
+      new ResolvedRedisInstance(instance)
 
-    protected implicit def implicitlyString2unresolved(name: String): RedisInstanceProvider =
+    implicit protected def implicitlyString2unresolved(name: String): RedisInstanceProvider =
       new UnresolvedRedisInstance(name)
 
-    protected final case class RedisInstanceManagerTest(
-                                                         default: String)(
-                                                         providers: RedisInstanceProvider*
-                                                       ) extends RedisInstanceManager {
+    final protected case class RedisInstanceManagerTest(
+      default: String,
+    )(
+      providers: RedisInstanceProvider*,
+    ) extends RedisInstanceManager {
 
       override def caches: Set[String] = providers.map(_.name).toSet
 
@@ -273,20 +308,8 @@ class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterializati
         throw new RuntimeException("Default instance is not defined.")
       }
 
+    }
+
   }
-  }
+
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

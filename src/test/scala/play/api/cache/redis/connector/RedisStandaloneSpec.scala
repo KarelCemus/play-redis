@@ -150,9 +150,7 @@ class RedisStandaloneSpec extends IntegrationSpec with RedisStandaloneContainer 
   }
 
   test("remove with empty args") { (_, connector) =>
-    for {
-      _ <- connector.remove(List.empty: _*).assertingSuccess
-    } yield Passed
+    connector.remove().assertingSuccess
   }
 
   test("clear with setting null") { (cacheKey, connector) =>
@@ -185,8 +183,7 @@ class RedisStandaloneSpec extends IntegrationSpec with RedisStandaloneContainer 
       _ <- connector.matching(s"$cacheKey-*A").map(_.toSet).assertingEqual(Set(s"$cacheKey-key-A", s"$cacheKey-note-A"))
       _ <- connector.matching(s"$cacheKey-key-*").map(_.toSet).assertingEqual(Set(s"$cacheKey-key-A", s"$cacheKey-key-B"))
       _ <- connector.matching(s"$cacheKey-* A * ").assertingEqual(Seq.empty)
-    }
-    yield Passed
+    } yield Passed
   }
 
   test("remove multiple keys at once") { (cacheKey, connector) =>
@@ -381,15 +378,15 @@ class RedisStandaloneSpec extends IntegrationSpec with RedisStandaloneContainer 
     } yield Passed
   }
 
-    test("set add") { (cacheKey, connector) =>
-      for {
-        _ <- connector.setSize(cacheKey).assertingEqual(0)
-        _ <- connector.setAdd(cacheKey, "A", "B").assertingEqual(2)
-        _ <- connector.setSize(cacheKey).assertingEqual(2)
-        _ <- connector.setAdd(cacheKey, "C", "B").assertingEqual(1)
-        _ <- connector.setSize(cacheKey).assertingEqual(3)
-      } yield Passed
-    }
+  test("set add") { (cacheKey, connector) =>
+    for {
+      _ <- connector.setSize(cacheKey).assertingEqual(0)
+      _ <- connector.setAdd(cacheKey, "A", "B").assertingEqual(2)
+      _ <- connector.setSize(cacheKey).assertingEqual(2)
+      _ <- connector.setAdd(cacheKey, "C", "B").assertingEqual(1)
+      _ <- connector.setSize(cacheKey).assertingEqual(3)
+    } yield Passed
+  }
 
   test("set add into invalid type") { (cacheKey, connector) =>
     for {
@@ -399,23 +396,23 @@ class RedisStandaloneSpec extends IntegrationSpec with RedisStandaloneContainer 
     } yield Passed
   }
 
-    test("set rank") { (cacheKey, connector) =>
-      for {
-        _ <- connector.setSize(cacheKey).assertingEqual(0)
-        _ <- connector.setAdd(cacheKey, "A", "B").assertingEqual(2)
-        _ <- connector.setSize(cacheKey).assertingEqual(2)
+  test("set rank") { (cacheKey, connector) =>
+    for {
+      _ <- connector.setSize(cacheKey).assertingEqual(0)
+      _ <- connector.setAdd(cacheKey, "A", "B").assertingEqual(2)
+      _ <- connector.setSize(cacheKey).assertingEqual(2)
 
-        _ <- connector.setIsMember(cacheKey, "A").assertingEqual(true)
-        _ <- connector.setIsMember(cacheKey, "B").assertingEqual(true)
-        _ <- connector.setIsMember(cacheKey, "C").assertingEqual(false)
+      _ <- connector.setIsMember(cacheKey, "A").assertingEqual(true)
+      _ <- connector.setIsMember(cacheKey, "B").assertingEqual(true)
+      _ <- connector.setIsMember(cacheKey, "C").assertingEqual(false)
 
-        _ <- connector.setAdd(cacheKey, "C", "B").assertingEqual(1)
+      _ <- connector.setAdd(cacheKey, "C", "B").assertingEqual(1)
 
-        _ <- connector.setIsMember(cacheKey, "A").assertingEqual(true)
-        _ <- connector.setIsMember(cacheKey, "B").assertingEqual(true)
-        _ <- connector.setIsMember(cacheKey, "C").assertingEqual(true)
-      } yield Passed
-    }
+      _ <- connector.setIsMember(cacheKey, "A").assertingEqual(true)
+      _ <- connector.setIsMember(cacheKey, "B").assertingEqual(true)
+      _ <- connector.setIsMember(cacheKey, "C").assertingEqual(true)
+    } yield Passed
+  }
 
   test("set size") { (cacheKey, connector) =>
     for {
@@ -438,41 +435,41 @@ class RedisStandaloneSpec extends IntegrationSpec with RedisStandaloneContainer 
     } yield Passed
   }
 
-    test("set slice") { (cacheKey, connector) =>
-      for {
-        _ <- connector.setSize(cacheKey).assertingEqual(0)
-        _ <- connector.setAdd(cacheKey, "A", "B", "C").assertingEqual(3)
-        _ <- connector.setSize(cacheKey).assertingEqual(3)
+  test("set slice") { (cacheKey, connector) =>
+    for {
+      _ <- connector.setSize(cacheKey).assertingEqual(0)
+      _ <- connector.setAdd(cacheKey, "A", "B", "C").assertingEqual(3)
+      _ <- connector.setSize(cacheKey).assertingEqual(3)
 
-        _ <- connector.setMembers[String](cacheKey).assertingEqual(Set("A", "B", "C"))
+      _ <- connector.setMembers[String](cacheKey).assertingEqual(Set("A", "B", "C"))
 
-        _ <- connector.setSize(cacheKey).assertingEqual(3)
-      } yield Passed
-    }
+      _ <- connector.setSize(cacheKey).assertingEqual(3)
+    } yield Passed
+  }
 
   test("hash set values") { (cacheKey, connector) =>
     for {
       _ <- connector.hashSize(cacheKey).assertingEqual(0)
-      _ <- connector.hashGetAll[String] (cacheKey).assertingEqual(Map.empty)
+      _ <- connector.hashGetAll[String](cacheKey).assertingEqual(Map.empty)
       _ <- connector.hashKeys(cacheKey).assertingEqual(Set.empty)
-      _ <- connector.hashValues[String] (cacheKey).assertingEqual(Set.empty)
+      _ <- connector.hashValues[String](cacheKey).assertingEqual(Set.empty)
 
-      _ <- connector.hashGet[String] (cacheKey, "KA").assertingEqual(None)
+      _ <- connector.hashGet[String](cacheKey, "KA").assertingEqual(None)
       _ <- connector.hashSet(cacheKey, "KA", "VA1").assertingEqual(true)
-      _ <- connector.hashGet[String] (cacheKey, "KA").assertingEqual(Some("VA1"))
+      _ <- connector.hashGet[String](cacheKey, "KA").assertingEqual(Some("VA1"))
       _ <- connector.hashSet(cacheKey, "KA", "VA2").assertingEqual(false)
-      _ <- connector.hashGet[String] (cacheKey, "KA").assertingEqual(Some("VA2"))
+      _ <- connector.hashGet[String](cacheKey, "KA").assertingEqual(Some("VA2"))
       _ <- connector.hashSet(cacheKey, "KB", "VB").assertingEqual(true)
 
-      _ <- connector.hashGet[String] (cacheKey, Seq("KA", "KB", "KC")).assertingEqual(Seq(Some("VA2"), Some("VB"), None))
+      _ <- connector.hashGet[String](cacheKey, Seq("KA", "KB", "KC")).assertingEqual(Seq(Some("VA2"), Some("VB"), None))
 
       _ <- connector.hashExists(cacheKey, "KB").assertingEqual(true)
       _ <- connector.hashExists(cacheKey, "KC").assertingEqual(false)
 
       _ <- connector.hashSize(cacheKey).assertingEqual(2)
-      _ <- connector.hashGetAll[String] (cacheKey).assertingEqual(Map("KA" -> "VA2", "KB" -> "VB"))
+      _ <- connector.hashGetAll[String](cacheKey).assertingEqual(Map("KA" -> "VA2", "KB" -> "VB"))
       _ <- connector.hashKeys(cacheKey).assertingEqual(Set("KA", "KB"))
-      _ <- connector.hashValues[String] (cacheKey).assertingEqual(Set("VA2", "VB"))
+      _ <- connector.hashValues[String](cacheKey).assertingEqual(Set("VA2", "VB"))
 
       _ <- connector.hashRemove(cacheKey, "KB").assertingEqual(1)
       _ <- connector.hashRemove(cacheKey, "KC").assertingEqual(0)
@@ -480,9 +477,9 @@ class RedisStandaloneSpec extends IntegrationSpec with RedisStandaloneContainer 
       _ <- connector.hashExists(cacheKey, "KA").assertingEqual(true)
 
       _ <- connector.hashSize(cacheKey).assertingEqual(1)
-      _ <- connector.hashGetAll[String] (cacheKey).assertingEqual(Map("KA" -> "VA2"))
+      _ <- connector.hashGetAll[String](cacheKey).assertingEqual(Map("KA" -> "VA2"))
       _ <- connector.hashKeys(cacheKey).assertingEqual(Set("KA"))
-      _ <- connector.hashValues[String] (cacheKey).assertingEqual(Set("VA2"))
+      _ <- connector.hashValues[String](cacheKey).assertingEqual(Set("VA2"))
 
       _ <- connector.hashSet(cacheKey, "KD", 5).assertingEqual(true)
       _ <- connector.hashIncrement(cacheKey, "KD", 2).assertingEqual(7)
@@ -514,25 +511,25 @@ class RedisStandaloneSpec extends IntegrationSpec with RedisStandaloneContainer 
     for {
       _ <- connector.set(cacheKey, "value").assertingSuccess
       _ <- connector.get[String](cacheKey).assertingEqual(Some("value"))
-      _ <- connector.sortedSetAdd(cacheKey, 1D -> "VA1").assertingFailure[IllegalArgumentException]
+      _ <- connector.sortedSetAdd(cacheKey, 1d -> "VA1").assertingFailure[IllegalArgumentException]
     } yield Passed
   }
 
   test("sorted set score") { (cacheKey, connector) =>
     for {
       _ <- connector.sortedSetSize(cacheKey).assertingEqual(0)
-      _ <- connector.sortedSetAdd(cacheKey, 1D -> "A", 3D -> "B").assertingEqual(2)
+      _ <- connector.sortedSetAdd(cacheKey, 1d -> "A", 3d -> "B").assertingEqual(2)
       _ <- connector.sortedSetSize(cacheKey).assertingEqual(2)
 
-      _ <- connector.sortedSetScore(cacheKey, "A").assertingEqual(Some(1D))
-      _ <- connector.sortedSetScore(cacheKey, "B").assertingEqual(Some(3D))
+      _ <- connector.sortedSetScore(cacheKey, "A").assertingEqual(Some(1d))
+      _ <- connector.sortedSetScore(cacheKey, "B").assertingEqual(Some(3d))
       _ <- connector.sortedSetScore(cacheKey, "C").assertingEqual(None)
 
-      _ <- connector.sortedSetAdd(cacheKey, 2D -> "C", 4D -> "B").assertingEqual(1)
+      _ <- connector.sortedSetAdd(cacheKey, 2d -> "C", 4d -> "B").assertingEqual(1)
 
-      _ <- connector.sortedSetScore(cacheKey, "A").assertingEqual(Some(1D))
-      _ <- connector.sortedSetScore(cacheKey, "B").assertingEqual(Some(4D))
-      _ <- connector.sortedSetScore(cacheKey, "C").assertingEqual(Some(2D))
+      _ <- connector.sortedSetScore(cacheKey, "A").assertingEqual(Some(1d))
+      _ <- connector.sortedSetScore(cacheKey, "B").assertingEqual(Some(4d))
+      _ <- connector.sortedSetScore(cacheKey, "C").assertingEqual(Some(2d))
     } yield Passed
   }
 
@@ -547,7 +544,7 @@ class RedisStandaloneSpec extends IntegrationSpec with RedisStandaloneContainer 
   test("sorted set remove") { (cacheKey, connector) =>
     for {
       _ <- connector.sortedSetSize(cacheKey).assertingEqual(0)
-      _ <- connector.sortedSetAdd(cacheKey, 1D -> "A", 2D -> "B", 3D -> "C").assertingEqual(3)
+      _ <- connector.sortedSetAdd(cacheKey, 1d -> "A", 2d -> "B", 3d -> "C").assertingEqual(3)
       _ <- connector.sortedSetSize(cacheKey).assertingEqual(3)
 
       _ <- connector.sortedSetRemove(cacheKey, "A").assertingEqual(1)
@@ -560,7 +557,7 @@ class RedisStandaloneSpec extends IntegrationSpec with RedisStandaloneContainer 
   test("sorted set range") { (cacheKey, connector) =>
     for {
       _ <- connector.sortedSetSize(cacheKey).assertingEqual(0)
-      _ <- connector.sortedSetAdd(cacheKey, 1D -> "A", 2D -> "B", 4D -> "C").assertingEqual(3)
+      _ <- connector.sortedSetAdd(cacheKey, 1d -> "A", 2d -> "B", 4d -> "C").assertingEqual(3)
       _ <- connector.sortedSetSize(cacheKey).assertingEqual(3)
 
       _ <- connector.sortedSetRange[String](cacheKey, 0, 1).assertingEqual(Vector("A", "B"))
@@ -574,7 +571,7 @@ class RedisStandaloneSpec extends IntegrationSpec with RedisStandaloneContainer 
   test("sorted set reverse range") { (cacheKey, connector) =>
     for {
       _ <- connector.sortedSetSize(cacheKey).assertingEqual(0)
-      _ <- connector.sortedSetAdd(cacheKey, 1D -> "A", 2D -> "B", 4D -> "C").assertingEqual(3)
+      _ <- connector.sortedSetAdd(cacheKey, 1d -> "A", 2d -> "B", 4d -> "C").assertingEqual(3)
       _ <- connector.sortedSetSize(cacheKey).assertingEqual(3)
 
       _ <- connector.sortedSetReverseRange[String](cacheKey, 0, 1).assertingEqual(Vector("C", "B"))
@@ -585,7 +582,7 @@ class RedisStandaloneSpec extends IntegrationSpec with RedisStandaloneContainer 
     } yield Passed
   }
 
-  def test(name: String)(f: (String, RedisConnector) => Future[Assertion]): Unit = {
+  def test(name: String)(f: (String, RedisConnector) => Future[Assertion]): Unit =
     name in {
       implicit val system: ActorSystem = ActorSystem("test", classLoader = Some(getClass.getClassLoader))
       implicit val runtime: RedisRuntime = RedisRuntime("standalone", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
@@ -597,22 +594,21 @@ class RedisStandaloneSpec extends IntegrationSpec with RedisStandaloneContainer 
         host = RedisHost(container.containerIpAddress, container.mappedPort(defaultPort)),
         settings = RedisSettings.load(
           config = Helpers.configuration.default.underlying,
-          path = "play.cache.redis"
-        )
+          path = "play.cache.redis",
+        ),
       )
-      
+
       val cacheKey = name.toLowerCase().replace(" ", "-")
 
       application.runAsyncInApplication {
         for {
           connector <- Future(new RedisConnectorProvider(instance, serializer).get)
           // initialize the connector by flushing the database
-          _ <- connector.invalidate()
+          _         <- connector.invalidate()
           // run the test
-          _ <- f(cacheKey, connector)
+          _         <- f(cacheKey, connector)
         } yield Passed
       }
     }
-  }
 
- }
+}

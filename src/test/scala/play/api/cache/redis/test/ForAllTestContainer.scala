@@ -3,17 +3,16 @@ package play.api.cache.redis.test
 import com.dimafeng.testcontainers.SingleContainer
 import org.scalatest.{BeforeAndAfterAll, Suite}
 
-trait ForAllTestContainer extends BeforeAndAfterAll {this: Suite =>
+trait ForAllTestContainer extends BeforeAndAfterAll { this: Suite =>
 
-  protected def newContainer: SingleContainer[_]
+  protected def newContainer: SingleContainer[?]
 
   final protected lazy val container = newContainer
 
-  override def beforeAll(): Unit = {
+  override def beforeAll(): Unit =
     container.start()
-  }
 
-  override def afterAll(): Unit = {
+  override def afterAll(): Unit =
     container.stop()
-  }
+
 }

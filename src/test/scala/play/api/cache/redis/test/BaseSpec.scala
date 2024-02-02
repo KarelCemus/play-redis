@@ -3,53 +3,52 @@ package play.api.cache.redis.test
 import akka.Done
 import org.scalactic.source.Position
 import org.scalamock.scalatest.AsyncMockFactory
+import org.scalatest._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.{AnyWordSpecLike, AsyncWordSpecLike}
-import org.scalatest._
 import play.api.cache.redis.RedisException
 import play.api.cache.redis.configuration._
 
 import java.util.concurrent.{CompletionStage, TimeoutException}
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
 trait DefaultValues {
 
-    protected final val defaultCacheName: String = "play"
-    protected final val localhost = "localhost"
-    protected final val defaultPort: Int = 6379
+  final protected val defaultCacheName: String = "play"
+  final protected val localhost = "localhost"
+  final protected val defaultPort: Int = 6379
 
-    val defaultsSettings: RedisSettingsTest =
-        RedisSettingsTest(
-          invocationContext = "akka.actor.default-dispatcher",
-          invocationPolicy = "lazy",
-          timeout = RedisTimeouts(1.second, None, Some(500.millis)),
-          recovery = "log-and-default",
-          source = "standalone"
-        )
+  val defaultsSettings: RedisSettingsTest =
+    RedisSettingsTest(
+      invocationContext = "akka.actor.default-dispatcher",
+      invocationPolicy = "lazy",
+      timeout = RedisTimeouts(1.second, None, Some(500.millis)),
+      recovery = "log-and-default",
+      source = "standalone",
+    )
 
-  protected final val cacheKey: String = "cache-key"
-  protected final val cacheValue: String = "cache-value"
-  protected final val otherKey: String = "other-key"
-  protected final val otherValue: String = "other-value"
-  protected final val field: String = "field"
+  final protected val cacheKey: String = "cache-key"
+  final protected val cacheValue: String = "cache-value"
+  final protected val otherKey: String = "other-key"
+  final protected val otherValue: String = "other-value"
+  final protected val field: String = "field"
 
-  protected final val cacheExpiration: FiniteDuration = 1.minute
+  final protected val cacheExpiration: FiniteDuration = 1.minute
 
-  protected final val failure: RedisException = SimulatedException.asRedis
+  final protected val failure: RedisException = SimulatedException.asRedis
 
 }
 
 trait ImplicitOptionMaterialization {
-    protected implicit def implicitlyAny2Some[T](value: T): Option[T] = Some(value)
+  implicit protected def implicitlyAny2Some[T](value: T): Option[T] = Some(value)
 }
 
 trait ImplicitFutureMaterialization {
-  protected implicit def implicitlyThrowable2Future[T](cause: Throwable): Future[T] = Future.failed(cause)
-  protected implicit def implicitlyAny2Future[T](value: T): Future[T] = Future.successful(value)
+  implicit protected def implicitlyThrowable2Future[T](cause: Throwable): Future[T] = Future.failed(cause)
+  implicit protected def implicitlyAny2Future[T](value: T): Future[T] = Future.successful(value)
 }
 
 trait TimeLimitedSpec extends AsyncTestSuiteMixin with AsyncUtilities {
@@ -72,25 +71,27 @@ trait TimeLimitedSpec extends AsyncTestSuiteMixin with AsyncUtilities {
     val result: Future[Outcome] = Future.firstCompletedOf(
       Seq(
         Future.after(testTimeout, ()).map(_ => fail(s"Test didn't finish within $testTimeout.")),
-        test.toFuture
-      )
+        test.toFuture,
+      ),
     )
     new FutureOutcome(result)
   }
 
-  abstract override def withFixture(test: NoArgAsyncTest): FutureOutcome = {
+  abstract override def withFixture(test: NoArgAsyncTest): FutureOutcome =
     super.withFixture(new TimeLimitedTest(test))
-  }
+
 }
 
 trait AsyncUtilities { this: AsyncTestSuite =>
 
   implicit class FutureAsyncUtilities(future: Future.type) {
+
     def after[T](duration: FiniteDuration, value: => T): Future[T] =
       Future(Await.result(Future.never, duration)).recover(_ => value)
 
     def waitFor(duration: FiniteDuration): Future[Unit] =
       after(duration, ())
+
   }
 
 }
@@ -118,10 +119,10 @@ trait FutureAssertions extends AsyncUtilities { this: BaseSpec =>
     def assertingTry(f: Try[T] => Assertion): Future[Assertion] =
       future.map(Success.apply).recover { case ex => Failure(ex) }.map(f)
 
-    def assertingFailure[Cause <: Throwable : ClassTag]: Future[Assertion] =
+    def assertingFailure[Cause <: Throwable: ClassTag]: Future[Assertion] =
       future.map(value => fail(s"Expected exception but got $value")).recover { case ex => ex mustBe a[Cause] }
 
-    def assertingFailure[Cause <: Throwable : ClassTag, InnerCause <: Throwable : ClassTag]: Future[Assertion] =
+    def assertingFailure[Cause <: Throwable: ClassTag, InnerCause <: Throwable: ClassTag]: Future[Assertion] =
       future.map(value => fail(s"Expected exception but got $value")).recover { case ex =>
         ex mustBe a[Cause]
         ex.getCause mustBe a[InnerCause]
@@ -131,21 +132,24 @@ trait FutureAssertions extends AsyncUtilities { this: BaseSpec =>
       future.map(value => fail(s"Expected exception but got $value")).recover { case ex => ex mustEqual cause }
 
     def assertingSuccess: Future[Assertion] =
-      future.recover(cause => fail(s"Got unexpected exception", cause)).map(_ => Passed)
+      future.recover(cause => fail("Got unexpected exception", cause)).map(_ => Passed)
 
-    def assertTimeout(timeout: FiniteDuration): Future[Assertion] = {
-      Future.firstCompletedOf(
-        Seq(
-          Future.after(timeout, throw new TimeoutException(s"Expected timeout after $timeout")),
-          future.map(value => fail(s"Expected timeout but got $value"))
+    def assertTimeout(timeout: FiniteDuration): Future[Assertion] =
+      Future
+        .firstCompletedOf(
+          Seq(
+            Future.after(timeout, throw new TimeoutException(s"Expected timeout after $timeout")),
+            future.map(value => fail(s"Expected timeout but got $value")),
+          ),
         )
-      ).assertingFailure[TimeoutException]
-    }
+        .assertingFailure[TimeoutException]
+
   }
 
   implicit class FutureAssertionDoneOps(future: Future[Done]) {
     def assertingDone: Future[Assertion] = future.assertingEqual(Done)
   }
+
 }
 
 trait BaseSpec extends Matchers with AsyncMockFactory {
@@ -153,7 +157,7 @@ trait BaseSpec extends Matchers with AsyncMockFactory {
   protected type Assertion = org.scalatest.Assertion
   protected val Passed: Assertion = org.scalatest.Succeeded
 
-  override implicit def executionContext: ExecutionContext = ExecutionContext.global
+  implicit override def executionContext: ExecutionContext = ExecutionContext.global
 }
 
 trait AsyncBaseSpec extends BaseSpec with AsyncWordSpecLike with FutureAssertions with AsyncUtilities with TimeLimitedSpec

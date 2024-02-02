@@ -1,5 +1,7 @@
+import org.typelevel.sbt.tpolecat.DevMode
 import sbt.Keys._
 import sbt._
+import org.typelevel.scalacoptions._
 
 normalizedName := "play-redis"
 
@@ -17,25 +19,25 @@ playVersion := "2.9.0"
 
 libraryDependencies ++= Seq(
   // play framework cache API
-  "com.typesafe.play" %% "play-cache" % playVersion.value % Provided,
+  "com.typesafe.play"   %% "play-cache"                % playVersion.value % Provided,
   // redis connector
-  "io.github.rediscala" %% "rediscala" % "1.14.0-akka",
+  "io.github.rediscala" %% "rediscala"                 % "1.14.0-akka",
   // test framework with mockito extension
-  "org.scalatest" %% "scalatest" % "3.2.17" % Test,
-  "org.scalamock" %% "scalamock" % "5.2.0" % Test,
+  "org.scalatest"       %% "scalatest"                 % "3.2.17"          % Test,
+  "org.scalamock"       %% "scalamock"                 % "5.2.0"           % Test,
   // test module for play framework
-  "com.typesafe.play" %% "play-test" % playVersion.value % Test,
+  "com.typesafe.play"   %% "play-test"                 % playVersion.value % Test,
   // to run integration tests
-  "com.dimafeng" %% "testcontainers-scala-core" % "0.41.2" % Test
+  "com.dimafeng"        %% "testcontainers-scala-core" % "0.41.2"          % Test,
 )
 
 resolvers ++= Seq(
-  "Typesafe repository" at "https://repo.typesafe.com/typesafe/releases/"
+  "Typesafe repository" at "https://repo.typesafe.com/typesafe/releases/",
 )
 
 javacOptions ++= Seq("-Xlint:unchecked", "-encoding", "UTF-8")
 
-scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked")
+scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-Ywarn-unused")
 
 enablePlugins(CustomReleasePlugin)
 
@@ -43,6 +45,11 @@ enablePlugins(CustomReleasePlugin)
 coverageExcludedFiles := ".*exceptions.*"
 
 Test / test := (Test / testOnly).toTask(" * -- -l \"org.scalatest.Ignore\"").value
+
+semanticdbEnabled                      := true
+semanticdbOptions += "-P:semanticdb:synthetics:on"
+semanticdbVersion                      := scalafixSemanticdb.revision
+ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value)
 
 wartremoverWarnings ++= Warts.allBut(
   Wart.Any,
@@ -66,3 +73,18 @@ wartremoverWarnings ++= Warts.allBut(
   Wart.TryPartial,
   Wart.Var,
 )
+
+tpolecatDevModeOptions ~= { opts =>
+  opts.filterNot(Set(ScalacOptions.warnError))
+}
+
+Test / tpolecatExcludeOptions ++= Set(
+  ScalacOptions.warnValueDiscard,
+  ScalacOptions.warnNonUnitStatement,
+)
+
+ThisBuild / tpolecatCiModeEnvVar       := "CI"
+ThisBuild / tpolecatDefaultOptionsMode := DevMode
+
+addCommandAlias("fix", "; scalafixAll; scalafmtAll; scalafmtSbt")
+addCommandAlias("lint", "; scalafmtSbtCheck; scalafmtCheckAll; scalafixAll --check")
