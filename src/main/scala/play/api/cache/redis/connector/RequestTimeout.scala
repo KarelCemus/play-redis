@@ -1,6 +1,5 @@
 package play.api.cache.redis.connector
 
-
 import org.apache.pekko.actor.Scheduler
 import org.apache.pekko.pattern.after
 import redis._

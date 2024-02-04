@@ -1,6 +1,6 @@
 package play.api.cache.redis.connector
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import play.api.cache.redis._
 import play.api.cache.redis.configuration._
 import play.api.cache.redis.impl._
@@ -78,7 +78,7 @@ class RedisClusterSpec extends IntegrationSpec with RedisClusterContainer {
         implicit val system: ActorSystem = ActorSystem("test", classLoader = Some(getClass.getClassLoader))
         implicit val runtime: RedisRuntime = RedisRuntime("cluster", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
         implicit val application: StoppableApplication = StoppableApplication(system)
-        val serializer = new AkkaSerializerImpl(system)
+        val serializer = new PekkoSerializerImpl(system)
 
         application.runAsyncInApplication {
           for {

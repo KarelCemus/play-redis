@@ -1,6 +1,6 @@
 package play.api.cache.redis.connector
 
-import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.actor.{ActorSystem, Scheduler}
 import play.api.cache.redis.test._
 
 import scala.concurrent.duration._

@@ -1,9 +1,8 @@
 package play.api.cache.redis.connector
 
-import play.api.cache.redis._
-
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.serialization.{Serialization, SerializationExtension}
+import play.api.cache.redis._
 
 import java.util.Base64
 import javax.inject._
@@ -45,10 +44,10 @@ trait PekkoSerializer {
 }
 
 /**
-  * Pekko encoder provides implementation of serialization using Pekko serializer.
-  * The implementation considers all primitives, nulls, and refs. This enables
-  * us to use Pekko settings to modify serializer mapping and use different
-  * serializers for different objects.
+  * Pekko encoder provides implementation of serialization using Pekko
+  * serializer. The implementation considers all primitives, nulls, and refs.
+  * This enables us to use Pekko settings to modify serializer mapping and use
+  * different serializers for different objects.
   */
 private[connector] class PekkoEncoder(serializer: Serialization) {
 

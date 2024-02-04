@@ -1,6 +1,5 @@
 package play.api.cache.redis
 
-
 import org.apache.pekko.actor.ActorSystem
 import play.api.cache.redis.configuration.{RedisHost, RedisSettings, RedisStandalone, RedisTimeouts}
 import play.api.cache.redis.test._
@@ -134,7 +133,7 @@ class RedisCacheModuleSpec extends IntegrationSpec with RedisStandaloneContainer
         password = None,
       ),
       settings = RedisSettings(
-        dispatcher = "akka.actor.default-dispatcher",
+        dispatcher = "pekko.actor.default-dispatcher",
         invocationPolicy = "lazy",
         timeout = RedisTimeouts(1.second),
         recovery = "log-and-default",

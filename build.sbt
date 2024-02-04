@@ -19,14 +19,14 @@ playVersion := "3.0.0"
 
 libraryDependencies ++= Seq(
   // play framework cache API
-  "org.playframework" %% "play-cache" % playVersion.value % Provided,
+  "org.playframework"   %% "play-cache"                % playVersion.value % Provided,
   // redis connector
-  "io.github.rediscala" %% "rediscala" % "1.14.0-pekko",
+  "io.github.rediscala" %% "rediscala"                 % "1.14.0-pekko",
   // test framework with mockito extension
   "org.scalatest"       %% "scalatest"                 % "3.2.17"          % Test,
   "org.scalamock"       %% "scalamock"                 % "5.2.0"           % Test,
   // test module for play framework
-  "org.playframework" %% "play-test" % playVersion.value % Test,
+  "org.playframework"   %% "play-test"                 % playVersion.value % Test,
   // to run integration tests
   "com.dimafeng"        %% "testcontainers-scala-core" % "0.41.2"          % Test,
 )

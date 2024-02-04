@@ -1,8 +1,6 @@
 package play.api.cache.redis.impl
 
 import org.apache.pekko.actor.ActorSystem
-
-import javax.inject.Provider
 import play.api.Environment
 import play.api.cache.redis._
 import play.api.inject.ApplicationLifecycle

@@ -1,9 +1,8 @@
 package play.api.cache.redis.impl
 
+import org.apache.pekko.Done
 import play.api.Environment
 import play.api.cache.redis._
-
-import org.apache.pekko.Done
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag

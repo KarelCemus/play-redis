@@ -1,6 +1,5 @@
 package play.api.cache.redis.impl
 
-import akka.Done
 import org.scalamock.scalatest.AsyncMockFactoryBase
 import play.api.cache.redis._
 

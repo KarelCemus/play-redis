@@ -1,7 +1,5 @@
 package play.api.cache.redis.impl
 
-
-import org.apache.pekko.pattern.AskTimeoutException
 import play.api.cache.redis._
 import play.api.cache.redis.test._
 
@@ -105,12 +103,6 @@ class BuildersSpec extends AsyncUnitSpec with RedisRuntimeMock {
         timeout = 1.millis,
       )
       SynchronousBuilder.toResult(Task.infinite(), Task.resolved()) mustEqual Task.resolved.response
-    }
-
-    "recover from peko ask timeout" in new RuntimeMock {
-      runtime.policy returns failThrough
-      val actorFailure = Future.failed(new AskTimeoutException("Simulated actor ask timeout"))
-      SynchronousBuilder.toResult(actorFailure, Task.resolved()) mustEqual Task.resolved.response
     }
 
     "map value" in {

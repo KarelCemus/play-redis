@@ -1,8 +1,7 @@
 package play.api.cache.redis.impl
 
-import play.api.cache.redis._
-
 import org.apache.pekko.actor.ActorSystem
+import play.api.cache.redis._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
@@ -24,7 +23,7 @@ final private[redis] case class RedisRuntimeImpl(
   policy: RecoveryPolicy,
   invocation: InvocationPolicy,
   prefix: RedisPrefix,
-  timeout: org.apache.pekko.util.Timeout
+  timeout: org.apache.pekko.util.Timeout,
 ) extends RedisRuntime
 
 private[redis] object RedisRuntime {

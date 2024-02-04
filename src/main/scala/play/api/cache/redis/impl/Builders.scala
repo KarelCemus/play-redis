@@ -1,7 +1,5 @@
 package play.api.cache.redis.impl
 
-import org.apache.pekko.pattern.AskTimeoutException
-
 import scala.concurrent.Future
 
 /**

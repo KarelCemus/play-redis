@@ -24,7 +24,7 @@ class RedisCacheModule extends Module {
     // common settings
     val commons = Seq(
       // bind serializer
-      bind[connector.PekkoSerializer].toProvider[connector.AkkaSerializerProvider],
+      bind[connector.PekkoSerializer].toProvider[connector.PekkoSerializerProvider],
       bind[configuration.RedisInstanceResolver].to[GuiceRedisInstanceResolver],
     )
     // bind recovery resolver

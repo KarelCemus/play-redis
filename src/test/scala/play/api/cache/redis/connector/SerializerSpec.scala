@@ -1,6 +1,6 @@
 package play.api.cache.redis.connector
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import play.api.cache.redis._
 import play.api.cache.redis.test._
 
@@ -171,10 +171,10 @@ class SerializerSpec extends AsyncUnitSpec {
     }
   }
 
-  private def test(name: String)(f: AkkaSerializer => Unit): Unit =
+  private def test(name: String)(f: PekkoSerializer => Unit): Unit =
     name in {
       val system = ActorSystem.apply(s"test-${Random.nextInt()}", classLoader = Some(getClass.getClassLoader))
-      val serializer: AkkaSerializer = new AkkaSerializerImpl(system)
+      val serializer: PekkoSerializer = new PekkoSerializerImpl(system)
       f(serializer)
       system.terminate().map(_ => Passed)
     }

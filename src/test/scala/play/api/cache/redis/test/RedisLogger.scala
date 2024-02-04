@@ -5,7 +5,7 @@ import org.apache.pekko.event.slf4j.Slf4jLogger
 
 /**
   * This logger fixes initialization issues; it fixes race conditions between
-  * Akka and Slf4j, this ensures that Slf4j is initialized first.
+  * Pekko and Slf4j, this ensures that Slf4j is initialized first.
   */
 class RedisLogger extends Slf4jLogger {
 

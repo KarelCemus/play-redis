@@ -1,7 +1,7 @@
 package play.api.cache.redis.test
 
-import akka.Done
-import akka.actor.{ActorSystem, CoordinatedShutdown}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.{ActorSystem, CoordinatedShutdown}
 import org.scalatest.Assertion
 import play.api.inject.ApplicationLifecycle
 
