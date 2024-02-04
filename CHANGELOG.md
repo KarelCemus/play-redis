@@ -14,6 +14,8 @@ for cluster are using fixed port mapping and tests for sentinel are disabled sin
 that sentinel implementation is not fully reliable, therefore sentinel is not officially
 supported at this moment. [#273](https://github.com/KarelCemus/play-redis/pull/273)
 
+Installed linters and formatters - scalafmt, scalafix, wartremover. [#275](https://github.com/KarelCemus/play-redis/pull/275)
+
 ### [:link: 2.7.0](https://github.com/KarelCemus/play-redis/tree/2.7.0)
 
 SET command supports milliseconds, previous versions used seconds [#247](https://github.com/KarelCemus/play-redis/issues/247)

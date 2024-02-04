@@ -1,6 +1,6 @@
 # Configuration
 
-Default configuration and very detailed manual is available in [reference.conf](https://github.com/KarelCemus/play-redis/blob/3.0.0-M1/src/main/resources/reference.conf). It can be overwritten in your `conf/application.conf` file.
+Default configuration and very detailed manual is available in [reference.conf](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/src/main/resources/reference.conf). It can be overwritten in your `conf/application.conf` file.
 
 There are several features supported in the configuration, they are discussed below. However, by default, there is no need for any further configuration. Default settings are set to the standalone instance running on `localhost:6379?db=0`, which is default for redis server. This instance is named `play` but is also exposed as a default implementation.
 
