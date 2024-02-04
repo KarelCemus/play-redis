@@ -36,22 +36,22 @@ as well as on your premise.
 
 - [synchronous and asynchronous APIs](#provided-apis)
 - [implements standard APIs defined by Play's `cacheApi` project](#provided-apis)
-- support of [named caches](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/20-configuration.md#named-caches)
-- [works with Guice](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/40-migration.md#runtime-time-dependency-injection) as well as [compile-time DI](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/40-migration.md#compile-time-dependency-injection)
-- [getOrElse and getOrFuture operations](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/30-how-to-use.md#use-of-cacheapi) easing the use
-- [wildcards in remove operation](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/30-how-to-use.md#use-of-cacheapi)
-- support of collections: [sets](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/30-how-to-use.md#use-of-sets), [lists](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/30-how-to-use.md#use-of-lists), and [maps](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/30-how-to-use.md#use-of-maps)
-- [increment and decrement operations](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/30-how-to-use.md#use-of-cacheapi)
-- [eager and lazy invocation policies](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/20-configuration.md#eager-and-lazy-invocation) waiting or not waiting for the result
-- several [recovery policies](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/20-configuration.md#recovery-policy) and possibility of further customization
-- support of [several configuration sources](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/20-configuration.md#running-in-different-environments)
+- support of [named caches](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/20-configuration.md#named-caches)
+- [works with Guice](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/40-migration.md#runtime-time-dependency-injection) as well as [compile-time DI](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/40-migration.md#compile-time-dependency-injection)
+- [getOrElse and getOrFuture operations](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/30-how-to-use.md#use-of-cacheapi) easing the use
+- [wildcards in remove operation](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/30-how-to-use.md#use-of-cacheapi)
+- support of collections: [sets](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/30-how-to-use.md#use-of-sets), [lists](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/30-how-to-use.md#use-of-lists), and [maps](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/30-how-to-use.md#use-of-maps)
+- [increment and decrement operations](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/30-how-to-use.md#use-of-cacheapi)
+- [eager and lazy invocation policies](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/20-configuration.md#eager-and-lazy-invocation) waiting or not waiting for the result
+- several [recovery policies](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/20-configuration.md#recovery-policy) and possibility of further customization
+- support of [several configuration sources](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/20-configuration.md#running-in-different-environments)
     - static in the configuration file
     - from the connection string optionally in the environmental variable
     - custom implementation of the configuration provider
-- support of [standalone, cluster,](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/20-configuration.md#standalone-vs-cluster)
-  [aws-cluster,](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/20-configuration.md#aws-cluster)
-  and [sentinel modes](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/20-configuration.md#sentinel)
-- build on the top of Akka actors and serializers, [agnostic to the serialization mechanism](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/20-configuration.md#limitation-of-data-serialization)
+- support of [standalone, cluster,](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/20-configuration.md#standalone-vs-cluster)
+  [aws-cluster,](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/20-configuration.md#aws-cluster)
+  and [sentinel modes](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/20-configuration.md#sentinel)
+- build on the top of Akka actors and serializers, [agnostic to the serialization mechanism](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/20-configuration.md#limitation-of-data-serialization)
     - for simplicity, it uses deprecated Java serialization by default
     - it is recommended to use [Kryo library](https://github.com/romix/akka-kryo-serialization) or any other mechanism
 
@@ -92,11 +92,11 @@ or you can use shortcuts in the table below.
 
 To use this module:
 
-1. [Add this library into your project](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/10-integration.md) and expose APIs
-1. See the [configuration options](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/20-configuration.md)
-1. [Browse examples of use](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/30-how-to-use.md)
+1. [Add this library into your project](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/10-integration.md) and expose APIs
+1. See the [configuration options](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/20-configuration.md)
+1. [Browse examples of use](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/30-how-to-use.md)
 
-If you come from older version, you might check the [Migration Guide](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/doc/40-migration.md)
+If you come from older version, you might check the [Migration Guide](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/40-migration.md)
 
 
 ## Samples
@@ -124,7 +124,7 @@ To your SBT `build.sbt` add the following lines:
 // enable Play cache API (based on your Play version)
 libraryDependencies += play.sbt.PlayImport.cacheApi
 // include play-redis library
-libraryDependencies += "com.github.karelcemus" %% "play-redis" % "3.0.0-M2"
+libraryDependencies += "com.github.karelcemus" %% "play-redis" % "3.0.0-M3"
 ```
 
 
@@ -132,7 +132,7 @@ libraryDependencies += "com.github.karelcemus" %% "play-redis" % "3.0.0-M2"
 
 | play framework |                       play-redis |                                                                                                                                                          documentation |
 |----------------|---------------------------------:|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
-| 2.9.x          | <!-- Play 2.9 -->3.0.0-M2<!-- / --> |                                                                                           [see here](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/README.md) |
+| 2.9.x          | <!-- Play 2.9 -->3.0.0-M3<!-- / --> |                                                                                           [see here](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/README.md) |
 | 2.8.x          | <!-- Play 2.8 -->2.7.0<!-- / --> |                                                                                              [see here](https://github.com/KarelCemus/play-redis/blob/2.7.0/README.md) |
 | 2.7.x          | <!-- Play 2.7 -->2.5.1<!-- / --> |                                                                                              [see here](https://github.com/KarelCemus/play-redis/blob/2.5.1/README.md) |
 | 2.6.x          | <!-- Play 2.6 -->2.3.0<!-- / --> | [see here](https://github.com/KarelCemus/play-redis/blob/2.3.0/README.md) ([Migration Guide](https://github.com/KarelCemus/play-redis/blob/2.3.0/doc/40-migration.md)) |
@@ -150,7 +150,7 @@ like this library, please feel free to report it or contact me.
 ## Changelog
 
 For the list of changes and migration guide please see
-[the Changelog](https://github.com/KarelCemus/play-redis/blob/3.0.0-M2/CHANGELOG.md).
+[the Changelog](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/CHANGELOG.md).
 
 
 ## Caveat

@@ -26,19 +26,8 @@ trait RedisTimeouts {
 }
 
 final case class RedisTimeoutsImpl(
-  /**
-    * sync timeout applies in sync API and indicates how long to wait before the
-    * future is resolved
-    */
   sync: FiniteDuration,
-
-  /** redis timeout indicates how long to wait for the response */
   redis: Option[FiniteDuration],
-
-  /**
-    * fail after timeout applies when the connection is not established to fail
-    * requests eagerly
-    */
   connection: Option[FiniteDuration],
 ) extends RedisTimeouts {
 
