@@ -1,16 +1,18 @@
 package play.api.cache.redis.configuration
 
-import org.specs2.mutable.Specification
+import play.api.cache.redis.test.UnitSpec
 
-class RedisInstanceProviderSpec extends Specification {
-  import play.api.cache.redis.Implicits._
+class RedisInstanceProviderSpec extends UnitSpec {
 
-  val defaultCache = RedisStandalone(defaultCacheName, RedisHost(localhost, defaultPort, database = 0), defaults)
+  private val defaultCache: RedisStandalone =
+    RedisStandalone(name = defaultCacheName, host = RedisHost(localhost, defaultPort, database = Some(0)), settings = defaultsSettings)
 
-  implicit val resolver: RedisInstanceResolver = new RedisInstanceResolver {
-    def resolve = {
-      case `defaultCacheName` => defaultCache
+  implicit private val resolver: RedisInstanceResolver = new RedisInstanceResolver {
+
+    def resolve: PartialFunction[String, RedisStandalone] = { case `defaultCacheName` =>
+      defaultCache
     }
+
   }
 
   "resolve already resolved" in {
@@ -22,6 +24,7 @@ class RedisInstanceProviderSpec extends Specification {
   }
 
   "fail when not able to resolve" in {
-    new UnresolvedRedisInstance("other").resolved must throwA[Exception]
+    the[Exception] thrownBy new UnresolvedRedisInstance("other").resolved
   }
+
 }

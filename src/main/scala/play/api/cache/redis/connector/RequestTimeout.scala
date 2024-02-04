@@ -1,43 +1,40 @@
 package play.api.cache.redis.connector
 
+
 import org.apache.pekko.actor.Scheduler
 import org.apache.pekko.pattern.after
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
 import redis._
 
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
+
 /**
-  *
-  * Helper for manipulation with the request to the redis.
-  * It defines the common variables and methods to avoid
-  * code duplication
+  * Helper for manipulation with the request to the redis. It defines the common
+  * variables and methods to avoid code duplication
   */
 trait RequestTimeout extends Request {
 
-  protected implicit val scheduler: Scheduler
+  implicit protected val scheduler: Scheduler
 }
 
 object RequestTimeout {
 
   // fails
   @inline
-  def fail(failAfter: FiniteDuration)(implicit scheduler: Scheduler, context: ExecutionContext) = {
+  def fail(failAfter: FiniteDuration)(implicit scheduler: Scheduler, context: ExecutionContext): Future[Nothing] =
     after(failAfter, scheduler)(Future.failed(redis.actors.NoConnectionException))
-  }
 
   // first completed
   @inline
-  def invokeOrFail[T](continue: => Future[T], failAfter: FiniteDuration)(implicit scheduler: Scheduler, context: ExecutionContext): Future[T] = {
+  def invokeOrFail[T](continue: => Future[T], failAfter: FiniteDuration)(implicit scheduler: Scheduler, context: ExecutionContext): Future[T] =
     Future.firstCompletedOf(Seq(continue, fail(failAfter)))
-  }
+
 }
 
 /**
-  * Actor extension maintaining current connected status.
-  * The operations are not invoked when the connection
-  * is not established, the failed future is returned
-  * instead.
+  * Actor extension maintaining current connected status. The operations are not
+  * invoked when the connection is not established, the failed future is
+  * returned instead.
   */
 trait FailEagerly extends RequestTimeout {
   import RequestTimeout._
@@ -48,18 +45,19 @@ trait FailEagerly extends RequestTimeout {
   @inline
   protected def connectionTimeout: Option[FiniteDuration]
 
-  abstract override def send[T](redisCommand: RedisCommand[_ <: protocol.RedisReply, T]) = {
+  abstract override def send[T](redisCommand: RedisCommand[? <: protocol.RedisReply, T]): Future[T] = {
     // proceed with the command
-    @inline def continue = super.send(redisCommand)
+    @inline def continue: Future[T] = super.send(redisCommand)
     // based on connection status
     if (connected) continue else connectionTimeout.fold(continue)(invokeOrFail(continue, _))
   }
+
 }
 
 /**
-  * Actor extension implementing a request timeout, if enabled.
-  * This is due to no internal timeout provided by
-  * the redis-scala to avoid never-completed futures.
+  * Actor extension implementing a request timeout, if enabled. This is due to
+  * no internal timeout provided by the redis-scala to avoid never-completed
+  * futures.
   */
 trait RedisRequestTimeout extends RequestTimeout {
   import RequestTimeout._
@@ -69,9 +67,9 @@ trait RedisRequestTimeout extends RequestTimeout {
   /** indicates the timeout on the redis request */
   protected def timeout: Option[FiniteDuration]
 
-  abstract override def send[T](redisCommand: RedisCommand[_ <: protocol.RedisReply, T]) = {
+  abstract override def send[T](redisCommand: RedisCommand[? <: protocol.RedisReply, T]): Future[T] = {
     // proceed with the command
-    @inline def continue = super.send(redisCommand)
+    @inline def continue: Future[T] = super.send(redisCommand)
     // based on connection status
     if (initialized) timeout.fold(continue)(invokeOrFail(continue, _)) else continue
   }

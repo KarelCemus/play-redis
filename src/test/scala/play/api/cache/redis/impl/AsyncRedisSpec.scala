@@ -1,68 +1,84 @@
 package play.api.cache.redis.impl
 
+import play.api.cache.redis._
+import play.api.cache.redis.test._
+
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
-import play.api.cache.redis._
+class AsyncRedisSpec extends AsyncUnitSpec with RedisConnectorMock with RedisRuntimeMock with ImplicitFutureMaterialization {
+  import Helpers._
 
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
-
-class AsyncRedisSpec(implicit ee: ExecutionEnv) extends Specification with ReducedMockito {
-  import Implicits._
-  import RedisCacheImplicits._
-
-  import org.mockito.ArgumentMatchers._
-
-  "AsyncRedis" should {
-
-    "removeAll" in new MockedAsyncRedis {
-      connector.invalidate() returns unit
-      cache.removeAll() must beDone.await
-      there was one(connector).invalidate()
-    }
-
-    "getOrElseUpdate (hit)" in new MockedAsyncRedis with OrElse {
-      connector.get[String](anyString)(anyClassTag) returns Some(value)
-      cache.getOrElseUpdate(key)(doFuture(value)) must beEqualTo(value).await
-      orElse mustEqual 0
-    }
-
-    "getOrElseUpdate (miss)" in new MockedAsyncRedis with OrElse {
-      connector.get[String](anyString)(anyClassTag) returns None
-      connector.set(anyString, anyString, any[Duration], anyBoolean) returns true
-      cache.getOrElseUpdate(key)(doFuture(value)) must beEqualTo(value).await
-      orElse mustEqual 1
-    }
-
-    "getOrElseUpdate (failure)" in new MockedAsyncRedis with OrElse {
-      connector.get[String](anyString)(anyClassTag) returns ex
-      cache.getOrElseUpdate(key)(doFuture(value)) must beEqualTo(value).await
-      orElse mustEqual 1
-    }
-
-    "getOrElseUpdate (failing orElse)" in new MockedAsyncRedis with OrElse {
-      connector.get[String](anyString)(anyClassTag) returns None
-      cache.getOrElseUpdate[String](key)(failedFuture) must throwA[TimeoutException].await
-      orElse mustEqual 2
-    }
-
-    "getOrElseUpdate (rerun)" in new MockedAsyncRedis with OrElse with Attempts {
-      override protected def policy = new RecoveryPolicy {
-        def recoverFrom[T](rerun: => Future[T], default: => Future[T], failure: RedisException) = rerun
-      }
-      connector.get[String](anyString)(anyClassTag) returns None
-      connector.set(anyString, anyString, any[Duration], anyBoolean) returns true
-      // run the test
-      cache.getOrElseUpdate(key) {
-        attempts match {
-          case 0 => attempt(failedFuture)
-          case _ => attempt(doFuture(value))
-        }
-      } must beEqualTo(value).await
-      // verification
-      orElse mustEqual 2
-      there were two(connector).get[String](anyString)(anyClassTag)
-      there was one(connector).set(key, value, Duration.Inf, ifNotExists = false)
-    }
+  test("removeAll") { (connector, cache) =>
+    for {
+      _ <- connector.expect.invalidate()
+      _ <- cache.removeAll().assertingDone
+    } yield Passed
   }
+
+  test("getOrElseUpdate (hit)") { (connector, cache) =>
+    for {
+      _ <- connector.expect.get(cacheKey, Some(cacheValue))
+      orElse = probe.orElse.async(cacheValue)
+      _ <- cache.getOrElseUpdate[String](cacheKey)(orElse.execute()).assertingEqual(cacheValue)
+      _ = orElse.calls mustEqual 0
+    } yield Passed
+  }
+
+  test("getOrElseUpdate (miss)") { (connector, cache) =>
+    for {
+      _ <- connector.expect.get[String](cacheKey, None)
+      _ <- connector.expect.set(cacheKey, cacheValue, Duration.Inf, result = true)
+      orElse = probe.orElse.async(cacheValue)
+      _ <- cache.getOrElseUpdate[String](cacheKey)(orElse.execute()).assertingEqual(cacheValue)
+      _ = orElse.calls mustEqual 1
+    } yield Passed
+  }
+
+  test("getOrElseUpdate (failure)") { (connector, cache) =>
+    for {
+      _ <- connector.expect.get[String](cacheKey, SimulatedException.asRedis)
+      orElse = probe.orElse.async(cacheValue)
+      _ <- cache.getOrElseUpdate[String](cacheKey)(orElse.execute()).assertingEqual(cacheValue)
+      _ = orElse.calls mustEqual 1
+    } yield Passed
+  }
+
+  test("getOrElseUpdate (failing orElse)") { (connector, cache) =>
+    for {
+      _ <- connector.expect.get[String](cacheKey, None)
+      orElse = probe.orElse.failing(SimulatedException.asRedis)
+      _ <- cache.getOrElseUpdate[String](cacheKey)(orElse.execute()).assertingFailure[TimeoutException]
+      _ = orElse.calls mustEqual 2
+    } yield Passed
+  }
+
+  test("getOrElseUpdate (rerun)", policy = recoveryPolicy.rerun) { (connector, cache) =>
+    for {
+      _ <- connector.expect.get[String](cacheKey, None)
+      _ <- connector.expect.get[String](cacheKey, None)
+      _ <- connector.expect.set(cacheKey, cacheValue, Duration.Inf, result = true)
+      orElse = probe
+                 .orElse
+                 .generic(
+                   Future.failed(SimulatedException.asRedis),
+                   Future.successful(cacheValue),
+                 )
+      _ <- cache.getOrElseUpdate[String](cacheKey)(orElse.execute()).assertingEqual(cacheValue)
+      _ = orElse.calls mustEqual 2
+    } yield Passed
+  }
+
+  private def test(name: String, policy: RecoveryPolicy = recoveryPolicy.default)(f: (RedisConnectorMock, AsyncRedis) => Future[Assertion]): Unit =
+    name in {
+      implicit val runtime: RedisRuntime = redisRuntime(
+        invocationPolicy = LazyInvocation,
+        recoveryPolicy = policy,
+      )
+      val connector = mock[RedisConnectorMock]
+      val cache: AsyncRedis = new AsyncRedisImpl(connector)
+
+      f(connector, cache)
+    }
+
 }

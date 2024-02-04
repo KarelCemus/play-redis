@@ -1,39 +1,35 @@
 package play.api.cache.redis.impl
 
-import scala.concurrent.Future
-import scala.concurrent.duration._
-
 import play.api.cache.redis._
+import play.api.cache.redis.test.UnitSpec
 
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
+import scala.concurrent._
+import scala.util.Success
 
-class InvocationPolicySpec(implicit ee: ExecutionEnv) extends Specification with ReducedMockito with WithApplication {
+class InvocationPolicySpec extends UnitSpec {
 
-  import Implicits._
-  import RedisCacheImplicits._
+  implicit private val ec: ExecutionContext = scala.concurrent.ExecutionContext.parasitic
 
-  val andThen = "then"
-
-  def longTask(andThen: => Unit) = Future.after(seconds = 2, { andThen; "result" })
-
-  "InvocationPolicy" should {
-
-    "invoke lazily, i.e., slowly" in {
-      var resolved = false
-      val promise = longTask { resolved = true }
-      LazyInvocation.invoke(promise, andThen) must beEqualTo(andThen).awaitFor(3.seconds)
-      resolved mustEqual true
-      promise.isCompleted mustEqual true
-    }
-
-    "invoke eagerly, i.e., return immediately" in {
-      var resolved = false
-      val promise = longTask { resolved = true }
-      EagerInvocation.invoke(promise, andThen) must beEqualTo(andThen).awaitFor(3.seconds)
-      resolved mustEqual false
-      promise must beEqualTo("result").awaitFor(3.seconds)
-      resolved mustEqual true
-    }
+  private class Probe {
+    private val promise = Promise[Unit]()
+    def resolve(): Unit = promise.success(())
+    def run(): Future[Unit] = promise.future
   }
+
+  "invoke lazily, i.e., slowly" in {
+    val probe = new Probe
+    val outcome = LazyInvocation.invoke(probe.run(), Done)
+    outcome.value mustEqual None
+    probe.resolve()
+    outcome.value mustEqual Some(Success(Done))
+  }
+
+  "invoke eagerly, i.e., return immediately" in {
+    val probe = new Probe
+    val outcome = EagerInvocation.invoke(probe.run(), Done)
+    outcome.isCompleted mustEqual true
+    probe.resolve()
+    outcome.isCompleted mustEqual true
+  }
+
 }

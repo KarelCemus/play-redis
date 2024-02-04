@@ -1,12 +1,12 @@
 package play.api.cache.redis.impl
 
+import play.api.Environment
+import play.api.cache.redis._
+
 import org.apache.pekko.Done
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import play.api.Environment
-import play.api.cache.redis.JavaCompatibilityBase
 
 private[impl] object JavaCompatibility extends JavaCompatibilityBase {
   import scala.jdk.javaapi.{FutureConverters, OptionConverters}
@@ -19,63 +19,60 @@ private[impl] object JavaCompatibility extends JavaCompatibilityBase {
   type JavaSet[T] = java.util.Set[T]
 
   object JavaList {
+
     def apply[T](values: T*): JavaList[T] = {
       val list = new java.util.ArrayList[T]()
-      list.addAll(values.asJava)
+      list.addAll(values.asJava): Unit
       list
     }
+
   }
 
-  implicit class Java8Stage[T](val future: Future[T]) extends AnyVal {
+  implicit class Java8Stage[T](private val future: Future[T]) extends AnyVal {
     @inline def asJava: CompletionStage[T] = FutureConverters.asJava(future)
     @inline def asDone(implicit ec: ExecutionContext): Future[Done] = future.map(_ => Done)
   }
 
-  implicit class Java8Callable[T](val f: () => T) extends AnyVal {
-    @inline def asJava: Callable[T] = new Callable[T] {
-      def call(): T = f()
-    }
+  implicit class Java8Callable[T](private val f: () => T) extends AnyVal {
+    @inline def asJava: Callable[T] = () => f()
   }
 
-  implicit class Java8Optional[T](val option: Option[T]) extends AnyVal {
+  implicit class Java8Optional[T](private val option: Option[T]) extends AnyVal {
     @inline def asJava: Optional[T] = OptionConverters.toJava(option)
   }
 
-  implicit class ScalaCompatibility[T](val future: CompletionStage[T]) extends AnyVal {
+  implicit class ScalaCompatibility[T](private val future: CompletionStage[T]) extends AnyVal {
     @inline def asScala: Future[T] = FutureConverters.asScala(future)
   }
 
-  implicit class RichFuture(val future: Future.type) extends AnyVal {
+  implicit class RichFuture(private val future: Future.type) extends AnyVal {
     @inline def from[T](futures: Future[T]*)(implicit ec: ExecutionContext): Future[Seq[T]] = future.sequence(futures)
   }
 
   @inline implicit def class2tag[T](classOf: Class[T]): ClassTag[T] = ClassTag(classOf)
 
-  @inline def async[T](doAsync: ExecutionContext => Future[T])(implicit runtime: RedisRuntime): CompletionStage[T] = {
+  @inline def async[T](doAsync: ExecutionContext => Future[T])(implicit runtime: RedisRuntime): CompletionStage[T] =
     doAsync {
       // save the HTTP context if any and restore it later for orElse clause
-      play.core.j.HttpExecutionContext.fromThread(runtime.context)
+      play.core.j.ClassLoaderExecutionContext.fromThread(runtime.context)
     }.asJava
-  }
 
   @inline def classTagKey(key: String): String = s"classTag::$key"
 
-  @inline def classTagOf(value: Any): String = {
-    if (value == null) "null" else value.getClass.getCanonicalName
-  }
+  @inline def classTagOf(value: Any): String =
+    if (Option(value).isEmpty) "null" else value.getClass.getCanonicalName
 
-  @inline def classTagFrom[T](tag: String)(implicit environment: Environment): ClassTag[T] = {
-    if (tag == "null") ClassTag.Null.asInstanceOf[ClassTag[T]]
+  @inline def classTagFrom[T](tag: String)(implicit environment: Environment): ClassTag[T] =
+    if (tag === "null") ClassTag.Null.asInstanceOf[ClassTag[T]]
     else ClassTag(classTagNameToClass(tag, environment))
-  }
 
-  implicit class CacheKey(val key: String) extends AnyVal {
+  implicit class CacheKey(private val key: String) extends AnyVal {
     @inline def withClassTag: Seq[String] = Seq(key, classTagKey(key))
   }
 
   // $COVERAGE-OFF$
   /** java primitives are serialized into their type names instead of classes */
-  def classTagNameToClass(name: String, environment: Environment): Class[_] = name match {
+  private def classTagNameToClass(name: String, environment: Environment): Class[?] = name match {
     case "boolean[]" => classOf[Array[java.lang.Boolean]]
     case "byte[]"    => classOf[Array[java.lang.Byte]]
     case "char[]"    => classOf[Array[java.lang.Character]]

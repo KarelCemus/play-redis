@@ -1,7 +1,5 @@
 package play.api.cache.redis
 
-import scala.language.higherKinds
-
 private[redis] trait RedisCollection[Collection, Result[_]] {
 
   type This >: this.type
@@ -13,7 +11,8 @@ private[redis] trait RedisCollection[Collection, Result[_]] {
     *
     * Time complexity: O(1)
     *
-    * @return size of the list
+    * @return
+    *   size of the list
     */
   def size: Result[Long]
 

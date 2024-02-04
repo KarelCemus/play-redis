@@ -1,13 +1,11 @@
 package play.api.cache.redis
 
-import scala.language.implicitConversions
-
 import play.api.inject.ApplicationLifecycle
 import play.api.{Configuration, Environment}
 
 /**
-  * <p>Components for compile-time dependency injection.
-  * It binds components from configuration package</p>
+  * <p>Components for compile-time dependency injection. It binds components
+  * from configuration package</p>
   */
 trait RedisCacheComponents {
   implicit def actorSystem: org.apache.pekko.actor.ActorSystem
@@ -33,7 +31,7 @@ trait RedisCacheComponents {
 
   private lazy val manager = configuration.get("play.cache.redis")(play.api.cache.redis.configuration.RedisInstanceManager)
 
-  /** translates the cache name into the configuration  */
+  /** translates the cache name into the configuration */
   private def redisInstance(name: String)(implicit resolver: RedisInstanceResolver): RedisInstance = manager.instanceOf(name).resolved(resolver)
 
   private def cacheApi(instance: RedisInstance): impl.RedisCaches = new impl.RedisCachesProvider(instance, pekkoSerializer, environment).get

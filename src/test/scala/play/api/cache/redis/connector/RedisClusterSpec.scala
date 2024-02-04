@@ -1,98 +1,106 @@
 package play.api.cache.redis.connector
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
-
+import akka.actor.ActorSystem
 import play.api.cache.redis._
 import play.api.cache.redis.configuration._
 import play.api.cache.redis.impl._
-import play.api.inject.ApplicationLifecycle
+import play.api.cache.redis.test._
 
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
-import org.specs2.specification.{AfterAll, BeforeAll}
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
-/**
-  * <p>Specification of the low level connector implementing basic commands</p>
-  */
-class RedisClusterSpec(implicit ee: ExecutionEnv) extends Specification with WithApplication with ClusterRedisContainer {
+class RedisClusterSpec extends IntegrationSpec with RedisClusterContainer {
 
-  args(skipAll=true)
+  override protected def testTimeout: FiniteDuration = 60.seconds
 
-  import Implicits._
+  test("pong on ping") { connector =>
+    connector.ping().assertingSuccess
+  }
 
-  implicit private val lifecycle: ApplicationLifecycle = application.injector.instanceOf[ApplicationLifecycle]
+  test("miss on get") { connector =>
+    connector.get[String]("miss-on-get").assertingEqual(None)
+  }
 
-  implicit private val runtime: RedisRuntime = RedisRuntime("cluster", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
+  test("hit after set") { connector =>
+    for {
+      _ <- connector.set("hit-after-set", "value").assertingEqual(true)
+      _ <- connector.get[String]("hit-after-set").assertingEqual(Some("value"))
+    } yield Passed
+  }
 
-  private val serializer = new PekkoSerializerImpl(system)
+  test("ignore set if not exists when already defined") { connector =>
+    for {
+      _ <- connector.set("if-not-exists-when-exists", "previous").assertingEqual(true)
+      _ <- connector.set("if-not-exists-when-exists", "value", ifNotExists = true).assertingEqual(false)
+      _ <- connector.get[String]("if-not-exists-when-exists").assertingEqual(Some("previous"))
+    } yield Passed
+  }
 
-  private lazy val containerIpAddress = container.containerIpAddress
+  test("perform set if not exists when undefined") { connector =>
+    for {
+      _ <- connector.get[String]("if-not-exists").assertingEqual(None)
+      _ <- connector.set("if-not-exists", "value", ifNotExists = true).assertingEqual(true)
+      _ <- connector.get[String]("if-not-exists").assertingEqual(Some("value"))
+      _ <- connector.set("if-not-exists", "other", ifNotExists = true).assertingEqual(false)
+      _ <- connector.get[String]("if-not-exists").assertingEqual(Some("value"))
+    } yield Passed
+  }
 
-  private lazy val clusterInstance = RedisCluster(
-    name = defaultCacheName,
-    nodes = RedisHost(containerIpAddress, container.mappedPort(7000)) ::
-      RedisHost(containerIpAddress, container.mappedPort(7001)) ::
-      RedisHost(containerIpAddress, container.mappedPort(7002)) ::
-      RedisHost(containerIpAddress, container.mappedPort(7003)) ::
-      Nil,
-    settings = defaults
-  )
-
-  private lazy val connector: RedisConnector = new RedisConnectorProvider(clusterInstance, serializer).get
-
-  val prefix = "cluster-test"
-
-  "Redis cluster" should {
-
-    "pong on ping" in new TestCase {
-      connector.ping() must not(throwA[Throwable]).await
-    }
-
-    "miss on get" in new TestCase {
-      connector.get[String](s"$prefix-$idx") must beNone.await
-    }
-
-    "hit after set" in new TestCase {
-      connector.set(s"$prefix-$idx", "value") must beTrue.await
-      connector.get[String](s"$prefix-$idx") must beSome[Any].await
-      connector.get[String](s"$prefix-$idx") must beSome("value").await
-    }
-
-    "ignore set if not exists when already defined" in new TestCase {
-      connector.set(s"$prefix-if-not-exists-when-exists", "previous") must beTrue.await
-      connector.set(s"$prefix-if-not-exists-when-exists", "value", ifNotExists = true) must beFalse.await
-      connector.get[String](s"$prefix-if-not-exists-when-exists") must beSome("previous").await
-    }
-
-    "perform set if not exists when undefined" in new TestCase {
-      connector.get[String](s"$prefix-if-not-exists") must beNone.await
-      connector.set(s"$prefix-if-not-exists", "value", ifNotExists = true) must beTrue.await
-      connector.get[String](s"$prefix-if-not-exists") must beSome("value").await
-      connector.set(s"$prefix-if-not-exists", "other", ifNotExists = true) must beFalse.await
-      connector.get[String](s"$prefix-if-not-exists") must beSome("value").await
-    }
-
-    "perform set if not exists with expiration" in new TestCase {
-      connector.get[String](s"$prefix-if-not-exists-with-expiration") must beNone.await
-      connector.set(s"$prefix-if-not-exists-with-expiration", "value", 2.seconds, ifNotExists = true) must beTrue.await
-      connector.get[String](s"$prefix-if-not-exists-with-expiration") must beSome("value").await
+  test("perform set if not exists with expiration") { connector =>
+    for {
+      _ <- connector.get[String]("if-not-exists-with-expiration").assertingEqual(None)
+      _ <- connector.set("if-not-exists-with-expiration", "value", 500.millis, ifNotExists = true).assertingEqual(true)
+      _ <- connector.get[String]("if-not-exists-with-expiration").assertingEqual(Some("value"))
       // wait until the first duration expires
-      Future.after(3) must not(throwA[Throwable]).awaitFor(4.seconds)
-      connector.get[String](s"$prefix-if-not-exists-with-expiration") must beNone.await
+      _ <- Future.after(700.millis, ())
+      _ <- connector.get[String]("if-not-exists-with-expiration").assertingEqual(None)
+    } yield Passed
+  }
+
+  def test(name: String)(f: RedisConnector => Future[Assertion]): Unit =
+    name in {
+
+      lazy val clusterInstance = RedisCluster(
+        name = "play",
+        nodes = 0
+          .until(redisMaster)
+          .map { i =>
+            RedisHost(container.containerIpAddress, container.mappedPort(initialPort + i))
+          }
+          .toList,
+        settings = RedisSettings.load(
+          config = Helpers.configuration.default.underlying,
+          path = "play.cache.redis",
+        ),
+      )
+
+      def runTest: Future[Assertion] = {
+        implicit val system: ActorSystem = ActorSystem("test", classLoader = Some(getClass.getClassLoader))
+        implicit val runtime: RedisRuntime = RedisRuntime("cluster", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
+        implicit val application: StoppableApplication = StoppableApplication(system)
+        val serializer = new AkkaSerializerImpl(system)
+
+        application.runAsyncInApplication {
+          for {
+            connector <- Future(new RedisConnectorProvider(clusterInstance, serializer).get)
+            // initialize the connector by flushing the database
+            keys      <- connector.matching("*")
+            _         <- Future.sequence(keys.map(connector.remove(_)))
+            // run the test
+            _         <- f(connector)
+          } yield Passed
+        }
+      }
+
+      @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
+      def makeAttempt(id: Int): Future[Assertion] =
+        runTest.recoverWith {
+          case cause: Throwable if id <= 1 =>
+            log.error(s"RedisClusterSpec: test '$name', attempt $id failed, will retry", cause)
+            Future.waitFor(1.second).flatMap(_ => makeAttempt(id + 1))
+        }
+
+      makeAttempt(1)
     }
-  }
 
-  override def beforeAll() = {
-    super.beforeAll()
-    // initialize the connector by flushing the database
-    connector.matching(s"$prefix-*").flatMap {
-      keys => Future.sequence(keys.map(connector.remove(_)))
-    }.awaitForFuture
-  }
-
-  override def afterAll() = {
-    Shutdown.run.awaitForFuture
-    super.afterAll()
-  }
 }

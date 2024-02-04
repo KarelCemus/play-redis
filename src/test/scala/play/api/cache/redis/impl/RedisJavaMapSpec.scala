@@ -1,71 +1,93 @@
 package play.api.cache.redis.impl
 
 import play.api.cache.redis._
+import play.api.cache.redis.test._
+import play.cache.redis.AsyncRedisMap
 
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
+import scala.jdk.OptionConverters._
 
-class RedisJavaMapSpec(implicit ee: ExecutionEnv) extends Specification with ReducedMockito {
-  import Implicits._
-  import JavaCompatibility._
-  import RedisCacheImplicits._
+class RedisJavaMapSpec extends AsyncUnitSpec with RedisMapJavaMock with RedisRuntimeMock {
 
-  import org.mockito.ArgumentMatchers._
-
-  "Redis Map" should {
-
-    "set" in new MockedJavaMap {
-      internal.add(beEq(field), beEq(value)) returns internal
-      map.add(field, value).asScala must beEqualTo(map).await
-      there were one(internal).add(field, value)
-    }
-
-    "get" in new MockedJavaMap {
-      internal.get(beEq(field)) returns Some(value)
-      map.get(field).asScala must beEqualTo(Some(value).asJava).await
-      there were one(internal).get(field)
-    }
-
-    "contains" in new MockedJavaMap {
-      internal.contains(beEq(field)) returns true
-      map.contains(field).asScala.map(Boolean.unbox) must beEqualTo(true).await
-      there were one(internal).contains(field)
-    }
-
-    "remove" in new MockedJavaMap {
-      internal.remove(anyVarArgs[String]) returns internal
-      map.remove(field, other).asScala must beEqualTo(map).await
-      there were one(internal).remove(field, other)
-    }
-
-    "increment" in new MockedJavaMap {
-      internal.increment(beEq(field), anyLong()) returns 4L
-      map.increment(field).asScala.map(Long.unbox) must beEqualTo(4L).await
-      there were one(internal).increment(field)
-    }
-
-    "increment by" in new MockedJavaMap {
-      internal.increment(beEq(field), beEq(2L)) returns 6L
-      map.increment(field, 2L).asScala.map(Long.unbox) must beEqualTo(6L).await
-      there were one(internal).increment(field, 2L)
-    }
-
-    "toMap" in new MockedJavaMap {
-      internal.toMap returns Map(key -> value)
-      map.toMap().asScala must beEqualTo(Map(key -> value).asJava).await
-      there were one(internal).toMap
-    }
-
-    "keySet" in new MockedJavaMap {
-      internal.keySet returns Set(key, other)
-      map.keySet().asScala must beEqualTo(Set(key, other).asJava).await
-      there were one(internal).keySet
-    }
-
-    "values" in new MockedJavaMap {
-      internal.values returns Set(value, other)
-      map.values().asScala must beEqualTo(Set(value, other).asJava).await
-      there were one(internal).values
-    }
+  test("set") { (cache, internal) =>
+    for {
+      _ <- internal.expect.add(cacheKey, cacheValue)
+      _ <- cache.add(cacheKey, cacheValue).assertingEqual(cache)
+    } yield Passed
   }
+
+  test("get") { (cache, internal) =>
+    for {
+      _ <- internal.expect.get(cacheKey, Some(cacheValue))
+      _ <- cache.get(cacheKey).assertingEqual(Option(cacheValue).toJava)
+    } yield Passed
+  }
+
+  test("contains") { (cache, internal) =>
+    for {
+      _ <- internal.expect.contains(cacheKey, result = true)
+      _ <- cache.contains(cacheKey).assertingEqual(true)
+    } yield Passed
+  }
+
+  test("remove") { (cache, internal) =>
+    for {
+      _ <- internal.expect.remove(cacheKey, otherKey)
+      _ <- cache.remove(cacheKey, otherKey).assertingEqual(cache)
+    } yield Passed
+  }
+
+  test("increment") { (cache, internal) =>
+    for {
+      _ <- internal.expect.increment(cacheKey, by = 1L, result = 4L)
+      _ <- cache.increment(cacheKey).assertingEqual(4L)
+    } yield Passed
+  }
+
+  test("increment by") { (cache, internal) =>
+    for {
+      _ <- internal.expect.increment(cacheKey, by = 2L, result = 6L)
+      _ <- cache.increment(cacheKey, 2L).assertingEqual(6L)
+    } yield Passed
+  }
+
+  test("toMap") { (cache, internal) =>
+    for {
+      _ <- internal.expect.toMap(cacheKey -> cacheValue)
+      _ <- cache.toMap.assertingEqual(Map(cacheKey -> cacheValue).asJava)
+    } yield Passed
+  }
+
+  test("keySet") { (cache, internal) =>
+    for {
+      _ <- internal.expect.keySet(cacheKey, otherKey)
+      _ <- cache.keySet().assertingEqual(Set(cacheKey, otherKey).asJava)
+    } yield Passed
+  }
+
+  test("values") { (cache, internal) =>
+    for {
+      _ <- internal.expect.values(otherValue, cacheValue)
+      _ <- cache.values().assertingEqual(Set(otherValue, cacheValue).asJava)
+    } yield Passed
+  }
+
+  private def test(
+    name: String,
+    policy: RecoveryPolicy = recoveryPolicy.default,
+  )(
+    f: (AsyncRedisMap[String], RedisMapMock) => Future[Assertion],
+  ): Unit =
+    name in {
+      implicit val runtime: RedisRuntime = redisRuntime(
+        invocationPolicy = LazyInvocation,
+        recoveryPolicy = policy,
+      )
+      val internal: RedisMapMock = mock[RedisMapMock]
+      val map: AsyncRedisMap[String] = new RedisMapJavaImpl(internal)
+
+      f(map, internal)
+    }
+
 }

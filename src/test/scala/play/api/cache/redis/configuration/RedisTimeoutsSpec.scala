@@ -1,65 +1,75 @@
 package play.api.cache.redis.configuration
 
+import play.api.cache.redis.test.{Helpers, ImplicitOptionMaterialization, UnitSpec}
+
 import scala.concurrent.duration._
 
-import play.api.cache.redis._
-
-import org.specs2.mutable.Specification
-
-class RedisTimeoutsSpec extends Specification {
-  import Implicits._
+class RedisTimeoutsSpec extends UnitSpec with ImplicitOptionMaterialization {
 
   private def orDefault = RedisTimeouts(1.second, None, 500.millis)
 
-  "load defined timeouts" in new WithConfiguration(
+  "load defined timeouts" in {
+    val configuration = Helpers.configuration.fromHocon {
+      """
+        |play.cache.redis {
+        |
+        |  sync-timeout:        5s
+        |  redis-timeout:       7s
+        |  connection-timeout:  300ms
+        |}
     """
-      |play.cache.redis {
-      |
-      |  sync-timeout:        5s
-      |  redis-timeout:       7s
-      |  connection-timeout:  300ms
-      |}
-    """
-  ) {
-    RedisTimeouts.load(config, "play.cache.redis")(RedisTimeouts.requiredDefault) mustEqual RedisTimeouts(5.seconds, 7.seconds, 300.millis)
+    }
+    val expected = RedisTimeouts(5.seconds, 7.seconds, 300.millis)
+    val actual = RedisTimeouts.load(configuration.underlying, "play.cache.redis")(RedisTimeouts.requiredDefault)
+    actual mustEqual expected
   }
 
-  "load defined high timeouts" in new WithConfiguration(
+  "load defined high timeouts" in {
+    val configuration = Helpers.configuration.fromHocon {
+      """
+        |play.cache.redis {
+        |
+        |  sync-timeout:        500s
+        |  redis-timeout:       700s
+        |  connection-timeout:  900s
+        |}
     """
-      |play.cache.redis {
-      |
-      |  sync-timeout:        500s
-      |  redis-timeout:       700s
-      |  connection-timeout:  900s
-      |}
-    """
-  ) {
-    RedisTimeouts.load(config, "play.cache.redis")(RedisTimeouts.requiredDefault) mustEqual RedisTimeouts(500.seconds, 700.seconds, 900.seconds)
+    }
+    val expected = RedisTimeouts(500.seconds, 700.seconds, 900.seconds)
+    val actual = RedisTimeouts.load(configuration.underlying, "play.cache.redis")(RedisTimeouts.requiredDefault)
+    actual mustEqual expected
   }
 
-  "load with default timeouts" in new WithConfiguration(
+  "load with default timeouts" in {
+    val configuration = Helpers.configuration.fromHocon {
+      """
+        |play.cache.redis {
+        |}
     """
-      |play.cache.redis {
-      |}
-    """
-  ) {
-    RedisTimeouts.load(config, "play.cache.redis")(orDefault) mustEqual RedisTimeouts(1.second, None, connection = 500.millis)
+    }
+    val expected = RedisTimeouts(1.second, None, connection = 500.millis)
+    val actual = RedisTimeouts.load(configuration.underlying, "play.cache.redis")(orDefault)
+    actual mustEqual expected
   }
 
-  "load with disabled timeouts" in new WithConfiguration(
+  "load with disabled timeouts" in {
+    val configuration = Helpers.configuration.fromHocon {
+      """
+        |play.cache.redis {
+        |  redis-timeout:       null
+        |  connection-timeout:  null
+        |}
     """
-      |play.cache.redis {
-      |  redis-timeout:       null
-      |  connection-timeout:  null
-      |}
-    """
-  ) {
-    RedisTimeouts.load(config, "play.cache.redis")(orDefault) mustEqual RedisTimeouts(sync = 1.second, redis = None, connection = None)
+    }
+    val expected = RedisTimeouts(sync = 1.second, redis = None, connection = None)
+    val actual = RedisTimeouts.load(configuration.underlying, "play.cache.redis")(orDefault)
+    actual mustEqual expected
   }
 
   "load defaults" in {
-    RedisTimeouts.requiredDefault.sync must throwA[RuntimeException]
-    RedisTimeouts.requiredDefault.redis must beNone
-    RedisTimeouts.requiredDefault.connection must beNone
+    the[RuntimeException] thrownBy RedisTimeouts.requiredDefault.sync
+    RedisTimeouts.requiredDefault.redis mustEqual None
+    RedisTimeouts.requiredDefault.connection mustEqual None
   }
+
 }

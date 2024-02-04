@@ -1,177 +1,178 @@
 package play.api.cache.redis
 
+
 import org.apache.pekko.actor.ActorSystem
-
-import javax.inject.Provider
-import scala.concurrent.duration._
-import scala.reflect.ClassTag
+import play.api.cache.redis.configuration.{RedisHost, RedisSettings, RedisStandalone, RedisTimeouts}
+import play.api.cache.redis.test._
 import play.api.inject._
-import org.specs2.execute.{AsResult, Result}
-import org.specs2.mutable._
-import org.specs2.specification.Scope
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.cache.NamedCacheImpl
 
-/**
-  * <p>This specification tests expiration conversion</p>
-  */
-class RedisCacheModuleSpec extends Specification {
+import scala.concurrent.duration.DurationInt
+import scala.reflect.ClassTag
 
-  import Implicits._
-  import RedisCacheModuleSpec._
+class RedisCacheModuleSpec extends IntegrationSpec with RedisStandaloneContainer {
+  import Helpers._
 
-  "RedisCacheModule" should {
+  final private val defaultCacheName: String = "play"
 
-    "bind defaults" in new WithApplication with Scope with Around {
-      override protected def builder = super.builder.bindings(new RedisCacheModule)
-      def around[T: AsResult](t: => T): Result = runAndStop(t)
+  test("bind defaults") {
+    _.bindings(new RedisCacheModule).configure("play.cache.redis.port" -> container.mappedPort(defaultPort))
+  } { injector =>
+    injector.checkBinding[RedisConnector]
+    injector.checkBinding[CacheApi]
+    injector.checkBinding[CacheAsyncApi]
+    injector.checkBinding[play.cache.AsyncCacheApi]
+    injector.checkBinding[play.cache.SyncCacheApi]
+    injector.checkBinding[play.cache.redis.AsyncCacheApi]
+    injector.checkBinding[play.api.cache.AsyncCacheApi]
+    injector.checkBinding[play.api.cache.SyncCacheApi]
+  }
 
-      injector.instanceOf[RedisConnector] must beAnInstanceOf[RedisConnector]
-      injector.instanceOf[CacheApi] must beAnInstanceOf[CacheApi]
-      injector.instanceOf[CacheAsyncApi] must beAnInstanceOf[CacheAsyncApi]
-      injector.instanceOf[play.cache.AsyncCacheApi] must beAnInstanceOf[play.cache.AsyncCacheApi]
-      injector.instanceOf[play.cache.SyncCacheApi] must beAnInstanceOf[play.cache.SyncCacheApi]
-      injector.instanceOf[play.cache.redis.AsyncCacheApi] must beAnInstanceOf[play.cache.redis.AsyncCacheApi]
-      injector.instanceOf[play.api.cache.AsyncCacheApi] must beAnInstanceOf[play.api.cache.AsyncCacheApi]
-      injector.instanceOf[play.api.cache.SyncCacheApi] must beAnInstanceOf[play.api.cache.SyncCacheApi]
+  test("not bind defaults") {
+    _.bindings(new RedisCacheModule)
+      .configure("play.cache.redis.bind-default" -> false)
+      .configure("play.cache.redis.port" -> container.mappedPort(defaultPort))
+  } { injector =>
+    // bind named caches
+    injector.checkNamedBinding[CacheApi]
+    injector.checkNamedBinding[CacheAsyncApi]
+
+    // but do not bind defaults
+    assertThrows[com.google.inject.ConfigurationException] {
+      injector.instanceOf[CacheApi]
     }
-
-    "not bind defaults" in new WithHocon with WithApplication with Scope with Around {
-      override protected def builder = super.builder.bindings(new RedisCacheModule).configure(configuration)
-      def around[T: AsResult](t: => T): Result = runAndStop(t)
-      protected def hocon = "play.cache.redis.bind-default: false"
-
-      // bind named caches
-      injector.instanceOf(binding[CacheApi].namedCache(defaultCacheName)) must beAnInstanceOf[CacheApi]
-      injector.instanceOf(binding[CacheAsyncApi].namedCache(defaultCacheName)) must beAnInstanceOf[CacheAsyncApi]
-
-      // but do not bind defaults
-      injector.instanceOf[CacheApi] must throwA[com.google.inject.ConfigurationException]
-      injector.instanceOf[CacheAsyncApi] must throwA[com.google.inject.ConfigurationException]
+    assertThrows[com.google.inject.ConfigurationException] {
+      injector.instanceOf[CacheAsyncApi]
     }
+  }
 
-    "bind named cache in simple mode" in new WithApplication with Scope with Around {
-      override protected def builder = super.builder.bindings(new RedisCacheModule)
-      def around[T: AsResult](t: => T): Result = runAndStop(t)
-      def checkBinding[T <: AnyRef: ClassTag] = {
-        injector.instanceOf(binding[T].namedCache(defaultCacheName)) must beAnInstanceOf[T]
+  test("bind named cache in simple mode") {
+    _.bindings(new RedisCacheModule)
+  } { injector =>
+    injector.checkNamedBinding[RedisConnector]
+    injector.checkNamedBinding[CacheApi]
+    injector.checkNamedBinding[CacheAsyncApi]
+    injector.checkNamedBinding[play.cache.AsyncCacheApi]
+    injector.checkNamedBinding[play.cache.SyncCacheApi]
+    injector.checkNamedBinding[play.api.cache.AsyncCacheApi]
+    injector.checkNamedBinding[play.api.cache.SyncCacheApi]
+  }
+
+  test("bind named caches") {
+    _.bindings(new RedisCacheModule).configure(
+      configuration.fromHocon(
+        s"""
+           |play.cache.redis {
+           |  instances {
+           |    play {
+           |      host:     ${container.host}
+           |      port:     ${container.mappedPort(defaultPort)}
+           |      database: 1
+           |    }
+           |    other {
+           |      host:     ${container.host}
+           |      port:     ${container.mappedPort(defaultPort)}
+           |      database: 2
+           |      password: something
+           |    }
+           |  }
+           |  default-cache: other
+           |}
+        """.stripMargin,
+      ),
+    )
+  } { injector =>
+    val other = "other"
+
+    // something is bound to the default cache name
+    injector.checkNamedBinding[RedisConnector]
+    injector.checkNamedBinding[CacheApi]
+    injector.checkNamedBinding[CacheAsyncApi]
+    injector.checkNamedBinding[play.cache.AsyncCacheApi]
+    injector.checkNamedBinding[play.cache.SyncCacheApi]
+    injector.checkNamedBinding[play.api.cache.AsyncCacheApi]
+    injector.checkNamedBinding[play.api.cache.SyncCacheApi]
+
+    // something is bound to the other cache name
+    injector.checkNamedBinding[RedisConnector](other)
+    injector.checkNamedBinding[CacheApi](other)
+    injector.checkNamedBinding[CacheAsyncApi](other)
+    injector.checkNamedBinding[play.cache.AsyncCacheApi](other)
+    injector.checkNamedBinding[play.cache.SyncCacheApi](other)
+    injector.checkNamedBinding[play.api.cache.AsyncCacheApi](other)
+    injector.checkNamedBinding[play.api.cache.SyncCacheApi](other)
+
+    // the other cache is a default
+    injector.instanceOf(binding[RedisConnector].namedCache(other)) mustEqual injector.instanceOf[RedisConnector]
+    injector.instanceOf(binding[CacheApi].namedCache(other)) mustEqual injector.instanceOf[CacheApi]
+    injector.instanceOf(binding[CacheAsyncApi].namedCache(other)) mustEqual injector.instanceOf[CacheAsyncApi]
+    injector.instanceOf(binding[play.cache.AsyncCacheApi].namedCache(other)) mustEqual injector.instanceOf[play.cache.AsyncCacheApi]
+    injector.instanceOf(binding[play.cache.SyncCacheApi].namedCache(other)) mustEqual injector.instanceOf[play.cache.SyncCacheApi]
+    injector.instanceOf(binding[play.api.cache.AsyncCacheApi].namedCache(other)) mustEqual injector.instanceOf[play.api.cache.AsyncCacheApi]
+    injector.instanceOf(binding[play.api.cache.SyncCacheApi].namedCache(other)) mustEqual injector.instanceOf[play.api.cache.SyncCacheApi]
+  }
+
+  test("resolve custom redis instance") {
+    _.bindings(new RedisCacheModule)
+      .configure("play.cache.redis.source" -> "custom")
+      .bindings(binding[RedisInstance].namedCache(defaultCacheName).to(MyRedisInstance))
+  } { injector =>
+    injector.checkBinding[RedisConnector]
+    injector.checkBinding[CacheApi]
+    injector.checkBinding[CacheAsyncApi]
+  }
+
+  private lazy val MyRedisInstance: RedisStandalone =
+    RedisStandalone(
+      name = defaultCacheName,
+      host = RedisHost(
+        host = container.host,
+        port = container.mappedPort(defaultPort),
+        database = None,
+        username = None,
+        password = None,
+      ),
+      settings = RedisSettings(
+        dispatcher = "akka.actor.default-dispatcher",
+        invocationPolicy = "lazy",
+        timeout = RedisTimeouts(1.second),
+        recovery = "log-and-default",
+        source = "my-instance",
+        prefix = None,
+      ),
+    )
+
+  private def binding[T: ClassTag]: BindingKey[T] =
+    BindingKey(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
+
+  implicit private class RichBindingKey[T](private val key: BindingKey[T]) {
+    def namedCache(name: String): BindingKey[T] = key.qualifiedWith(new NamedCacheImpl(name))
+  }
+
+  implicit private class InjectorAssertions(private val injector: Injector) {
+
+    def checkBinding[T <: AnyRef: ClassTag]: Assertion =
+      injector.instanceOf(binding[T]) mustBe a[T]
+
+    def checkNamedBinding[T <: AnyRef: ClassTag]: Assertion =
+      checkNamedBinding(defaultCacheName)
+
+    def checkNamedBinding[T <: AnyRef: ClassTag](name: String): Assertion =
+      injector.instanceOf(binding[T].namedCache(name)) mustBe a[T]
+
+  }
+
+  private def test(name: String)(createBuilder: GuiceApplicationBuilder => GuiceApplicationBuilder)(f: Injector => Assertion): Unit =
+    s"should $name" in {
+
+      val builder = createBuilder(new GuiceApplicationBuilder)
+      val injector = builder.injector()
+      val application = StoppableApplication(injector.instanceOf[ActorSystem])
+
+      application.runInApplication {
+        f(injector)
       }
-
-      checkBinding[RedisConnector]
-      checkBinding[CacheApi]
-      checkBinding[CacheAsyncApi]
-      checkBinding[play.cache.AsyncCacheApi]
-      checkBinding[play.cache.SyncCacheApi]
-      checkBinding[play.api.cache.AsyncCacheApi]
-      checkBinding[play.api.cache.SyncCacheApi]
     }
 
-    "bind named caches" in new WithHocon with WithApplication with Scope with Around {
-      override protected def builder = super.builder.bindings(new RedisCacheModule).configure(configuration)
-      def around[T: AsResult](t: => T): Result = runAndStop(t)
-      protected def hocon =
-        """
-          |play.cache.redis {
-          |  instances {
-          |
-          |    play {
-          |      host:     localhost
-          |      port:     6379
-          |      database: 1
-          |    }
-          |
-          |    other {
-          |      host:     redis.localhost.cz
-          |      port:     6378
-          |      database: 2
-          |      password: something
-          |    }
-          |  }
-          |
-          |  default-cache: other
-          |}
-        """.stripMargin
-      val other = "other"
-
-      // something is bound to the default cache name
-      injector.instanceOf(binding[RedisConnector].namedCache(defaultCacheName)) must beAnInstanceOf[RedisConnector]
-      injector.instanceOf(binding[CacheApi].namedCache(defaultCacheName)) must beAnInstanceOf[CacheApi]
-      injector.instanceOf(binding[CacheAsyncApi].namedCache(defaultCacheName)) must beAnInstanceOf[CacheAsyncApi]
-      injector.instanceOf(binding[play.cache.AsyncCacheApi].namedCache(defaultCacheName)) must beAnInstanceOf[play.cache.AsyncCacheApi]
-      injector.instanceOf(binding[play.cache.SyncCacheApi].namedCache(defaultCacheName)) must beAnInstanceOf[play.cache.SyncCacheApi]
-      injector.instanceOf(binding[play.api.cache.AsyncCacheApi].namedCache(defaultCacheName)) must beAnInstanceOf[play.api.cache.AsyncCacheApi]
-      injector.instanceOf(binding[play.api.cache.SyncCacheApi].namedCache(defaultCacheName)) must beAnInstanceOf[play.api.cache.SyncCacheApi]
-
-      // something is bound to the other cache name
-      injector.instanceOf(binding[RedisConnector].namedCache(other)) must beAnInstanceOf[RedisConnector]
-      injector.instanceOf(binding[CacheApi].namedCache(other)) must beAnInstanceOf[CacheApi]
-      injector.instanceOf(binding[CacheAsyncApi].namedCache(other)) must beAnInstanceOf[CacheAsyncApi]
-      injector.instanceOf(binding[play.cache.AsyncCacheApi].namedCache(other)) must beAnInstanceOf[play.cache.AsyncCacheApi]
-      injector.instanceOf(binding[play.cache.SyncCacheApi].namedCache(other)) must beAnInstanceOf[play.cache.SyncCacheApi]
-      injector.instanceOf(binding[play.api.cache.AsyncCacheApi].namedCache(other)) must beAnInstanceOf[play.api.cache.AsyncCacheApi]
-      injector.instanceOf(binding[play.api.cache.SyncCacheApi].namedCache(other)) must beAnInstanceOf[play.api.cache.SyncCacheApi]
-
-      // the other cache is a default
-      injector.instanceOf(binding[RedisConnector].namedCache(other)) mustEqual injector.instanceOf[RedisConnector]
-      injector.instanceOf(binding[CacheApi].namedCache(other)) mustEqual injector.instanceOf[CacheApi]
-      injector.instanceOf(binding[CacheAsyncApi].namedCache(other)) mustEqual injector.instanceOf[CacheAsyncApi]
-      injector.instanceOf(binding[play.cache.AsyncCacheApi].namedCache(other)) mustEqual injector.instanceOf[play.cache.AsyncCacheApi]
-      injector.instanceOf(binding[play.cache.SyncCacheApi].namedCache(other)) mustEqual injector.instanceOf[play.cache.SyncCacheApi]
-      injector.instanceOf(binding[play.api.cache.AsyncCacheApi].namedCache(other)) mustEqual injector.instanceOf[play.api.cache.AsyncCacheApi]
-      injector.instanceOf(binding[play.api.cache.SyncCacheApi].namedCache(other)) mustEqual injector.instanceOf[play.api.cache.SyncCacheApi]
-    }
-
-    "resolve custom redis instance" in new WithHocon with WithApplication with Scope with Around {
-      override protected def builder = super.builder.bindings(new RedisCacheModule).configure(configuration).bindings(
-        binding[RedisInstance].namedCache(defaultCacheName).to(MyRedisInstance)
-      )
-      def around[T: AsResult](t: => T): Result = runAndStop(t)
-      protected def hocon = "play.cache.redis.source: custom"
-
-      // bind named caches
-      injector.instanceOf[RedisConnector] must beAnInstanceOf[RedisConnector]
-      injector.instanceOf[CacheApi] must beAnInstanceOf[CacheApi]
-      injector.instanceOf[CacheAsyncApi] must beAnInstanceOf[CacheAsyncApi]
-
-      // Note: there should be tested which recovery policy instance is actually used
-    }
-  }
-}
-
-object RedisCacheModuleSpec {
-  import Implicits._
-  import play.api.cache.redis.configuration._
-  import play.cache.NamedCacheImpl
-
-  class AnyProvider[T](instance: => T) extends Provider[T] {
-    lazy val get = instance
-  }
-
-  def binding[T: ClassTag]: BindingKey[T] = BindingKey(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
-
-  implicit class RichBindingKey[T](val key: BindingKey[T]) {
-    def namedCache(name: String) = key.qualifiedWith(new NamedCacheImpl(name))
-  }
-
-  def runAndStop[T: AsResult](t: => T)(implicit system: ActorSystem) = {
-    try {
-      AsResult.effectively(t)
-    } finally {
-      Shutdown.run(system)
-    }
-  }
-
-  object MyRedisInstance extends RedisStandalone {
-
-    override def name = defaultCacheName
-    override def invocationContext = "pekko.actor.default-dispatcher"
-    override def invocationPolicy = "lazy"
-    override def timeout = RedisTimeouts(1.second)
-    override def recovery = "log-and-default"
-    override def source = "my-instance"
-    override def prefix = None
-    override def host = localhost
-    override def port = defaultPort
-    override def database = None
-    override def username = None
-    override def password = None
-  }
 }

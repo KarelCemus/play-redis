@@ -1,35 +1,39 @@
 package play.api.cache.redis.configuration
 
+import play.api.cache.redis.test._
+import play.api.{ConfigLoader, Configuration}
+
 import scala.concurrent.duration._
 
-import org.specs2.mutable.Specification
+class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterialization {
 
-class RedisInstanceManagerSpec extends Specification {
-  import play.api.cache.redis.Implicits._
+  "default configuration" in new TestCase {
 
-  private implicit def implicitlyInstance2resolved(instance: RedisInstance): RedisInstanceProvider = new ResolvedRedisInstance(instance)
-  private implicit def implicitlyString2unresolved(name: String): RedisInstanceProvider = new UnresolvedRedisInstance(name)
+    override protected def hocon: String =
+      """
+          |play.cache.redis {}
+        """
 
-  private val extras = RedisSettingsTest("my-dispatcher", "eager", RedisTimeouts(5.minutes, 5.seconds, 300.millis), "log-and-fail", "standalone", "redis.")
-
-  "default configuration" in new WithRedisInstanceManager(
-    """
-      |play.cache.redis {}
-    """
-  ) {
-    val defaultCache: RedisInstanceProvider = RedisStandalone(defaultCacheName, RedisHost(localhost, defaultPort, database = 0), defaults)
+    private val defaultCache: RedisInstanceProvider =
+      RedisStandalone(
+        name = defaultCacheName,
+        host = RedisHost(localhost, defaultPort, database = 0),
+        settings = defaultsSettings,
+      )
 
     manager mustEqual RedisInstanceManagerTest(defaultCacheName)(defaultCache)
 
     manager.instanceOf(defaultCacheName) mustEqual defaultCache
-    manager.instanceOfOption(defaultCacheName) must beSome(defaultCache)
-    manager.instanceOfOption("other") must beNone
+    manager.instanceOfOption(defaultCacheName) mustEqual Some(defaultCache)
+    manager.instanceOfOption("other") mustEqual None
 
     manager.defaultInstance mustEqual defaultCache
   }
 
-  "single default instance" in new WithRedisInstanceManager(
-    """
+  "single default instance" in new TestCase {
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  host:          redis.localhost.cz
       |  port:          6378
@@ -46,14 +50,26 @@ class RedisInstanceManagerSpec extends Specification {
       |  recovery:      log-and-fail
       |}
     """
-  ) {
-    manager mustEqual RedisInstanceManagerTest(defaultCacheName)(
-      RedisStandalone(defaultCacheName, RedisHost("redis.localhost.cz", 6378, database = 2, password = "something"), extras)
+
+    private val settings: RedisSettings = RedisSettingsTest(
+      invocationContext = "my-dispatcher",
+      invocationPolicy = "eager",
+      timeout = RedisTimeouts(5.minutes, 5.seconds, 300.millis),
+      recovery = "log-and-fail",
+      source = "standalone",
+      prefix = "redis.",
     )
+
+    manager mustEqual RedisInstanceManagerTest(defaultCacheName)(
+      RedisStandalone(defaultCacheName, RedisHost("redis.localhost.cz", 6378, database = 2, password = "something"), settings),
+    )
+
   }
 
-  "named caches" in new WithRedisInstanceManager(
-    """
+  "named caches" in new TestCase {
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  instances {
       |
@@ -83,9 +99,18 @@ class RedisInstanceManagerSpec extends Specification {
       |  default-cache: other
       |}
     """
-  ) {
-    val defaultCache: RedisInstanceProvider = RedisStandalone(defaultCacheName, RedisHost(localhost, defaultPort, database = 1), extras)
-    val otherCache: RedisInstanceProvider = RedisStandalone("other", RedisHost("redis.localhost.cz", 6378, database = 2, password = "something"), defaults)
+
+    private val otherSettings: RedisSettings = RedisSettingsTest(
+      invocationContext = "my-dispatcher",
+      invocationPolicy = "eager",
+      timeout = RedisTimeouts(5.minutes, 5.seconds, 300.millis),
+      recovery = "log-and-fail",
+      source = "standalone",
+      prefix = "redis.",
+    )
+
+    private val defaultCache: RedisInstanceProvider = RedisStandalone(defaultCacheName, RedisHost(localhost, defaultPort, database = 1), otherSettings)
+    private val otherCache: RedisInstanceProvider = RedisStandalone("other", RedisHost("redis.localhost.cz", 6378, database = 2, password = "something"), defaultsSettings)
 
     manager mustEqual RedisInstanceManagerTest("other")(defaultCache, otherCache)
     manager.instanceOf(defaultCacheName) mustEqual defaultCache
@@ -93,8 +118,10 @@ class RedisInstanceManagerSpec extends Specification {
     manager.defaultInstance mustEqual otherCache
   }
 
-  "cluster mode" in new WithRedisInstanceManager(
-    """
+  "cluster mode" in new TestCase {
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  instances {
       |    play {
@@ -109,16 +136,19 @@ class RedisInstanceManagerSpec extends Specification {
       |  }
       |}
     """
-  ) {
-    def node(port: Int) = RedisHost(localhost, port)
+
+    private def node(port: Int) = RedisHost(localhost, port)
 
     manager mustEqual RedisInstanceManagerTest(defaultCacheName)(
-      RedisCluster(defaultCacheName, node(6380) :: node(6381) :: node(6382) :: node(6383) :: Nil, defaults.copy(source = "cluster"))
+      RedisCluster(name = defaultCacheName, nodes = node(6380) :: node(6381) :: node(6382) :: node(6383) :: Nil, settings = defaultsSettings.copy(source = "cluster")),
     )
+
   }
 
-  "AWS cluster mode" in new WithRedisInstanceManager(
-    """
+  "AWS cluster mode" in new TestCase {
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  instances {
       |    play {
@@ -128,14 +158,16 @@ class RedisInstanceManagerSpec extends Specification {
       |  }
       |}
     """
-  ) {
-    val provider = manager.defaultInstance.asInstanceOf[ResolvedRedisInstance]
-    val instance = provider.instance.asInstanceOf[RedisCluster]
+
+    private val provider = manager.defaultInstance.asInstanceOf[ResolvedRedisInstance]
+    private val instance = provider.instance.asInstanceOf[RedisCluster]
     instance.nodes must contain(RedisHost("127.0.0.1", 6379))
   }
 
-  "sentinel mode" in new WithRedisInstanceManager(
-    """
+  "sentinel mode" in new TestCase {
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  instances {
       |    play {
@@ -152,49 +184,66 @@ class RedisInstanceManagerSpec extends Specification {
       |  }
       |}
     """
-  ) {
-    def node(port: Int) = RedisHost(localhost, port)
+
+    private def node(port: Int) = RedisHost(localhost, port)
 
     manager mustEqual RedisInstanceManagerTest(defaultCacheName)(
-      RedisSentinel(defaultCacheName, "primary", node(6380) :: node(6381) :: node(6382) :: Nil, defaults.copy(source = "sentinel"), password = "my-password", database = 1)
+      RedisSentinel(
+        name = defaultCacheName,
+        masterGroup = "primary",
+        sentinels = node(6380) :: node(6381) :: node(6382) :: Nil,
+        settings = defaultsSettings.copy(source = "sentinel"),
+        password = "my-password",
+        database = 1,
+      ),
     )
+
   }
 
-  "connection string mode" in new WithRedisInstanceManager(
-    """
+  "connection string mode" in new TestCase {
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  source:            "connection-string"
       |  connection-string: "redis://localhost:6379"
       |}
     """
-  ) {
+
     manager mustEqual RedisInstanceManagerTest(defaultCacheName)(
-      RedisStandalone(defaultCacheName, RedisHost(localhost, defaultPort), defaults.copy(source = "connection-string"))
+      RedisStandalone(defaultCacheName, RedisHost(localhost, defaultPort), defaultsSettings.copy(source = "connection-string")),
     )
+
   }
 
-  "custom mode" in new WithRedisInstanceManager(
-    """
+  "custom mode" in new TestCase {
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  source: custom
       |}
     """
-  ) {
+
     manager mustEqual RedisInstanceManagerTest(defaultCacheName)(defaultCacheName)
   }
 
-  "typo in mode with simple syntax" in new WithRedisInstanceManager(
-    """
+  "typo in mode with simple syntax" in new TestCase {
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  source: typo
       |}
     """
-  ) {
-    manager.defaultInstance must throwA[IllegalStateException]
+
+    the[IllegalStateException] thrownBy manager.defaultInstance
   }
 
-  "typo in mode with advanced syntax" in new WithRedisInstanceManager(
-    """
+  "typo in mode with advanced syntax" in new TestCase {
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  instances {
       |    play {
@@ -203,12 +252,14 @@ class RedisInstanceManagerSpec extends Specification {
       |  }
       |}
     """
-  ) {
-    manager.defaultInstance must throwA[IllegalStateException]
+
+    the[IllegalStateException] thrownBy manager.defaultInstance
   }
 
-  "fail when requesting undefined cache" in new WithRedisInstanceManager(
-    """
+  "fail when requesting undefined cache" in new TestCase {
+
+    override protected def hocon: String =
+      """
       |play.cache.redis {
       |  instances {
       |    play {
@@ -219,12 +270,46 @@ class RedisInstanceManagerSpec extends Specification {
       |  default-cache:  other
       |}
     """
-  ) {
 
-    manager.instanceOfOption(defaultCacheName) must beSome[RedisInstanceProvider]
-    manager.instanceOfOption("other") must beNone
+    manager.instanceOfOption(defaultCacheName) mustBe a[Some[?]]
+    manager.instanceOfOption("other") mustEqual None
 
-    manager.instanceOf("other") must throwA[IllegalArgumentException]
-    manager.defaultInstance must throwA[IllegalArgumentException]
+    the[IllegalArgumentException] thrownBy manager.instanceOf("other")
+    the[IllegalArgumentException] thrownBy manager.defaultInstance
   }
+
+  private trait TestCase {
+
+    implicit private val loader: ConfigLoader[RedisInstanceManager] = RedisInstanceManager
+
+    private val configuration: Configuration = Helpers.configuration.fromHocon(hocon)
+
+    protected val manager: RedisInstanceManager = configuration.get[RedisInstanceManager]("play.cache.redis")
+
+    protected def hocon: String
+
+    implicit protected def implicitlyInstance2resolved(instance: RedisInstance): RedisInstanceProvider =
+      new ResolvedRedisInstance(instance)
+
+    implicit protected def implicitlyString2unresolved(name: String): RedisInstanceProvider =
+      new UnresolvedRedisInstance(name)
+
+    final protected case class RedisInstanceManagerTest(
+      default: String,
+    )(
+      providers: RedisInstanceProvider*,
+    ) extends RedisInstanceManager {
+
+      override def caches: Set[String] = providers.map(_.name).toSet
+
+      override def instanceOfOption(name: String): Option[RedisInstanceProvider] = providers.find(_.name === name)
+
+      override def defaultInstance: RedisInstanceProvider = providers.find(_.name === default) getOrElse {
+        throw new RuntimeException("Default instance is not defined.")
+      }
+
+    }
+
+  }
+
 }

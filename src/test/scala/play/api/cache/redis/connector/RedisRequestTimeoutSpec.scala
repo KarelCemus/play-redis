@@ -1,47 +1,49 @@
 package play.api.cache.redis.connector
 
+
 import org.apache.pekko.actor.ActorSystem
+import play.api.cache.redis.test.{AsyncUnitSpec, StoppableApplication}
+import redis.RedisCommand
+import redis.protocol.RedisReply
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
-import play.api.cache.redis._
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
+import scala.concurrent.{ExecutionContextExecutor, Future, Promise}
 
-class RedisRequestTimeoutSpec(implicit ee: ExecutionEnv) extends Specification with WithApplication {
+class RedisRequestTimeoutSpec extends AsyncUnitSpec {
 
-  import Implicits._
-  import MockitoImplicits._
-  import RedisRequestTimeoutSpec._
+  override protected def testTimeout: FiniteDuration = 3.seconds
 
-  "RedisRequestTimeout" should {
+  "fail long running requests when connected but timeout defined" in {
+    implicit val system: ActorSystem = ActorSystem("test")
+    val application = StoppableApplication(system)
 
-    "fail long running requests when connected but timeout defined" in {
-      val impl = new RedisRequestTimeoutImpl(timeout = 1.second)
-      val cmd = mock[RedisCommandTest].returning returns Future.after(seconds = 3, "response")
+    application.runAsyncInApplication {
+      val redisCommandMock = mock[RedisCommandTest[String]]
+      (() => redisCommandMock.returning).expects().returns(Promise[String]().future)
+      val redisRequest = new RedisRequestTimeoutImpl(timeout = Some(1.second))
       // run the test
-      impl.send[String](cmd) must throwA[redis.actors.NoConnectionException.type].awaitFor(5.seconds)
-    }
-  }
-}
-
-object RedisRequestTimeoutSpec {
-
-  import redis.RedisCommand
-  import redis.protocol.RedisReply
-
-  trait RedisCommandTest extends RedisCommand[RedisReply, String] {
-    def returning: Future[String]
-  }
-
-  class RequestTimeoutBase(implicit system: ActorSystem) extends RequestTimeout {
-    protected implicit val scheduler = system.scheduler
-    implicit val executionContext = system.dispatcher
-
-    def send[T](redisCommand: RedisCommand[_ <: RedisReply, T]) = {
-      redisCommand.asInstanceOf[RedisCommandTest].returning.asInstanceOf[Future[T]]
+      redisRequest.send[String](redisCommandMock).assertingFailure[redis.actors.NoConnectionException.type]
     }
   }
 
-  class RedisRequestTimeoutImpl(val timeout: Option[FiniteDuration])(implicit system: ActorSystem) extends RequestTimeoutBase with RedisRequestTimeout
+  private trait RedisCommandTest[T] extends RedisCommand[RedisReply, T] {
+    def returning: Future[T]
+  }
+
+  private class RequestTimeoutBase(implicit system: ActorSystem) extends RequestTimeout {
+    implicit protected val scheduler: Scheduler = system.scheduler
+    implicit val executionContext: ExecutionContextExecutor = system.dispatcher
+
+    def send[T](redisCommand: RedisCommand[? <: RedisReply, T]): Future[T] =
+      redisCommand.asInstanceOf[RedisCommandTest[T]].returning
+
+  }
+
+  private class RedisRequestTimeoutImpl(
+    override val timeout: Option[FiniteDuration],
+  )(implicit
+    system: ActorSystem,
+  ) extends RequestTimeoutBase
+    with RedisRequestTimeout
+
 }

@@ -1,35 +1,59 @@
 package play.api.cache.redis.configuration
 
-import play.api.cache.redis._
-import org.specs2.mutable.Specification
 import play.api.ConfigLoader
+import play.api.cache.redis.test._
 
-class RedisHostSpec extends Specification {
-  import Implicits._
+class RedisHostSpec extends UnitSpec with ImplicitOptionMaterialization {
 
-  private implicit val loader: ConfigLoader[RedisHost] = RedisHost
+  implicit private val loader: ConfigLoader[RedisHost] = RedisHost
 
-  "host with database and password" in new WithConfiguration(
-    """
-      |play.cache.redis {
-      |  host:     localhost
-      |  port:     6378
-      |  database: 1
-      |  password: something
-      |}
-    """
-  ) {
-    configuration.get[RedisHost]("play.cache.redis") mustEqual RedisHost("localhost", 6378, database = 1, password = "something")
+  "host with database, username, and password" in {
+    val configuration = Helpers.configuration.fromHocon {
+      """play.cache.redis {
+        |  host:     localhost
+        |  port:     6378
+        |  database: 1
+        |  username: my-user
+        |  password: something
+        |}
+      """.stripMargin
+    }
+    configuration.get[RedisHost]("play.cache.redis") mustEqual RedisHost(
+      host = "localhost",
+      port = 6378,
+      database = 1,
+      username = "my-user",
+      password = "something",
+    )
   }
 
-  "host without database and password" in new WithConfiguration(
-    """
-      |play.cache.redis {
-      |  host:     localhost
-      |  port:     6378
-      |}
-    """
-  ) {
+  "host with database, password but without a username" in {
+    val configuration = Helpers.configuration.fromHocon {
+      """play.cache.redis {
+        |  host:     localhost
+        |  port:     6378
+        |  database: 1
+        |  password: something
+        |}
+      """.stripMargin
+    }
+    configuration.get[RedisHost]("play.cache.redis") mustEqual RedisHost(
+      host = "localhost",
+      port = 6378,
+      database = 1,
+      username = None,
+      password = "something",
+    )
+  }
+
+  "host without database and password" in {
+    val configuration = Helpers.configuration.fromHocon {
+      """play.cache.redis {
+        |  host:     localhost
+        |  port:     6378
+        |}
+      """.stripMargin
+    }
     configuration.get[RedisHost]("play.cache.redis") mustEqual RedisHost("localhost", 6378, database = 0)
   }
 
@@ -37,6 +61,9 @@ class RedisHostSpec extends Specification {
     RedisHost.fromConnectionString("redis://redis:something@localhost:6378") mustEqual RedisHost("localhost", 6378, username = "redis", password = "something")
     RedisHost.fromConnectionString("redis://localhost:6378") mustEqual RedisHost("localhost", 6378)
     // test invalid string
-    RedisHost.fromConnectionString("redis:/localhost:6378") must throwA[IllegalArgumentException]
+    assertThrows[IllegalArgumentException] {
+      RedisHost.fromConnectionString("redis:/localhost:6378")
+    }
   }
+
 }

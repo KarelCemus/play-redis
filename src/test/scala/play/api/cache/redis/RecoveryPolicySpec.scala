@@ -1,37 +1,31 @@
 package play.api.cache.redis
 
+import play.api.Logger
+import play.api.cache.redis.test._
+
 import scala.concurrent.Future
 
-import play.api.Logger
+class RecoveryPolicySpec extends AsyncUnitSpec {
 
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
+  private val rerun = Future.successful(10)
+  private val default = Future.successful(0)
 
-class RecoveryPolicySpec(implicit ee: ExecutionEnv) extends Specification with ReducedMockito {
-
-  class BasicPolicy extends RecoveryPolicy {
-    def recoverFrom[T](rerun: => Future[T], default: => Future[T], failure: RedisException) = default
-  }
-
-  val rerun = Future.successful(10)
-  val default = Future.successful(0)
-
-  object ex {
-    private val internal = new IllegalArgumentException("Internal cause")
-    val unexpectedAny = UnexpectedResponseException(None, "TEST-CMD")
-    val unexpectedKey = UnexpectedResponseException(Some("some key"), "TEST-CMD")
-    val failedAny = ExecutionFailedException(None, "TEST-CMD", "TEST-CMD", internal)
-    val failedKey = ExecutionFailedException(Some("key"), "TEST-CMD", "TEST-CMD key value", internal)
-    val timeout = TimeoutException(internal)
-    val serialization = SerializationException("some key", "TEST-CMD", internal)
+  private object ex {
+    private val internal = new IllegalArgumentException("Simulated Internal cause")
+    val unexpectedAny: UnexpectedResponseException = UnexpectedResponseException(None, "TEST-CMD")
+    val unexpectedKey: UnexpectedResponseException = UnexpectedResponseException(Some("some key"), "TEST-CMD")
+    val failedAny: ExecutionFailedException = ExecutionFailedException(None, "TEST-CMD", "TEST-CMD", internal)
+    val failedKey: ExecutionFailedException = ExecutionFailedException(Some("key"), "TEST-CMD", "TEST-CMD key value", internal)
+    val timeout: TimeoutException = TimeoutException(internal)
+    val serialization: SerializationException = SerializationException("some key", "TEST-CMD", internal)
     def any: UnexpectedResponseException = unexpectedAny
   }
 
   "Recovery Policy" should {
 
     "log detailed report" in {
-      val policy = new BasicPolicy with DetailedReports {
-        override val log = mock[Logger]
+      val policy = new RecoverWithDefault with DetailedReports {
+        override val log: Logger = Logger(getClass)
       }
 
       // note: there should be tested a logger and the message
@@ -44,8 +38,8 @@ class RecoveryPolicySpec(implicit ee: ExecutionEnv) extends Specification with R
     }
 
     "log condensed report" in {
-      val policy = new BasicPolicy with CondensedReports {
-        override val log = mock[Logger]
+      val policy = new RecoverWithDefault with CondensedReports {
+        override val log: Logger = Logger(getClass)
       }
 
       // note: there should be tested a logger and the message
@@ -58,15 +52,14 @@ class RecoveryPolicySpec(implicit ee: ExecutionEnv) extends Specification with R
     }
 
     "fail through" in {
-      val policy = new BasicPolicy with FailThrough
-
-      policy.recoverFrom(rerun, default, ex.any) must throwA(ex.any).await
+      val policy = new FailThrough {}
+      policy.recoverFrom(rerun, default, ex.any).assertingFailure(ex.any)
     }
 
     "recover with default" in {
-      val policy = new BasicPolicy with RecoverWithDefault
-
+      val policy = new RecoverWithDefault {}
       policy.recoverFrom(rerun, default, ex.any) mustEqual default
     }
   }
+
 }

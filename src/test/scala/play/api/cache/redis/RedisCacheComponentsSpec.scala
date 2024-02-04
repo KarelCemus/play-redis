@@ -1,49 +1,50 @@
 package play.api.cache.redis
 
+import akka.actor.ActorSystem
 import play.api._
+import play.api.cache.redis.test._
 import play.api.inject.ApplicationLifecycle
-import org.specs2.mutable.Specification
 
-class RedisCacheComponentsSpec extends Specification with WithApplication with StandaloneRedisContainer {
-  import Implicits._
+class RedisCacheComponentsSpec extends IntegrationSpec with RedisStandaloneContainer {
 
-  object components extends RedisCacheComponents with WithHocon {
-    def actorSystem = system
-    def applicationLifecycle = injector.instanceOf[ApplicationLifecycle]
-    def environment = injector.instanceOf[Environment]
-    lazy val syncRedis = cacheApi("play").sync
-    override lazy val configuration = Configuration(config)
-    override protected def hocon: String = s"play.cache.redis.port: ${container.mappedPort(defaultPort)}"
+  private val prefix = "components-sync"
+
+  test("miss on get") { cache =>
+    cache.get[String](s"$prefix-test-1") mustEqual None
   }
 
-  private type Cache = CacheApi
+  test(" hit after set") { cache =>
+    cache.set(s"$prefix-test-2", "value")
+    cache.get[String](s"$prefix-test-2") mustEqual Some("value")
+  }
 
-  private lazy val cache = components.syncRedis
+  test("return positive exists on existing keys") { cache =>
+    cache.set(s"$prefix-test-11", "value")
+    cache.exists(s"$prefix-test-11") mustEqual true
+  }
 
-  val prefix = "components-sync"
+  private def test(name: String)(cache: CacheApi => Assertion): Unit =
+    s"should $name" in {
 
-  "RedisComponents" should {
-
-    "provide api" >> {
-      "miss on get" in {
-        cache.get[String](s"$prefix-test-1") must beNone
+      val components: TestComponents = new TestComponents {
+        override lazy val configuration: Configuration = Helpers
+          .configuration
+          .fromHocon(
+            s"play.cache.redis.port: ${container.mappedPort(defaultPort)}",
+          )
+        override lazy val actorSystem: ActorSystem = system
+        override lazy val applicationLifecycle: ApplicationLifecycle = injector.instanceOf[ApplicationLifecycle]
+        override lazy val environment: Environment = injector.instanceOf[Environment]
+        override lazy val syncRedis: CacheApi = cacheApi("play").sync
       }
 
-      "hit after set" in {
-        cache.set(s"$prefix-test-2", "value")
-        cache.get[String](s"$prefix-test-2") must beSome[Any]
-        cache.get[String](s"$prefix-test-2") must beSome("value")
-      }
-
-      "positive exists on existing keys" in {
-        cache.set(s"$prefix-test-11", "value")
-        cache.exists(s"$prefix-test-11") must beTrue
+      components.runInApplication {
+        cache(components.syncRedis)
       }
     }
+
+  private trait TestComponents extends RedisCacheComponents with FakeApplication {
+    def syncRedis: CacheApi
   }
 
-  override def afterAll() = {
-    Shutdown.run.awaitForFuture
-    super.afterAll()
-  }
 }

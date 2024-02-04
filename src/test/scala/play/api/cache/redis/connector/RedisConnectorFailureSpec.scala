@@ -1,182 +1,288 @@
 package play.api.cache.redis.connector
 
-import scala.concurrent.Future
-import scala.concurrent.duration._
-import scala.reflect.ClassTag
-import scala.util.Failure
-
 import play.api.cache.redis._
-
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
+import play.api.cache.redis.test._
 import redis._
+import redis.api.{BEFORE, ListPivot}
 
-class RedisConnectorFailureSpec(implicit ee: ExecutionEnv) extends Specification with ReducedMockito {
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
+import scala.util.{Failure, Success}
 
-  import Implicits._
+class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMaterialization {
 
-  import org.mockito.ArgumentMatchers._
+  private val score = 1d
+  private val encodedValue = "encoded"
+  private val disconnected = Future.failed(SimulatedException)
 
-  private val key = "key"
-  private val value = "value"
-  private val score = 1D
+  "Serializer fail" when {
 
-  private val simulatedEx = new RuntimeException("Simulated failure.")
-  private val simulatedFailure = Failure(simulatedEx)
-
-  private val someValue = Some(value)
-
-  private val disconnected = Future.failed(new IllegalStateException("Simulated redis status: disconnected."))
-
-  private def anySerializer = org.mockito.ArgumentMatchers.any[ByteStringSerializer[String]]
-  private def anyDeserializer = org.mockito.ArgumentMatchers.any[ByteStringDeserializer[String]]
-
-  "Serializer failure" should {
-
-    "fail when serialization fails" in new MockedConnector {
-      serializer.encode(any[Any]) returns simulatedFailure
-      // run the test
-      connector.set(key, value) must throwA[SerializationException].await
+    test("serialization fails") { (serializer, _, connector) =>
+      for {
+        _ <- serializer.failOnEncode(cacheValue)
+        _ <- connector.set(cacheKey, cacheValue).assertingFailure[SerializationException]
+      } yield Passed
     }
 
-    "fail when decoder fails" in new MockedConnector {
-      serializer.decode(anyString)(any()) returns simulatedFailure
-      commands.get[String](key) returns someValue
-      // run the test
-      connector.get[String](key) must throwA[SerializationException].await
+    test("decoder fails") { (serializer, commands, connector) =>
+      for {
+        _ <- serializer.failOnDecode(cacheValue)
+        _ = (commands.get[String](_: String)(_: ByteStringDeserializer[String])).expects(cacheKey, *).returns(Some(cacheValue))
+        _ <- connector.get[String](cacheKey).assertingFailure[SerializationException]
+      } yield Passed
     }
   }
 
-  "Redis returning error code" should {
+  "Redis returns error code" when {
 
-    "SET returning false" in new MockedConnector {
-      serializer.encode(anyString) returns "encoded"
-      commands.set[String](anyString, anyString, any[Some[Long]], any[Some[Long]], anyBoolean, anyBoolean)(anySerializer) returns false
-      // run the test
-      connector.set(key, value) must not(throwA[Throwable]).await
+    test("SET returning false") { (serializer, commands, connector) =>
+      for {
+        _ <- serializer.encode(cacheValue, encodedValue)
+        _ = (commands
+              .set[String](_: String, _: String, _: Option[Long], _: Option[Long], _: Boolean, _: Boolean)(_: ByteStringSerializer[String]))
+              .expects(cacheKey, encodedValue, None, None, false, false, *)
+              .returns(false)
+        _ <- connector.set(cacheKey, cacheValue).assertingEqual(false)
+      } yield Passed
     }
 
-    "EXPIRE returning false" in new MockedConnector {
-      commands.expire(anyString, any[Long]) returns false
-      // run the test
-      connector.expire(key, 1.minute) must not(throwA[Throwable]).await
+    test("EXPIRE returning false") { (_, commands, connector) =>
+      for {
+        _ <- (commands.expire _).expects(cacheKey, 1.minute.toSeconds).returns(false)
+        _ <- connector.expire(cacheKey, 1.minute).assertingSuccess
+      } yield Passed
+    }
+
+  }
+
+  "Connector fails" when {
+
+    test("failed SET") { (serializer, commands, connector) =>
+      for {
+        _ <- serializer.encode(cacheValue, encodedValue)
+        _ = (commands
+              .set[String](_: String, _: String, _: Option[Long], _: Option[Long], _: Boolean, _: Boolean)(_: ByteStringSerializer[String]))
+              .expects(cacheKey, encodedValue, None, None, false, false, *)
+              .returns(disconnected)
+
+        _ <- serializer.encode(cacheValue, encodedValue)
+        _ = (commands
+              .set[String](_: String, _: String, _: Option[Long], _: Option[Long], _: Boolean, _: Boolean)(_: ByteStringSerializer[String]))
+              .expects(cacheKey, encodedValue, None, Some(1.minute.toMillis), false, false, *)
+              .returns(disconnected)
+
+        _ <- serializer.encode(cacheValue, encodedValue)
+        _ = (commands
+              .set[String](_: String, _: String, _: Option[Long], _: Option[Long], _: Boolean, _: Boolean)(_: ByteStringSerializer[String]))
+              .expects(cacheKey, encodedValue, None, None, true, false, *)
+              .returns(disconnected)
+
+        _ <- connector.set(cacheKey, cacheValue).assertingFailure[ExecutionFailedException, SimulatedException]
+        _ <- connector.set(cacheKey, cacheValue, 1.minute).assertingFailure[ExecutionFailedException, SimulatedException]
+        _ <- connector.set(cacheKey, cacheValue, ifNotExists = true).assertingFailure[ExecutionFailedException, SimulatedException]
+      } yield Passed
+    }
+
+    test("failed MSET") { (serializer, commands, connector) =>
+      for {
+        _ <- serializer.encode(cacheValue, encodedValue)
+        _ = (commands
+              .mset[String](_: Map[String, String])(_: ByteStringSerializer[String]))
+              .expects(Map(cacheKey -> encodedValue), *)
+              .returns(disconnected)
+        _ <- connector.mSet(cacheKey -> cacheValue).assertingFailure[ExecutionFailedException, SimulatedException]
+      } yield Passed
+    }
+
+    test("failed MSETNX") { (serializer, commands, connector) =>
+      for {
+        _ <- serializer.encode(cacheValue, encodedValue)
+        _ = (commands
+              .msetnx[String](_: Map[String, String])(_: ByteStringSerializer[String]))
+              .expects(Map(cacheKey -> encodedValue), *)
+              .returns(disconnected)
+        _ <- connector.mSetIfNotExist(cacheKey -> cacheValue).assertingFailure[ExecutionFailedException, SimulatedException]
+      } yield Passed
+    }
+
+    test("failed EXPIRE") { (_, commands, connector) =>
+      for {
+        _ <- (commands.expire(_: String, _: Long)).expects(cacheKey, 1.minute.toSeconds).returns(disconnected)
+        _ <- connector.expire(cacheKey, 1.minute).assertingFailure[ExecutionFailedException, SimulatedException]
+      } yield Passed
+    }
+
+    test("failed INCRBY") { (_, commands, connector) =>
+      for {
+        _ <- (commands.incrby(_: String, _: Long)).expects(cacheKey, 1L).returns(disconnected)
+        _ <- connector.increment(cacheKey, 1L).assertingFailure[ExecutionFailedException, SimulatedException]
+      } yield Passed
+    }
+
+    test("failed LRANGE") { (_, commands, connector) =>
+      for {
+        _ <- (commands
+               .lrange[String](_: String, _: Long, _: Long)(_: ByteStringDeserializer[String]))
+               .expects(cacheKey, 0, -1, *)
+               .returns(disconnected)
+        _ <- connector.listSlice[String](cacheKey, 0, -1).assertingFailure[ExecutionFailedException, SimulatedException]
+      } yield Passed
+    }
+
+    test("failed LREM") { (serializer, commands, connector) =>
+      for {
+        _ <- serializer.encode(cacheValue, encodedValue)
+        _ = (commands
+              .lrem(_: String, _: Long, _: String)(_: ByteStringSerializer[String]))
+              .expects(cacheKey, 2L, encodedValue, *)
+              .returns(disconnected)
+        _ <- connector.listRemove(cacheKey, cacheValue, 2).assertingFailure[ExecutionFailedException, SimulatedException]
+      } yield Passed
+    }
+
+    test("failed LTRIM") { (_, commands, connector) =>
+      for {
+        _ <- (commands.ltrim(_: String, _: Long, _: Long)).expects(cacheKey, 1L, 5L).returns(disconnected)
+        _ <- connector.listTrim(cacheKey, 1, 5).assertingFailure[ExecutionFailedException, SimulatedException]
+      } yield Passed
+    }
+
+    test("failed LINSERT") { (serializer, commands, connector) =>
+      for {
+        _ <- serializer.encode("pivot", "encodedPivot")
+        _ <- serializer.encode(cacheValue, encodedValue)
+        _ = (commands
+              .linsert[String](_: String, _: ListPivot, _: String, _: String)(_: ByteStringSerializer[String]))
+              .expects(cacheKey, BEFORE, "encodedPivot", encodedValue, *)
+              .returns(disconnected)
+        // run the test
+        _ <- connector.listInsert(cacheKey, "pivot", cacheValue).assertingFailure[ExecutionFailedException, SimulatedException]
+      } yield Passed
+    }
+
+    test("failed HINCRBY") { (_, commands, connector) =>
+      for {
+        _ <- (commands.hincrby(_: String, _: String, _: Long)).expects(cacheKey, "field", 1L).returns(disconnected)
+        // run the test
+        _ <- connector.hashIncrement(cacheKey, "field", 1).assertingFailure[ExecutionFailedException, SimulatedException]
+      } yield Passed
+    }
+
+    test("failed HSET") { (serializer, commands, connector) =>
+      for {
+        _ <- serializer.encode(cacheValue, encodedValue)
+        _ = (commands
+              .hset[String](_: String, _: String, _: String)(_: ByteStringSerializer[String]))
+              .expects(cacheKey, "field", encodedValue, *)
+              .returns(disconnected)
+        _ <- connector.hashSet(cacheKey, "field", cacheValue).assertingFailure[ExecutionFailedException, SimulatedException]
+      } yield Passed
+    }
+
+    test("failed ZADD") { (serializer, commands, connector) =>
+      for {
+        _ <- serializer.encode(cacheValue, encodedValue)
+        _ = (commands
+              .zaddMock[String](_: String, _: Seq[(Double, String)])(_: ByteStringSerializer[String]))
+              .expects(cacheKey, Seq((score, encodedValue)), *)
+              .returns(disconnected)
+        _ <- connector.sortedSetAdd(cacheKey, (score, cacheValue)).assertingFailure[ExecutionFailedException, SimulatedException]
+      } yield Passed
+    }
+
+    test("failed ZCARD") { (_, commands, connector) =>
+      for {
+        _ <- (commands.zcard(_: String)).expects(cacheKey).returns(disconnected)
+        _ <- connector.sortedSetSize(cacheKey).assertingFailure[ExecutionFailedException, SimulatedException]
+      } yield Passed
+    }
+
+    test("failed ZSCORE") { (serializer, commands, connector) =>
+      for {
+        _ <- serializer.encode(cacheValue, encodedValue)
+        _ = (commands
+              .zscore[String](_: String, _: String)(_: ByteStringSerializer[String]))
+              .expects(cacheKey, encodedValue, *)
+              .returns(disconnected)
+        _ <- connector.sortedSetScore(cacheKey, cacheValue).assertingFailure[ExecutionFailedException, SimulatedException]
+      } yield Passed
+    }
+
+    test("failed ZREM") { (serializer, commands, connector) =>
+      for {
+        _ <- serializer.encode(cacheValue, encodedValue)
+        _ = (commands
+              .zremMock(_: String, _: Seq[String])(_: ByteStringSerializer[String]))
+              .expects(cacheKey, Seq(encodedValue), *)
+              .returns(disconnected)
+        _ <- connector.sortedSetRemove(cacheKey, cacheValue).assertingFailure[ExecutionFailedException, SimulatedException]
+      } yield Passed
+    }
+
+    test("failed ZRANGE") { (_, commands, connector) =>
+      for {
+        _ <- (commands
+               .zrange[String](_: String, _: Long, _: Long)(_: ByteStringDeserializer[String]))
+               .expects(cacheKey, 1, 5, *)
+               .returns(disconnected)
+        _ <- connector.sortedSetRange[String](cacheKey, 1, 5).assertingFailure[ExecutionFailedException, SimulatedException]
+      } yield Passed
+    }
+
+    test("failed ZREVRANGE") { (_, commands, connector) =>
+      for {
+        _ <- (commands
+               .zrevrange[String](_: String, _: Long, _: Long)(_: ByteStringDeserializer[String]))
+               .expects(cacheKey, 1, 5, *)
+               .returns(disconnected)
+        _ <- connector.sortedSetReverseRange[String](cacheKey, 1, 5).assertingFailure[ExecutionFailedException, SimulatedException]
+      } yield Passed
     }
   }
 
-  "Connector failure" should {
+  private def test(name: String)(f: (SerializerAssertions, RedisCommandsMock, RedisConnector) => Future[Assertion]): Unit =
+    name in {
+      implicit val runtime: RedisRuntime = mock[RedisRuntime]
+      val serializer = mock[AkkaSerializer]
+      val commands = mock[RedisCommandsMock]
+      val connector: RedisConnector = new RedisConnectorImpl(serializer, commands)
 
-    "failed SET" in new MockedConnector {
-      serializer.encode(anyString) returns "encoded"
-      commands.set(anyString, anyString, any, any, anyBoolean, anyBoolean)(anySerializer) returns disconnected
-      // run the test
-      connector.set(key, value) must throwA[ExecutionFailedException].await
-      connector.set(key, value, 1.minute) must throwA[ExecutionFailedException].await
-      connector.set(key, value, ifNotExists = true) must throwA[ExecutionFailedException].await
+      (() => runtime.context).expects().returns(ExecutionContext.global).anyNumberOfTimes()
+
+      f(new SerializerAssertions(serializer), commands, connector)
     }
 
-    "failed MSET" in new MockedConnector {
-      serializer.encode(anyString) returns "encoded"
-      commands.mset[String](any[Map[String, String]])(anySerializer) returns disconnected
-      // run the test
-      connector.mSet(key -> value) must throwA[ExecutionFailedException].await
-    }
+  private class SerializerAssertions(mock: AkkaSerializer) {
 
-    "failed MSETNX" in new MockedConnector {
-      serializer.encode(anyString) returns "encoded"
-      commands.msetnx[String](any[Map[String, String]])(anySerializer) returns disconnected
-      // run the test
-      connector.mSetIfNotExist(key -> value) must throwA[ExecutionFailedException].await
-    }
+    def failOnEncode[T](value: T): Future[Unit] =
+      Future.successful {
+        (mock.encode(_: Any)).expects(value).returns(Failure(SimulatedException))
+      }
 
-    "failed EXPIRE" in new MockedConnector {
-      commands.expire(anyString, anyLong) returns disconnected
-      // run the test
-      connector.expire(key, 1.minute) must throwA[ExecutionFailedException].await
-    }
+    def encode[T](value: T, encoded: String): Future[Unit] =
+      Future.successful {
+        (mock.encode(_: Any)).expects(value).returns(Success(encoded))
+      }
 
-    "failed INCRBY" in new MockedConnector {
-      commands.incrby(anyString, anyLong) returns disconnected
-      // run the test
-      connector.increment(key, 1L) must throwA[ExecutionFailedException].await
-    }
+    def failOnDecode(value: String): Future[Unit] =
+      Future.successful {
+        (mock.decode(_: String)(_: ClassTag[String])).expects(value, *).returns(Failure(SimulatedException))
+      }
 
-    "failed LRANGE" in new MockedConnector {
-      serializer.encode(anyString) returns "encoded"
-      commands.lrange[String](anyString, anyLong, anyLong)(anyDeserializer) returns disconnected
-      // run the test
-      connector.listSlice[String](key, 0, -1) must throwA[ExecutionFailedException].await
-    }
-
-    "failed LREM" in new MockedConnector {
-      serializer.encode(anyString) returns "encoded"
-      commands.lrem(anyString, anyLong, anyString)(anySerializer) returns disconnected
-      // run the test
-      connector.listRemove(key, value, 2) must throwA[ExecutionFailedException].await
-    }
-
-    "failed LTRIM" in new MockedConnector {
-      commands.ltrim(anyString, anyLong, anyLong) returns disconnected
-      // run the test
-      connector.listTrim(key, 1, 5) must throwA[ExecutionFailedException].await
-    }
-
-    "failed LINSERT" in new MockedConnector {
-      serializer.encode(anyString) returns "encoded"
-      commands.linsert[String](anyString, any[api.ListPivot], anyString, anyString)(anySerializer) returns disconnected
-      // run the test
-      connector.listInsert(key, "pivot", value) must throwA[ExecutionFailedException].await
-    }
-
-    "failed HINCRBY" in new MockedConnector {
-      commands.hincrby(anyString, anyString, anyLong) returns disconnected
-      // run the test
-      connector.hashIncrement(key, "field", 1) must throwA[ExecutionFailedException].await
-    }
-
-    "failed HSET" in new MockedConnector {
-      serializer.encode(anyString) returns "encoded"
-      commands.hset[String](anyString, anyString, anyString)(anySerializer) returns disconnected
-      // run the test
-      connector.hashSet(key, "field", value) must throwA[ExecutionFailedException].await
-    }
-
-    "failed ZADD" in new MockedConnector {
-      serializer.encode(anyString) returns "encoded"
-      commands.zadd[String](anyString, any[(Double, String)])(anySerializer) returns disconnected
-      // run the test
-      connector.sortedSetAdd(key, (score, value)) must throwA[ExecutionFailedException].await
-    }
-
-    "failed ZCARD" in new MockedConnector {
-      commands.zcard(anyString) returns disconnected
-      // run the test
-      connector.sortedSetSize(key) must throwA[ExecutionFailedException].await
-    }
-
-    "failed ZSCORE" in new MockedConnector {
-      serializer.encode(anyString) returns "encoded"
-      commands.zscore[String](anyString, anyString)(anySerializer) returns disconnected
-      // run the test
-      connector.sortedSetScore(key, value) must throwA[ExecutionFailedException].await
-    }
-
-    "failed ZREM" in new MockedConnector {
-      serializer.encode(anyString) returns "encoded"
-      commands.zrem[String](anyString, anyString)(anySerializer) returns disconnected
-      // run the test
-      connector.sortedSetRemove(key, value) must throwA[ExecutionFailedException].await
-    }
-
-    "failed ZRANGE" in new MockedConnector {
-      commands.zrange[String](anyString, anyLong, anyLong)(anyDeserializer) returns disconnected
-      // run the test
-      connector.sortedSetRange[String](key, 1, 5) must throwA[ExecutionFailedException].await
-    }
-
-    "failed ZREVRANGE" in new MockedConnector {
-      commands.zrevrange[String](anyString, anyLong, anyLong)(anyDeserializer) returns disconnected
-      // run the test
-      connector.sortedSetReverseRange[String](key, 1, 5) must throwA[ExecutionFailedException].await
-    }
   }
+
+  private trait RedisCommandsMock extends RedisCommands {
+
+    final override def zadd[V: ByteStringSerializer](key: String, scoreMembers: (Double, V)*): Future[Long] =
+      zaddMock(key, scoreMembers)
+
+    def zaddMock[V: ByteStringSerializer](key: String, scoreMembers: Seq[(Double, V)]): Future[Long]
+
+    final override def zrem[V: ByteStringSerializer](key: String, members: V*): Future[Long] =
+      zremMock(key, members)
+
+    def zremMock[V: ByteStringSerializer](key: String, members: Seq[V]): Future[Long]
+  }
+
 }

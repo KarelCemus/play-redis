@@ -65,7 +65,7 @@ public interface AsyncRedisList<Elem> {
      * @param index position of the element
      * @return element at the index or exception
      */
-    CompletionStage<Elem> apply(int index);
+    CompletionStage<Elem> apply(long index);
 
     /**
      * Returns the element at index index in the list stored at key.
@@ -83,7 +83,7 @@ public interface AsyncRedisList<Elem> {
      * @return Some(element) at the index, None if no element exists,
      * or exception when the value is not a list
      */
-    CompletionStage<Optional<Elem>> get(int index);
+    CompletionStage<Optional<Elem>> get(long index);
 
     /**
      * @return first element of the collection or an exception
@@ -154,7 +154,7 @@ public interface AsyncRedisList<Elem> {
      * @param element  elements to be inserted
      * @return this collection to chain commands
      */
-    CompletionStage<AsyncRedisList<Elem>> set(int position, Elem element);
+    CompletionStage<AsyncRedisList<Elem>> set(long position, Elem element);
 
     /**
      * Removes first value equal to the given value from the list.
@@ -183,7 +183,7 @@ public interface AsyncRedisList<Elem> {
      * @param count   first N occurrences
      * @return this collection to chain commands
      */
-    CompletionStage<AsyncRedisList<Elem>> remove(Elem element, int count);
+    CompletionStage<AsyncRedisList<Elem>> remove(Elem element, long count);
 
     /**
      * Removes the element at the given position. If the index
@@ -194,7 +194,7 @@ public interface AsyncRedisList<Elem> {
      * @param position element index to be removed
      * @return this collection to chain commands
      */
-    CompletionStage<AsyncRedisList<Elem>> removeAt(int position);
+    CompletionStage<AsyncRedisList<Elem>> removeAt(long position);
 
     /**
      * @return read-only operations over the collection, does not modify data
@@ -214,7 +214,7 @@ public interface AsyncRedisList<Elem> {
          * @param n takes initial N elements
          * @return first N elements of the collection if exist
          */
-        default CompletionStage<List<Elem>> take(int n) {
+        default CompletionStage<List<Elem>> take(long n) {
             return slice(0, n - 1);
         }
 
@@ -224,7 +224,7 @@ public interface AsyncRedisList<Elem> {
          * @param n ignore initial N elements
          * @return rest of the collection ignoring initial N elements
          */
-        default CompletionStage<List<Elem>> drop(int n) {
+        default CompletionStage<List<Elem>> drop(long n) {
             return slice(n, -1);
         }
 
@@ -260,7 +260,7 @@ public interface AsyncRedisList<Elem> {
          * @param end  index of the last element included
          * @return collection at the specified range
          */
-        CompletionStage<List<Elem>> slice(int from, int end);
+        CompletionStage<List<Elem>> slice(long from, long end);
     }
 
     interface AsyncRedisListModification<Elem> {
@@ -276,7 +276,7 @@ public interface AsyncRedisList<Elem> {
          * @param n takes initial N elements
          * @return this object to chain commands
          */
-        default CompletionStage<AsyncRedisListModification<Elem>> take(int n) {
+        default CompletionStage<AsyncRedisListModification<Elem>> take(long n) {
             return slice(0, n - 1);
         }
 
@@ -286,7 +286,7 @@ public interface AsyncRedisList<Elem> {
          * @param n ignore initial N elements
          * @return this object to chain commands
          */
-        default CompletionStage<AsyncRedisListModification<Elem>> drop(int n) {
+        default CompletionStage<AsyncRedisListModification<Elem>> drop(long n) {
             return slice(n, -1);
         }
 
@@ -318,7 +318,7 @@ public interface AsyncRedisList<Elem> {
          * @param end  index of the last element included
          * @return this object to chain commands
          */
-        CompletionStage<AsyncRedisListModification<Elem>> slice(int from, int end);
+        CompletionStage<AsyncRedisListModification<Elem>> slice(long from, long end);
     }
 }
         

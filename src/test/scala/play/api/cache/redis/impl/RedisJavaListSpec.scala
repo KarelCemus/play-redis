@@ -1,193 +1,224 @@
 package play.api.cache.redis.impl
 
 import play.api.cache.redis._
+import play.api.cache.redis.test._
+import play.cache.redis.AsyncRedisList
 
-import org.mockito.ArgumentMatchers
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
+import scala.jdk.OptionConverters._
 
-class RedisJavaListSpec(implicit ee: ExecutionEnv) extends Specification with ReducedMockito {
-  import Implicits._
-  import JavaCompatibility._
-  import RedisCacheImplicits._
+class RedisJavaListSpec extends AsyncUnitSpec with RedisListJavaMock with RedisRuntimeMock {
 
-  import ArgumentMatchers._
-
-  "Redis List" should {
-
-    "prepend" in new MockedJavaList {
-      internal.prepend(value) returns internal
-      list.prepend(value).asScala must beEqualTo(list).await
-      there were one(internal).prepend(value)
-    }
-
-    "append" in new MockedJavaList {
-      internal.append(value) returns internal
-      list.append(value).asScala must beEqualTo(list).await
-      there were one(internal).append(value)
-    }
-
-    "apply (hit)" in new MockedJavaList {
-      internal.apply(beEq(5)) returns value
-      list.apply(5).asScala must beEqualTo(value).await
-      there were one(internal).apply(5)
-    }
-
-    "apply (miss or fail)" in new MockedJavaList {
-      internal.apply(beEq(5)) returns NoSuchElementException
-      list.apply(5).asScala must throwA[NoSuchElementException].await
-      there were one(internal).apply(5)
-    }
-
-    "get (miss)" in new MockedJavaList {
-      internal.get(beEq(5)) returns None
-      list.get(5).asScala must beEqualTo(None.asJava).await
-      there were one(internal).get(5)
-    }
-
-    "get (hit)" in new MockedJavaList {
-      internal.get(beEq(5)) returns Some(value)
-      list.get(5).asScala must beEqualTo(Some(value).asJava).await
-      there were one(internal).get(5)
-    }
-
-    "head (non-empty)" in new MockedJavaList {
-      internal.apply(beEq(0)) returns value
-      list.head.asScala must beEqualTo(value).await
-      there were one(internal).apply(0)
-    }
-
-    "head (empty)" in new MockedJavaList {
-      internal.apply(beEq(0)) returns NoSuchElementException
-      list.head.asScala must throwA(NoSuchElementException).await
-      there were one(internal).apply(0)
-    }
-
-    "headOption (non-empty)" in new MockedJavaList {
-      internal.get(beEq(0)) returns Some(value)
-      list.headOption.asScala must beEqualTo(Some(value).asJava).await
-      there were one(internal).get(0)
-    }
-
-    "headOption (empty)" in new MockedJavaList {
-      internal.get(beEq(0)) returns None
-      list.headOption.asScala must beEqualTo(None.asJava).await
-      there were one(internal).get(0)
-    }
-
-    "head pop" in new MockedJavaList {
-      internal.headPop returns None
-      list.headPop().asScala must beEqualTo(None.asJava).await
-      there were one(internal).headPop
-    }
-
-    "last (non-empty)" in new MockedJavaList {
-      internal.apply(beEq(-1)) returns value
-      list.last.asScala must beEqualTo(value).await
-      there were one(internal).apply(-1)
-    }
-
-    "last (empty)" in new MockedJavaList {
-      internal.apply(beEq(-1)) returns NoSuchElementException
-      list.last.asScala must throwA(NoSuchElementException).await
-      there were one(internal).apply(-1)
-    }
-
-    "lastOption (non-empty)" in new MockedJavaList {
-      internal.get(beEq(-1)) returns Some(value)
-      list.lastOption.asScala must beEqualTo(Some(value).asJava).await
-      there were one(internal).get(-1)
-    }
-
-    "lastOption (empty)" in new MockedJavaList {
-      internal.get(beEq(-1)) returns None
-      list.lastOption.asScala must beEqualTo(None.asJava).await
-      there were one(internal).get(-1)
-    }
-
-    "toList" in new MockedJavaList {
-      view.slice(beEq(0), beEq(-1)) returns List.empty[String]
-      list.toList.asScala must beEqualTo(List.empty.asJava).await
-      there were one(internal).view
-      there were one(view).slice(0, -1)
-    }
-
-    "insert before" in new MockedJavaList {
-      internal.insertBefore("pivot", value) returns Some(5L)
-      list.insertBefore("pivot", value).asScala must beEqualTo(Some(5L).asJava).await
-      there were one(internal).insertBefore("pivot", value)
-    }
-
-    "set at position" in new MockedJavaList {
-      internal.set(beEq(2), beEq(value)) returns internal
-      list.set(2, value).asScala must beEqualTo(list).await
-      there were one(internal).set(2, value)
-    }
-
-    "remove element" in new MockedJavaList {
-      internal.remove(beEq(value), anyInt) returns internal
-      list.remove(value).asScala must beEqualTo(list).await
-      there were one(internal).remove(value)
-    }
-
-    "remove with count" in new MockedJavaList {
-      internal.remove(beEq(value), beEq(2)) returns internal
-      list.remove(value, 2).asScala must beEqualTo(list).await
-      there were one(internal).remove(value, 2)
-    }
-
-    "remove at position" in new MockedJavaList {
-      internal.removeAt(beEq(2)) returns internal
-      list.removeAt(2).asScala must beEqualTo(list).await
-      there were one(internal).removeAt(2)
-    }
-
-    "view all" in new MockedJavaList {
-      view.slice(beEq(0), beEq(-1)) returns List.empty[String]
-      list.view().all().asScala must beEqualTo(List.empty.asJava).await
-      there were one(internal).view
-      there were one(view).slice(0, -1)
-    }
-
-    "view take" in new MockedJavaList {
-      view.slice(beEq(0), beEq(1)) returns List.empty[String]
-      list.view().take(2).asScala must beEqualTo(List.empty.asJava).await
-      there were one(internal).view
-      there were one(view).slice(0, 1)
-    }
-
-    "view drop" in new MockedJavaList {
-      view.slice(beEq(2), beEq(-1)) returns List.empty[String]
-      list.view().drop(2).asScala must beEqualTo(List.empty.asJava).await
-      there were one(internal).view
-      there were one(view).slice(2, -1)
-    }
-
-    "view slice" in new MockedJavaList {
-      view.slice(beEq(1), beEq(2)) returns List.empty[String]
-      list.view().slice(1, 2).asScala must beEqualTo(List.empty.asJava).await
-      there were one(internal).view
-      there were one(view).slice(1, 2)
-    }
-
-    "modify collection" in new MockedJavaList {
-      list.modify().collection() mustEqual list
-    }
-
-    "modify clear" in new MockedJavaList {
-      private val javaModifier = list.modify()
-      modifier.clear() returns modifier
-      javaModifier.clear().asScala must beEqualTo(javaModifier).await
-      there were one(internal).modify
-      there were one(modifier).clear()
-    }
-
-    "modify slice" in new MockedJavaList {
-      private val javaModifier = list.modify()
-      modifier.slice(beEq(1), beEq(2)) returns modifier
-      javaModifier.slice(1, 2).asScala must beEqualTo(javaModifier).await
-      there were one(internal).modify
-      there were one(modifier).slice(1, 2)
-    }
+  test("prepend") { (list, internal) =>
+    for {
+      _ <- internal.expect.prepend(cacheValue)
+      _ <- list.prepend(cacheValue).assertingEqual(list)
+    } yield Passed
   }
+
+  test("append") { (list, internal) =>
+    for {
+      _ <- internal.expect.append(cacheValue)
+      _ <- list.append(cacheValue).assertingEqual(list)
+    } yield Passed
+  }
+
+  test("apply (hit)") { (list, internal) =>
+    for {
+      _ <- internal.expect.apply(5, Some(cacheValue))
+      _ <- list.apply(5).assertingEqual(cacheValue)
+    } yield Passed
+  }
+
+  test("apply (miss or fail)") { (list, internal) =>
+    for {
+      _ <- internal.expect.apply(5, None)
+      _ <- list.apply(5).assertingFailure[NoSuchElementException]
+    } yield Passed
+  }
+
+  test("get (miss)") { (list, internal) =>
+    for {
+      _ <- internal.expect.get(5, None)
+      _ <- list.get(5).assertingEqual(None.toJava)
+    } yield Passed
+  }
+
+  test("get (hit)") { (list, internal) =>
+    for {
+      _ <- internal.expect.get(5, Some(cacheValue))
+      _ <- list.get(5).assertingEqual(Some(cacheValue).toJava)
+    } yield Passed
+  }
+
+  test("head (non-empty)") { (list, internal) =>
+    for {
+      _ <- internal.expect.apply(0, Some(cacheValue))
+      _ <- list.head.assertingEqual(cacheValue)
+    } yield Passed
+  }
+
+  test("head (empty)") { (list, internal) =>
+    for {
+      _ <- internal.expect.apply(0, None)
+      _ <- list.head.assertingFailure[NoSuchElementException]
+    } yield Passed
+  }
+
+  test("headOption (non-empty)") { (list, internal) =>
+    for {
+      _ <- internal.expect.get(0, Some(cacheValue))
+      _ <- list.headOption().assertingEqual(Some(cacheValue).toJava)
+    } yield Passed
+  }
+
+  test("headOption (empty)") { (list, internal) =>
+    for {
+      _ <- internal.expect.get(0, None)
+      _ <- list.headOption().assertingEqual(None.toJava)
+    } yield Passed
+  }
+
+  test("head pop") { (list, internal) =>
+    for {
+      _ <- internal.expect.headPop(None)
+      _ <- list.headPop().assertingEqual(None.toJava)
+    } yield Passed
+  }
+
+  test("last (non-empty)") { (list, internal) =>
+    for {
+      _ <- internal.expect.apply(-1, Some(cacheValue))
+      _ <- list.last().assertingEqual(cacheValue)
+    } yield Passed
+  }
+
+  test("last (empty)") { (list, internal) =>
+    for {
+      _ <- internal.expect.apply(-1, None)
+      _ <- list.last().assertingFailure[NoSuchElementException]
+    } yield Passed
+  }
+
+  test("lastOption (non-empty)") { (list, internal) =>
+    for {
+      _ <- internal.expect.get(-1, Some(cacheValue))
+      _ <- list.lastOption().assertingEqual(Some(cacheValue).toJava)
+    } yield Passed
+  }
+
+  test("lastOption (empty)") { (list, internal) =>
+    for {
+      _ <- internal.expect.get(-1, None)
+      _ <- list.lastOption().assertingEqual(None.toJava)
+    } yield Passed
+  }
+
+  test("toList") { (list, internal) =>
+    for {
+      _ <- internal.expect.view.slice(0, -1, List.empty)
+      _ <- list.toList.assertingEqual(List.empty.asJava)
+    } yield Passed
+  }
+
+  test("insert before") { (list, internal) =>
+    for {
+      _ <- internal.expect.insertBefore("pivot", cacheValue, Some(5L))
+      _ <- list.insertBefore("pivot", cacheValue).assertingEqual(Option(5L).map(long2Long).toJava)
+    } yield Passed
+  }
+
+  test("set at position") { (list, internal) =>
+    for {
+      _ <- internal.expect.set(2, cacheValue)
+      _ <- list.set(2, cacheValue).assertingEqual(list)
+    } yield Passed
+  }
+
+  test("remove element") { (list, internal) =>
+    for {
+      _ <- internal.expect.remove(cacheValue)
+      _ <- list.remove(cacheValue).assertingEqual(list)
+    } yield Passed
+  }
+
+  test("remove with count") { (list, internal) =>
+    for {
+      _ <- internal.expect.remove(cacheValue, 2)
+      _ <- list.remove(cacheValue, 2).assertingEqual(list)
+    } yield Passed
+  }
+
+  test("remove at position") { (list, internal) =>
+    for {
+      _ <- internal.expect.removeAt(2)
+      _ <- list.removeAt(2).assertingEqual(list)
+    } yield Passed
+  }
+
+  test("view all") { (list, internal) =>
+    for {
+      _ <- internal.expect.view.slice(0, -1, List.empty)
+      _ <- list.view().all().assertingEqual(List.empty.asJava)
+    } yield Passed
+  }
+
+  test("view take") { (list, internal) =>
+    for {
+      _ <- internal.expect.view.slice(0, 1, List.empty)
+      _ <- list.view().take(2).assertingEqual(List.empty.asJava)
+    } yield Passed
+  }
+
+  test("view drop") { (list, internal) =>
+    for {
+      _ <- internal.expect.view.slice(2, -1, List.empty)
+      _ <- list.view().drop(2).assertingEqual(List.empty.asJava)
+    } yield Passed
+  }
+
+  test("view slice") { (list, internal) =>
+    for {
+      _ <- internal.expect.view.slice(1, 2, List.empty)
+      _ <- list.view().slice(1, 2).assertingEqual(List.empty.asJava)
+    } yield Passed
+  }
+
+  test("modify clear") { (list, internal) =>
+    for {
+      _ <- internal.expect.modify.clear()
+      _ <- list.modify().clear().assertingEqual(list.modify())
+    } yield Passed
+  }
+
+  test("modify slice") { (list, internal) =>
+    for {
+      _ <- internal.expect.modify.slice(1, 2)
+      _ <- list.modify().slice(1, 2).assertingEqual(list.modify())
+    } yield Passed
+  }
+
+  private def test(
+    name: String,
+    policy: RecoveryPolicy = recoveryPolicy.default,
+  )(
+    f: (AsyncRedisList[String], RedisListMock) => Future[Assertion],
+  ): Unit =
+    name in {
+      implicit val runtime: RedisRuntime = redisRuntime(
+        invocationPolicy = LazyInvocation,
+        recoveryPolicy = policy,
+      )
+      val internal: RedisListMock = mock[RedisListMock]
+      val view: internal.RedisListView = mock[internal.RedisListView]
+      val modifier: internal.RedisListModification = mock[internal.RedisListModification]
+      val list: AsyncRedisList[String] = new RedisListJavaImpl(internal)
+
+      (() => internal.view).expects().returns(view).anyNumberOfTimes()
+      (() => internal.modify).expects().returns(modifier).anyNumberOfTimes()
+
+      f(list, internal)
+    }
+
 }
