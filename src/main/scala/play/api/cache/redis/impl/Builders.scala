@@ -10,7 +10,7 @@ private object Builders {
 
   import dsl._
   import play.api.cache.redis._
-  import akka.pattern.AskTimeoutException
+  import org.apache.pekko.pattern.AskTimeoutException
 
   trait ResultBuilder[Result[_]] {
 

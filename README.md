@@ -24,7 +24,7 @@ operations. Besides the basic methods such as `get`, `set`
 and `remove`, it provides more convenient methods such as
 `expire`, `exists`, `invalidate` and much more.
 
-The implementation builds on the top of Akka actor system,
+The implementation builds on the top of Pekko actor system,
 it is **completely non-blocking and asynchronous** under
 the hood, though it also provides blocking APIs to ease
 the use. Furthermore, the library supports several configuration
@@ -51,9 +51,9 @@ as well as on your premise.
 - support of [standalone, cluster,](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/20-configuration.md#standalone-vs-cluster)
   [aws-cluster,](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/20-configuration.md#aws-cluster)
   and [sentinel modes](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/20-configuration.md#sentinel)
-- build on the top of Akka actors and serializers, [agnostic to the serialization mechanism](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/20-configuration.md#limitation-of-data-serialization)
+- build on the top of Pekko actors and serializers, [agnostic to the serialization mechanism](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/doc/20-configuration.md#limitation-of-data-serialization)
     - for simplicity, it uses deprecated Java serialization by default
-    - it is recommended to use [Kryo library](https://github.com/romix/akka-kryo-serialization) or any other mechanism
+      - it is recommended to use [Kryo library](https://github.com/romix/akka-kryo-serialization) or any other mechanism
 
 
 ## Provided APIs

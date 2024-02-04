@@ -1,7 +1,7 @@
 package play.api.cache.redis.impl
 
-import akka.actor.ActorSystem
-import akka.util.Timeout
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.util.Timeout
 import play.api.cache.redis._
 import play.api.cache.redis.configuration.{RedisHost, RedisStandalone}
 import play.api.cache.redis.test.UnitSpec

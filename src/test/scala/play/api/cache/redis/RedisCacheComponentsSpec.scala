@@ -1,6 +1,6 @@
 package play.api.cache.redis
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import play.api._
 import play.api.cache.redis.test._
 import play.api.inject.ApplicationLifecycle

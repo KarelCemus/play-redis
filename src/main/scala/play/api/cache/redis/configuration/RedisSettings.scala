@@ -5,7 +5,7 @@ import play.api.ConfigLoader
 
 /**
   * Configures non-connection related settings of redis instance, e.g.,
-  * synchronization timeout, Akka dispatcher, and recovery policy.
+  * synchronization timeout, Pekko dispatcher, and recovery policy.
   */
 trait RedisSettings {
 

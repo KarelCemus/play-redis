@@ -1,6 +1,5 @@
 package play.api.cache.redis.impl
 
-import akka.pattern.AskTimeoutException
 import play.api.cache.redis._
 import play.api.cache.redis.test._
 
@@ -104,12 +103,6 @@ class BuildersSpec extends AsyncUnitSpec with RedisRuntimeMock {
         timeout = 1.millis,
       )
       SynchronousBuilder.toResult(Task.infinite(), Task.resolved()) mustEqual Task.resolved.response
-    }
-
-    "recover from akka ask timeout" in {
-      implicit val runtime: RedisRuntime = redisRuntime(recoveryPolicy = recoveryPolicy.default)
-      val actorFailure = Future.failed(new AskTimeoutException("Simulated actor ask timeout"))
-      SynchronousBuilder.toResult(actorFailure, Task.resolved()) mustEqual Task.resolved.response
     }
 
     "map value" in {

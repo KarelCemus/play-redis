@@ -350,8 +350,8 @@ it uses `JavaSerializer` by default.
 Since Akka 2.4.1, default `JavaSerializer` is [officially considered inefficient for production use](https://github.com/akka/akka/pull/18552).
 Nevertheless, to keep things simple, play-redis **still uses this inefficient serializer NOT to enforce** any serialization
 library to end users. Although, it recommends [kryo serializer](https://github.com/romix/akka-kryo-serialization) claiming
-great performance and small output stream. Any serialization library can be smoothly connected through Akka
-configuration, see the [official Akka documentation](https://doc.akka.io/docs/akka/current/scala/serialization.html).
+great performance and small output stream. Any serialization library can be smoothly connected through Pekko
+configuration, see the [official Pekko documentation](https://pekko.apache.org/docs/pekko/current/serialization.html).
 
 
 ## Overview
@@ -366,11 +366,11 @@ configuration, see the [official Akka documentation](https://doc.akka.io/docs/ak
 
 ### Instance-specific (can be locally overridden)
 
-| Key                                                      | Type     | Default                         | Description                         |
-|----------------------------------------------------------|---------:|--------------------------------:|-------------------------------------|
-| [play.cache.redis.source](#standalone-vs-cluster)        | String   | `standalone`                    | Defines the source of the configuration. Accepted values are `standalone`, `cluster`, `connection-string`, and `custom` |
-| [play.cache.redis.sync-timeout](#timeout)                | Duration | `1s`                            | conversion timeout applied by `SyncAPI` to convert `Future[T]` to `T`|
-| [play.cache.redis.redis-timeout](#timeout)               | Duration | `null`                          | waiting for the response from redis server |
-| [play.cache.redis.prefix](#namespace-prefix)             | String   | `null`                          | optional namespace, i.e., key prefix |
-| play.cache.redis.dispatcher                              | String   | `akka.actor.default-dispatcher` | Akka actor                          |
-| [play.cache.redis.recovery](#recovery-policy)            | String   | `log-and-default`               | Defines behavior when command execution fails. For accepted values and more see |
+| Key                                                      | Type     |                              Default | Description                                                                                                             |
+|----------------------------------------------------------|---------:|-------------------------------------:|-------------------------------------------------------------------------------------------------------------------------|
+| [play.cache.redis.source](#standalone-vs-cluster)        | String   |                         `standalone` | Defines the source of the configuration. Accepted values are `standalone`, `cluster`, `connection-string`, and `custom` |
+| [play.cache.redis.sync-timeout](#timeout)                | Duration |                                 `1s` | conversion timeout applied by `SyncAPI` to convert `Future[T]` to `T`                                                   |
+| [play.cache.redis.redis-timeout](#timeout)               | Duration |                               `null` | waiting for the response from redis server                                                                              |
+| [play.cache.redis.prefix](#namespace-prefix)             | String   |                               `null` | optional namespace, i.e., key prefix                                                                                    |
+| play.cache.redis.dispatcher                              | String   | `pekko.actor.default-dispatcher` | Pekko actor                                                                                                             |
+| [play.cache.redis.recovery](#recovery-policy)            | String   |                    `log-and-default` | Defines behavior when command execution fails. For accepted values and more see                                         |

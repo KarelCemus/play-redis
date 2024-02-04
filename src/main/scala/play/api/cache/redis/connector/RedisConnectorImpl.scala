@@ -20,7 +20,7 @@ import scala.reflect.ClassTag
   * @param redis
   *   implementation of the commands
   */
-private[connector] class RedisConnectorImpl(serializer: AkkaSerializer, redis: RedisCommands)(implicit runtime: RedisRuntime) extends RedisConnector {
+private[connector] class RedisConnectorImpl(serializer: PekkoSerializer, redis: RedisCommands)(implicit runtime: RedisRuntime) extends RedisConnector {
 
   import ExpectedFuture._
 

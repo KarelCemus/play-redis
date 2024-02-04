@@ -1,6 +1,6 @@
 package play.api.cache.redis.impl
 
-import akka.util.Timeout
+import org.apache.pekko.util.Timeout
 import org.scalamock.scalatest.AsyncMockFactoryBase
 import play.api.cache.redis.{FailThrough, RecoverWithDefault, RecoveryPolicy, RedisException}
 

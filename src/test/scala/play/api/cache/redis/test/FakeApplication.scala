@@ -1,6 +1,6 @@
 package play.api.cache.redis.test
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import play.api.inject.Injector
 
 trait FakeApplication extends StoppableApplication {

@@ -244,7 +244,7 @@ class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMateria
   private def test(name: String)(f: (SerializerAssertions, RedisCommandsMock, RedisConnector) => Future[Assertion]): Unit =
     name in {
       implicit val runtime: RedisRuntime = mock[RedisRuntime]
-      val serializer = mock[AkkaSerializer]
+      val serializer = mock[PekkoSerializer]
       val commands = mock[RedisCommandsMock]
       val connector: RedisConnector = new RedisConnectorImpl(serializer, commands)
 
@@ -253,7 +253,7 @@ class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMateria
       f(new SerializerAssertions(serializer), commands, connector)
     }
 
-  private class SerializerAssertions(mock: AkkaSerializer) {
+  private class SerializerAssertions(mock: PekkoSerializer) {
 
     def failOnEncode[T](value: T): Future[Unit] =
       Future.successful {

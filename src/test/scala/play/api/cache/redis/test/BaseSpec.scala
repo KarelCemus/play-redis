@@ -1,6 +1,6 @@
 package play.api.cache.redis.test
 
-import akka.Done
+import org.apache.pekko.Done
 import org.scalactic.source.Position
 import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest._
@@ -23,7 +23,7 @@ trait DefaultValues {
 
   val defaultsSettings: RedisSettingsTest =
     RedisSettingsTest(
-      invocationContext = "akka.actor.default-dispatcher",
+      invocationContext = "pekko.actor.default-dispatcher",
       invocationPolicy = "lazy",
       timeout = RedisTimeouts(1.second, None, Some(500.millis)),
       recovery = "log-and-default",

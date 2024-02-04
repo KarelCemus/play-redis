@@ -1,6 +1,6 @@
 package play.api.cache.redis.connector
 
-import akka.actor.{ActorSystem, Scheduler}
+import org.apache.pekko.actor.{ActorSystem, Scheduler}
 import play.api.cache.redis.test.{AsyncUnitSpec, StoppableApplication}
 import redis.RedisCommand
 import redis.protocol.RedisReply

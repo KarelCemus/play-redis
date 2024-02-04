@@ -49,7 +49,7 @@ private[impl] object dsl {
 
   }
 
-  /** maps units into akka.Done */
+  /** maps units into org.apache.pekko.Done */
   @inline private val unitAsDone: Any => Done = _ => Done
 
   /** applies prefixer to produce final cache key */

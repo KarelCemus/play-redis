@@ -24,7 +24,7 @@ class RedisCacheModule extends Module {
     // common settings
     val commons = Seq(
       // bind serializer
-      bind[connector.AkkaSerializer].toProvider[connector.AkkaSerializerProvider],
+      bind[connector.PekkoSerializer].toProvider[connector.PekkoSerializerProvider],
       bind[configuration.RedisInstanceResolver].to[GuiceRedisInstanceResolver],
     )
     // bind recovery resolver
@@ -108,10 +108,10 @@ class GuiceRedisCacheProvider(instance: RedisInstanceProvider) extends Provider[
 
   override lazy val get: RedisCaches = new impl.RedisCachesProvider(
     instance = instance.resolved(bind[configuration.RedisInstanceResolver]),
-    serializer = bind[connector.AkkaSerializer],
+    serializer = bind[connector.PekkoSerializer],
     environment = bind[play.api.Environment],
   )(
-    system = bind[akka.actor.ActorSystem],
+    system = bind[org.apache.pekko.actor.ActorSystem],
     lifecycle = bind[ApplicationLifecycle],
     recovery = bind[RecoveryPolicyResolver],
   ).get

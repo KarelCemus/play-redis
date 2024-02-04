@@ -1,6 +1,6 @@
 package play.api.cache.redis.impl
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import play.api.Environment
 import play.api.cache.redis._
 import play.api.inject.ApplicationLifecycle
@@ -21,7 +21,7 @@ trait RedisCaches {
   def javaAsync: play.cache.redis.AsyncCacheApi
 }
 
-private[redis] class RedisCachesProvider(instance: RedisInstance, serializer: connector.AkkaSerializer, environment: Environment)(implicit system: ActorSystem, lifecycle: ApplicationLifecycle, recovery: RecoveryPolicyResolver) extends Provider[RedisCaches] {
+private[redis] class RedisCachesProvider(instance: RedisInstance, serializer: connector.PekkoSerializer, environment: Environment)(implicit system: ActorSystem, lifecycle: ApplicationLifecycle, recovery: RecoveryPolicyResolver) extends Provider[RedisCaches] {
   import RedisRuntime._
 
   implicit private lazy val runtime: RedisRuntime = RedisRuntime(instance, instance.recovery, instance.invocationPolicy, instance.prefix)(system)
