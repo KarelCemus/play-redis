@@ -12,7 +12,7 @@ is the only way of keeping this project in a good shape.
 
 ## Migration from 2.8.x to 3.0.x
 
-Migrated to Play 2.9.0 and increased minimal version of JDK to 17.
+Migrated to Play 2.9.0 and increased minimal version of JDK to 11.
 
 Dropped support for Scala 2.12, compiled against Scala 2.13.12 to be usable with Scala 3.
 
