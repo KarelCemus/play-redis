@@ -26,7 +26,7 @@ jobs:
       - name: Setup JDK
         uses: coursier/setup-action@v1.3.4
         with:
-          jvm: adoptium:1.17
+          jvm: adoptium:1.11
 
       - name: Import GPG Key
         timeout-minutes: 10
