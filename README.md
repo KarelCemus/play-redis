@@ -2,7 +2,7 @@
 
   # Redis Cache module for Play framework
 
-  **This version supports Play framework 3.0.x with JDK 17 and Scala 2.13. Scala 3 on the roadmap.**<br/>
+  **This version supports Play framework 3.0.x with JDK 11 and Scala 2.13. Scala 3 on the roadmap.**<br/>
   **For previous versions see older releases.**
 
   [![Travis CI: Status](https://travis-ci.org/KarelCemus/play-redis.svg?branch=master)](https://travis-ci.org/KarelCemus/play-redis)
