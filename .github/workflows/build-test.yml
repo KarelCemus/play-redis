@@ -4,7 +4,7 @@ on:
 
   push:
     branches:
-      - master
+      - master*
 
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
@@ -28,7 +28,7 @@ jobs:
       - name: Setup JDK
         uses: coursier/setup-action@v1.3.4
         with:
-          jvm: adoptium:1.17
+          jvm: adoptium:1.11
 
       - name: Build
         timeout-minutes: 10
