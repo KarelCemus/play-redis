@@ -6,6 +6,8 @@
 Migration to Pekko and Play 3.0, thanks to @TomJKing for help in [#272](https://github.com/KarelCemus/play-redis/pull/272),
 finished in [#278](https://github.com/KarelCemus/play-redis/pull/278)
 
+Added support to Scala 3 in [#264](https://github.com/KarelCemus/play-redis/issues/264)
+
 ### [:link: 3.0.0](https://github.com/KarelCemus/play-redis/tree/3.0.0-M1)
 
 Updated to Play `2.9.0` and dropped `Scala 2.12` since it was discontinued from the Play framework.

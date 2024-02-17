@@ -244,13 +244,13 @@ class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMateria
   private def test(name: String)(f: (SerializerAssertions, RedisCommandsMock, RedisConnector) => Future[Assertion]): Unit =
     name in {
       implicit val runtime: RedisRuntime = mock[RedisRuntime]
-      val serializer = mock[PekkoSerializer]
-      val commands = mock[RedisCommandsMock]
+      val serializer: PekkoSerializer = mock[PekkoSerializer]
+      val (commands: RedisCommands, mockedCommands: RedisCommandsMock) = RedisCommandsMock.mock(this)
       val connector: RedisConnector = new RedisConnectorImpl(serializer, commands)
 
       (() => runtime.context).expects().returns(ExecutionContext.global).anyNumberOfTimes()
 
-      f(new SerializerAssertions(serializer), commands, connector)
+      f(new SerializerAssertions(serializer), mockedCommands, connector)
     }
 
   private class SerializerAssertions(mock: PekkoSerializer) {
@@ -270,19 +270,6 @@ class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMateria
         (mock.decode(_: String)(_: ClassTag[String])).expects(value, *).returns(Failure(SimulatedException))
       }
 
-  }
-
-  private trait RedisCommandsMock extends RedisCommands {
-
-    final override def zadd[V: ByteStringSerializer](key: String, scoreMembers: (Double, V)*): Future[Long] =
-      zaddMock(key, scoreMembers)
-
-    def zaddMock[V: ByteStringSerializer](key: String, scoreMembers: Seq[(Double, V)]): Future[Long]
-
-    final override def zrem[V: ByteStringSerializer](key: String, members: V*): Future[Long] =
-      zremMock(key, members)
-
-    def zremMock[V: ByteStringSerializer](key: String, members: Seq[V]): Future[Long]
   }
 
 }

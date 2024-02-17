@@ -10,7 +10,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters.IterableHasAsScala
 
-class AsyncJavaRedisSpec extends AsyncUnitSpec with AsyncRedisMock with RedisRuntimeMock {
+class AsyncJavaRedisSpec extends AsyncUnitSpec with MockedAsyncRedis with RedisRuntimeMock {
   import Helpers._
 
   private val expiration = 5.seconds
@@ -359,10 +359,10 @@ class AsyncJavaRedisSpec extends AsyncUnitSpec with AsyncRedisMock with RedisRun
         classLoader = getClass.getClassLoader,
         mode = Mode.Test,
       )
-      val async = mock[AsyncRedisMock]
+      val (async: AsyncRedis, asyncMock: AsyncRedisMock) = AsyncRedisMock.mock(this)
       val cache: play.cache.redis.AsyncCacheApi = new AsyncJavaRedis(async)
 
-      f(async, cache)
+      f(asyncMock, cache)
     }
 
 }

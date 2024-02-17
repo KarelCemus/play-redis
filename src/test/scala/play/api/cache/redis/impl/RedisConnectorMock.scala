@@ -2,6 +2,7 @@ package play.api.cache.redis.impl
 
 import org.scalamock.scalatest.AsyncMockFactoryBase
 import play.api.cache.redis._
+import play.api.cache.redis.test.ImplicitOptionMaterialization
 
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -90,12 +91,12 @@ private[impl] trait RedisConnectorMock { this: AsyncMockFactoryBase =>
 
   }
 
-  final protected class RedisConnectorExpectation(connector: RedisConnectorMock) {
+  final protected class RedisConnectorExpectation(connector: RedisConnectorMock) extends ImplicitOptionMaterialization {
 
     def get[T: ClassTag](key: String, result: Try[Option[T]]): Future[Unit] =
       Future.successful {
         (connector
-          .get(_: String)(_: ClassTag[?]))
+          .get(_: String)(_: ClassTag[T]))
           .expects(key, implicitly[ClassTag[T]])
           .returning(Future.fromTry(result))
           .once()
@@ -110,7 +111,7 @@ private[impl] trait RedisConnectorMock { this: AsyncMockFactoryBase =>
     def mGet[T: ClassTag](keys: Seq[String], result: Future[Seq[Option[T]]]): Future[Unit] =
       Future.successful {
         (connector
-          .mGetKeys(_: Seq[String])(_: ClassTag[?]))
+          .mGetKeys(_: Seq[String])(_: ClassTag[T]))
           .expects(keys, implicitly[ClassTag[T]])
           .returning(result)
           .once()
@@ -238,7 +239,7 @@ private[impl] trait RedisConnectorMock { this: AsyncMockFactoryBase =>
     def listSlice[T: ClassTag](key: String, start: Long, end: Long, result: Future[Seq[T]]): Future[Unit] =
       Future.successful {
         (connector
-          .listSlice(_: String, _: Long, _: Long)(_: ClassTag[?]))
+          .listSlice(_: String, _: Long, _: Long)(_: ClassTag[T]))
           .expects(key, start, end, implicitly[ClassTag[T]])
           .returning(result)
           .once()
@@ -247,7 +248,7 @@ private[impl] trait RedisConnectorMock { this: AsyncMockFactoryBase =>
     def listHeadPop[T: ClassTag](key: String, result: Future[Option[T]]): Future[Unit] =
       Future.successful {
         (connector
-          .listHeadPop(_: String)(_: ClassTag[?]))
+          .listHeadPop(_: String)(_: ClassTag[T]))
           .expects(key, implicitly[ClassTag[T]])
           .returning(result)
           .once()
@@ -339,10 +340,10 @@ private[impl] trait RedisConnectorMock { this: AsyncMockFactoryBase =>
           .once()
       }
 
-    def setMembers[T: ClassTag](key: String, result: Future[Set[Any]]): Future[Unit] =
+    def setMembers[T: ClassTag](key: String, result: Future[Set[T]]): Future[Unit] =
       Future.successful {
         (connector
-          .setMembers(_: String)(_: ClassTag[?]))
+          .setMembers(_: String)(_: ClassTag[T]))
           .expects(key, implicitly[ClassTag[T]])
           .returning(result)
           .once()
@@ -384,19 +385,19 @@ private[impl] trait RedisConnectorMock { this: AsyncMockFactoryBase =>
           .once()
       }
 
-    def sortedSetRange[T: ClassTag](key: String, start: Long, end: Long, result: Future[Seq[String]]): Future[Unit] =
+    def sortedSetRange[T: ClassTag](key: String, start: Long, end: Long, result: Future[Seq[T]]): Future[Unit] =
       Future.successful {
         (connector
-          .sortedSetRange(_: String, _: Long, _: Long)(_: ClassTag[?]))
+          .sortedSetRange(_: String, _: Long, _: Long)(_: ClassTag[T]))
           .expects(key, start, end, implicitly[ClassTag[T]])
           .returning(result)
           .once()
       }
 
-    def sortedSetReverseRange[T: ClassTag](key: String, start: Long, end: Long, result: Future[Seq[String]]): Future[Unit] =
+    def sortedSetReverseRange[T: ClassTag](key: String, start: Long, end: Long, result: Future[Seq[T]]): Future[Unit] =
       Future.successful {
         (connector
-          .sortedSetReverseRange(_: String, _: Long, _: Long)(_: ClassTag[?]))
+          .sortedSetReverseRange(_: String, _: Long, _: Long)(_: ClassTag[T]))
           .expects(key, start, end, implicitly[ClassTag[T]])
           .returning(result)
           .once()
@@ -423,7 +424,7 @@ private[impl] trait RedisConnectorMock { this: AsyncMockFactoryBase =>
     def hashGet[T: ClassTag](key: String, field: String, result: Future[Option[T]]): Future[Unit] =
       Future.successful {
         (connector
-          .hashGetField(_: String, _: String)(_: ClassTag[?]))
+          .hashGetField(_: String, _: String)(_: ClassTag[T]))
           .expects(key, field, implicitly[ClassTag[T]])
           .returning(result)
           .once()
@@ -432,7 +433,7 @@ private[impl] trait RedisConnectorMock { this: AsyncMockFactoryBase =>
     def hashGet[T: ClassTag](key: String, fields: Seq[String], result: Future[Seq[Option[T]]]): Future[Unit] =
       Future.successful {
         (connector
-          .hashGetFields(_: String, _: Seq[String])(_: ClassTag[?]))
+          .hashGetFields(_: String, _: Seq[String])(_: ClassTag[T]))
           .expects(key, fields, implicitly[ClassTag[T]])
           .returning(result)
           .once()
@@ -468,7 +469,7 @@ private[impl] trait RedisConnectorMock { this: AsyncMockFactoryBase =>
     def hashGetAll[T: ClassTag](key: String, result: Future[Map[String, T]]): Future[Unit] =
       Future.successful {
         (connector
-          .hashGetAllValues(_: String)(_: ClassTag[?]))
+          .hashGetAllValues(_: String)(_: ClassTag[T]))
           .expects(key, implicitly[ClassTag[T]])
           .returning(result)
           .once()

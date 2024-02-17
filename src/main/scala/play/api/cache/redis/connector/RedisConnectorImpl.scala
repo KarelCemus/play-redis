@@ -256,7 +256,7 @@ private[connector] class RedisConnectorImpl(serializer: PekkoSerializer, redis: 
                 case length   =>
                   log.debug(s"Inserted $value into the list at '$key'. New size is $length.")
                   Some(length)
-              } recover [Option[Long]] {
+              } recover {
                 case ExecutionFailedException(_, _, _, ex) if ex.getMessage startsWith "WRONGTYPE" =>
                   log.warn(s"Value at '$key' is not a list.")
                   throw new IllegalArgumentException(s"Value at '$key' is not a list.")
