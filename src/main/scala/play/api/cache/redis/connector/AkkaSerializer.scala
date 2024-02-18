@@ -129,6 +129,7 @@ private[connector] class AkkaDecoder(serializer: Serialization) {
     Base64.getDecoder.decode(base64)
 
   /** deserializes the binary stream into the object */
+  @SuppressWarnings(Array("org.wartremover.warts.RedundantAsInstanceOf"))
   private def binaryToAnyRef[T](binary: Array[Byte])(implicit classTag: ClassTag[T]): AnyRef =
     serializer.deserialize(binary, classTag.runtimeClass.asInstanceOf[Class[? <: AnyRef]]).get
 

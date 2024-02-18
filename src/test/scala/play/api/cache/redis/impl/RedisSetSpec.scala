@@ -58,7 +58,7 @@ class RedisSetSpec extends AsyncUnitSpec with RedisRuntimeMock with RedisConnect
 
   test("toSet") { (set, connector) =>
     for {
-      _ <- connector.expect.setMembers[String](cacheKey, result = Set[Any](cacheValue, otherValue))
+      _ <- connector.expect.setMembers[String](cacheKey, result = Set(cacheValue, otherValue))
       _ <- set.toSet.assertingEqual(Set(cacheValue, otherValue))
     } yield Passed
   }

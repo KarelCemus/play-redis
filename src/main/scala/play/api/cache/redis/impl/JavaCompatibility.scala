@@ -21,7 +21,7 @@ private[impl] object JavaCompatibility extends JavaCompatibilityBase {
 
     def apply[T](values: T*): JavaList[T] = {
       val list = new java.util.ArrayList[T]()
-      list.addAll(values.asJava): Unit
+      val _ = list.addAll(values.asJava)
       list
     }
 

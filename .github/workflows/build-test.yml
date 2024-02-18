@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     env:
-      SBT_OPTS: -Dfile.encoding=UTF-8 -Duser.timezone=UTC
+      SBT_OPTS: "-Dfile.encoding=UTF-8 -Duser.timezone=UTC -Xmx2g"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -31,8 +31,8 @@ jobs:
           jvm: adoptium:1.11
 
       - name: Build
-        timeout-minutes: 10
+        timeout-minutes: 15
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          sbt --client "+clean; +compile; +Test/compile; lint; +coverage; +test; +coverageReport; +coveralls;"
+          sbt -v "+clean; +compile; +Test/compile; lint; +coverage; +test; +coverageReport; +coveralls;"
