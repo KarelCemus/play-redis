@@ -96,7 +96,7 @@ trait AsyncUtilities { this: AsyncTestSuite =>
 
 }
 
-trait FutureAssertions extends AsyncUtilities { this: BaseSpec =>
+trait FutureAssertions extends AsyncUtilities { this: AsyncBaseSpec =>
   import scala.jdk.FutureConverters._
 
   implicit def completionStageToFutureOps[T](future: CompletionStage[T]): FutureAssertionOps[T] =
@@ -152,15 +152,16 @@ trait FutureAssertions extends AsyncUtilities { this: BaseSpec =>
 
 }
 
-trait BaseSpec extends Matchers with AsyncMockFactory {
+trait BaseSpec extends Matchers {
 
   protected type Assertion = org.scalatest.Assertion
   protected val Passed: Assertion = org.scalatest.Succeeded
+}
+
+trait AsyncBaseSpec extends BaseSpec with AsyncWordSpecLike with AsyncMockFactory with FutureAssertions with AsyncUtilities with TimeLimitedSpec {
 
   implicit override def executionContext: ExecutionContext = ExecutionContext.global
 }
-
-trait AsyncBaseSpec extends BaseSpec with AsyncWordSpecLike with FutureAssertions with AsyncUtilities with TimeLimitedSpec
 
 trait UnitSpec extends BaseSpec with AnyWordSpecLike with DefaultValues
 
