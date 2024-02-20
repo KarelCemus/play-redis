@@ -132,8 +132,8 @@ libraryDependencies += "com.github.karelcemus" %% "play-redis" % "4.0.0"
 
 | play framework |                          play-redis |                                                                                                                                                          documentation |
 |----------------|------------------------------------:|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
-| 3.0.x          | <!-- Play 3.0 -->4.0.0<!-- / --> |                                                                                           [see here](https://github.com/KarelCemus/play-redis/blob/4.0.0/README.md) |
-| 2.9.x          | <!-- Play 2.9 -->3.0.0-M3<!-- / --> |                                                                                           [see here](https://github.com/KarelCemus/play-redis/blob/3.0.0-M3/README.md) |
+| 3.0.x          |    <!-- Play 3.0 -->4.0.0<!-- / --> |                                                                                              [see here](https://github.com/KarelCemus/play-redis/blob/4.0.0/README.md) |
+| 2.9.x          |    <!-- Play 2.9 -->3.0.0<!-- / --> |                                                                                             [see here](https://github.com/KarelCemus/play-redis/blob/3.0.0/README.md) |
 | 2.8.x          |    <!-- Play 2.8 -->2.7.0<!-- / --> |                                                                                              [see here](https://github.com/KarelCemus/play-redis/blob/2.7.0/README.md) |
 | 2.7.x          |    <!-- Play 2.7 -->2.5.1<!-- / --> |                                                                                              [see here](https://github.com/KarelCemus/play-redis/blob/2.5.1/README.md) |
 | 2.6.x          |    <!-- Play 2.6 -->2.3.0<!-- / --> | [see here](https://github.com/KarelCemus/play-redis/blob/2.3.0/README.md) ([Migration Guide](https://github.com/KarelCemus/play-redis/blob/2.3.0/doc/40-migration.md)) |
