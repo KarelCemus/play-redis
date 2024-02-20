@@ -13,7 +13,7 @@ class RedisRequestTimeoutSpec extends AsyncUnitSpec {
   override protected def testTimeout: FiniteDuration = 3.seconds
 
   "fail long running requests when connected but timeout defined" in {
-    implicit val system: ActorSystem = ActorSystem("test")
+    implicit val system: ActorSystem = ActorSystem("test", classLoader = Some(getClass.getClassLoader))
     val application = StoppableApplication(system)
 
     application.runAsyncInApplication {

@@ -11,7 +11,7 @@ description := "Redis cache plugin for the Play framework 2"
 
 organization := "com.github.karelcemus"
 
-crossScalaVersions := Seq("2.13.12") //, "3.3.0"
+crossScalaVersions := Seq("2.13.12", "3.3.1")
 
 scalaVersion := crossScalaVersions.value.head
 
@@ -23,8 +23,8 @@ libraryDependencies ++= Seq(
   // redis connector
   "io.github.rediscala" %% "rediscala"                 % "1.14.0-akka",
   // test framework with mockito extension
-  "org.scalatest"       %% "scalatest"                 % "3.2.17"          % Test,
-  "org.scalamock"       %% "scalamock"                 % "5.2.0"           % Test,
+  "org.scalatest"       %% "scalatest"                 % "3.2.18"          % Test,
+  "org.scalamock"       %% "scalamock"                 % "6.0.0-M1"        % Test,
   // test module for play framework
   "com.typesafe.play"   %% "play-test"                 % playVersion.value % Test,
   // to run integration tests
@@ -37,7 +37,11 @@ resolvers ++= Seq(
 
 javacOptions ++= Seq("-Xlint:unchecked", "-encoding", "UTF-8")
 
-scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-Ywarn-unused")
+scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked")
+
+scalacOptions ++= {
+  if (scalaVersion.value.startsWith("2.")) Seq("-Ywarn-unused") else Seq.empty
+}
 
 enablePlugins(CustomReleasePlugin)
 
@@ -47,7 +51,6 @@ coverageExcludedFiles := ".*exceptions.*"
 Test / test := (Test / testOnly).toTask(" * -- -l \"org.scalatest.Ignore\"").value
 
 semanticdbEnabled                      := true
-semanticdbOptions += "-P:semanticdb:synthetics:on"
 semanticdbVersion                      := scalafixSemanticdb.revision
 ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value)
 
@@ -57,6 +60,7 @@ wartremoverWarnings ++= Warts.allBut(
   Wart.AsInstanceOf,
   Wart.AutoUnboxing,
   Wart.DefaultArguments,
+  Wart.FinalVal,
   Wart.GlobalExecutionContext,
   Wart.ImplicitConversion,
   Wart.ImplicitParameter,

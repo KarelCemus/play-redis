@@ -5,7 +5,11 @@ import play.api._
 import play.api.cache.redis.test._
 import play.api.inject.ApplicationLifecycle
 
+import scala.concurrent.duration._
+
 class RedisCacheComponentsSpec extends IntegrationSpec with RedisStandaloneContainer {
+
+  override protected def testTimeout: FiniteDuration = 3.seconds
 
   private val prefix = "components-sync"
 

@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 15
     environment: "Generally Available"
     env:
-      SBT_OPTS: -Dfile.encoding=UTF-8 -Duser.timezone=UTC
+      SBT_OPTS: "-Dfile.encoding=UTF-8 -Duser.timezone=UTC -Xmx2g"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -36,10 +36,10 @@ jobs:
           echo $PGP_SECRET | base64 --decode | gpg  --batch --import
 
       - name: Test and Publish JARs
-        timeout-minutes: 10
+        timeout-minutes: 15
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
         run: |
-             sbt --client "+test; +publishSigned; sonatypeBundleRelease;"
+             sbt -v "+test; +publishSigned; sonatypeBundleRelease;"

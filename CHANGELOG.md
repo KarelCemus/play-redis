@@ -16,6 +16,8 @@ supported at this moment. [#273](https://github.com/KarelCemus/play-redis/pull/2
 
 Installed linters and formatters - scalafmt, scalafix, wartremover. [#275](https://github.com/KarelCemus/play-redis/pull/275)
 
+Added support to Scala 3 in [#264](https://github.com/KarelCemus/play-redis/issues/264)
+
 ### [:link: 2.7.0](https://github.com/KarelCemus/play-redis/tree/2.7.0)
 
 SET command supports milliseconds, previous versions used seconds [#247](https://github.com/KarelCemus/play-redis/issues/247)

@@ -3,25 +3,13 @@ package play.api.cache.redis.impl
 import akka.Done
 import org.scalamock.scalatest.AsyncMockFactoryBase
 import play.api.cache.redis._
+import play.api.cache.redis.test.ImplicitOptionMaterialization
 
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 
-private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
-
-  protected[impl] trait AsyncRedisMock extends AsyncRedis {
-
-    final override def removeAll(keys: String*): AsynchronousResult[Done] =
-      removeAllKeys(keys)
-
-    def removeAllKeys(keys: Seq[String]): AsynchronousResult[Done]
-
-    final override def getAll[T: ClassTag](keys: Iterable[String]): AsynchronousResult[Seq[Option[T]]] =
-      getAllKeys(keys)
-
-    def getAllKeys[T](keys: Iterable[String]): AsynchronousResult[Seq[Option[T]]]
-  }
+private[impl] trait MockedAsyncRedis { this: AsyncMockFactoryBase =>
 
   implicit final protected class AsyncRedisOps(async: AsyncRedisMock) {
 
@@ -30,7 +18,7 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
 
   }
 
-  final protected class AsyncRedisExpectation(async: AsyncRedisMock) {
+  final protected class AsyncRedisExpectation(async: AsyncRedisMock) extends ImplicitOptionMaterialization {
 
     private def classTagKey(key: String): String = s"classTag::$key"
 
@@ -46,7 +34,7 @@ private[impl] trait AsyncRedisMock { this: AsyncMockFactoryBase =>
     def get[T: ClassTag](key: String, value: Option[T]): Future[Unit] =
       Future.successful {
         (async
-          .get(_: String)(_: ClassTag[?]))
+          .get[T](_: String)(_: ClassTag[T]))
           .expects(key, implicitly[ClassTag[T]])
           .returning(Future.successful(value))
           .once()

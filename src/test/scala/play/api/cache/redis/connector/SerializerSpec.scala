@@ -196,5 +196,7 @@ object SerializerSpec {
   }
 
   /** Plain test object to be cached */
+  @SerialVersionUID(3363306882840417725L)
   final private case class SimpleObject(key: String, value: Int)
+
 }
