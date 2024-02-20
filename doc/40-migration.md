@@ -25,7 +25,7 @@ changes in public API, which needs your code to be updated.
 
 The invocation policy in `2.0.x` was used as an implicit parameter. Since
 `2.1.x` it is a static configurable property inside the instance configuration.
-See the [updated documentation for more details](https://github.com/KarelCemus/play-redis/blob/3.0.0-M4/doc/20-configuration.md#eager-and-lazy-invocation).
+See the [updated documentation for more details](https://github.com/KarelCemus/play-redis/blob/3.0.0/doc/20-configuration.md#eager-and-lazy-invocation).
 
 ### Named caches uses @NamedCache instead of @Named
 
@@ -39,7 +39,7 @@ Since `2.1.0`, there is a new `redis-timeout` property. To avoid
 ambiguity, the original `timeout` property was renamed to `sync-redis`.
 The `timeout` property was deprecated any will be removed in `2.2.0`.
 
-See the updated [documentation for more details](https://github.com/KarelCemus/play-redis/blob/3.0.0-M4/doc/20-configuration.md#eager-and-lazy-invocation).
+See the updated [documentation for more details](https://github.com/KarelCemus/play-redis/blob/3.0.0/doc/20-configuration.md#eager-and-lazy-invocation).
 
 
 ## Migration from 1.6.x to 2.0.x
