@@ -24,7 +24,7 @@ libraryDependencies ++= Seq(
   "io.github.rediscala" %% "rediscala"                 % "1.14.0-pekko",
   // test framework with mockito extension
   "org.scalatest"       %% "scalatest"                 % "3.2.18"          % Test,
-  "org.scalamock"       %% "scalamock"                 % "6.0.0-M1"        % Test,
+  "org.scalamock"       %% "scalamock"                 % "6.0.0-M2"        % Test,
   // test module for play framework
   "org.playframework"   %% "play-test"                 % playVersion.value % Test,
   // to run integration tests
