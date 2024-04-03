@@ -10,7 +10,7 @@ There are several features supported in the configuration, they are discussed be
 
 This implementation supports both standalone and cluster instances. By default, the standalone mode is enabled.  It is configured like this:
 
-```
+```hocon
   play.cache.redis {
     host:       localhost
     # redis server: port
@@ -26,7 +26,7 @@ This implementation supports both standalone and cluster instances. By default, 
 
 To enable cluster mode instead, use `source` property. Valid values are `standalone` (default), `cluster`, `connection-string`, and `custom`. For more details, see below. Example of cluster settings:
 
-```
+```hocon
 play.cache.redis {
   # enable cluster mode
   source: cluster
@@ -52,7 +52,7 @@ play.cache.redis {
 Some platforms such as Amazon AWS use a single DNS record to define a whole cluster. Such
 a domain name resolves to multiple IP addresses, which are nodes of a cluster.
 
-```
+```hocon
 play.cache.redis {
   instances {
     play {
@@ -68,7 +68,7 @@ play.cache.redis {
 Use `source: sentinel` to enable sentinel mode. Required parameters are
 `master_group_name: ...` and `sentinels: []`. An example of sentinel settings:
 
-```
+```hocon
 play.cache.redis {
     source: sentinel
 
@@ -96,6 +96,50 @@ play.cache.redis {
         {
             host: localhost
             port: 16382
+        }
+    ]
+}
+```
+
+## Master-Slaves
+
+Use `source: master-slaves` to enable master-slaves mode.
+In this mode write only to the master node and read from one of slaves node.
+Required parameters are `master: {...}` and `slaves: []`. An example of master-slaves settings:
+
+```hocon
+play.cache.redis {
+    source: master-slaves
+
+    # username to your redis hosts (optional)
+    username: some-username
+    # password to your redis hosts, use if not specified for a specific node (optional)
+    password: "my-password"
+    # number of your redis database, use if not specified for a specific node (optional)
+    database: 1 
+    
+    # master node
+    master: {
+        host: "localhost"
+        port: 6380
+        # number of your redis database on master (optional)
+        database: 1
+        # username on master host (optional)
+        username: some-username
+        # password on master host (optional)
+        password: something
+    }
+    # slave nodes
+    slaves: [
+        {
+            host: "localhost"
+            port: 6381
+            # number of your redis database on slave (optional)
+            database: 1
+            # username on slave host (optional)
+            username: some-username
+            # password on slave host (optional)
+            password: something
         }
     ]
 }
@@ -307,7 +351,7 @@ each instance uses `lazy` policy.
 
 ## Running in different environments
 
-This module can run in various environments, from the localhost through the Heroku to your own premise. Each of these has a possibly different configuration. For this purpose, there is a `source` property accepting 4 values: `standalone` (default), `cluster`, `connection-string`, and `custom`.
+This module can run in various environments, from the localhost through the Heroku to your own premise. Each of these has a possibly different configuration. For this purpose, there is a `source` property accepting 4 values: `standalone` (default), `cluster`, `connection-string`, `master-slaves` and `custom`.
 
 The `standalone` and `cluster` options are already explained. The latter two simplify the use in environments, where the connection cannot be written into the configuration file up front.
 
@@ -366,11 +410,11 @@ configuration, see the [official Pekko documentation](https://pekko.apache.org/d
 
 ### Instance-specific (can be locally overridden)
 
-| Key                                                      | Type     |                              Default | Description                                                                                                             |
-|----------------------------------------------------------|---------:|-------------------------------------:|-------------------------------------------------------------------------------------------------------------------------|
-| [play.cache.redis.source](#standalone-vs-cluster)        | String   |                         `standalone` | Defines the source of the configuration. Accepted values are `standalone`, `cluster`, `connection-string`, and `custom` |
-| [play.cache.redis.sync-timeout](#timeout)                | Duration |                                 `1s` | conversion timeout applied by `SyncAPI` to convert `Future[T]` to `T`                                                   |
-| [play.cache.redis.redis-timeout](#timeout)               | Duration |                               `null` | waiting for the response from redis server                                                                              |
-| [play.cache.redis.prefix](#namespace-prefix)             | String   |                               `null` | optional namespace, i.e., key prefix                                                                                    |
-| play.cache.redis.dispatcher                              | String   | `pekko.actor.default-dispatcher` | Pekko actor                                                                                                             |
-| [play.cache.redis.recovery](#recovery-policy)            | String   |                    `log-and-default` | Defines behavior when command execution fails. For accepted values and more see                                         |
+| Key                                                      | Type     |                              Default | Description                                                                                                                             |
+|----------------------------------------------------------|---------:|-------------------------------------:|-----------------------------------------------------------------------------------------------------------------------------------------|
+| [play.cache.redis.source](#standalone-vs-cluster)        | String   |                         `standalone` | Defines the source of the configuration. Accepted values are `standalone`, `cluster`, `connection-string`, `master-slaves` and `custom` |
+| [play.cache.redis.sync-timeout](#timeout)                | Duration |                                 `1s` | conversion timeout applied by `SyncAPI` to convert `Future[T]` to `T`                                                                   |
+| [play.cache.redis.redis-timeout](#timeout)               | Duration |                               `null` | waiting for the response from redis server                                                                                              |
+| [play.cache.redis.prefix](#namespace-prefix)             | String   |                               `null` | optional namespace, i.e., key prefix                                                                                                    |
+| play.cache.redis.dispatcher                              | String   | `pekko.actor.default-dispatcher` | Pekko actor                                                                                                                             |
+| [play.cache.redis.recovery](#recovery-policy)            | String   |                    `log-and-default` | Defines behavior when command execution fails. For accepted values and more see                                                         |

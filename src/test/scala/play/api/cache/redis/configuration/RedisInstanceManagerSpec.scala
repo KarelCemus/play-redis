@@ -216,6 +216,41 @@ class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterializati
 
   }
 
+  "master-slaves mode" in new TestCase {
+
+    override protected def hocon: String =
+      """
+        |play.cache.redis {
+        |  instances {
+        |    play {
+        |      master: { host: "localhost", port: 6380 }
+        |      slaves: [
+        |        { host: "localhost", port: 6381 }
+        |        { host: "localhost", port: 6382 }
+        |      ]
+        |      password: "my-password"
+        |      database: 1
+        |      source: master-slaves
+        |    }
+        |  }
+        |}
+    """
+
+    private def node(port: Int) = RedisHost(localhost, port)
+
+    manager mustEqual RedisInstanceManagerTest(defaultCacheName)(
+      RedisMasterSlaves(
+        name = defaultCacheName,
+        master = node(6380),
+        slaves = node(6381) :: node(6382) :: Nil,
+        settings = defaultsSettings.copy(source = "master-slaves"),
+        password = "my-password",
+        database = 1,
+      ),
+    )
+
+  }
+
   "custom mode" in new TestCase {
 
     override protected def hocon: String =

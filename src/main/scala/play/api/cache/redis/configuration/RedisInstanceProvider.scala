@@ -58,6 +58,8 @@ private[configuration] object RedisInstanceProvider extends RedisConfigInstanceL
       case "aws-cluster"       => RedisInstanceAwsCluster
       // required static configuration of the sentinel using application.conf
       case "sentinel"          => RedisInstanceSentinel
+      // required static configuration of the master-slaves using application.conf
+      case "master-slaves"     => RedisInstanceMasterSlaves
       // required possibly environmental configuration of the standalone instance
       case "connection-string" => RedisInstanceEnvironmental
       // supplied custom configuration
@@ -158,6 +160,26 @@ private[configuration] object RedisInstanceSentinel extends RedisConfigInstanceL
         settings = RedisSettings.withFallback(defaults).load(config, path),
       ),
     )
+
+}
+
+/** Statically configures redis master-slaves. */
+private[configuration] object RedisInstanceMasterSlaves extends RedisConfigInstanceLoader[RedisInstanceProvider] {
+
+  import JavaCompatibilityBase._
+  import RedisConfigLoader._
+
+  def load(config: Config, path: String, instanceName: String)(implicit defaults: RedisSettings) = new ResolvedRedisInstance(
+    RedisMasterSlaves.apply(
+      name = instanceName,
+      master = RedisHost.load(config.getConfig(path / "master")),
+      slaves = config.getConfigList(path / "slaves").asScala.map(config => RedisHost.load(config)).toList,
+      username = config.getOption(path / "username", _.getString),
+      password = config.getOption(path / "password", _.getString),
+      database = config.getOption(path / "database", _.getInt),
+      settings = RedisSettings.withFallback(defaults).load(config, path),
+    ),
+  )
 
 }
 

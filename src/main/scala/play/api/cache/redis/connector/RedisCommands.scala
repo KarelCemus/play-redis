@@ -17,9 +17,10 @@ import scala.concurrent.duration.FiniteDuration
 private[connector] class RedisCommandsProvider(instance: RedisInstance)(implicit system: ActorSystem, lifecycle: ApplicationLifecycle) extends Provider[RedisCommands] {
 
   lazy val get: RedisCommands = instance match {
-    case cluster: RedisCluster       => new RedisCommandsCluster(cluster).get
-    case standalone: RedisStandalone => new RedisCommandsStandalone(standalone).get
-    case sentinel: RedisSentinel     => new RedisCommandsSentinel(sentinel).get
+    case cluster: RedisCluster           => new RedisCommandsCluster(cluster).get
+    case standalone: RedisStandalone     => new RedisCommandsStandalone(standalone).get
+    case sentinel: RedisSentinel         => new RedisCommandsSentinel(sentinel).get
+    case masterSlaves: RedisMasterSlaves => new RedisCommandsMasterSlaves(masterSlaves).get
   }
 
 }
@@ -180,6 +181,59 @@ private[connector] class RedisCommandsSentinel(configuration: RedisSentinel)(imp
     log.info("Stopping the redis sentinel cache actor ...")
     client.stop()
     log.info("Redis sentinel cache stopped.")
+  }
+  // $COVERAGE-ON$
+
+}
+
+/**
+  * Creates a connection to master and slaves nodes.
+  *
+  * @param lifecycle
+  *   application lifecycle to trigger on stop hook
+  * @param configuration
+  *   configures master-slaves
+  * @param system
+  *   actor system
+  */
+private[connector] class RedisCommandsMasterSlaves(configuration: RedisMasterSlaves)(implicit system: ActorSystem, val lifecycle: ApplicationLifecycle) extends Provider[RedisCommands] with AbstractRedisCommands {
+  import HostnameResolver._
+
+  val client: RedisClientMasterSlaves with RedisRequestTimeout = new RedisClientMasterSlaves(
+    master = RedisServer(
+      host = configuration.master.host.resolvedIpAddress,
+      port = configuration.master.port,
+      username = if (configuration.master.username.isEmpty) configuration.username else configuration.master.username,
+      password = if (configuration.master.password.isEmpty) configuration.password else configuration.master.password,
+      db = if (configuration.master.database.isEmpty) configuration.database else configuration.master.database,
+    ),
+    slaves = configuration.slaves.map { case RedisHost(host, port, db, username, password) =>
+      RedisServer(
+        host.resolvedIpAddress,
+        port,
+        if (username.isEmpty) configuration.username else username,
+        if (password.isEmpty) configuration.password else password,
+        if (db.isEmpty) configuration.database else db,
+      )
+    },
+  ) with RedisRequestTimeout {
+
+    protected val timeout: Option[FiniteDuration] = configuration.timeout.redis
+
+    implicit protected val scheduler: Scheduler = system.scheduler
+
+    override def send[T](redisCommand: RedisCommand[? <: protocol.RedisReply, T]): Future[T] = super.send(redisCommand)
+  }
+
+  // $COVERAGE-OFF$
+  def start(): Unit =
+    log.info(s"Redis master-slaves cache actor started. It is connected to ${configuration.toString}")
+
+  def stop(): Future[Unit] = Future successful {
+    log.info("Stopping the redis master-slaves cache actor ...")
+    client.masterClient.stop()
+    client.slavesClients.stop()
+    log.info("Redis master-slaves cache stopped.")
   }
   // $COVERAGE-ON$
 
