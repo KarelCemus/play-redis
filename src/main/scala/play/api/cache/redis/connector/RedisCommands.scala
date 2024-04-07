@@ -1,21 +1,28 @@
 package play.api.cache.redis.connector
 
-import javax.inject._
-
-import scala.concurrent.Future
-
+import akka.actor.ActorSystem
+import io.lettuce.core.api.async.RedisAsyncCommands
+import io.lettuce.core.cluster.ClusterTopologyRefreshOptions.RefreshTrigger
+import io.lettuce.core.cluster.{ClusterClientOptions, ClusterTopologyRefreshOptions, RedisClusterClient}
+import io.lettuce.core.{RedisClient, RedisURI}
 import play.api.Logger
 import play.api.cache.redis.configuration._
 import play.api.inject.ApplicationLifecycle
 
-import akka.actor.ActorSystem
-import redis.{RedisClient => RedisStandaloneClient, RedisCluster => RedisClusterClient, _}
+import java.time.Duration
+import java.util.concurrent.TimeUnit
+import javax.inject._
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters.SeqHasAsJava
 
 /**
   * Dispatches a provider of the redis commands implementation. Use with Guice
   * or some other DI container.
   */
-private[connector] class RedisCommandsProvider(instance: RedisInstance)(implicit system: ActorSystem, lifecycle: ApplicationLifecycle) extends Provider[RedisCommands] {
+private[connector] class RedisCommandsProvider(instance: RedisInstance)(implicit
+  system: ActorSystem,
+  lifecycle: ApplicationLifecycle
+) extends Provider[RedisAsyncCommands[String, String]] {
 
   lazy val get = instance match {
     case cluster: RedisCluster       => new RedisCommandsCluster(cluster).get
@@ -32,7 +39,7 @@ private[connector] trait AbstractRedisCommands {
   def lifecycle: ApplicationLifecycle
 
   /** an implementation of the redis commands */
-  def client: RedisCommands
+  def client: RedisAsyncCommands[String, String]
 
   lazy val get = client
 
@@ -55,29 +62,25 @@ private[connector] trait AbstractRedisCommands {
   * @param configuration configures clusters
   * @param system        actor system
   */
-private[connector] class RedisCommandsStandalone(configuration: RedisStandalone)(implicit system: ActorSystem, val lifecycle: ApplicationLifecycle) extends Provider[RedisCommands] with AbstractRedisCommands {
+private[connector] class RedisCommandsStandalone(configuration: RedisStandalone)(implicit
+  system: ActorSystem,
+  val lifecycle: ApplicationLifecycle
+) extends Provider[RedisAsyncCommands[String, String]] with AbstractRedisCommands {
+
   import configuration._
 
-  val client: RedisStandaloneClient = new RedisStandaloneClient(
-    host = host,
-    port = port,
-    db = database,
-    password = password
-  ) with FailEagerly with RedisRequestTimeout {
-
-    protected val connectionTimeout = configuration.timeout.connection
-
-    protected val timeout = configuration.timeout.redis
-
-    protected implicit val scheduler = system.scheduler
-
-    override def send[T](redisCommand: RedisCommand[_ <: protocol.RedisReply, T]) = super.send(redisCommand)
-
-    override def onConnectStatus = (status: Boolean) => connected = status
+  private val redisUri = RedisURI.Builder.redis(host).withPort(port)
+  redisUri.withDatabase(database.getOrElse(0))
+  if (username.nonEmpty && password.nonEmpty) {
+    redisUri.withAuthentication(username.get, password.get.toCharArray)
+  } else if (password.nonEmpty) {
+    redisUri.withPassword(password.get.toCharArray)
   }
+  private val redisClient: RedisClient = RedisClient.create(redisUri.build())
+  val client: RedisAsyncCommands[String, String] = redisClient.connect().async()
 
   // $COVERAGE-OFF$
-  def start() = database.fold {
+  def start(): Unit = database.fold {
     log.info(s"Redis cache actor started. It is connected to $host:$port")
   } {
     database => log.info(s"Redis cache actor started. It is connected to $host:$port?database=$database")
@@ -85,7 +88,7 @@ private[connector] class RedisCommandsStandalone(configuration: RedisStandalone)
 
   def stop(): Future[Unit] = Future successful {
     log.info("Stopping the redis cache actor ...")
-    client.stop()
+    redisClient.shutdown()
     log.info("Redis cache stopped.")
   }
   // $COVERAGE-ON$
@@ -98,26 +101,37 @@ private[connector] class RedisCommandsStandalone(configuration: RedisStandalone)
   * @param configuration configures clusters
   * @param system        actor system
   */
-private[connector] class RedisCommandsCluster(configuration: RedisCluster)(implicit system: ActorSystem, val lifecycle: ApplicationLifecycle) extends Provider[RedisCommands] with AbstractRedisCommands {
-  import HostnameResolver._
+private[connector] class RedisCommandsCluster(configuration: RedisCluster)(implicit
+  system: ActorSystem,
+  val lifecycle: ApplicationLifecycle
+) extends Provider[RedisAsyncCommands[String, String]] with AbstractRedisCommands {
 
   import configuration._
 
-  val client: RedisClusterClient = new RedisClusterClient(
-    nodes.map {
-      case RedisHost(host, port, database, password) => RedisServer(host.resolvedIpAddress, port, password, database)
-    }
-  ) with RedisRequestTimeout {
-    protected val timeout = configuration.timeout.redis
+  private val redisClient: RedisClusterClient = RedisClusterClient.create(nodes.map {
+    case RedisHost(host, port, database, password, username) =>
+      val redisUri = RedisURI.Builder.redis(host).withPort(port)
+      redisUri.withDatabase(database.getOrElse(0))
+      if (username.nonEmpty && password.nonEmpty) {
+        redisUri.withAuthentication(username.get, password.get.toCharArray)
+      } else if (password.nonEmpty) {
+        redisUri.withPassword(password.get.toCharArray)
+      }
+      redisUri.build()
+  }.asJava)
+  private val topologyRefreshOptions: ClusterTopologyRefreshOptions = ClusterTopologyRefreshOptions.builder.enableAdaptiveRefreshTrigger(RefreshTrigger.MOVED_REDIRECT, RefreshTrigger.PERSISTENT_RECONNECTS).adaptiveRefreshTriggersTimeout(
+    Duration.ofNanos(TimeUnit.SECONDS.toNanos(30))
+  ).build
 
-    protected implicit val scheduler = system.scheduler
-  }
+  redisClient.setOptions(ClusterClientOptions.builder.topologyRefreshOptions(topologyRefreshOptions).build)
+
+  val client: RedisAsyncCommands[String, String] = redisClient.connect().async().asInstanceOf[RedisAsyncCommands[String, String]]
 
   // $COVERAGE-OFF$
-  def start() = {
-    def servers = nodes.map {
-      case RedisHost(host, port, Some(database), _) => s" $host:$port?database=$database"
-      case RedisHost(host, port, None, _)           => s" $host:$port"
+  def start(): Unit = {
+    def servers: List[String] = nodes.map {
+      case RedisHost(host, port, Some(database), _, _) => s" $host:$port?database=$database"
+      case RedisHost(host, port, None, _, _)           => s" $host:$port"
     }
 
     log.info(s"Redis cluster cache actor started. It is connected to ${servers mkString ", "}")
@@ -125,7 +139,7 @@ private[connector] class RedisCommandsCluster(configuration: RedisCluster)(impli
 
   def stop(): Future[Unit] = Future successful {
     log.info("Stopping the redis cluster cache actor ...")
-    client.stop()
+    redisClient.shutdown()
     log.info("Redis cluster cache stopped.")
   }
   // $COVERAGE-ON$
@@ -138,25 +152,24 @@ private[connector] class RedisCommandsCluster(configuration: RedisCluster)(impli
   * @param configuration configures sentinels
   * @param system        actor system
   */
-private[connector] class RedisCommandsSentinel(configuration: RedisSentinel)(implicit system: ActorSystem, val lifecycle: ApplicationLifecycle) extends Provider[RedisCommands] with AbstractRedisCommands {
-  import HostnameResolver._
+private[connector] class RedisCommandsSentinel(configuration: RedisSentinel)(implicit system: ActorSystem, val lifecycle: ApplicationLifecycle) extends Provider[RedisAsyncCommands[String, String]] with AbstractRedisCommands {
 
-  val client: SentinelMonitoredRedisClient with RedisRequestTimeout = new SentinelMonitoredRedisClient(
-    configuration.sentinels.map {
-      case RedisHost(host, port, _, _) => (host.resolvedIpAddress, port)
-    },
-    master = configuration.masterGroup,
-    password = configuration.password,
-    db = configuration.database
-  ) with RedisRequestTimeout {
-    protected val connectionTimeout = configuration.timeout.connection
-
-    protected val timeout = configuration.timeout.redis
-
-    protected implicit val scheduler = system.scheduler
-
-    override def send[T](redisCommand: RedisCommand[_ <: protocol.RedisReply, T]) = super.send(redisCommand)
+  val sentinel: RedisHost = configuration.sentinels.head
+  val redisUri: RedisURI.Builder = RedisURI.Builder.sentinel(sentinel.host, sentinel.port)
+  if (configuration.database.nonEmpty) {
+    redisUri.withDatabase(configuration.database.get)
   }
+  if (configuration.username.nonEmpty && configuration.password.nonEmpty) {
+    redisUri.withAuthentication(configuration.username.get, configuration.password.get.toCharArray)
+  } else if (configuration.password.nonEmpty) {
+    redisUri.withPassword(configuration.password.get.toCharArray)
+  }
+  configuration.sentinels.map {
+    case RedisHost(host, port, database, password, username) =>
+      redisUri.withSentinel(host, port)
+  }
+  private val redisClient: RedisClient = RedisClient.create(redisUri.build())
+  val client: RedisAsyncCommands[String, String] = redisClient.connect().async()
 
   // $COVERAGE-OFF$
   def start(): Unit = {
@@ -165,7 +178,7 @@ private[connector] class RedisCommandsSentinel(configuration: RedisSentinel)(imp
 
   def stop(): Future[Unit] = Future successful {
     log.info("Stopping the redis sentinel cache actor ...")
-    client.stop()
+    redisClient.shutdown()
     log.info("Redis sentinel cache stopped.")
   }
   // $COVERAGE-ON$
