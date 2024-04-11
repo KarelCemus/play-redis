@@ -9,19 +9,21 @@ import scala.annotation.nowarn
 
 trait RedisContainer extends ForAllTestContainer { this: Suite =>
 
+  final override protected type TestContainer = GenericContainer
+
   protected def redisConfig: RedisContainerConfig
 
   private lazy val config = redisConfig
 
   @nowarn("cat=deprecation")
   @SuppressWarnings(Array("org.wartremover.warts.ForeachEntry"))
-  final override protected val newContainer: GenericContainer = {
+  final override protected val newContainer: TestContainerDef[TestContainer] = {
     val container: FixedHostPortGenericContainer[?] = new FixedHostPortGenericContainer(config.redisDockerImage)
     container.withExposedPorts(config.redisMappedPorts.map(int2Integer): _*)
     config.redisEnvironment.foreach { case (k, v) => container.withEnv(k, v) }
     container.waitingFor(Wait.forListeningPorts(config.redisMappedPorts ++ config.redisFixedPorts: _*))
     config.redisFixedPorts.foreach(port => container.withFixedExposedPort(port, port))
-    new GenericContainer(container)
+    new GenericContainer.Def(new GenericContainer(container): TestContainer) {}
   }
 
 }

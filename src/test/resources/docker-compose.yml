@@ -4,11 +4,11 @@ services:
     image: redis:latest
     hostname: redis-master
     ports:
-      - '6379:6379'
+      - '${REDIS_MASTER_PORT}:6379'
 
   redis-slave:
     image: redis:latest
     hostname: redis-slave
     ports:
-      - '6479:6379'
+      - '${REDIS_SLAVE_PORT}:6379'
     command: redis-server --slaveof redis-master 6379
