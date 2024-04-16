@@ -1,5 +1,6 @@
 package play.api.cache.redis.connector
 
+import io.lettuce.core.api.async.RedisAsyncCommands
 import play.api.cache.redis._
 import play.api.cache.redis.test._
 import redis._
@@ -245,7 +246,7 @@ class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMateria
     name in {
       implicit val runtime: RedisRuntime = mock[RedisRuntime]
       val serializer: PekkoSerializer = mock[PekkoSerializer]
-      val (commands: RedisCommands, mockedCommands: RedisCommandsMock) = RedisCommandsMock.mock(this)
+      val (commands: RedisAsyncCommands[String,String], mockedCommands: RedisCommandsMock) = RedisCommandsMock.mock(this)
       val connector: RedisConnector = new RedisConnectorImpl(serializer, commands)
 
       (() => runtime.context).expects().returns(ExecutionContext.global).anyNumberOfTimes()

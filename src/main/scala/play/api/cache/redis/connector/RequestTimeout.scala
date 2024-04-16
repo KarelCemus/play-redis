@@ -8,14 +8,16 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
-  * Helper for manipulation with the request to the redis. It defines the common
-  * variables and methods to avoid code duplication
-  */
+ * Helper for manipulation with the request to the redis. It defines the common
+ * variables and methods to avoid code duplication
+ */
+@deprecated
 trait RequestTimeout extends Request {
 
   implicit protected val scheduler: Scheduler
 }
 
+@deprecated
 object RequestTimeout {
 
   // fails
@@ -31,11 +33,12 @@ object RequestTimeout {
 }
 
 /**
-  * Actor extension maintaining current connected status. The operations are not
-  * invoked when the connection is not established, the failed future is
-  * returned instead.
-  */
+ * Actor extension maintaining current connected status. The operations are not
+ * invoked when the connection is not established, the failed future is
+ * returned instead.
+ */
 trait FailEagerly extends RequestTimeout {
+
   import RequestTimeout._
 
   protected var connected = false
@@ -54,11 +57,13 @@ trait FailEagerly extends RequestTimeout {
 }
 
 /**
-  * Actor extension implementing a request timeout, if enabled. This is due to
-  * no internal timeout provided by the redis-scala to avoid never-completed
-  * futures.
-  */
+ * Actor extension implementing a request timeout, if enabled. This is due to
+ * no internal timeout provided by the redis-scala to avoid never-completed
+ * futures.
+ */
+@deprecated
 trait RedisRequestTimeout extends RequestTimeout {
+
   import RequestTimeout._
 
   private var initialized = false
