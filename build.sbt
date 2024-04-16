@@ -22,6 +22,7 @@ libraryDependencies ++= Seq(
   "org.playframework" %% "play-cache" % playVersion.value % Provided,
   // redis connector
   "io.lettuce" % "lettuce-core" % "6.3.2.RELEASE",
+  //Subsequent versions can attempt to remove it
   "io.github.rediscala" %% "rediscala" % "1.14.0-pekko",
   // test framework with mockito extension
   "org.scalatest" %% "scalatest" % "3.2.18" % Test,
