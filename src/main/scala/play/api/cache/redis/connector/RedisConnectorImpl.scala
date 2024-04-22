@@ -1,7 +1,6 @@
 package play.api.cache.redis.connector
 
-import io.lettuce.core.{KeyValue, SetArgs}
-import io.lettuce.core.api.async.RedisAsyncCommands
+import io.lettuce.core.SetArgs
 import io.lettuce.core.cluster.api.async.RedisClusterAsyncCommands
 import play.api.Logger
 import play.api.cache.redis._
@@ -14,57 +13,51 @@ import scala.jdk.FutureConverters.CompletionStageOps
 import scala.reflect.ClassTag
 
 /**
- * The connector directly connects with the REDIS instance, implements protocol
- * commands and is supposed to by used internally by another wrappers. The
- * connector does not directly implement [[play.api.cache.redis.CacheApi]] but
- * provides fundamental functionality.
- *
- * @param serializer
- * encodes/decodes objects into/from a string
- * @param redis
- * implementation of the commands
- */
+  * The connector directly connects with the REDIS instance, implements protocol
+  * commands and is supposed to by used internally by another wrappers. The
+  * connector does not directly implement [[play.api.cache.redis.CacheApi]] but
+  * provides fundamental functionality.
+  *
+  * @param serializer
+  *   encodes/decodes objects into/from a string
+  * @param redis
+  *   implementation of the commands
+  */
 private[connector] class RedisConnectorImpl(serializer: PekkoSerializer, redis: RedisClusterAsyncCommands[String, String])(implicit runtime: RedisRuntime) extends RedisConnector {
 
   import ExpectedFuture._
-
   import runtime._
 
   /** logger instance */
   protected val log: Logger = Logger("play.api.cache.redis")
 
-  override def get[T: ClassTag](key: String): Future[Option[T]] = redis.get(key).asScala executing "GET" withKey key expects {
-    response: String =>
-      log.trace(s"Hit on key '$key'.")
-      toScala(key, response)
-  } recover {
-    case _: Exception =>
-      None
+  override def get[T: ClassTag](key: String): Future[Option[T]] = redis.get(key).asScala executing "GET" withKey key expects { response: String =>
+    log.trace(s"Hit on key '$key'.")
+    toScala(key, response)
+  } recover { case _: Exception =>
+    None
   }
-
 
   override def mGet[T: ClassTag](keys: String*): Future[Seq[Option[T]]] =
     redis.mget(keys: _*).asScala executing "MGET" withKeys keys expects {
       // list is always returned
       case list =>
-        list.asScala.map {
-          l =>
-            log.trace(s"Hit on key '${l.getKey}'.")
-            if (l.hasValue) {
-              toScala(l.getKey, l.getValue)
-            } else {
-              None
-            }
+        list.asScala.map { l =>
+          log.trace(s"Hit on key '${l.getKey}'.")
+          if (l.hasValue) {
+            toScala(l.getKey, l.getValue)
+          } else {
+            None
+          }
         }.toSeq
     }
 
-  private def toScala[T: ClassTag](key: String, value: String): Option[T] = {
+  private def toScala[T: ClassTag](key: String, value: String): Option[T] =
     if (value == null) {
       None
     } else {
       Some(decode[T](key, value))
     }
-  }
 
   /** decodes the object, reports an exception if fails */
   private def decode[T: ClassTag](key: String, encoded: String): T =
@@ -89,9 +82,9 @@ private[connector] class RedisConnectorImpl(serializer: PekkoSerializer, redis: 
   }
 
   /**
-   * implements the advanced set operation storing already encoded value into
-   * the storage
-   */
+    * implements the advanced set operation storing already encoded value into
+    * the storage
+    */
   private def doSet(key: String, value: String, expiration: Duration, ifNotExists: Boolean): Future[Boolean] = {
     val args: SetArgs = new SetArgs()
     if (ifNotExists) args.nx()
@@ -104,23 +97,22 @@ private[connector] class RedisConnectorImpl(serializer: PekkoSerializer, redis: 
       args,
     ).asScala.map {
       case "OK" => true
-      case _ => false
+      case _    => false
     } executing "SET" withKey key andParameters s"$value${s" PX $expiration" when expiration.isFinite}${" NX" when ifNotExists}" logging {
       case true if expiration.isFinite => log.debug(s"Set on key '$key' for ${expiration.toMillis} milliseconds.")
-      case true => log.debug(s"Set on key '$key' for infinite seconds.")
-      case false => log.debug(s"Set on key '$key' ignored. Condition was not met.")
+      case true                        => log.debug(s"Set on key '$key' for infinite seconds.")
+      case false                       => log.debug(s"Set on key '$key' ignored. Condition was not met.")
     }
   }
-
 
   override def mSet(keyValues: (String, Any)*): Future[Unit] = mSetUsing(mSetEternally, (), keyValues: _*)
 
   override def mSetIfNotExist(keyValues: (String, Any)*): Future[Boolean] = mSetUsing(mSetEternallyIfNotExist, true, keyValues: _*)
 
   /**
-   * eternally stores or removes all given values, using the given mSet
-   * implementation
-   */
+    * eternally stores or removes all given values, using the given mSet
+    * implementation
+    */
   private def mSetUsing[T](mSet: Seq[(String, String)] => Future[T], default: T, keyValues: (String, Any)*): Future[T] = {
     val (toBeRemoved, toBeSet) = keyValues.partition(_.isNull)
     // remove all keys to be removed
@@ -140,22 +132,22 @@ private[connector] class RedisConnectorImpl(serializer: PekkoSerializer, redis: 
   /** eternally stores already encoded values into the storage */
   private def mSetEternallyIfNotExist(keyValues: (String, String)*): Future[Boolean] =
     redis.msetnx(keyValues.toMap.asJava).asScala.map(_.booleanValue()) executing "MSETNX" withKeys keyValues.map(_._1) asCommand keyValues.map(_.asString).mkString(" ") logging {
-      case true => log.debug(s"Set if not exists on keys ${keyValues.map(_.key) mkString " "} succeeded.")
+      case true  => log.debug(s"Set if not exists on keys ${keyValues.map(_.key) mkString " "} succeeded.")
       case false => log.debug(s"Set if not exists on keys ${keyValues.map(_.key) mkString " "} ignored. Some value already exists.")
     }
 
   override def expire(key: String, expiration: Duration): Future[Unit] =
     redis.expire(key, expiration.toSeconds).asScala.map(_.booleanValue()) executing "EXPIRE" withKey key andParameter s"$expiration" logging {
-      case true => log.debug(s"Expiration set on key '$key'.") // expiration was set
+      case true  => log.debug(s"Expiration set on key '$key'.")                            // expiration was set
       case false => log.debug(s"Expiration set on key '$key' failed. Key does not exist.") // Nothing was removed
     }
 
   override def expiresIn(key: String): Future[Option[Duration]] =
     redis.pttl(key).asScala.map(_.longValue()) executing "PTTL" withKey key expects {
-      case -2 =>
+      case -2         =>
         log.debug(s"PTTL on key '$key' returns -2, it does not exist.")
         None
-      case -1 =>
+      case -1         =>
         log.debug(s"PTTL on key '$key' returns -1, it has no associated expiration.")
         Some(Duration.Inf)
       case expiration =>
@@ -179,11 +171,8 @@ private[connector] class RedisConnectorImpl(serializer: PekkoSerializer, redis: 
   // $COVERAGE-ON$
 
   override def exists(key: String): Future[Boolean] =
-    redis.exists(key).asScala.map(_.longValue()).map {
-      case 1L => true
-      case 0L => false
-    } executing "EXISTS" withKey key logging {
-      case true => log.debug(s"Key '$key' exists.")
+    redis.exists(key).asScala.map(_ > 0) executing "EXISTS" withKey key logging {
+      case true  => log.debug(s"Key '$key' exists.")
       case false => log.debug(s"Key '$key' doesn't exist.")
     }
 
@@ -191,7 +180,7 @@ private[connector] class RedisConnectorImpl(serializer: PekkoSerializer, redis: 
     if (keys.nonEmpty) { // if any key to remove do it
       redis.del(keys: _*).asScala.map(_.longValue()) executing "DEL" withKeys keys logging {
         // Nothing was removed
-        case 0L => log.debug(s"Remove on keys ${keys.mkString("'", ",", "'")} succeeded but nothing was removed.")
+        case 0L      => log.debug(s"Remove on keys ${keys.mkString("'", ",", "'")} succeeded but nothing was removed.")
         // Some entries were removed
         case removed => log.debug(s"Remove on keys ${keys.mkString("'", ",", "'")} removed $removed values.")
       }
@@ -246,44 +235,42 @@ private[connector] class RedisConnectorImpl(serializer: PekkoSerializer, redis: 
     }
 
   override def listHeadPop[T: ClassTag](key: String): Future[Option[T]] =
-    redis.lpop(key).asScala executing "LPOP" withKey key expects {
-      encoded =>
-        log.trace(s"Hit on head in key '$key'.")
-        toScala[T](key, encoded)
+    redis.lpop(key).asScala executing "LPOP" withKey key expects { encoded =>
+      log.trace(s"Hit on head in key '$key'.")
+      toScala[T](key, encoded)
     }
 
   override def listSlice[T: ClassTag](key: String, start: Long, end: Long): Future[Seq[T]] =
-    redis.lrange(key, start, end).asScala.map(_.asScala.toSeq) executing "LRANGE" withKey key andParameters s"$start $end" expects {
-      case values =>
-        log.debug(s"The range on '$key' from $start to $end included returned ${values.size} values.")
-        values.map(decode[T](key, _))
+    redis.lrange(key, start, end).asScala.map(_.asScala.toSeq) executing "LRANGE" withKey key andParameters s"$start $end" expects { case values =>
+      log.debug(s"The range on '$key' from $start to $end included returned ${values.size} values.")
+      values.map(decode[T](key, _))
     }
 
   override def listRemove(key: String, value: Any, count: Long): Future[Long] =
-    encode(key, value).flatMap(redis.lrem(key, count, _).asScala.map(_.toLong)) executing "LREM" withKey key andParameters s"$value $count" logging {
-      case removed => log.debug(s"Removed $removed occurrences of $value in '$key'.")
+    encode(key, value).flatMap(redis.lrem(key, count, _).asScala.map(_.longValue())) executing "LREM" withKey key andParameters s"$value $count" logging { case removed =>
+      log.debug(s"Removed $removed occurrences of $value in '$key'.")
     }
 
   override def listTrim(key: String, start: Long, end: Long): Future[Unit] =
-    redis.ltrim(key, start, end).asScala executing "LTRIM" withKey key andParameter s"$start $end" logging {
-      case _ => log.debug(s"Trimmed collection at '$key' to $start:$end ")
+    redis.ltrim(key, start, end).asScala executing "LTRIM" withKey key andParameter s"$start $end" logging { case _ =>
+      log.debug(s"Trimmed collection at '$key' to $start:$end ")
     }
 
   override def listInsert(key: String, pivot: Any, value: Any): Future[Option[Long]] = for {
-    pivot <- encode(key, pivot)
-    value <- encode(key, value)
+    pivot  <- encode(key, pivot)
+    value  <- encode(key, value)
     result <- redis.linsert(key, true, pivot, value).asScala.map(_.longValue()) executing "LINSERT" withKey key andParameter s"$pivot $value" expects {
-      case -1L | 0L =>
-        log.debug(s"Insert into the list at '$key' failed. Pivot not found.")
-        None
-      case length =>
-        log.debug(s"Inserted $value into the list at '$key'. New size is $length.")
-        Some(length)
-    } recover {
-      case ExecutionFailedException(_, _, _, ex) if ex.getMessage startsWith "WRONGTYPE" =>
-        log.warn(s"Value at '$key' is not a list.")
-        throw new IllegalArgumentException(s"Value at '$key' is not a list.")
-    }
+                case -1L | 0L =>
+                  log.debug(s"Insert into the list at '$key' failed. Pivot not found.")
+                  None
+                case length   =>
+                  log.debug(s"Inserted $value into the list at '$key'. New size is $length.")
+                  Some(length)
+              } recover {
+                case ExecutionFailedException(_, _, _, ex) if ex.getMessage startsWith "WRONGTYPE" =>
+                  log.warn(s"Value at '$key' is not a list.")
+                  throw new IllegalArgumentException(s"Value at '$key' is not a list.")
+              }
   } yield result
 
   override def setAdd(key: String, values: Any*): Future[Long] = {
@@ -313,7 +300,7 @@ private[connector] class RedisConnectorImpl(serializer: PekkoSerializer, redis: 
 
   override def setIsMember(key: String, value: Any): Future[Boolean] =
     encode(key, value).flatMap(redis.sismember(key, _).asScala.map(_.booleanValue())) executing "SISMEMBER" withKey key andParameter value logging {
-      case true => log.debug(s"Item $value exists in the collection at '$key'.")
+      case true  => log.debug(s"Item $value exists in the collection at '$key'.")
       case false => log.debug(s"Item $value does not exist in the collection at '$key'")
     }
 
@@ -330,8 +317,8 @@ private[connector] class RedisConnectorImpl(serializer: PekkoSerializer, redis: 
     // encodes the value
     def toEncoded(scoreValue: (Double, Any)): Future[(Double, String)] = encode(key, scoreValue._2).map((scoreValue._1, _))
 
-    Future.sequence(scoreValues.map(toEncoded)).flatMap {
-      i => redis.zadd(key, i.flatMap(i => i.productIterator): _*).asScala.map(_.longValue())
+    Future.sequence(scoreValues.map(toEncoded)).flatMap { i =>
+      redis.zadd(key, i.flatMap(i => i.productIterator): _*).asScala.map(_.longValue())
     } executing "ZADD" withKey key andParameters scoreValues expects { case inserted =>
       log.debug(s"Inserted $inserted elements into the zset at '$key'.")
       inserted
@@ -348,8 +335,8 @@ private[connector] class RedisConnectorImpl(serializer: PekkoSerializer, redis: 
     }
 
   override def sortedSetScore(key: String, value: Any): Future[Option[Double]] =
-    encode(key, value) flatMap (redis.zscore(key, _).asScala.map(i => if (i != null) Some(i.doubleValue()) else None)) executing "ZSCORE" withKey key andParameter value logging {
-      score => log.debug(s"The score of item: $value is $score in the collection at '$key'.")
+    encode(key, value) flatMap (redis.zscore(key, _).asScala.map(i => if (i != null) Some(i.doubleValue()) else None)) executing "ZSCORE" withKey key andParameter value logging { score =>
+      log.debug(s"The score of item: $value is $score in the collection at '$key'.")
     }
 
   override def sortedSetRemove(key: String, values: Any*): Future[Long] = {
@@ -362,22 +349,20 @@ private[connector] class RedisConnectorImpl(serializer: PekkoSerializer, redis: 
   }
 
   override def sortedSetRange[T: ClassTag](key: String, start: Long, stop: Long): Future[Seq[T]] =
-    redis.zrange(key, start, stop).asScala.map(_.asScala) executing "ZRANGE" withKey key andParameter s"$start $stop" expects {
-      case encodedSeq =>
-        log.debug(s"Got range from $start to $stop in the zset at '$key'.")
-        encodedSeq.map(encoded => decode[T](key, encoded)).toSeq
+    redis.zrange(key, start, stop).asScala.map(_.asScala) executing "ZRANGE" withKey key andParameter s"$start $stop" expects { case encodedSeq =>
+      log.debug(s"Got range from $start to $stop in the zset at '$key'.")
+      encodedSeq.map(encoded => decode[T](key, encoded)).toSeq
     }
 
   override def sortedSetReverseRange[T: ClassTag](key: String, start: Long, stop: Long): Future[Seq[T]] =
-    redis.zrevrange(key, start, stop).asScala.map(_.asScala) executing "ZREVRANGE" withKey key andParameter s"$start $stop" expects {
-      case encodedSeq =>
-        log.debug(s"Got reverse range from $start to $stop in the zset at '$key'.")
-        encodedSeq.map(encoded => decode[T](key, encoded)).toSeq
+    redis.zrevrange(key, start, stop).asScala.map(_.asScala) executing "ZREVRANGE" withKey key andParameter s"$start $stop" expects { case encodedSeq =>
+      log.debug(s"Got reverse range from $start to $stop in the zset at '$key'.")
+      encodedSeq.map(encoded => decode[T](key, encoded)).toSeq
     }
 
   override def hashRemove(key: String, fields: String*): Future[Long] =
-    redis.hdel(key, fields: _*).asScala.map(_.longValue()) executing "HDEL" withKey key andParameters fields logging {
-      case removed => log.debug(s"Removed $removed elements from the collection at '$key'.")
+    redis.hdel(key, fields: _*).asScala.map(_.longValue()) executing "HDEL" withKey key andParameters fields logging { case removed =>
+      log.debug(s"Removed $removed elements from the collection at '$key'.")
     }
 
   override def hashIncrement(key: String, field: String, incrementBy: Long): Future[Long] =
@@ -387,24 +372,20 @@ private[connector] class RedisConnectorImpl(serializer: PekkoSerializer, redis: 
 
   override def hashExists(key: String, field: String): Future[Boolean] =
     redis.hexists(key, field).asScala.map(_.booleanValue()) executing "HEXISTS" withKey key andParameter field logging {
-      case true => log.debug(s"Item $field exists in the collection at '$key'.")
+      case true  => log.debug(s"Item $field exists in the collection at '$key'.")
       case false => log.debug(s"Item $field does not exist in the collection at '$key'")
     }
 
   override def hashGet[T: ClassTag](key: String, field: String): Future[Option[T]] =
-    redis.hget(key, field).asScala executing "HGET" withKey key andParameter field expects {
-      encoded =>
-        log.debug(s"Item $field exists in the collection at '$key'.")
-        toScala[T](key, encoded)
+    redis.hget(key, field).asScala executing "HGET" withKey key andParameter field expects { encoded =>
+      log.debug(s"Item $field exists in the collection at '$key'.")
+      toScala[T](key, encoded)
     }
 
   override def hashGet[T: ClassTag](key: String, fields: Seq[String]): Future[Seq[Option[T]]] =
-    redis.hmget(key, fields: _*).asScala.map(_.asScala.toSeq) executing "HMGET" withKey key andParameters fields expects {
-      case encoded =>
-        log.debug(s"Collection at '$key' with fields '$fields' has returned ${encoded.size} items.")
-        encoded.map(i => {
-          if (i.hasValue) toScala[T](i.getKey, i.getValue) else None
-        })
+    redis.hmget(key, fields: _*).asScala.map(_.asScala.toSeq) executing "HMGET" withKey key andParameters fields expects { case encoded =>
+      log.debug(s"Collection at '$key' with fields '$fields' has returned ${encoded.size} items.")
+      encoded.map(i => if (i.hasValue) toScala[T](i.getKey, i.getValue) else None)
     }
 
   override def hashGetAll[T: ClassTag](key: String): Future[Map[String, T]] =
@@ -412,26 +393,25 @@ private[connector] class RedisConnectorImpl(serializer: PekkoSerializer, redis: 
       case empty if empty.isEmpty =>
         log.debug(s"Collection at '$key' is empty.")
         Map.empty
-      case encoded =>
+      case encoded                =>
         log.debug(s"Collection at '$key' has ${encoded.size} items.")
-        encoded.asScala.map { itemKey => itemKey._1 -> decode[T](itemKey._1, itemKey._2) }.toMap
+        encoded.asScala.map(itemKey => itemKey._1 -> decode[T](itemKey._1, itemKey._2)).toMap
     }
 
   override def hashSize(key: String): Future[Long] =
-    redis.hlen(key).asScala.map(_.longValue()) executing "HLEN" withKey key logging {
-      case length => log.debug(s"The collection at '$key' has $length items.")
+    redis.hlen(key).asScala.map(_.longValue()) executing "HLEN" withKey key logging { case length =>
+      log.debug(s"The collection at '$key' has $length items.")
     }
 
   override def hashKeys(key: String): Future[Set[String]] =
-    redis.hkeys(key).asScala.map(_.asScala) executing "HKEYS" withKey key expects {
-      case keys =>
-        log.debug(s"The collection at '$key' defines: ${keys mkString " "}.")
-        keys.toSet
+    redis.hkeys(key).asScala.map(_.asScala) executing "HKEYS" withKey key expects { case keys =>
+      log.debug(s"The collection at '$key' defines: ${keys mkString " "}.")
+      keys.toSet
     }
 
   override def hashSet(key: String, field: String, value: Any): Future[Boolean] =
     encode(key, value).flatMap(redis.hset(key, field, _).asScala).map(_.booleanValue) executing "HSET" withKey key andParameters s"$field $value" logging {
-      case true => log.debug(s"Item $field in the collection at '$key' was inserted.")
+      case true  => log.debug(s"Item $field in the collection at '$key' was inserted.")
       case false => log.debug(s"Item $field in the collection at '$key' was updated.")
     } recover {
       case ExecutionFailedException(_, _, _, ex) if ex.getMessage startsWith "WRONGTYPE" =>
@@ -440,10 +420,9 @@ private[connector] class RedisConnectorImpl(serializer: PekkoSerializer, redis: 
     }
 
   override def hashValues[T: ClassTag](key: String): Future[Set[T]] =
-    redis.hvals(key).asScala.map(_.asScala) executing "HVALS" withKey key expects {
-      case values =>
-        log.debug(s"The collection at '$key' contains ${values.size} values.")
-        values.map(decode[T](key, _)).toSet
+    redis.hvals(key).asScala.map(_.asScala) executing "HVALS" withKey key expects { case values =>
+      log.debug(s"The collection at '$key' contains ${values.size} values.")
+      values.map(decode[T](key, _)).toSet
     }
 
   // $COVERAGE-OFF$

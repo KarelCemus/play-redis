@@ -13,7 +13,7 @@ trait RedisClusterContainer extends RedisContainer { this: Suite =>
 
   protected def redisSlaves = 1
 
-  final protected def initialPort = 9001
+  final protected def initialPort = 7000
 
   private val waitForStart = 6.seconds
 

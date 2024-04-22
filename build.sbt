@@ -19,16 +19,14 @@ playVersion := "3.0.2"
 
 libraryDependencies ++= Seq(
   // play framework cache API
-  "org.playframework" %% "play-cache" % playVersion.value % Provided,
+  "org.playframework" %% "play-cache"                % playVersion.value % Provided,
   // redis connector
-  "io.lettuce" % "lettuce-core" % "6.3.2.RELEASE",
-  //Subsequent versions can attempt to remove it
-  "io.github.rediscala" %% "rediscala" % "1.14.0-pekko",
+  "io.lettuce"         % "lettuce-core"              % "6.3.2.RELEASE",
   // test framework with mockito extension
-  "org.scalatest" %% "scalatest" % "3.2.18" % Test,
+  "org.scalatest"     %% "scalatest"                 % "3.2.18"          % Test,
   "org.scalamock" %% "scalamock" % "6.0.0" % Test,
   // test module for play framework
-  "org.playframework" %% "play-test" % playVersion.value % Test,
+  "org.playframework" %% "play-test"                 % playVersion.value % Test,
   // to run integration tests
   "com.dimafeng" %% "testcontainers-scala-core" % "0.41.3" % Test,
 )
@@ -53,8 +51,8 @@ coverageExcludedFiles := ".*exceptions.*"
 
 Test / test := (Test / testOnly).toTask(" * -- -l \"org.scalatest.Ignore\"").value
 
-semanticdbEnabled := true
-semanticdbVersion := scalafixSemanticdb.revision
+semanticdbEnabled                      := true
+semanticdbVersion                      := scalafixSemanticdb.revision
 ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value)
 
 wartremoverWarnings ++= Warts.allBut(
@@ -90,7 +88,7 @@ Test / tpolecatExcludeOptions ++= Set(
   ScalacOptions.warnNonUnitStatement,
 )
 
-ThisBuild / tpolecatCiModeEnvVar := "CI"
+ThisBuild / tpolecatCiModeEnvVar       := "CI"
 ThisBuild / tpolecatDefaultOptionsMode := DevMode
 
 addCommandAlias("fix", "; scalafixAll; scalafmtAll; scalafmtSbt")

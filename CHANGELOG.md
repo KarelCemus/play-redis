@@ -1,6 +1,11 @@
 
 ## Changelog
 
+### [:link: 5.0.0](https://github.com/KarelCemus/play-redis/tree/5.0.0)
+
+Switched underlying connector from Rediscala, which is no longer maintained,
+to Lettuce. [#301](https://github.com/KarelCemus/play-redis/pull/301)
+
 ### [:link: 4.1.0](https://github.com/KarelCemus/play-redis/tree/4.1.0)
 
 Provided support for MasterSlave configuration, which writes data to the master,
