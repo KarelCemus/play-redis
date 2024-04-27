@@ -2,7 +2,7 @@ package play.api.cache.redis.connector
 
 import io.lettuce.core.api.async.RedisAsyncCommands
 import io.lettuce.core.cluster.ClusterTopologyRefreshOptions.RefreshTrigger
-import io.lettuce.core.cluster.api.async.{RedisAdvancedClusterAsyncCommands, RedisClusterAsyncCommands}
+import io.lettuce.core.cluster.api.async.RedisClusterAsyncCommands
 import io.lettuce.core.cluster.{ClusterClientOptions, ClusterTopologyRefreshOptions, RedisClusterClient}
 import io.lettuce.core.codec.StringCodec
 import io.lettuce.core.masterreplica.{MasterReplica, StatefulRedisMasterReplicaConnection}
@@ -15,7 +15,9 @@ import java.time.Duration
 import java.util.concurrent.TimeUnit
 import javax.inject._
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters.SeqHasAsJava
+import java.time.{Duration => JavaDuration}
 
 /**
  * Dispatches a provider of the redis commands implementation. Use with Guice
@@ -75,7 +77,18 @@ private[connector] class RedisCommandsStandalone(configuration: RedisStandalone)
   } else if (password.nonEmpty) {
     redisUri.withPassword(password.get.toCharArray)
   }
-  private val redisClient: RedisClient = RedisClient.create(redisUri.build())
+
+  private val redisClient: RedisClient = RedisClient.create(
+    ScalaRedisClientResources.clientResources(),
+    redisUri.build())
+
+  private val connectionTimeout: Option[FiniteDuration] = configuration.timeout.connection
+  if (connectionTimeout.nonEmpty) {
+    redisClient.connect().setTimeout(JavaDuration.ofNanos(connectionTimeout.get.toNanos))
+  }
+
+  redisClient.setOptions(ScalaRedisClientResources.clientOption(configuration.timeout.redis))
+
   val client: RedisAsyncCommands[String, String] = redisClient.connect().async()
 
 
@@ -107,22 +120,32 @@ private[connector] class RedisCommandsCluster(configuration: RedisCluster)(impli
 
   import configuration._
 
-  private val redisClient: RedisClusterClient = RedisClusterClient.create(nodes.map {
-    case RedisHost(host, port, database, password, username) =>
-      val redisUri = RedisURI.Builder.redis(host).withPort(port)
-      redisUri.withDatabase(database.getOrElse(0))
-      if (username.nonEmpty && password.nonEmpty) {
-        redisUri.withAuthentication(username.get, password.get.toCharArray)
-      } else if (password.nonEmpty) {
-        redisUri.withPassword(password.get.toCharArray)
-      }
-      redisUri.build()
-  }.asJava)
-  private val topologyRefreshOptions: ClusterTopologyRefreshOptions = ClusterTopologyRefreshOptions.builder.enableAdaptiveRefreshTrigger(RefreshTrigger.MOVED_REDIRECT, RefreshTrigger.PERSISTENT_RECONNECTS).adaptiveRefreshTriggersTimeout(
-    Duration.ofNanos(TimeUnit.SECONDS.toNanos(30))
-  ).build
-
-  redisClient.setOptions(ClusterClientOptions.builder.topologyRefreshOptions(topologyRefreshOptions).build)
+  private val redisClient: RedisClusterClient = RedisClusterClient.create(ScalaRedisClientResources.clientResources(),
+    nodes.map {
+      case RedisHost(host, port, database, password, username) =>
+        val redisUri = RedisURI.Builder.redis(host).withPort(port)
+        redisUri.withDatabase(database.getOrElse(0))
+        if (username.nonEmpty && password.nonEmpty) {
+          redisUri.withAuthentication(username.get, password.get.toCharArray)
+        } else if (password.nonEmpty) {
+          redisUri.withPassword(password.get.toCharArray)
+        }
+        redisUri.build()
+    }.asJava)
+  private val topologyRefreshOptions: ClusterTopologyRefreshOptions =
+    ClusterTopologyRefreshOptions.builder.enableAdaptiveRefreshTrigger(RefreshTrigger.MOVED_REDIRECT,
+      RefreshTrigger.PERSISTENT_RECONNECTS).adaptiveRefreshTriggersTimeout(
+      Duration.ofNanos(TimeUnit.SECONDS.toNanos(30))
+    ).build
+  private val connectionTimeout: Option[FiniteDuration] = configuration.timeout.connection
+  if (connectionTimeout.nonEmpty) {
+    redisClient.connect().setTimeout(JavaDuration.ofNanos(connectionTimeout.get.toNanos))
+  }
+  redisClient.setOptions(ClusterClientOptions.builder().autoReconnect(true) //Auto-Reconnect
+    .pingBeforeActivateConnection(true) //PING before activating connection
+    .timeoutOptions(
+      ScalaRedisClientResources.timeoutOptions(configuration.timeout.redis)
+    ).topologyRefreshOptions(topologyRefreshOptions).build)
 
   val client: RedisClusterAsyncCommands[String, String] = redisClient.connect().async()
 
@@ -170,7 +193,12 @@ private[connector] class RedisCommandsSentinel(configuration: RedisSentinel)(imp
     case RedisHost(host, port, _, _, _) =>
       redisUri.withSentinel(host, port)
   }
-  private val redisClient: RedisClient = RedisClient.create(redisUri.build())
+  private val redisClient: RedisClient = RedisClient.create(ScalaRedisClientResources.clientResources(), redisUri.build())
+  private val connectionTimeout: Option[FiniteDuration] = configuration.timeout.connection
+  if (connectionTimeout.nonEmpty) {
+    redisClient.connect().setTimeout(JavaDuration.ofNanos(connectionTimeout.get.toNanos))
+  }
+  redisClient.setOptions(ScalaRedisClientResources.clientOption(configuration.timeout.redis))
   val client: RedisAsyncCommands[String, String] = redisClient.connect().async()
 
 
@@ -198,7 +226,7 @@ private[connector] class RedisCommandsSentinel(configuration: RedisSentinel)(imp
 //noinspection DuplicatedCode
 private[connector] class RedisCommandsMasterSlaves(configuration: RedisMasterSlaves)(implicit val lifecycle: ApplicationLifecycle) extends Provider[RedisClusterAsyncCommands[String, String]] with AbstractRedisCommands {
 
-  private val redisClient: RedisClient = RedisClient.create()
+  private val redisClient: RedisClient = RedisClient.create(ScalaRedisClientResources.clientResources())
 
 
   private val redisUri = RedisURI.Builder.redis(configuration.master.host)
@@ -214,6 +242,11 @@ private[connector] class RedisCommandsMasterSlaves(configuration: RedisMasterSla
   } else if (password.nonEmpty) {
     redisUri.withPassword(password.get.toCharArray)
   }
+  private val connectionTimeout: Option[FiniteDuration] = configuration.timeout.connection
+  if (connectionTimeout.nonEmpty) {
+    redisClient.connect().setTimeout(JavaDuration.ofNanos(connectionTimeout.get.toNanos))
+  }
+  redisClient.setOptions(ScalaRedisClientResources.clientOption(configuration.timeout.redis))
   val connection: StatefulRedisMasterReplicaConnection[String, String] = MasterReplica.connect(redisClient, StringCodec.UTF8,
     redisUri.build())
   connection.setReadFrom(ReadFrom.MASTER_PREFERRED)

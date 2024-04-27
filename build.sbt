@@ -11,11 +11,11 @@ description := "Redis cache plugin for the Play framework 2"
 
 organization := "com.github.karelcemus"
 
-crossScalaVersions := Seq("2.13.12", "3.3.1")
+crossScalaVersions := Seq("2.13.13", "3.3.3")
 
 scalaVersion := crossScalaVersions.value.head
 
-playVersion := "3.0.1"
+playVersion := "3.0.2"
 
 libraryDependencies ++= Seq(
   // play framework cache API
@@ -26,11 +26,11 @@ libraryDependencies ++= Seq(
   "io.github.rediscala" %% "rediscala" % "1.14.0-pekko",
   // test framework with mockito extension
   "org.scalatest" %% "scalatest" % "3.2.18" % Test,
-  "org.scalamock" %% "scalamock" % "6.0.0-M2" % Test,
+  "org.scalamock" %% "scalamock" % "6.0.0" % Test,
   // test module for play framework
   "org.playframework" %% "play-test" % playVersion.value % Test,
   // to run integration tests
-  "com.dimafeng" %% "testcontainers-scala-core" % "0.41.2" % Test,
+  "com.dimafeng" %% "testcontainers-scala-core" % "0.41.3" % Test,
 )
 
 resolvers ++= Seq(
@@ -44,8 +44,9 @@ scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked")
 scalacOptions ++= {
   if (scalaVersion.value.startsWith("2.")) Seq("-Ywarn-unused") else Seq.empty
 }
+ThisBuild / version := "4.0.2"
 
-enablePlugins(CustomReleasePlugin)
+//enablePlugins(CustomReleasePlugin)
 
 // exclude from tests coverage
 coverageExcludedFiles := ".*exceptions.*"
