@@ -24,11 +24,11 @@ libraryDependencies ++= Seq(
   "io.lettuce"         % "lettuce-core"              % "6.3.2.RELEASE",
   // test framework with mockito extension
   "org.scalatest"     %% "scalatest"                 % "3.2.18"          % Test,
-  "org.scalamock" %% "scalamock" % "6.0.0" % Test,
+  "org.scalamock"     %% "scalamock"                 % "6.0.0"           % Test,
   // test module for play framework
   "org.playframework" %% "play-test"                 % playVersion.value % Test,
   // to run integration tests
-  "com.dimafeng" %% "testcontainers-scala-core" % "0.41.3" % Test,
+  "com.dimafeng"      %% "testcontainers-scala-core" % "0.41.3"          % Test,
 )
 
 resolvers ++= Seq(
@@ -42,6 +42,7 @@ scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked")
 scalacOptions ++= {
   if (scalaVersion.value.startsWith("2.")) Seq("-Ywarn-unused") else Seq.empty
 }
+
 ThisBuild / version := "4.0.2"
 
 //enablePlugins(CustomReleasePlugin)
@@ -49,7 +50,9 @@ ThisBuild / version := "4.0.2"
 // exclude from tests coverage
 coverageExcludedFiles := ".*exceptions.*"
 
+Test / fork := true
 Test / test := (Test / testOnly).toTask(" * -- -l \"org.scalatest.Ignore\"").value
+Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oF")
 
 semanticdbEnabled                      := true
 semanticdbVersion                      := scalafixSemanticdb.revision

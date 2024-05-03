@@ -3,13 +3,14 @@ package play.api.cache.redis.connector
 import org.apache.pekko.actor.ActorSystem
 import play.api.cache.redis.configuration.{RedisHost, RedisMasterSlaves, RedisSettings}
 import play.api.cache.redis.impl.{LazyInvocation, RedisRuntime}
-import play.api.cache.redis.test.{Helpers, IntegrationSpec, RedisMasterSlaveContainer, StoppableApplication}
+import play.api.cache.redis.test._
 import play.api.cache.redis.{LogAndFailPolicy, RedisConnector}
+import play.api.inject.{ApplicationLifecycle, Injector}
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
-class RedisMasterSlavesSpec extends IntegrationSpec with RedisMasterSlaveContainer {
+class RedisMasterSlavesSpec extends IntegrationSpec with RedisMasterSlaveContainer with DefaultInjector {
 
   override protected def testTimeout: FiniteDuration = 60.seconds
 
@@ -63,9 +64,10 @@ class RedisMasterSlavesSpec extends IntegrationSpec with RedisMasterSlaveContain
 
   def test(name: String)(f: RedisConnector => Future[Assertion]): Unit =
     name in {
-      implicit val system: ActorSystem = ActorSystem("test", classLoader = Some(getClass.getClassLoader))
+      val injector: Injector = newInjector.build()
+      implicit val system: ActorSystem = injector.instanceOf[ActorSystem]
+      implicit val lifecycle: ApplicationLifecycle = injector.instanceOf[ApplicationLifecycle]
       implicit val runtime: RedisRuntime = RedisRuntime("master-slaves", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
-      implicit val application: StoppableApplication = StoppableApplication(system)
       val serializer = new PekkoSerializerImpl(system)
 
       lazy val masterSlavesInstance = RedisMasterSlaves(
@@ -78,7 +80,7 @@ class RedisMasterSlavesSpec extends IntegrationSpec with RedisMasterSlaveContain
         ),
       )
 
-      application.runAsyncInApplication {
+      TestApplication.runAsync(injector) {
         val connector: RedisConnector = new RedisConnectorProvider(masterSlavesInstance, serializer).get
         for {
           // initialize the connector by flushing the database

@@ -1,6 +1,6 @@
 package play.api.cache.redis.configuration
 
-import play.api.cache.redis.test.UnitSpec
+import play.api.cache.redis.test._
 
 class RedisInstanceProviderSpec extends UnitSpec {
 

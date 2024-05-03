@@ -1,9 +1,9 @@
 package play.api.cache.redis.connector
 
+import io.lettuce.core._
 import io.lettuce.core.api.StatefulConnection
 import io.lettuce.core.masterreplica.StatefulRedisMasterReplicaConnection
 import io.lettuce.core.resource.{ClientResources, NettyCustomizer}
-import io.lettuce.core.{AbstractRedisClient, ClientOptions, ReadFrom, RedisURI, TimeoutOptions}
 import io.netty.channel.{Channel, ChannelDuplexHandler, ChannelHandlerContext}
 import io.netty.handler.timeout.{IdleStateEvent, IdleStateHandler}
 import play.api.cache.redis.configuration.RedisHost
@@ -51,6 +51,8 @@ private object RedisClientFactory {
       password: Option[String],
     ): Builder =
       (username, password) match {
+        case (None, None)                     =>
+          thiz
         case (Some(username), Some(password)) =>
           thiz.withAuthentication(username, password) // mutable
           thiz
@@ -116,7 +118,7 @@ private object RedisClientFactory {
 
   }
 
-  def clientResources(
+  def newClientResources(
     ioThreadPoolSize: Int = 8,
     computationThreadPoolSize: Int = 8,
     afterChannelTime: Int = 60 * 4,
@@ -143,13 +145,14 @@ private object RedisClientFactory {
       .nettyCustomizer(
         new NettyCustomizer() {
 
+          @SuppressWarnings(Array("org.wartremover.warts.IsInstanceOf"))
           override def afterChannelInitialized(channel: Channel): Unit = {
-            channel.pipeline.addLast(new IdleStateHandler(afterChannelTime, 0, 0))
+            channel.pipeline.addLast(new IdleStateHandler(afterChannelTime, 0, 0)): Unit
             channel.pipeline.addLast(new ChannelDuplexHandler() {
               @throws[Exception]
               override def userEventTriggered(ctx: ChannelHandlerContext, evt: Object): Unit =
-                if (evt.isInstanceOf[IdleStateEvent]) ctx.disconnect
-            })
+                if (evt.isInstanceOf[IdleStateEvent]) ctx.disconnect().sync(): Unit
+            }): Unit
           }
 
         },

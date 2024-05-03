@@ -6,12 +6,13 @@ import play.api.cache.redis._
 import play.api.cache.redis.configuration._
 import play.api.cache.redis.impl._
 import play.api.cache.redis.test._
+import play.api.inject.{ApplicationLifecycle, Injector}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Ignore
-class RedisSentinelSpec extends IntegrationSpec with RedisSentinelContainer {
+class RedisSentinelSpec extends IntegrationSpec with RedisSentinelContainer with DefaultInjector {
 
   test("pong on ping") { connector =>
     for {
@@ -63,9 +64,10 @@ class RedisSentinelSpec extends IntegrationSpec with RedisSentinelContainer {
 
   def test(name: String)(f: RedisConnector => Future[Assertion]): Unit =
     name in {
+      val injector: Injector = newInjector.build()
       implicit val system: ActorSystem = ActorSystem("test", classLoader = Some(getClass.getClassLoader))
+      implicit val lifecycle: ApplicationLifecycle = injector.instanceOf[ApplicationLifecycle]
       implicit val runtime: RedisRuntime = RedisRuntime("sentinel", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
-      implicit val application: StoppableApplication = StoppableApplication(system)
       val serializer = new PekkoSerializerImpl(system)
 
       lazy val sentinelInstance = RedisSentinel(
@@ -83,7 +85,7 @@ class RedisSentinelSpec extends IntegrationSpec with RedisSentinelContainer {
         ),
       )
 
-      application.runAsyncInApplication {
+      TestApplication.runAsync(injector) {
         val connector: RedisConnector = new RedisConnectorProvider(sentinelInstance, serializer).get
         for {
           // initialize the connector by flushing the database

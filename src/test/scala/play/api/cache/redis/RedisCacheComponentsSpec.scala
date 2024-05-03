@@ -40,9 +40,10 @@ class RedisCacheComponentsSpec extends IntegrationSpec with RedisStandaloneConta
         override lazy val applicationLifecycle: ApplicationLifecycle = injector.instanceOf[ApplicationLifecycle]
         override lazy val environment: Environment = injector.instanceOf[Environment]
         override lazy val syncRedis: CacheApi = cacheApi("play").sync
+
       }
 
-      components.runInApplication {
+      TestApplication.run(components.injector) {
         cache(components.syncRedis)
       }
     }

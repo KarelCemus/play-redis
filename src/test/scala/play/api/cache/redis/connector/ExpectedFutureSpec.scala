@@ -1,7 +1,7 @@
 package play.api.cache.redis.connector
 
 import play.api.cache.redis._
-import play.api.cache.redis.test.{AsyncUnitSpec, SimulatedException}
+import play.api.cache.redis.test._
 
 import scala.concurrent.{ExecutionContext, Future}
 

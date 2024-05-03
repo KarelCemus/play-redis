@@ -14,7 +14,7 @@ private[redis] class RedisConnectorProvider(
   runtime: RedisRuntime,
 ) extends Provider[RedisConnector] {
 
-  private[connector] lazy val commands = new RedisCommandsProvider(instance).get
+  private[connector] lazy val commands = new RedisCommandsProvider(instance)(lifecycle, runtime.context).get
 
   lazy val get = new RedisConnectorImpl(serializer, commands)
 }

@@ -1,7 +1,7 @@
 package play.api.cache.redis.impl
 
 import play.api.cache.redis._
-import play.api.cache.redis.test.UnitSpec
+import play.api.cache.redis.test._
 
 import scala.concurrent._
 import scala.util.Success
