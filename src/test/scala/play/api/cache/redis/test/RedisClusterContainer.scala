@@ -15,7 +15,7 @@ trait RedisClusterContainer extends RedisContainer { this: Suite =>
 
   final protected def initialPort = 7000
 
-  private val waitForStart = 6.seconds
+  private val waitForStart = 10.seconds
 
   override protected lazy val redisConfig: RedisContainerConfig =
     RedisContainerConfig(

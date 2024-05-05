@@ -4,7 +4,7 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.util.Timeout
 import play.api.cache.redis._
 import play.api.cache.redis.configuration.{RedisHost, RedisStandalone}
-import play.api.cache.redis.test.UnitSpec
+import play.api.cache.redis.test._
 
 class RedisRuntimeSpec extends UnitSpec {
   import RedisRuntime._

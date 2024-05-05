@@ -1,6 +1,5 @@
 package play.api.cache.redis
 
-import org.apache.pekko.actor.ActorSystem
 import play.api.cache.redis.configuration.{RedisHost, RedisSettings, RedisStandalone, RedisTimeouts}
 import play.api.cache.redis.test._
 import play.api.inject._
@@ -47,7 +46,7 @@ class RedisCacheModuleSpec extends IntegrationSpec with RedisStandaloneContainer
   }
 
   test("bind named cache in simple mode") {
-    _.bindings(new RedisCacheModule)
+    _.bindings(new RedisCacheModule).configure("play.cache.redis.port" -> container.mappedPort(defaultPort))
   } { injector =>
     injector.checkNamedBinding[RedisConnector]
     injector.checkNamedBinding[CacheApi]
@@ -165,11 +164,9 @@ class RedisCacheModuleSpec extends IntegrationSpec with RedisStandaloneContainer
   private def test(name: String)(createBuilder: GuiceApplicationBuilder => GuiceApplicationBuilder)(f: Injector => Assertion): Unit =
     s"should $name" in {
 
-      val builder = createBuilder(new GuiceApplicationBuilder)
+      val builder = createBuilder(new GuiceApplicationBuilder())
       val injector = builder.injector()
-      val application = StoppableApplication(injector.instanceOf[ActorSystem])
-
-      application.runInApplication {
+      TestApplication.run(injector) {
         f(injector)
       }
     }

@@ -11,24 +11,24 @@ description := "Redis cache plugin for the Play framework 2"
 
 organization := "com.github.karelcemus"
 
-crossScalaVersions := Seq("2.13.12", "3.3.1")
+crossScalaVersions := Seq("2.13.14", "3.3.3")
 
 scalaVersion := crossScalaVersions.value.head
 
-playVersion := "3.0.1"
+playVersion := "3.0.2"
 
 libraryDependencies ++= Seq(
   // play framework cache API
-  "org.playframework"   %% "play-cache"                % playVersion.value % Provided,
+  "org.playframework" %% "play-cache"                % playVersion.value % Provided,
   // redis connector
-  "io.github.rediscala" %% "rediscala"                 % "1.14.0-pekko",
+  "io.lettuce"         % "lettuce-core"              % "6.3.2.RELEASE",
   // test framework with mockito extension
-  "org.scalatest"       %% "scalatest"                 % "3.2.18"          % Test,
-  "org.scalamock"       %% "scalamock"                 % "6.0.0-M2"        % Test,
+  "org.scalatest"     %% "scalatest"                 % "3.2.18"          % Test,
+  "org.scalamock"     %% "scalamock"                 % "6.0.0"           % Test,
   // test module for play framework
-  "org.playframework"   %% "play-test"                 % playVersion.value % Test,
+  "org.playframework" %% "play-test"                 % playVersion.value % Test,
   // to run integration tests
-  "com.dimafeng"        %% "testcontainers-scala-core" % "0.41.2"          % Test,
+  "com.dimafeng"      %% "testcontainers-scala-core" % "0.41.3"          % Test,
 )
 
 resolvers ++= Seq(
@@ -43,16 +43,19 @@ scalacOptions ++= {
   if (scalaVersion.value.startsWith("2.")) Seq("-Ywarn-unused") else Seq.empty
 }
 
-enablePlugins(CustomReleasePlugin)
+ThisBuild / version := "4.0.2"
+
+//enablePlugins(CustomReleasePlugin)
 
 // exclude from tests coverage
 coverageExcludedFiles := ".*exceptions.*"
 
+Test / fork := true
 Test / test := (Test / testOnly).toTask(" * -- -l \"org.scalatest.Ignore\"").value
+Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oF")
 
-semanticdbEnabled                      := true
-semanticdbVersion                      := scalafixSemanticdb.revision
-ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value)
+semanticdbEnabled := true
+semanticdbVersion := scalafixSemanticdb.revision
 
 wartremoverWarnings ++= Warts.allBut(
   Wart.Any,

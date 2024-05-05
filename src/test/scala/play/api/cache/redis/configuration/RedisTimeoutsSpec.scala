@@ -1,6 +1,6 @@
 package play.api.cache.redis.configuration
 
-import play.api.cache.redis.test.{Helpers, ImplicitOptionMaterialization, UnitSpec}
+import play.api.cache.redis.test._
 
 import scala.concurrent.duration._
 

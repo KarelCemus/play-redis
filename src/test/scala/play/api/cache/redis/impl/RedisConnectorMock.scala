@@ -2,7 +2,7 @@ package play.api.cache.redis.impl
 
 import org.scalamock.scalatest.AsyncMockFactoryBase
 import play.api.cache.redis._
-import play.api.cache.redis.test.ImplicitOptionMaterialization
+import play.api.cache.redis.test._
 
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration

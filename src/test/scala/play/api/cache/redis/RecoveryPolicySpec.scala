@@ -4,6 +4,7 @@ import play.api.Logger
 import play.api.cache.redis.test._
 
 import scala.concurrent.Future
+import scala.util.control.NoStackTrace
 
 class RecoveryPolicySpec extends AsyncUnitSpec {
 
@@ -11,7 +12,7 @@ class RecoveryPolicySpec extends AsyncUnitSpec {
   private val default = Future.successful(0)
 
   private object ex {
-    private val internal = new IllegalArgumentException("Simulated Internal cause")
+    private val internal = new IllegalArgumentException("Simulated Internal cause") with NoStackTrace
     val unexpectedAny: UnexpectedResponseException = UnexpectedResponseException(None, "TEST-CMD")
     val unexpectedKey: UnexpectedResponseException = UnexpectedResponseException(Some("some key"), "TEST-CMD")
     val failedAny: ExecutionFailedException = ExecutionFailedException(None, "TEST-CMD", "TEST-CMD", internal)
