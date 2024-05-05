@@ -54,9 +54,8 @@ Test / fork := true
 Test / test := (Test / testOnly).toTask(" * -- -l \"org.scalatest.Ignore\"").value
 Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oF")
 
-semanticdbEnabled                      := true
-semanticdbVersion                      := scalafixSemanticdb.revision
-ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value)
+semanticdbEnabled := true
+semanticdbVersion := scalafixSemanticdb.revision
 
 wartremoverWarnings ++= Warts.allBut(
   Wart.Any,
