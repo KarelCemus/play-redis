@@ -147,12 +147,14 @@ private object RedisClientFactory {
 
           @SuppressWarnings(Array("org.wartremover.warts.IsInstanceOf"))
           override def afterChannelInitialized(channel: Channel): Unit = {
-            channel.pipeline.addLast(new IdleStateHandler(afterChannelTime, 0, 0)): Unit
-            channel.pipeline.addLast(new ChannelDuplexHandler() {
+            val _ = channel.pipeline.addLast(new IdleStateHandler(afterChannelTime, 0, 0))
+            val _ = channel.pipeline.addLast(new ChannelDuplexHandler() {
               @throws[Exception]
               override def userEventTriggered(ctx: ChannelHandlerContext, evt: Object): Unit =
-                if (evt.isInstanceOf[IdleStateEvent]) ctx.disconnect().sync(): Unit
-            }): Unit
+                if (evt.isInstanceOf[IdleStateEvent]) {
+                  val _ = ctx.disconnect().sync()
+                }
+            })
           }
 
         },

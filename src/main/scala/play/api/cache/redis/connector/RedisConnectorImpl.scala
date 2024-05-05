@@ -91,8 +91,8 @@ private[connector] class RedisConnectorImpl(
       key,
       value,
       new SetArgs()
-        .when(expiration.isFinite, _.px(expiration.toMillis))
-        .when(ifNotExists, _.nx()),
+        .mapWhen(expiration.isFinite, _.px(expiration.toMillis))
+        .mapWhen(ifNotExists, _.nx()),
     )
       .toScala[Option[String]]
       .map(_ contains "OK")
@@ -485,7 +485,7 @@ private[connector] object RedisConnectorImpl {
 
   implicit private class ConditionalCall[T](private val thiz: T) extends AnyVal {
 
-    def when(condition: Boolean, f: T => T): T =
+    def mapWhen(condition: Boolean, f: T => T): T =
       if (condition) f(thiz) // mutable side effect
       else thiz
 

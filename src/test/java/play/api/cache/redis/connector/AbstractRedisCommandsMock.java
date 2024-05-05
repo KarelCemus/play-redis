@@ -6,7 +6,7 @@ import io.lettuce.core.protocol.CommandType;
 
 import java.util.List;
 
-public abstract class RedisCommandsMock implements RedisClusterAsyncCommands<String, String> {
+public abstract class AbstractRedisCommandsMock implements RedisClusterAsyncCommands<String, String> {
 
     @Override
     final public RedisFuture<String> set(String key, String value, SetArgs setArgs) {

@@ -314,7 +314,7 @@ class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMateria
 
         @SuppressWarnings(Array("org.wartremover.warts.Equals"))
         override def equals(obj: Any): Boolean = obj match {
-          case that: Array[?] => that.length == expected.length && that.zip(expected).forall { case (a, b) => a == b }
+          case that: Array[?] => that.length == expected.length && expected.zip(that).forall { case (a, b) => a == b }
           case _              => false
         }
 
