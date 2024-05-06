@@ -1,13 +1,15 @@
-version: '3.7'
+version: '3.9'
+
 services:
+
   redis-master:
-    image: redis:latest
+    image: redis:7.2
     hostname: redis-master
     ports:
       - '${REDIS_MASTER_PORT}:6379'
 
   redis-slave:
-    image: redis:latest
+    image: redis:7.2
     hostname: redis-slave
     ports:
       - '${REDIS_SLAVE_PORT}:6379'

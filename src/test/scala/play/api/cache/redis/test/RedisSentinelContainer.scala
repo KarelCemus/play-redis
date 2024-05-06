@@ -1,43 +1,53 @@
 package play.api.cache.redis.test
 
+import com.dimafeng.testcontainers.{DockerComposeContainer, ExposedService}
 import org.scalatest.Suite
-import play.api.Logger
+import org.testcontainers.containers.wait.strategy.Wait
 
-import scala.concurrent.duration.DurationInt
+import java.io.File
 
-trait RedisSentinelContainer extends RedisContainer {
+trait RedisSentinelContainer extends ForAllTestContainer {
   this: Suite =>
 
-  private val log = Logger("play.api.cache.redis.test")
+  override protected type TestContainer = DockerComposeContainer
 
-  protected def nodes: Int = 3
+  protected def master: String = "mymaster"
 
-  final protected def initialPort: Int = 7000
+  final protected val host = "localhost"
+
+  final private val initialPort = 7000
+
+  final protected val masterPort = initialPort
+  final protected val slavePort = masterPort + 1
+
+  protected def sentinels: Int = 3
 
   final protected def sentinelPort: Int = initialPort - 2000
 
-  protected def master: String = s"sentinel$initialPort"
+  // note: waiting for sentinels is not working
+  // private def sentinelWaitStrategy = new WaitAllStrategy()
+  //   .withStrategy(Wait.forLogMessage(".*\\+monitor master.*\\n", 1))
+  //   .withStrategy(Wait.forLogMessage(".*\\+slave slave.*\\n", 1))
 
-  private val waitForStart = 7.seconds
-
-  override protected lazy val redisConfig: RedisContainerConfig =
-    RedisContainerConfig(
-      redisDockerImage = "grokzen/redis-cluster:7.0.10",
-      redisMappedPorts = Seq.empty,
-      redisFixedPorts = 0.until(nodes).flatMap(i => Seq(initialPort + i, sentinelPort + i)),
-      redisEnvironment = Map(
-        "IP"           -> "0.0.0.0",
-        "INITIAL_PORT" -> initialPort.toString,
-        "SENTINEL"     -> "true",
+  protected def newContainer: TestContainerDef[TestContainer] =
+    DockerComposeContainer.Def(
+      new File("docker/sentinel/docker-compose.yml"),
+      tailChildContainers = true,
+      env = Map(
+        "REDIS_MASTER_PORT"     -> s"$masterPort",
+        "REDIS_SLAVE_PORT"      -> s"$slavePort",
+        "REDIS_SENTINEL_1_PORT" -> s"${sentinelPort + 0}",
+        "REDIS_SENTINEL_2_PORT" -> s"${sentinelPort + 1}",
+        "REDIS_SENTINEL_3_PORT" -> s"${sentinelPort + 2}",
+      ),
+      exposedServices = Seq(
+        ExposedService("redis-master", masterPort, Wait.forLogMessage(".*Ready to accept connections tcp.*\\n", 1)),
+        ExposedService("redis-slave", slavePort, Wait.forLogMessage(".*MASTER <-> REPLICA sync: Finished with success.*\\n", 1)),
+        // note: waiting for sentinels doesn't work, it says "service is not running"
+        // ExposedService("redis-sentinel-1", sentinelPort + 0, sentinelWaitStrategy),
+        // ExposedService("redis-sentinel-2", sentinelPort + 1, sentinelWaitStrategy),
+        // ExposedService("redis-sentinel-3", sentinelPort + 2, sentinelWaitStrategy),
       ),
     )
-
-  @SuppressWarnings(Array("org.wartremover.warts.ThreadSleep"))
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-    log.info(s"Waiting for Redis Sentinel to start on ${container.containerIpAddress}, will wait for $waitForStart")
-    Thread.sleep(waitForStart.toMillis)
-    log.info(s"Finished waiting for Redis Sentinel to start on ${container.containerIpAddress}")
-  }
 
 }

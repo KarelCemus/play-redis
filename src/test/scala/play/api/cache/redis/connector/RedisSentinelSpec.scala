@@ -1,7 +1,6 @@
 package play.api.cache.redis.connector
 
 import org.apache.pekko.actor.ActorSystem
-import org.scalatest.Ignore
 import play.api.cache.redis._
 import play.api.cache.redis.configuration._
 import play.api.cache.redis.impl._
@@ -11,7 +10,6 @@ import play.api.inject.{ApplicationLifecycle, Injector}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-@Ignore
 class RedisSentinelSpec extends IntegrationSpec with RedisSentinelContainer with DefaultInjector {
 
   test("pong on ping") { connector =>
@@ -74,10 +72,8 @@ class RedisSentinelSpec extends IntegrationSpec with RedisSentinelContainer with
         name = "sentinel",
         masterGroup = master,
         sentinels = 0
-          .until(nodes)
-          .map { i =>
-            RedisHost(container.containerIpAddress, container.mappedPort(sentinelPort + i))
-          }
+          .until(sentinels)
+          .map(i => RedisHost(host, sentinelPort + i))
           .toList,
         settings = RedisSettings.load(
           config = Helpers.configuration.default.underlying,
