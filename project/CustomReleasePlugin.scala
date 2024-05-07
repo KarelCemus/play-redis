@@ -60,7 +60,7 @@ object CustomReleasePlugin extends AutoPlugin {
     val nextVersion = st.extracted.runTask(releaseVersion, st)._2(currentV)
     val bump = Version.Bump.Minor
 
-    val suggestedReleaseV: String = Version(nextVersion).map(_.bump(bump).unapply).getOrElse(versionFormatError(currentV))
+    val suggestedReleaseV: String = Version(nextVersion).map(_.bump(bump).string).getOrElse(versionFormatError(currentV))
 
     st.log.info("Press enter to use the default value")
 
