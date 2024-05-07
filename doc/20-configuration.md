@@ -1,6 +1,6 @@
 # Configuration
 
-Default configuration and very detailed manual is available in [reference.conf](https://github.com/KarelCemus/play-redis/blob/4.0.0/src/main/resources/reference.conf). It can be overwritten in your `conf/application.conf` file.
+Default configuration and very detailed manual is available in [reference.conf](https://github.com/KarelCemus/play-redis/blob/5.0.0/src/main/resources/reference.conf). It can be overwritten in your `conf/application.conf` file.
 
 There are several features supported in the configuration, they are discussed below. However, by default, there is no need for any further configuration. Default settings are set to the standalone instance running on `localhost:6379?db=0`, which is default for redis server. This instance is named `play` but is also exposed as a default implementation.
 
@@ -147,7 +147,7 @@ play.cache.redis {
 
 ## Named caches
 
-Play framework supports [named caches](https://www.playframework.com/documentation/2.6.x/ScalaCache#Accessing-different-caches) through a qualifier. For a simplicity, the default cache is also exposed without a qualifier to ease the access. This feature can be disabled by `bind-default` property, which defaults to true. The name of the default cache is defined in `default-cache` property, which defaults to `play` to keep consistency with Play framework.
+Play framework supports [named caches](https://www.playframework.com/documentation/3.0.x/ScalaCache#Accessing-different-caches) through a qualifier. For a simplicity, the default cache is also exposed without a qualifier to ease the access. This feature can be disabled by `bind-default` property, which defaults to true. The name of the default cache is defined in `default-cache` property, which defaults to `play` to keep consistency with Play framework.
 
 The configuration of each instance is inherited from the `play.cache.redis` configuration. Inherited values may be locally overridden by the instance's own configuration (e.g., `play.cache.redis.instances.myNamedCache`)
 
@@ -226,13 +226,6 @@ time window. It is expected the redis works smoothly thus the timeout
 usually does not apply. However, it is expected the cache should be fast responding
 and thus **by default the timeout is set to 500 millis** to avoid unnecessary delays.
 This timeout is optional and can be disabled.
-
-### Other timeouts
-
-Other timeouts you might be interested in are related to the communication to Redis, e.g., connection timeout
-and receive timeout. These are provided directly by the underlying connector and `play-redis` doesn't affect them.
-For more details, see
-the [`Redis` configuration](https://github.com/etaty/rediscala).
 
 ## Recovery policy
 

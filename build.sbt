@@ -45,7 +45,7 @@ scalacOptions ++= {
 
 ThisBuild / version := "4.0.2"
 
-//enablePlugins(CustomReleasePlugin)
+enablePlugins(CustomReleasePlugin)
 
 // exclude from tests coverage
 coverageExcludedFiles := ".*exceptions.*"
