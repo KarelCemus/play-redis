@@ -213,10 +213,10 @@ private[connector] class RedisCommandsSentinel(
 
   private val redisUri: RedisURI =
     RedisURI.Builder
-      .sentinel(sentinel.host, sentinel.port)
+      .sentinel(sentinel.host, sentinel.port, configuration.masterGroup)
       .withDatabase(configuration.database)
       .withCredentials(configuration.username, configuration.password)
-      .withSentinels(configuration.sentinels)
+      .withSentinels(configuration.sentinels.tail)
       .build()
 
   override protected def connectionString: String = redisUri.toString
@@ -232,7 +232,8 @@ private[connector] class RedisCommandsSentinel(
 
   val newConnection: RedisConnection =
     RedisConnection.fromStandalone(
-      client.connect().withTimeout(configuration.timeout.connection),
+      MasterReplica.connect(client, StringCodec.UTF8, redisUri)
+        .withReadFrom(ReadFrom.MASTER_PREFERRED),
     )
 
 }

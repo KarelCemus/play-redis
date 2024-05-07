@@ -1,0 +1,79 @@
+version: '3.9'
+
+services:
+
+  redis-master:
+    image: "bitnami/redis:7.2"
+    hostname: redis-master
+    ports:
+      - "${REDIS_MASTER_PORT}:6379"
+    networks:
+      - redis-sentinel
+    environment:
+      - REDIS_REPLICATION_MODE=master
+      - ALLOW_EMPTY_PASSWORD=yes
+
+  redis-slave:
+    image: "bitnami/redis:7.2"
+    hostname: redis-slave
+    ports:
+      - "${REDIS_SLAVE_PORT}:6379"
+    networks:
+      - redis-sentinel
+    environment:
+      - REDIS_REPLICATION_MODE=slave
+      - REDIS_MASTER_HOST=redis-master
+      - ALLOW_EMPTY_PASSWORD=yes
+    depends_on:
+      - redis-master
+
+  redis-sentinel-1:
+    image: "bitnami/redis-sentinel:7.2"
+    hostname: redis-sentinel-1
+    ports:
+      - "${REDIS_SENTINEL_1_PORT}:26379"
+    networks:
+      - redis-sentinel
+    environment:
+      - REDIS_MASTER_SET=mymaster
+      - REDIS_MASTER_HOST=redis-master
+      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=10000
+      - ALLOW_EMPTY_PASSWORD=yes
+    depends_on:
+      - redis-master
+      - redis-slave
+
+  redis-sentinel-2:
+    image: "bitnami/redis-sentinel:7.2"
+    hostname: redis-sentinel-2
+    ports:
+      - "${REDIS_SENTINEL_2_PORT}:26379"
+    networks:
+      - redis-sentinel
+    environment:
+      - REDIS_MASTER_SET=mymaster
+      - REDIS_MASTER_HOST=redis-master
+      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=10000
+      - ALLOW_EMPTY_PASSWORD=yes
+    depends_on:
+      - redis-master
+      - redis-slave
+
+  redis-sentinel-3:
+    image: "bitnami/redis-sentinel:7.2"
+    hostname: redis-sentinel-3
+    ports:
+      - "${REDIS_SENTINEL_3_PORT}:26379"
+    networks:
+      - redis-sentinel
+    environment:
+      - REDIS_MASTER_SET=mymaster
+      - REDIS_MASTER_HOST=redis-master
+      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=10000
+      - ALLOW_EMPTY_PASSWORD=yes
+    depends_on:
+      - redis-master
+      - redis-slave
+
+networks:
+  redis-sentinel:

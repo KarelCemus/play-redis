@@ -17,7 +17,7 @@ trait RedisMasterSlaveContainer extends ForAllTestContainer {
 
   protected def newContainer: TestContainerDef[TestContainer] =
     DockerComposeContainer.Def(
-      new File("src/test/resources/docker-compose.yml"),
+      new File("docker/master-slave/docker-compose.yml"),
       tailChildContainers = true,
       env = Map(
         "REDIS_MASTER_PORT" -> s"$masterPort",
