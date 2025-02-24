@@ -15,6 +15,6 @@ addSbtPlugin("com.github.sbt" % "sbt-release"  % "1.1.0")
 
 // linters
 addSbtPlugin("org.typelevel"   % "sbt-tpolecat"    % "0.5.1")
-addSbtPlugin("org.wartremover" % "sbt-wartremover" % "3.1.6")
+addSbtPlugin("org.wartremover" % "sbt-wartremover" % "3.3.0")
 addSbtPlugin("org.scalameta"   % "sbt-scalafmt"    % "2.5.2")
 addSbtPlugin("ch.epfl.scala"   % "sbt-scalafix"    % "0.12.1")
