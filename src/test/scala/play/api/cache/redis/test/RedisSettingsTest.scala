@@ -9,4 +9,5 @@ final case class RedisSettingsTest(
   recovery: String,
   source: String,
   prefix: Option[String] = None,
+  threadPool: RedisThreadPools,
 ) extends RedisSettings

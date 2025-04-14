@@ -26,6 +26,9 @@ trait RedisSettings {
 
   /** instance prefix */
   def prefix: Option[String]
+
+  /** threadpool */
+  def threadPool: RedisThreadPools
   // $COVERAGE-OFF$
   /** trait-specific equals */
   override def equals(obj: scala.Any): Boolean = equalsAsSettings(obj)
@@ -49,6 +52,7 @@ object RedisSettings extends ConfigLoader[RedisSettings] {
     timeout = loadTimeouts(config, path)(RedisTimeouts.requiredDefault),
     source = loadSource(config, path).get,
     prefix = loadPrefix(config, path),
+    threadPool = loadThreadPool(config, path)(RedisThreadPools.requiredDefault),
   )
 
   def withFallback(fallback: RedisSettings): ConfigLoader[RedisSettings] =
@@ -60,19 +64,21 @@ object RedisSettings extends ConfigLoader[RedisSettings] {
         timeout = loadTimeouts(config, path)(fallback.timeout),
         source = loadSource(config, path) getOrElse fallback.source,
         prefix = loadPrefix(config, path) orElse fallback.prefix,
+        threadPool = loadThreadPool(config, path)(fallback.threadPool),
       )
 
-  def apply(dispatcher: String, invocationPolicy: String, timeout: RedisTimeouts, recovery: String, source: String, prefix: Option[String] = None): RedisSettings =
-    create(dispatcher, invocationPolicy, prefix, timeout, recovery, source)
+  def apply(dispatcher: String, invocationPolicy: String, timeout: RedisTimeouts, recovery: String, source: String, prefix: Option[String] = None, threadPool: RedisThreadPools): RedisSettings =
+    create(dispatcher, invocationPolicy, prefix, timeout, recovery, source, threadPool)
 
   @inline
-  private def create(_dispatcher: String, _invocation: String, _prefix: Option[String], _timeout: RedisTimeouts, _recovery: String, _source: String) = new RedisSettings {
+  private def create(_dispatcher: String, _invocation: String, _prefix: Option[String], _timeout: RedisTimeouts, _recovery: String, _source: String, _threadpool: RedisThreadPools) = new RedisSettings {
     override val invocationContext: String = _dispatcher
     override val invocationPolicy: String = _invocation
     override val prefix: Option[String] = _prefix
     override val recovery: String = _recovery
     override val timeout: RedisTimeouts = _timeout
     override val source: String = _source
+    override val threadPool: RedisThreadPools = _threadpool
   }
 
   private def loadInvocationContext(config: Config, path: String): Option[String] =
@@ -93,6 +99,9 @@ object RedisSettings extends ConfigLoader[RedisSettings] {
   private def loadTimeouts(config: Config, path: String)(defaults: RedisTimeouts): RedisTimeouts =
     RedisTimeouts.load(config, path)(defaults)
 
+  private def loadThreadPool(config: Config, path: String)(defaults: RedisThreadPools): RedisThreadPools =
+    RedisThreadPools.load(config, path)(defaults)
+
 }
 
 /** A helper trait delegating properties into the inner settings object */
@@ -104,4 +113,5 @@ trait RedisDelegatingSettings extends RedisSettings {
   override def recovery: String = settings.recovery
   override def invocationContext: String = settings.invocationContext
   override def invocationPolicy: String = settings.invocationPolicy
+  override def threadPool: RedisThreadPools = settings.threadPool
 }

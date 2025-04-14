@@ -227,6 +227,18 @@ usually does not apply. However, it is expected the cache should be fast respond
 and thus **by default the timeout is set to 500 millis** to avoid unnecessary delays.
 This timeout is optional and can be disabled.
 
+## ThreadPool
+
+These are ResourceClient settings passed to Lettuce, a Java Redis client library. For more information see
+
+https://redis.github.io/lettuce/advanced-usage/
+
+```hocon
+play.cache.redis {
+  io-thread-pool-size:          8 // default 8, min 3
+  computation-thread-pool-size: 8 // default 8, min 3
+}
+```
 ## Recovery policy
 
 The intention of cache is usually to optimize the application behavior, not to provide any business logic.

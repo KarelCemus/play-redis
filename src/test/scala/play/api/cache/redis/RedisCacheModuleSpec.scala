@@ -1,6 +1,6 @@
 package play.api.cache.redis
 
-import play.api.cache.redis.configuration.{RedisHost, RedisSettings, RedisStandalone, RedisTimeouts}
+import play.api.cache.redis.configuration.{RedisHost, RedisSettings, RedisStandalone, RedisThreadPools, RedisTimeouts}
 import play.api.cache.redis.test._
 import play.api.inject._
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -138,6 +138,7 @@ class RedisCacheModuleSpec extends IntegrationSpec with RedisStandaloneContainer
         recovery = "log-and-default",
         source = "my-instance",
         prefix = None,
+        threadPool = RedisThreadPools(ioSize = 1, computationSize = 1),
       ),
     )
 
