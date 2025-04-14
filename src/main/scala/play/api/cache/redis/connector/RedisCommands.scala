@@ -50,7 +50,12 @@ abstract private[connector] class AbstractRedisCommands(
 
   protected def connectionString: String
 
-  protected lazy val resources: ClientResources = RedisClientFactory.newClientResources()
+  protected def configuration: RedisSettings
+
+  protected lazy val resources: ClientResources = RedisClientFactory.newClientResources(
+    ioThreadPoolSize = configuration.threadPool.ioSize,
+    computationThreadPoolSize = configuration.threadPool.computationSize,
+  )
 
   protected def client: AbstractRedisClient
 
@@ -102,7 +107,7 @@ abstract private[connector] class AbstractRedisCommands(
   *   configures clusters
   */
 private[connector] class RedisCommandsStandalone(
-  configuration: RedisStandalone,
+  override val configuration: RedisStandalone,
 )(implicit
   executionContext: ExecutionContext,
   lifecycle: ApplicationLifecycle,
@@ -147,7 +152,7 @@ private[connector] class RedisCommandsStandalone(
   *   configures clusters
   */
 private[connector] class RedisCommandsCluster(
-  configuration: RedisCluster,
+  override val configuration: RedisCluster,
 )(implicit
   lifecycle: ApplicationLifecycle,
   executionContext: ExecutionContext,
@@ -199,7 +204,7 @@ private[connector] class RedisCommandsCluster(
   *   configures sentinels
   */
 private[connector] class RedisCommandsSentinel(
-  configuration: RedisSentinel,
+  override val configuration: RedisSentinel,
 )(implicit
   lifecycle: ApplicationLifecycle,
   executionContext: ExecutionContext,
@@ -248,7 +253,7 @@ private[connector] class RedisCommandsSentinel(
   */
 //noinspection DuplicatedCode
 private[connector] class RedisCommandsMasterSlaves(
-  configuration: RedisMasterSlaves,
+  override val configuration: RedisMasterSlaves,
 )(implicit
   lifecycle: ApplicationLifecycle,
   executionContext: ExecutionContext,

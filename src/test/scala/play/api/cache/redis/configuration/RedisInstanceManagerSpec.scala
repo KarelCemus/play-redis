@@ -58,6 +58,7 @@ class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterializati
       recovery = "log-and-fail",
       source = "standalone",
       prefix = "redis.",
+      threadPool = RedisThreadPools(1, 1),
     )
 
     manager mustEqual RedisInstanceManagerTest(defaultCacheName)(
@@ -107,6 +108,7 @@ class RedisInstanceManagerSpec extends UnitSpec with ImplicitOptionMaterializati
       recovery = "log-and-fail",
       source = "standalone",
       prefix = "redis.",
+      threadPool = RedisThreadPools(1, 1),
     )
 
     private val defaultCache: RedisInstanceProvider = RedisStandalone(defaultCacheName, RedisHost(localhost, defaultPort, database = 1), otherSettings)

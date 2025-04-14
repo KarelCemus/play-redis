@@ -28,6 +28,7 @@ trait DefaultValues {
       timeout = RedisTimeouts(1.second, None, Some(500.millis)),
       recovery = "log-and-default",
       source = "standalone",
+      threadPool = RedisThreadPools(1, 1),
     )
 
   final protected val cacheKey: String = "cache-key"
