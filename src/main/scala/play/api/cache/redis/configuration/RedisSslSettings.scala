@@ -98,7 +98,7 @@ object RedisSslSettings extends ConfigLoader[RedisSslSettings]{
     }
 
     final case class UrlResource(path: String) extends SslResource {
-      def toResource: URL = new URL(path)
+      def toResource: URL = java.net.URI.create(path).toURL
     }
     object UrlResource {
       def get(config: Config, path: String): UrlResource =
