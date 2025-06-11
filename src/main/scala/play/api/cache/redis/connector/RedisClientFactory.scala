@@ -6,7 +6,7 @@ import io.lettuce.core.masterreplica.StatefulRedisMasterReplicaConnection
 import io.lettuce.core.resource.{ClientResources, NettyCustomizer}
 import io.netty.channel.{Channel, ChannelDuplexHandler, ChannelHandlerContext}
 import io.netty.handler.timeout.{IdleStateEvent, IdleStateHandler}
-import play.api.cache.redis.configuration.RedisHost
+import play.api.cache.redis.configuration.{RedisHost, RedisSslSettings}
 
 import java.time.{Duration => JavaDuration}
 import scala.concurrent.duration.FiniteDuration
@@ -83,6 +83,14 @@ private object RedisClientFactory {
       // mutable calls
       thiz.autoReconnect(true)                // Auto-Reconnect
       thiz.pingBeforeActivateConnection(true) // PING before activating connection
+      thiz
+    }
+
+    def withSslSettings(maybeSslSettings: Option[RedisSslSettings]): T = {
+      maybeSslSettings match {
+        case Some(sslSettings) => thiz.sslOptions(sslSettings.toOptions)
+        case None => ()
+      }
       thiz
     }
 
