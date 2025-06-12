@@ -1,9 +1,9 @@
 package play.api.cache.redis.configuration
 
 import com.typesafe.config.Config
-import io.lettuce.core.SslOptions
+import io.lettuce.core.{SslOptions, SslVerifyMode}
 import play.api.ConfigLoader
-import play.api.cache.redis.configuration.RedisSslSettings.{TrustStoreDefinition, KeyStoreDefinition, KeyManagerDefinition, TrustManagerDefinition}
+import play.api.cache.redis.configuration.RedisSslSettings.{KeyManagerDefinition, KeyStoreDefinition, TrustManagerDefinition, TrustStoreDefinition, VerifyPeerMode}
 
 import java.io.File
 import java.net.URL
@@ -23,6 +23,7 @@ trait RedisSslSettings {
   def keyStore: Option[KeyStoreDefinition]
   def keyManager: Option[KeyManagerDefinition]
   def trustManager: Option[TrustManagerDefinition]
+  def verifyPeerMode: Option[VerifyPeerMode]
 
   def toOptions: SslOptions = {
     val modifiers: List[Option[SslOptions.Builder => SslOptions.Builder]] = {
@@ -55,7 +56,8 @@ object RedisSslSettings extends ConfigLoader[RedisSslSettings]{
      handShakeTimeout: Option[FiniteDuration],
      keyStore: Option[KeyStoreDefinition],
      keyManager: Option[KeyManagerDefinition],
-     trustManager: Option[TrustManagerDefinition]
+     trustManager: Option[TrustManagerDefinition],
+     verifyPeerMode: Option[VerifyPeerMode]
   ) extends RedisSslSettings
 
   def getOpt(config: Config, path: String): Option[RedisSslSettings] = {
@@ -71,7 +73,8 @@ object RedisSslSettings extends ConfigLoader[RedisSslSettings]{
           handShakeTimeout = config.getOption(pathToObject / "hand-shake-timeout", _.getDuration).map(d => FiniteDuration(d.toMillis, TimeUnit.MILLISECONDS)),
           keyStore = KeyStoreDefinition.getOpt(config, pathToObject / "key-store"),
           keyManager = KeyManagerDefinition.getOpt(config, pathToObject / "key-manager"),
-          trustManager = TrustManagerDefinition.getOpt(config, pathToObject / "trust-manager")
+          trustManager = TrustManagerDefinition.getOpt(config, pathToObject / "trust-manager"),
+          verifyPeerMode = VerifyPeerMode.getOpt(config, pathToObject / "verify-peer-mode")
         )
       )
     } else {
@@ -84,6 +87,25 @@ object RedisSslSettings extends ConfigLoader[RedisSslSettings]{
 
   private def getPasswordOpt(config: Config, path: String): Option[String] =
     config.getOption(path / "password", _.getString)
+
+  sealed abstract class VerifyPeerMode(val name: String, val value: SslVerifyMode) extends Product with Serializable
+  object VerifyPeerMode {
+    final case object NONE extends VerifyPeerMode("none", SslVerifyMode.NONE)
+    final case object FULL extends VerifyPeerMode("full", SslVerifyMode.FULL)
+    final case object CA extends VerifyPeerMode("ca", SslVerifyMode.CA)
+
+    def none: VerifyPeerMode = NONE
+    def full: VerifyPeerMode = FULL
+    def ca: VerifyPeerMode = CA
+
+    def getOpt(config: Config, path: String): Option[VerifyPeerMode] =
+      config.getOption(path, _.getString) match {
+        case Some(NONE.name) => Some(none)
+        case Some(FULL.name) => Some(full)
+        case Some(CA.name) => Some(ca)
+        case _ => None
+      }
+  }
 
   sealed trait SslResource extends Product with Serializable {
     def path: String

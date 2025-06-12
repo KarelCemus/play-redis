@@ -3,6 +3,7 @@ package play.api.cache.redis.configuration
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import play.api.ConfigLoader
 import play.api.cache.redis.configuration.RedisSslSettings.SslResource.FileResource
+import play.api.cache.redis.configuration.RedisSslSettings.VerifyPeerMode.CA
 import play.api.cache.redis.configuration.RedisSslSettings.{FactoryDefinition, KeyManagerDefinition, KeyStoreDefinition, RedisSslSettingsImpl, SslResource, TrustManagerDefinition, TrustStoreDefinition}
 import play.api.cache.redis.test._
 
@@ -34,7 +35,8 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       handShakeTimeout = None,
       keyStore = None,
       keyManager = None,
-      trustManager = None
+      trustManager = None,
+      verifyPeerMode = None
     )
   }
 
@@ -63,7 +65,8 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       handShakeTimeout = None,
       keyStore = None,
       keyManager = None,
-      trustManager = None
+      trustManager = None,
+      verifyPeerMode = None
     )
   }
 
@@ -91,7 +94,8 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       handShakeTimeout = None,
       keyStore = None,
       keyManager = None,
-      trustManager = None
+      trustManager = None,
+      verifyPeerMode = None
     )
   }
 
@@ -144,7 +148,8 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
           "keyManagerPassword"
         )
       ),
-      trustManager = None
+      trustManager = None,
+      verifyPeerMode = None
     )
   }
 
@@ -183,7 +188,8 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
             SslResource.FileResource("pathToTrustManagerFile")
           )
         )
-      )
+      ),
+      verifyPeerMode = None
     )
   }
 
@@ -218,7 +224,8 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
         |      algorithm: trustManagerAlgorithm
         |      provider: trustManagerProvider
         |    }
-        |  }
+        |  },
+        |  verify-peer-mode: ca
         |}
       """.stripMargin
     }
@@ -252,7 +259,8 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
             FactoryDefinition("trustManagerAlgorithm", Some("trustManagerProvider"))
           )
         )
-      )
+      ),
+      verifyPeerMode = Some(CA)
     )
   }
 }

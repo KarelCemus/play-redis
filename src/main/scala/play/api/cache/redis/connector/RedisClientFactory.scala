@@ -6,6 +6,7 @@ import io.lettuce.core.masterreplica.StatefulRedisMasterReplicaConnection
 import io.lettuce.core.resource.{ClientResources, NettyCustomizer}
 import io.netty.channel.{Channel, ChannelDuplexHandler, ChannelHandlerContext}
 import io.netty.handler.timeout.{IdleStateEvent, IdleStateHandler}
+import play.api.cache.redis.configuration.RedisSslSettings.VerifyPeerMode
 import play.api.cache.redis.configuration.{RedisHost, RedisSslSettings}
 
 import java.time.{Duration => JavaDuration}
@@ -44,6 +45,13 @@ private object RedisClientFactory {
     def withDatabase(database: Option[Int]): Builder = {
       thiz.withDatabase(database.getOrElse(0)) // mutable
       thiz
+    }
+
+    def withVerifyPeer(verifyPeerMode: Option[VerifyPeerMode]): RedisURI.Builder = {
+      verifyPeerMode match {
+        case Some(m) => thiz.withVerifyPeer(m.value)
+        case None => thiz
+      }
     }
 
     def withCredentials(
