@@ -57,7 +57,7 @@ object RedisSettings extends ConfigLoader[RedisSettings] {
     source = loadSource(config, path).get,
     prefix = loadPrefix(config, path),
     threadPool = loadThreadPool(config, path)(RedisThreadPools.requiredDefault),
-    sslSettings = loadSslSettings(config, path)
+    sslSettings = loadSslSettings(config, path),
   )
 
   def withFallback(fallback: RedisSettings): ConfigLoader[RedisSettings] =
@@ -70,7 +70,7 @@ object RedisSettings extends ConfigLoader[RedisSettings] {
         source = loadSource(config, path) getOrElse fallback.source,
         prefix = loadPrefix(config, path) orElse fallback.prefix,
         threadPool = loadThreadPool(config, path)(fallback.threadPool),
-        sslSettings = loadSslSettings(config, path) orElse fallback.sslSettings
+        sslSettings = loadSslSettings(config, path) orElse fallback.sslSettings,
       )
 
   def apply(dispatcher: String, invocationPolicy: String, timeout: RedisTimeouts, recovery: String, source: String, prefix: Option[String] = None, threadPool: RedisThreadPools, sslSettings: Option[RedisSslSettings] = None): RedisSettings =

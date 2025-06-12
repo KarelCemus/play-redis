@@ -28,7 +28,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       protocols = List("TLSv1.2", "TLSv1.3"),
       trustStore = TrustStoreDefinition(
         resource = SslResource.FileResource("/abc/def"),
-        password = Some("1234")
+        password = Some("1234"),
       ),
       keyStoreType = None,
       cipherSuites = None,
@@ -36,7 +36,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       keyStore = None,
       keyManager = None,
       trustManager = None,
-      verifyPeerMode = None
+      verifyPeerMode = None,
     )
   }
 
@@ -58,7 +58,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       protocols = List("TLSv1.2", "TLSv1.3"),
       trustStore = TrustStoreDefinition(
         resource = SslResource.UrlResource("/abc/def"),
-        password = Some("1234")
+        password = Some("1234"),
       ),
       keyStoreType = None,
       cipherSuites = None,
@@ -66,7 +66,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       keyStore = None,
       keyManager = None,
       trustManager = None,
-      verifyPeerMode = None
+      verifyPeerMode = None,
     )
   }
 
@@ -87,7 +87,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       protocols = List("TLSv1.2", "TLSv1.3"),
       trustStore = TrustStoreDefinition(
         resource = SslResource.FileResource("/abc/def"),
-        password = None
+        password = None,
       ),
       keyStoreType = None,
       cipherSuites = None,
@@ -95,7 +95,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       keyStore = None,
       keyManager = None,
       trustManager = None,
-      verifyPeerMode = None
+      verifyPeerMode = None,
     )
   }
 
@@ -131,7 +131,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       protocols = List("TLSv1.2", "TLSv1.3"),
       trustStore = TrustStoreDefinition(
         resource = SslResource.FileResource("/abc/def"),
-        password = None
+        password = None,
       ),
       keyStoreType = None,
       cipherSuites = None,
@@ -142,14 +142,14 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
           Right(
             KeyManagerDefinition.Resource(
               keyCertChain = SslResource.FileResource("pathToKeyCertChainFile"),
-              key = SslResource.FileResource("pathToKeyFile")
-            )
+              key = SslResource.FileResource("pathToKeyFile"),
+            ),
           ),
-          "keyManagerPassword"
-        )
+          "keyManagerPassword",
+        ),
       ),
       trustManager = None,
-      verifyPeerMode = None
+      verifyPeerMode = None,
     )
   }
 
@@ -175,7 +175,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       protocols = List("TLSv1.2", "TLSv1.3"),
       trustStore = TrustStoreDefinition(
         resource = SslResource.FileResource("/abc/def"),
-        password = None
+        password = None,
       ),
       keyStoreType = None,
       cipherSuites = None,
@@ -185,11 +185,11 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       trustManager = Some(
         TrustManagerDefinition(
           Right(
-            SslResource.FileResource("pathToTrustManagerFile")
-          )
-        )
+            SslResource.FileResource("pathToTrustManagerFile"),
+          ),
+        ),
       ),
-      verifyPeerMode = None
+      verifyPeerMode = None,
     )
   }
 
@@ -234,7 +234,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       protocols = List("TLSv1.2", "TLSv1.3"),
       trustStore = TrustStoreDefinition(
         resource = SslResource.FileResource("/abc/def"),
-        password = Some("1234")
+        password = Some("1234"),
       ),
       keyStoreType = Some("defaultKeyStoreType"),
       cipherSuites = Some(List("firstCipherSuite", "secondCipherSuite")),
@@ -242,25 +242,26 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       keyStore = Some(
         KeyStoreDefinition(
           FileResource("keyStoreFile"),
-          Some("keyStorePassword")
-        )
+          Some("keyStorePassword"),
+        ),
       ),
       keyManager = Some(
         KeyManagerDefinition(
           Left(
-            FactoryDefinition("keyManagerAlgorithm", Some("keyManagerProvider"))
+            FactoryDefinition("keyManagerAlgorithm", Some("keyManagerProvider")),
           ),
-          "keyManagerPassword"
-        )
+          "keyManagerPassword",
+        ),
       ),
       trustManager = Some(
         TrustManagerDefinition(
           Left(
-            FactoryDefinition("trustManagerAlgorithm", Some("trustManagerProvider"))
-          )
-        )
+            FactoryDefinition("trustManagerAlgorithm", Some("trustManagerProvider")),
+          ),
+        ),
       ),
-      verifyPeerMode = Some(CA)
+      verifyPeerMode = Some(CA),
     )
   }
+
 }

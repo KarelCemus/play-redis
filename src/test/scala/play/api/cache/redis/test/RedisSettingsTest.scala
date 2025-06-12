@@ -10,5 +10,5 @@ final case class RedisSettingsTest(
   source: String,
   prefix: Option[String] = None,
   threadPool: RedisThreadPools,
-  sslSettings: Option[RedisSslSettings] = None
+  sslSettings: Option[RedisSslSettings] = None,
 ) extends RedisSettings
