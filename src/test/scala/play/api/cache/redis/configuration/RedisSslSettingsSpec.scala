@@ -293,5 +293,4 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       verifyPeerMode = None,
     )
   }
-
 }

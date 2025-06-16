@@ -39,7 +39,7 @@ trait RedisSettings {
 
   /** trait-specific equals, invokable from children */
   protected def equalsAsSettings(obj: scala.Any): Boolean = obj match {
-    case that: RedisSettings => Equals.check(this, that)(_.invocationContext, _.invocationPolicy, _.timeout, _.recovery, _.source, _.prefix)
+    case that: RedisSettings => Equals.check(this, that)(_.invocationContext, _.invocationPolicy, _.timeout, _.recovery, _.source, _.prefix, _.sslSettings)
     case _                   => false
   }
   // $COVERAGE-ON$
@@ -111,7 +111,6 @@ object RedisSettings extends ConfigLoader[RedisSettings] {
 
   private def loadSslSettings(config: Config, path: String): Option[AbstractRedisSslSettings] =
     AbstractRedisSslSettings.getOpt(config, path)
-
 }
 
 /** A helper trait delegating properties into the inner settings object */

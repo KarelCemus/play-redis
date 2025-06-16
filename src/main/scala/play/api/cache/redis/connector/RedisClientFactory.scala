@@ -47,13 +47,12 @@ private object RedisClientFactory {
       thiz
     }
 
-    def withVerifyPeer(verifyPeerMode: Option[VerifyPeerMode]): Builder = {
+
+    def withVerifyPeer(verifyPeerMode: Option[VerifyPeerMode]): RedisURI.Builder =
       verifyPeerMode match {
-        case Some(value) => thiz.withVerifyPeer(value.value)
-        case None        => ()
+        case Some(m) => thiz.withVerifyPeer(m.value)
+        case None    => thiz
       }
-      thiz
-    }
 
     def withCredentials(
       username: Option[String],

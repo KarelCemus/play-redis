@@ -135,6 +135,7 @@ private[connector] class RedisCommandsStandalone(
         ClientOptions.builder()
           .withDefaults()
           .withTimeout(configuration.timeout.redis)
+          .withSslSettings(configuration.sslSettings)
           .build(),
       )
 
@@ -183,6 +184,7 @@ private[connector] class RedisCommandsCluster(
         ClusterClientOptions.builder()
           .withDefaults()
           .withTimeout(configuration.timeout.redis)
+          .withSslSettings(configuration.sslSettings)
           .topologyRefreshOptions(
             ClusterTopologyRefreshOptions.builder
               .enableAdaptiveRefreshTrigger(RefreshTrigger.MOVED_REDIRECT, RefreshTrigger.PERSISTENT_RECONNECTS)
@@ -238,6 +240,7 @@ private[connector] class RedisCommandsSentinel(
         ClientOptions.builder()
           .withDefaults()
           .withTimeout(configuration.timeout.redis)
+          .withSslSettings(configuration.sslSettings)
           .build(),
       )
 
@@ -289,6 +292,7 @@ private[connector] class RedisCommandsMasterSlaves(
         ClientOptions.builder()
           .withDefaults()
           .withTimeout(configuration.timeout.redis)
+          .withSslSettings(configuration.sslSettings)
           .build(),
       )
 
