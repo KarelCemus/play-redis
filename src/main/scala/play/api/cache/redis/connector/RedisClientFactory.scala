@@ -6,8 +6,8 @@ import io.lettuce.core.masterreplica.StatefulRedisMasterReplicaConnection
 import io.lettuce.core.resource.{ClientResources, NettyCustomizer}
 import io.netty.channel.{Channel, ChannelDuplexHandler, ChannelHandlerContext}
 import io.netty.handler.timeout.{IdleStateEvent, IdleStateHandler}
-import play.api.cache.redis.configuration.RedisSslSettings.VerifyPeerMode
-import play.api.cache.redis.configuration.{RedisHost, RedisSslSettings}
+import play.api.cache.redis.configuration.AbstractRedisSslSettings.VerifyPeerMode
+import play.api.cache.redis.configuration.{AbstractRedisSslSettings, RedisHost}
 
 import java.time.{Duration => JavaDuration}
 import scala.concurrent.duration.FiniteDuration
@@ -93,9 +93,9 @@ private object RedisClientFactory {
       thiz
     }
 
-    def withSslSettings(maybeSslSettings: Option[RedisSslSettings]): T = {
+    def withSslSettings(maybeSslSettings: Option[AbstractRedisSslSettings]): T = {
       maybeSslSettings match {
-        case Some(sslSettings) => thiz.sslOptions(sslSettings.toOptions)
+        case Some(sslSettings) => sslSettings.toOptions.foreach(thiz.sslOptions)
         case None              => ()
       }
       thiz

@@ -2,15 +2,16 @@ package play.api.cache.redis.configuration
 
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import play.api.ConfigLoader
-import play.api.cache.redis.configuration.RedisSslSettings.SslResource.FileResource
-import play.api.cache.redis.configuration.RedisSslSettings.VerifyPeerMode.CA
-import play.api.cache.redis.configuration.RedisSslSettings.{FactoryDefinition, KeyManagerDefinition, KeyStoreDefinition, RedisSslSettingsImpl, SslResource, TrustManagerDefinition, TrustStoreDefinition}
+import play.api.cache.redis.configuration.AbstractRedisSslSettings.ExtendedRedisSslSettingsImpl.SslResource.FileResource
+import play.api.cache.redis.configuration.AbstractRedisSslSettings.ExtendedRedisSslSettingsImpl.{FactoryDefinition, KeyManagerDefinition, KeyStoreDefinition, SslResource, TrustManagerDefinition, TrustStoreDefinition}
+import play.api.cache.redis.configuration.AbstractRedisSslSettings.VerifyPeerMode.{CA, FULL}
+import play.api.cache.redis.configuration.AbstractRedisSslSettings.{BasicRedisSslSettingsImpl, ExtendedRedisSslSettingsImpl}
 import play.api.cache.redis.test._
 
 class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
-  implicit private val loader: ConfigLoader[RedisSslSettings] = RedisSslSettings
+  implicit private val loader: ConfigLoader[AbstractRedisSslSettings] = AbstractRedisSslSettings
 
-  "ssl settings only with required fields with file trust-store" in {
+  "extended ssl settings only with required fields with file trust-store" in {
     val configuration = Helpers.configuration.fromHocon {
       """play.cache.redis.ssl-settings {
         |  protocols  : ["TLSv1.2", "TLSv1.3"]
@@ -24,7 +25,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       """.stripMargin
     }
 
-    configuration.get[RedisSslSettings]("play.cache.redis") mustEqual RedisSslSettingsImpl(
+    configuration.get[AbstractRedisSslSettings]("play.cache.redis") mustEqual ExtendedRedisSslSettingsImpl(
       protocols = List("TLSv1.2", "TLSv1.3"),
       trustStore = TrustStoreDefinition(
         resource = SslResource.FileResource("/abc/def"),
@@ -40,7 +41,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
     )
   }
 
-  "ssl settings only with required fields with url trust-store" in {
+  "extended ssl settings only with required fields with url trust-store" in {
     val configuration = Helpers.configuration.fromHocon {
       """play.cache.redis.ssl-settings {
         |  protocols  : ["TLSv1.2", "TLSv1.3"]
@@ -54,7 +55,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       """.stripMargin
     }
 
-    configuration.get[RedisSslSettings]("play.cache.redis") mustEqual RedisSslSettingsImpl(
+    configuration.get[AbstractRedisSslSettings]("play.cache.redis") mustEqual ExtendedRedisSslSettingsImpl(
       protocols = List("TLSv1.2", "TLSv1.3"),
       trustStore = TrustStoreDefinition(
         resource = SslResource.UrlResource("/abc/def"),
@@ -70,7 +71,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
     )
   }
 
-  "ssl settings only with required fields, but without password" in {
+  "extended ssl settings only with required fields, but without password" in {
     val configuration = Helpers.configuration.fromHocon {
       """play.cache.redis.ssl-settings {
         |  protocols  : ["TLSv1.2", "TLSv1.3"]
@@ -83,7 +84,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       """.stripMargin
     }
 
-    configuration.get[RedisSslSettings]("play.cache.redis") mustEqual RedisSslSettingsImpl(
+    configuration.get[AbstractRedisSslSettings]("play.cache.redis") mustEqual ExtendedRedisSslSettingsImpl(
       protocols = List("TLSv1.2", "TLSv1.3"),
       trustStore = TrustStoreDefinition(
         resource = SslResource.FileResource("/abc/def"),
@@ -99,7 +100,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
     )
   }
 
-  "ssl-settings with file-resource for key-manager" in {
+  "extended ssl-settings with file-resource for key-manager" in {
     val configuration = Helpers.configuration.fromHocon {
       """play.cache.redis.ssl-settings {
         |  protocols  : ["TLSv1.2", "TLSv1.3"]
@@ -127,7 +128,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       """.stripMargin
     }
 
-    configuration.get[RedisSslSettings]("play.cache.redis") mustEqual RedisSslSettingsImpl(
+    configuration.get[AbstractRedisSslSettings]("play.cache.redis") mustEqual ExtendedRedisSslSettingsImpl(
       protocols = List("TLSv1.2", "TLSv1.3"),
       trustStore = TrustStoreDefinition(
         resource = SslResource.FileResource("/abc/def"),
@@ -153,7 +154,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
     )
   }
 
-  "ssl-settings with file-resource for trust-manager" in {
+  "extended ssl-settings with file-resource for trust-manager" in {
     val configuration = Helpers.configuration.fromHocon {
       """play.cache.redis.ssl-settings {
         |  protocols  : ["TLSv1.2", "TLSv1.3"]
@@ -171,7 +172,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       """.stripMargin
     }
 
-    configuration.get[RedisSslSettings]("play.cache.redis") mustEqual RedisSslSettingsImpl(
+    configuration.get[AbstractRedisSslSettings]("play.cache.redis") mustEqual ExtendedRedisSslSettingsImpl(
       protocols = List("TLSv1.2", "TLSv1.3"),
       trustStore = TrustStoreDefinition(
         resource = SslResource.FileResource("/abc/def"),
@@ -193,7 +194,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
     )
   }
 
-  "ssl-settings with all fields" in {
+  "extended ssl-settings with all fields" in {
     val configuration = Helpers.configuration.fromHocon {
       """play.cache.redis.ssl-settings {
         |  protocols  : ["TLSv1.2", "TLSv1.3"]
@@ -230,7 +231,7 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
       """.stripMargin
     }
 
-    configuration.get[RedisSslSettings]("play.cache.redis") mustEqual RedisSslSettingsImpl(
+    configuration.get[AbstractRedisSslSettings]("play.cache.redis") mustEqual ExtendedRedisSslSettingsImpl(
       protocols = List("TLSv1.2", "TLSv1.3"),
       trustStore = TrustStoreDefinition(
         resource = SslResource.FileResource("/abc/def"),
@@ -261,6 +262,35 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
         ),
       ),
       verifyPeerMode = Some(CA),
+    )
+  }
+
+  "basic ssl-settings with all fields" in {
+    val configuration = Helpers.configuration.fromHocon {
+      """play.cache.redis.ssl-settings {
+        |  enabled  : true
+        |  verify-peer-mode: full
+        |}
+      """.stripMargin
+    }
+
+    configuration.get[AbstractRedisSslSettings]("play.cache.redis") mustEqual BasicRedisSslSettingsImpl(
+      enabled = true,
+      verifyPeerMode = Some(FULL),
+    )
+  }
+
+  "basic ssl-settings with enabled field" in {
+    val configuration = Helpers.configuration.fromHocon {
+      """play.cache.redis.ssl-settings {
+        |  enabled  : true
+        |}
+      """.stripMargin
+    }
+
+    configuration.get[AbstractRedisSslSettings]("play.cache.redis") mustEqual BasicRedisSslSettingsImpl(
+      enabled = true,
+      verifyPeerMode = None,
     )
   }
 
