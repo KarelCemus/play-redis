@@ -29,6 +29,10 @@ trait RedisSettings {
 
   /** threadpool */
   def threadPool: RedisThreadPools
+
+  /** ssl settings */
+  def sslSettings: Option[AbstractRedisSslSettings]
+
   // $COVERAGE-OFF$
   /** trait-specific equals */
   override def equals(obj: scala.Any): Boolean = equalsAsSettings(obj)
@@ -53,6 +57,7 @@ object RedisSettings extends ConfigLoader[RedisSettings] {
     source = loadSource(config, path).get,
     prefix = loadPrefix(config, path),
     threadPool = loadThreadPool(config, path)(RedisThreadPools.requiredDefault),
+    sslSettings = loadSslSettings(config, path),
   )
 
   def withFallback(fallback: RedisSettings): ConfigLoader[RedisSettings] =
@@ -65,13 +70,14 @@ object RedisSettings extends ConfigLoader[RedisSettings] {
         source = loadSource(config, path) getOrElse fallback.source,
         prefix = loadPrefix(config, path) orElse fallback.prefix,
         threadPool = loadThreadPool(config, path)(fallback.threadPool),
+        sslSettings = loadSslSettings(config, path),
       )
 
-  def apply(dispatcher: String, invocationPolicy: String, timeout: RedisTimeouts, recovery: String, source: String, prefix: Option[String] = None, threadPool: RedisThreadPools): RedisSettings =
-    create(dispatcher, invocationPolicy, prefix, timeout, recovery, source, threadPool)
+  def apply(dispatcher: String, invocationPolicy: String, timeout: RedisTimeouts, recovery: String, source: String, prefix: Option[String] = None, threadPool: RedisThreadPools, sslSettings: Option[AbstractRedisSslSettings] = None): RedisSettings =
+    create(dispatcher, invocationPolicy, prefix, timeout, recovery, source, threadPool, sslSettings)
 
   @inline
-  private def create(_dispatcher: String, _invocation: String, _prefix: Option[String], _timeout: RedisTimeouts, _recovery: String, _source: String, _threadpool: RedisThreadPools) = new RedisSettings {
+  private def create(_dispatcher: String, _invocation: String, _prefix: Option[String], _timeout: RedisTimeouts, _recovery: String, _source: String, _threadpool: RedisThreadPools, _sslSettings: Option[AbstractRedisSslSettings]) = new RedisSettings {
     override val invocationContext: String = _dispatcher
     override val invocationPolicy: String = _invocation
     override val prefix: Option[String] = _prefix
@@ -79,6 +85,7 @@ object RedisSettings extends ConfigLoader[RedisSettings] {
     override val timeout: RedisTimeouts = _timeout
     override val source: String = _source
     override val threadPool: RedisThreadPools = _threadpool
+    override val sslSettings: Option[AbstractRedisSslSettings] = _sslSettings
   }
 
   private def loadInvocationContext(config: Config, path: String): Option[String] =
@@ -102,6 +109,9 @@ object RedisSettings extends ConfigLoader[RedisSettings] {
   private def loadThreadPool(config: Config, path: String)(defaults: RedisThreadPools): RedisThreadPools =
     RedisThreadPools.load(config, path)(defaults)
 
+  private def loadSslSettings(config: Config, path: String): Option[AbstractRedisSslSettings] =
+    AbstractRedisSslSettings.getOpt(config, path)
+
 }
 
 /** A helper trait delegating properties into the inner settings object */
@@ -114,4 +124,5 @@ trait RedisDelegatingSettings extends RedisSettings {
   override def invocationContext: String = settings.invocationContext
   override def invocationPolicy: String = settings.invocationPolicy
   override def threadPool: RedisThreadPools = settings.threadPool
+  override def sslSettings: Option[AbstractRedisSslSettings] = settings.sslSettings
 }

@@ -122,6 +122,8 @@ private[connector] class RedisCommandsStandalone(
       .withPort(configuration.port)
       .withDatabase(configuration.database)
       .withCredentials(configuration.username, configuration.password)
+      .withSsl(configuration.sslSettings.exists(_.enabled))
+      .withVerifyPeer(configuration.sslSettings.flatMap(_.verifyPeerMode))
       .build()
 
   override protected def connectionString: String =
@@ -168,6 +170,8 @@ private[connector] class RedisCommandsCluster(
         .withPort(port)
         .withDatabase(database)
         .withCredentials(username, password)
+        .withSsl(configuration.sslSettings.exists(_.enabled))
+        .withVerifyPeer(configuration.sslSettings.flatMap(_.verifyPeerMode))
         .build()
     }
 
@@ -222,6 +226,8 @@ private[connector] class RedisCommandsSentinel(
       .withDatabase(configuration.database)
       .withCredentials(configuration.username, configuration.password)
       .withSentinels(configuration.sentinels.tail)
+      .withSsl(configuration.sslSettings.exists(_.enabled))
+      .withVerifyPeer(configuration.sslSettings.flatMap(_.verifyPeerMode))
       .build()
 
   override protected def connectionString: String = redisUri.toString
@@ -271,6 +277,8 @@ private[connector] class RedisCommandsMasterSlaves(
         configuration.master.username.orElse(configuration.username),
         configuration.master.password.orElse(configuration.password),
       )
+      .withSsl(configuration.sslSettings.exists(_.enabled))
+      .withVerifyPeer(configuration.sslSettings.flatMap(_.verifyPeerMode))
       .build()
 
   override protected def connectionString: String = redisUri.toString
