@@ -3,7 +3,8 @@ package play.api.cache.redis.configuration
 import com.typesafe.config.Config
 import io.lettuce.core.{SslOptions, SslVerifyMode}
 import play.api.ConfigLoader
-import play.api.cache.redis.configuration.RedisSslSettings.{KeyManagerDefinition, KeyStoreDefinition, TrustManagerDefinition, TrustStoreDefinition, VerifyPeerMode}
+import play.api.cache.redis.configuration.AbstractRedisSslSettings.ExtendedRedisSslSettingsImpl.{KeyManagerDefinition, KeyStoreDefinition, TrustManagerDefinition, TrustStoreDefinition}
+import play.api.cache.redis.configuration.AbstractRedisSslSettings.VerifyPeerMode
 
 import java.io.File
 import java.net.URL

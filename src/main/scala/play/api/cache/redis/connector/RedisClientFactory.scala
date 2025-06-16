@@ -47,7 +47,6 @@ private object RedisClientFactory {
       thiz
     }
 
-
     def withVerifyPeer(verifyPeerMode: Option[VerifyPeerMode]): RedisURI.Builder =
       verifyPeerMode match {
         case Some(m) => thiz.withVerifyPeer(m.value)

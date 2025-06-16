@@ -111,6 +111,7 @@ object RedisSettings extends ConfigLoader[RedisSettings] {
 
   private def loadSslSettings(config: Config, path: String): Option[AbstractRedisSslSettings] =
     AbstractRedisSslSettings.getOpt(config, path)
+
 }
 
 /** A helper trait delegating properties into the inner settings object */
