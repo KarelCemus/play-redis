@@ -6,8 +6,7 @@ import io.lettuce.core.masterreplica.StatefulRedisMasterReplicaConnection
 import io.lettuce.core.resource.{ClientResources, NettyCustomizer}
 import io.netty.channel.{Channel, ChannelDuplexHandler, ChannelHandlerContext}
 import io.netty.handler.timeout.{IdleStateEvent, IdleStateHandler}
-import play.api.cache.redis.configuration.RedisSslSettings.VerifyPeerMode
-import play.api.cache.redis.configuration.{RedisHost, RedisSslSettings}
+import play.api.cache.redis.configuration.{RedisHost, RedisSslSettings, RedisUriSslSettings}
 
 import java.time.{Duration => JavaDuration}
 import scala.concurrent.duration.FiniteDuration
@@ -47,11 +46,11 @@ private object RedisClientFactory {
       thiz
     }
 
-    def withVerifyPeer(verifyPeerMode: Option[VerifyPeerMode]): RedisURI.Builder =
-      verifyPeerMode match {
-        case Some(m) => thiz.withVerifyPeer(m.value)
-        case None    => thiz
-      }
+    def withSsl(settings: RedisUriSslSettings): RedisURI.Builder =
+      if (settings.enabled) {
+        thiz.withSsl(true)
+        thiz.withVerifyPeer(settings.verifyPeerMode.value)
+      } else thiz
 
     def withCredentials(
       username: Option[String],
@@ -93,9 +92,9 @@ private object RedisClientFactory {
       thiz
     }
 
-    def withSslSettings(maybeSslSettings: Option[RedisSslSettings]): T = {
+    def withSslSettings(sslUriSettings: RedisUriSslSettings, maybeSslSettings: Option[RedisSslSettings]): T = {
       maybeSslSettings match {
-        case Some(sslSettings) => thiz.sslOptions(sslSettings.toOptions)
+        case Some(sslSettings) => if (sslUriSettings.enabled) thiz.sslOptions(sslSettings.toOptions) else ()
         case None              => ()
       }
       thiz

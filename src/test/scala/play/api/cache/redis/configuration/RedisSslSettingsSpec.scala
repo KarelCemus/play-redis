@@ -3,7 +3,6 @@ package play.api.cache.redis.configuration
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import play.api.ConfigLoader
 import play.api.cache.redis.configuration.RedisSslSettings.SslResource.FileResource
-import play.api.cache.redis.configuration.RedisSslSettings.VerifyPeerMode.CA
 import play.api.cache.redis.configuration.RedisSslSettings.{FactoryDefinition, KeyManagerDefinition, KeyStoreDefinition, RedisSslSettingsImpl, SslResource, TrustManagerDefinition, TrustStoreDefinition}
 import play.api.cache.redis.test._
 
@@ -260,7 +259,8 @@ class RedisSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
           ),
         ),
       ),
-      verifyPeerMode = Some(CA),
+      // filling deprecated value with None
+      verifyPeerMode = None,
     )
   }
 
