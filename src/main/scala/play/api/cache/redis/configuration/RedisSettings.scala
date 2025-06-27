@@ -33,13 +33,16 @@ trait RedisSettings {
   /** ssl settings */
   def sslSettings: Option[RedisSslSettings]
 
+  /** ssl uri settings */
+  def sslUriSettings: RedisUriSslSettings
+
   // $COVERAGE-OFF$
   /** trait-specific equals */
   override def equals(obj: scala.Any): Boolean = equalsAsSettings(obj)
 
   /** trait-specific equals, invokable from children */
   protected def equalsAsSettings(obj: scala.Any): Boolean = obj match {
-    case that: RedisSettings => Equals.check(this, that)(_.invocationContext, _.invocationPolicy, _.timeout, _.recovery, _.source, _.prefix, _.sslSettings)
+    case that: RedisSettings => Equals.check(this, that)(_.invocationContext, _.invocationPolicy, _.timeout, _.recovery, _.source, _.prefix, _.sslSettings, _.sslUriSettings)
     case _                   => false
   }
   // $COVERAGE-ON$
@@ -58,6 +61,7 @@ object RedisSettings extends ConfigLoader[RedisSettings] {
     prefix = loadPrefix(config, path),
     threadPool = loadThreadPool(config, path)(RedisThreadPools.requiredDefault),
     sslSettings = loadSslSettings(config, path),
+    sslUriSettings = loadUriSslSettings(config, path)(RedisUriSslSettings.requiredDefault),
   )
 
   def withFallback(fallback: RedisSettings): ConfigLoader[RedisSettings] =
@@ -71,13 +75,14 @@ object RedisSettings extends ConfigLoader[RedisSettings] {
         prefix = loadPrefix(config, path) orElse fallback.prefix,
         threadPool = loadThreadPool(config, path)(fallback.threadPool),
         sslSettings = loadSslSettings(config, path) orElse fallback.sslSettings,
+        sslUriSettings = loadUriSslSettings(config, path)(fallback.sslUriSettings),
       )
 
-  def apply(dispatcher: String, invocationPolicy: String, timeout: RedisTimeouts, recovery: String, source: String, prefix: Option[String] = None, threadPool: RedisThreadPools, sslSettings: Option[RedisSslSettings] = None): RedisSettings =
-    create(dispatcher, invocationPolicy, prefix, timeout, recovery, source, threadPool, sslSettings)
+  def apply(dispatcher: String, invocationPolicy: String, timeout: RedisTimeouts, recovery: String, source: String, prefix: Option[String] = None, threadPool: RedisThreadPools, sslSettings: Option[RedisSslSettings] = None, sslUriSettings: RedisUriSslSettings): RedisSettings =
+    create(dispatcher, invocationPolicy, prefix, timeout, recovery, source, threadPool, sslSettings, sslUriSettings)
 
   @inline
-  private def create(_dispatcher: String, _invocation: String, _prefix: Option[String], _timeout: RedisTimeouts, _recovery: String, _source: String, _threadpool: RedisThreadPools, _sslSettings: Option[RedisSslSettings]) = new RedisSettings {
+  private def create(_dispatcher: String, _invocation: String, _prefix: Option[String], _timeout: RedisTimeouts, _recovery: String, _source: String, _threadpool: RedisThreadPools, _sslSettings: Option[RedisSslSettings], _sslUriSettings: RedisUriSslSettings) = new RedisSettings {
     override val invocationContext: String = _dispatcher
     override val invocationPolicy: String = _invocation
     override val prefix: Option[String] = _prefix
@@ -86,6 +91,7 @@ object RedisSettings extends ConfigLoader[RedisSettings] {
     override val source: String = _source
     override val threadPool: RedisThreadPools = _threadpool
     override val sslSettings: Option[RedisSslSettings] = _sslSettings
+    override val sslUriSettings: RedisUriSslSettings = _sslUriSettings
   }
 
   private def loadInvocationContext(config: Config, path: String): Option[String] =
@@ -112,6 +118,9 @@ object RedisSettings extends ConfigLoader[RedisSettings] {
   private def loadSslSettings(config: Config, path: String): Option[RedisSslSettings] =
     RedisSslSettings.getOpt(config, path)
 
+  private def loadUriSslSettings(config: Config, path: String)(defaults: RedisUriSslSettings): RedisUriSslSettings =
+    RedisUriSslSettings.load(config, path)(defaults)
+
 }
 
 /** A helper trait delegating properties into the inner settings object */
@@ -125,4 +134,5 @@ trait RedisDelegatingSettings extends RedisSettings {
   override def invocationPolicy: String = settings.invocationPolicy
   override def threadPool: RedisThreadPools = settings.threadPool
   override def sslSettings: Option[RedisSslSettings] = settings.sslSettings
+  override def sslUriSettings: RedisUriSslSettings = settings.sslUriSettings
 }

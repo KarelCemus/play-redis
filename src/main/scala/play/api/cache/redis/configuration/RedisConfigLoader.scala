@@ -21,6 +21,7 @@ private[configuration] object RedisConfigLoader {
   }
 
   def required(path: String): Nothing = throw new IllegalStateException(s"Configuration key '$path' is missing.")
+  def notSupported[T](path: String, value: T): Nothing = throw new IllegalStateException(s"Value '$value' is not supported at the configuration key '$path'")
 }
 
 /**

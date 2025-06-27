@@ -122,8 +122,7 @@ private[connector] class RedisCommandsStandalone(
       .withPort(configuration.port)
       .withDatabase(configuration.database)
       .withCredentials(configuration.username, configuration.password)
-      .withSsl(configuration.sslSettings.nonEmpty)
-      .withVerifyPeer(configuration.sslSettings.flatMap(_.verifyPeerMode))
+      .withSsl(configuration.sslUriSettings)
       .build()
 
   override protected def connectionString: String =
@@ -135,7 +134,7 @@ private[connector] class RedisCommandsStandalone(
         ClientOptions.builder()
           .withDefaults()
           .withTimeout(configuration.timeout.redis)
-          .withSslSettings(configuration.sslSettings)
+          .withSslSettings(configuration.sslUriSettings, configuration.sslSettings)
           .build(),
       )
 
@@ -171,8 +170,7 @@ private[connector] class RedisCommandsCluster(
         .withPort(port)
         .withDatabase(database)
         .withCredentials(username, password)
-        .withSsl(configuration.sslSettings.nonEmpty)
-        .withVerifyPeer(configuration.sslSettings.flatMap(_.verifyPeerMode))
+        .withSsl(configuration.sslUriSettings)
         .build()
     }
 
@@ -184,7 +182,7 @@ private[connector] class RedisCommandsCluster(
         ClusterClientOptions.builder()
           .withDefaults()
           .withTimeout(configuration.timeout.redis)
-          .withSslSettings(configuration.sslSettings)
+          .withSslSettings(configuration.sslUriSettings, configuration.sslSettings)
           .topologyRefreshOptions(
             ClusterTopologyRefreshOptions.builder
               .enableAdaptiveRefreshTrigger(RefreshTrigger.MOVED_REDIRECT, RefreshTrigger.PERSISTENT_RECONNECTS)
@@ -228,8 +226,7 @@ private[connector] class RedisCommandsSentinel(
       .withDatabase(configuration.database)
       .withCredentials(configuration.username, configuration.password)
       .withSentinels(configuration.sentinels.tail)
-      .withSsl(configuration.sslSettings.nonEmpty)
-      .withVerifyPeer(configuration.sslSettings.flatMap(_.verifyPeerMode))
+      .withSsl(configuration.sslUriSettings)
       .build()
 
   override protected def connectionString: String = redisUri.toString
@@ -240,7 +237,7 @@ private[connector] class RedisCommandsSentinel(
         ClientOptions.builder()
           .withDefaults()
           .withTimeout(configuration.timeout.redis)
-          .withSslSettings(configuration.sslSettings)
+          .withSslSettings(configuration.sslUriSettings, configuration.sslSettings)
           .build(),
       )
 
@@ -280,8 +277,7 @@ private[connector] class RedisCommandsMasterSlaves(
         configuration.master.username.orElse(configuration.username),
         configuration.master.password.orElse(configuration.password),
       )
-      .withSsl(configuration.sslSettings.nonEmpty)
-      .withVerifyPeer(configuration.sslSettings.flatMap(_.verifyPeerMode))
+      .withSsl(configuration.sslUriSettings)
       .build()
 
   override protected def connectionString: String = redisUri.toString
@@ -292,7 +288,7 @@ private[connector] class RedisCommandsMasterSlaves(
         ClientOptions.builder()
           .withDefaults()
           .withTimeout(configuration.timeout.redis)
-          .withSslSettings(configuration.sslSettings)
+          .withSslSettings(configuration.sslUriSettings, configuration.sslSettings)
           .build(),
       )
 

@@ -11,4 +11,5 @@ final case class RedisSettingsTest(
   prefix: Option[String] = None,
   threadPool: RedisThreadPools,
   sslSettings: Option[RedisSslSettings] = None,
+  sslUriSettings: RedisUriSslSettings = RedisUriSslSettings.requiredDefault,
 ) extends RedisSettings
