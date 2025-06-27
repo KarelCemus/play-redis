@@ -5,6 +5,7 @@ import play.api.cache.redis.configuration.RedisUriSslSettings.RedisUriSslSetting
 import play.api.cache.redis.test.{Helpers, ImplicitOptionMaterialization, UnitSpec}
 
 class RedisUriSslSettingsSpec extends UnitSpec with ImplicitOptionMaterialization {
+
   "ssl uri settings" in {
     val configuration = Helpers.configuration.fromHocon {
       """play.cache.redis.ssl {
@@ -15,7 +16,8 @@ class RedisUriSslSettingsSpec extends UnitSpec with ImplicitOptionMaterializatio
     }
 
     RedisUriSslSettings.load(configuration.underlying, "play.cache.redis")(RedisUriSslSettings.requiredDefault) mustEqual RedisUriSslSettingsImpl(
-      enabled = true, verifyPeerMode = CA
+      enabled = true,
+      verifyPeerMode = CA,
     )
   }
 
@@ -25,7 +27,9 @@ class RedisUriSslSettingsSpec extends UnitSpec with ImplicitOptionMaterializatio
     }
 
     RedisUriSslSettings.load(configuration.underlying, "play.cache.redis")(RedisUriSslSettings.requiredDefault) mustEqual RedisUriSslSettingsImpl(
-      enabled = false, verifyPeerMode = NONE
+      enabled = false,
+      verifyPeerMode = NONE,
     )
   }
+
 }

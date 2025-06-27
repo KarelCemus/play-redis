@@ -10,6 +10,7 @@ trait RedisUriSslSettings {
 }
 
 object RedisUriSslSettings {
+
   def requiredDefault: RedisUriSslSettings = new RedisUriSslSettings {
     override val enabled: Boolean = false
     override val verifyPeerMode: VerifyPeerMode = VerifyPeerMode.NONE
@@ -21,11 +22,11 @@ object RedisUriSslSettings {
       override val verifyPeerMode: VerifyPeerMode = _verifyPeerMode
     }
 
-  final case class RedisUriSslSettingsImpl(enabled: Boolean,
-                                          verifyPeerMode: VerifyPeerMode) extends RedisUriSslSettings
+  final case class RedisUriSslSettingsImpl(enabled: Boolean, verifyPeerMode: VerifyPeerMode) extends RedisUriSslSettings
 
   def load(config: Config, path: String)(default: RedisUriSslSettings): RedisUriSslSettings = RedisUriSslSettingsImpl(
     enabled = config.getOption(path / "ssl" / "enabled", _.getBoolean).getOrElse(default.enabled),
-    verifyPeerMode = VerifyPeerMode.getOpt(config, path / "ssl" / "verify-peer-mode").getOrElse(default.verifyPeerMode)
+    verifyPeerMode = VerifyPeerMode.getOpt(config, path / "ssl" / "verify-peer-mode").getOrElse(default.verifyPeerMode),
   )
+
 }
