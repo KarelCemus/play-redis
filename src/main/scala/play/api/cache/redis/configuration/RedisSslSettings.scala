@@ -45,6 +45,17 @@ trait RedisSslSettings {
       .foldRight(SslOptions.builder())(_(_)).build()
   }
 
+  // $COVERAGE-OFF$
+  /** trait-specific equals */
+  override def equals(obj: scala.Any): Boolean = equalsAsSettings(obj)
+
+  /** trait-specific equals, invokable from children */
+  protected def equalsAsSettings(obj: scala.Any): Boolean = obj match {
+    case that: RedisSslSettings => Equals.check(this, that)(_.protocols, _.trustStore, _.keyStore, _.keyStoreType, _.keyManager, _.trustManager, _.cipherSuites, _.handShakeTimeout)
+    case _                      => false
+  }
+  // $COVERAGE-ON$
+
 }
 
 object RedisSslSettings extends ConfigLoader[RedisSslSettings] {
