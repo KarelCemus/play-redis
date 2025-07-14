@@ -23,6 +23,8 @@ trait RedisSslSettings {
   def keyStore: Option[KeyStoreDefinition]
   def keyManager: Option[KeyManagerDefinition]
   def trustManager: Option[TrustManagerDefinition]
+
+  @deprecated("Use RedisUriSslSetting", "5.3.0")
   def verifyPeerMode: Option[VerifyPeerMode]
 
   def toOptions: SslOptions = {
@@ -42,6 +44,17 @@ trait RedisSslSettings {
       .collect { case Some(m) => m }
       .foldRight(SslOptions.builder())(_(_)).build()
   }
+
+  // $COVERAGE-OFF$
+  /** trait-specific equals */
+  override def equals(obj: scala.Any): Boolean = equalsAsSettings(obj)
+
+  /** trait-specific equals, invokable from children */
+  protected def equalsAsSettings(obj: scala.Any): Boolean = obj match {
+    case that: RedisSslSettings => Equals.check(this, that)(_.protocols, _.trustStore, _.keyStore, _.keyStoreType, _.keyManager, _.trustManager, _.cipherSuites, _.handShakeTimeout)
+    case _                      => false
+  }
+  // $COVERAGE-ON$
 
 }
 
@@ -74,7 +87,7 @@ object RedisSslSettings extends ConfigLoader[RedisSslSettings] {
           keyStore = KeyStoreDefinition.getOpt(config, pathToObject / "key-store"),
           keyManager = KeyManagerDefinition.getOpt(config, pathToObject / "key-manager"),
           trustManager = TrustManagerDefinition.getOpt(config, pathToObject / "trust-manager"),
-          verifyPeerMode = VerifyPeerMode.getOpt(config, pathToObject / "verify-peer-mode"),
+          verifyPeerMode = None,
         ),
       )
     } else {
@@ -95,16 +108,13 @@ object RedisSslSettings extends ConfigLoader[RedisSslSettings] {
     case object FULL extends VerifyPeerMode("full", SslVerifyMode.FULL)
     case object CA   extends VerifyPeerMode("ca", SslVerifyMode.CA)
 
-    def none: VerifyPeerMode = NONE
-    def full: VerifyPeerMode = FULL
-    def ca: VerifyPeerMode = CA
-
     def getOpt(config: Config, path: String): Option[VerifyPeerMode] =
       config.getOption(path, _.getString) match {
-        case Some(NONE.name) => Some(none)
-        case Some(FULL.name) => Some(full)
-        case Some(CA.name)   => Some(ca)
-        case _               => None
+        case Some(NONE.name) => Some(NONE)
+        case Some(FULL.name) => Some(FULL)
+        case Some(CA.name)   => Some(CA)
+        case Some(unknown)   => notSupported(path, unknown)
+        case None            => Some(NONE)
       }
 
   }
