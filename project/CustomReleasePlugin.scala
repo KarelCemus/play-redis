@@ -27,26 +27,27 @@ object CustomReleasePlugin extends AutoPlugin {
     )
 
   override def projectSettings: Seq[Setting[?]] = Seq[Setting[?]](
-    publishMavenStyle                := true,
-    pomIncludeRepository             := { _ => false },
+    publishMavenStyle                  := true,
+    pomIncludeRepository               := { _ => false },
     // customized release process
-    releaseProcess                   := customizedReleaseProcess,
+    releaseProcess                     := customizedReleaseProcess,
     // release details
-    homepage                         := Some(url("https://github.com/KarelCemus/play-redis")),
-    licenses                         := Seq("Apache 2" -> url("https://www.apache.org/licenses/LICENSE-2.0")),
-    scmInfo                          := Some(
+    homepage                           := Some(url("https://github.com/KarelCemus/play-redis")),
+    licenses                           := Seq("Apache 2" -> url("https://www.apache.org/licenses/LICENSE-2.0")),
+    scmInfo                            := Some(
       ScmInfo(
         url("https://github.com/KarelCemus/play-redis.git"),
         "scm:git@github.com:KarelCemus/play-redis.git",
       ),
     ),
-    developers                       := List(
+    developers                         := List(
       Developer(id = "karel.cemus", name = "Karel Cemus", email = "", url = url("https://github.com/KarelCemus/")),
     ),
     // Publish settings
-    publishTo                        := sonatypePublishToBundle.value,
+    publishTo                          := sonatypePublishToBundle.value,
+    ThisBuild / sonatypeCredentialHost := Sonatype.sonatypeCentralHost,
     // git tags without "v" prefix
-    SbtGit.git.gitTagToVersionNumber := { tag: String =>
+    SbtGit.git.gitTagToVersionNumber   := { tag: String =>
       if (tag matches "[0-9]+\\..*") Some(tag)
       else None
     },
@@ -60,7 +61,7 @@ object CustomReleasePlugin extends AutoPlugin {
     val nextVersion = st.extracted.runTask(releaseVersion, st)._2(currentV)
     val bump = Version.Bump.Minor
 
-    val suggestedReleaseV: String = Version(nextVersion).map(_.bump(bump).string).getOrElse(versionFormatError(currentV))
+    val suggestedReleaseV: String = Version(nextVersion).map(_.bump(bump).unapply).getOrElse(versionFormatError(currentV))
 
     st.log.info("Press enter to use the default value")
 
