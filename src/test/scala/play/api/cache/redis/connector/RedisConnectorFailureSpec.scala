@@ -9,6 +9,7 @@ import play.api.cache.redis._
 import play.api.cache.redis.test._
 
 import java.util.concurrent.CompletableFuture
+import scala.annotation.nowarn
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.MapHasAsJava
@@ -231,6 +232,8 @@ class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMateria
     name in {
       implicit val runtime: RedisRuntime = mock[RedisRuntime]
       val serializer: PekkoSerializer = mock[PekkoSerializer]
+
+      @nowarn("cat=deprecation")
       val mockedCommands: RedisCommandsMock = mock[RedisCommandsMock]
       val connector: RedisConnector = new RedisConnectorImpl(serializer, mockedCommands)
 
