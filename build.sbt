@@ -16,22 +16,21 @@ crossScalaVersions := Seq( "2.12.15", scalaVersion.value )
 
 playVersion := "2.8.13"
 
-connectorVersion := "1.9.1"
-
 specs2Version := "4.13.2"
 
 libraryDependencies ++= Seq(
   // play framework cache API
   "com.typesafe.play" %% "play-cache" % playVersion.value % Provided,
   // redis connector
-  "com.github.karelcemus" %% "rediscala" % connectorVersion.value,
+  "io.github.rediscala" %% "rediscala" % "1.13.0",
   // test framework
   "org.specs2" %% "specs2-core" % specs2Version.value % Test,
   // with mockito extension
   "org.specs2" %% "specs2-mock" % specs2Version.value % Test,
   // test module for play framework
   "com.typesafe.play" %% "play-specs2" % playVersion.value % Test
-)
+) ++ Seq("akka-actor-typed", "akka-protobuf-v3", "akka-serialization-jackson", "akka-slf4j", "akka-stream")
+  .map("com.typesafe.akka" %% _ % "2.6.19")
 
 resolvers ++= Seq(
   "Typesafe repository" at "https://repo.typesafe.com/typesafe/releases/"

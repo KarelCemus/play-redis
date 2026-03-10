@@ -173,6 +173,7 @@ object RedisCacheModuleSpec {
     def host = localhost
     def port = defaultPort
     def database = None
+    def username = None
     def password = None
   }
 }
