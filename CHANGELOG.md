@@ -48,7 +48,7 @@ Cross-compiled with Scala 2.13 [#211](https://github.com/KarelCemus/play-redis/i
 
 ### [:link: 2.4.0](https://github.com/KarelCemus/play-redis/tree/2.4.0)
 
-Update to Play `2.7.0` [#202](https://github.com/KarelCemus/play-redis/pull/202)
+Update to Play `2.7.1` [#202](https://github.com/KarelCemus/play-redis/pull/202)
 
 Added `getAll[T: ClassTag](keys: Iterable[String]): Result[Seq[Option[T]]]` into `AbstractCacheApi` 
 in order to also accept collections aside vararg. [#194](https://github.com/KarelCemus/play-redis/pull/194)
