@@ -10,7 +10,6 @@ object CustomReleasePlugin extends AutoPlugin {
   object autoImport {
 
     val playVersion = settingKey[ String ]( "Version of Play framework" )
-    val connectorVersion = settingKey[ String ]( "Version redis connector" )
     val specs2Version = settingKey[ String ]( "Version of specs2 testing framework" )
 
     val authors = settingKey[ Seq[ String ] ]( "List of authors of the library" )

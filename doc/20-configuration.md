@@ -17,6 +17,8 @@ This implementation supports both standalone and cluster instances. By default, 
     port:       6379
     # redis server: database number (optional)
     database:   0
+    # authentication username (optional) with "redis" as fallback
+    username:   null
     # authentication password (optional)
     password:   null
   }
@@ -36,6 +38,8 @@ play.cache.redis {
       host:        localhost
       # required integer, defining a port the node is running on
       port:        6379
+      # optional string, defines a username to use with "redis" as fallback
+      username:    null
       # optional string, defines a password to use
       password:    null
     }
@@ -74,6 +78,8 @@ play.cache.redis {
 
     # Number of your redis database (optional)
     database: 1
+    # Username to your redis hosts (optional)
+    userame: some-username
     # Password to your redis hosts (optional)
     password: something
 
