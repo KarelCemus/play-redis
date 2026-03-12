@@ -1,0 +1,196 @@
+services:
+
+  # -----------------------
+  # REDIS CLUSTER NODES
+  # -----------------------
+  redis-7100:
+    image: redis:8
+    command: >
+      redis-server --port 7100
+      --cluster-enabled yes
+      --cluster-config-file nodes.conf
+      --cluster-node-timeout 5000
+      --appendonly yes
+    ports:
+      - "7100:7100"
+    networks:
+      - redis-net
+
+  redis-7101:
+    image: redis:8
+    command: >
+      redis-server --port 7101
+      --cluster-enabled yes
+      --cluster-config-file nodes.conf
+      --cluster-node-timeout 5000
+      --appendonly yes
+    ports:
+      - "7101:7101"
+    networks:
+      - redis-net
+
+  redis-7102:
+    image: redis:8
+    command: >
+      redis-server --port 7102
+      --cluster-enabled yes
+      --cluster-config-file nodes.conf
+      --cluster-node-timeout 5000
+      --appendonly yes
+    ports:
+      - "7102:7102"
+    networks:
+      - redis-net
+
+  redis-7103:
+    image: redis:8
+    command: >
+      redis-server --port 7103
+      --cluster-enabled yes
+      --cluster-config-file nodes.conf
+      --cluster-node-timeout 5000
+      --appendonly yes
+    ports:
+      - "7103:7103"
+    networks:
+      - redis-net
+
+  redis-7104:
+    image: redis:8
+    command: >
+      redis-server --port 7104
+      --cluster-enabled yes
+      --cluster-config-file nodes.conf
+      --cluster-node-timeout 5000
+      --appendonly yes
+    ports:
+      - "7104:7104"
+    networks:
+      - redis-net
+
+  redis-7105:
+    image: redis:8
+    command: >
+      redis-server --port 7105
+      --cluster-enabled yes
+      --cluster-config-file nodes.conf
+      --cluster-node-timeout 5000
+      --appendonly yes
+    ports:
+      - "7105:7105"
+    networks:
+      - redis-net
+
+  redis-7106:
+    image: redis:8
+    command: >
+      redis-server --port 7106
+      --cluster-enabled yes
+      --cluster-config-file nodes.conf
+      --cluster-node-timeout 5000
+      --appendonly yes
+    ports:
+      - "7106:7106"
+    networks:
+      - redis-net
+
+  redis-7107:
+    image: redis:8
+    command: >
+      redis-server --port 7107
+      --cluster-enabled yes
+      --cluster-config-file nodes.conf
+      --cluster-node-timeout 5000
+      --appendonly yes
+    ports:
+      - "7107:7107"
+    networks:
+      - redis-net
+
+  redis-cluster-init:
+    image: redis:8
+    depends_on:
+      - redis-7100
+      - redis-7101
+      - redis-7102
+      - redis-7103
+      - redis-7104
+      - redis-7105
+      - redis-7106
+      - redis-7107
+    entrypoint: >
+      sh -c "
+      sleep 5 &&
+      redis-cli --cluster create
+      redis-7100:7100 redis-7101:7101 redis-7102:7102 redis-7103:7103
+      redis-7104:7104 redis-7105:7105 redis-7106:7106 redis-7107:7107
+      --cluster-replicas 1 --cluster-yes
+      "
+    networks:
+      - redis-net
+
+  # -----------------------
+  # STANDALONE REDIS
+  # -----------------------
+  redis-standalone:
+    image: redis:8
+    container_name: redis-standalone
+    ports:
+      - "6379:6379"
+    networks:
+      - redis-net
+
+  # -----------------------
+  # SENTINEL MASTER
+  # -----------------------
+  redis-master:
+    image: redis:8
+    container_name: redis-master
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    ports:
+      - "6380:6380"
+    networks:
+      - redis-net
+
+  redis-sentinel-1:
+    image: redis:8
+    container_name: redis-sentinel-1
+    networks:
+      - redis-net
+    depends_on:
+      - redis-master
+    ports:
+      - "5100:26379"
+    command: redis-sentinel /usr/local/etc/redis/sentinel.conf
+    volumes:
+      - ./sentinel.conf:/usr/local/etc/redis/sentinel.conf
+  redis-sentinel-2:
+    image: redis:8
+    container_name: redis-sentinel-2
+    networks:
+      - redis-net
+    depends_on:
+      - redis-master
+    ports:
+      - "5101:26379"
+    command: redis-sentinel /usr/local/etc/redis/sentinel.conf
+    volumes:
+      - ./sentinel.conf:/usr/local/etc/redis/sentinel.conf
+
+  redis-sentinel-3:
+    image: redis:8
+    container_name: redis-sentinel-3
+    networks:
+      - redis-net
+    depends_on:
+      - redis-master
+    ports:
+      - "5102:26379"
+    command: redis-sentinel /usr/local/etc/redis/sentinel.conf
+    volumes:
+      - ./sentinel.conf:/usr/local/etc/redis/sentinel.conf
+
+networks:
+  redis-net:
+    driver: bridge
