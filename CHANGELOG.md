@@ -1,6 +1,10 @@
 
 ## Changelog
 
+### [:link: 2.7.1](https://github.com/KarelCemus/play-redis/tree/2.7.1)
+
+Changed underlying connector and implemented support for ACL [#316](https://github.com/KarelCemus/play-redis/pull/316)
+
 ### [:link: 2.7.0](https://github.com/KarelCemus/play-redis/tree/2.7.0)
 
 SET command supports milliseconds, previous versions used seconds [#247](https://github.com/KarelCemus/play-redis/issues/247)
