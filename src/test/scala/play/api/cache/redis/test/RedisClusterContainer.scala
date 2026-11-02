@@ -1,41 +1,22 @@
 package play.api.cache.redis.test
 
-import org.scalatest.Suite
+import com.dimafeng.testcontainers.DockerComposeContainer
+import org.scalatest.{BeforeAndAfterAll, Suite}
 import play.api.Logger
 
-import scala.concurrent.duration._
-
-trait RedisClusterContainer extends RedisContainer { this: Suite =>
+trait RedisClusterContainer extends BeforeAndAfterAll { this: Suite =>
 
   protected val log: Logger = Logger("play.api.cache.redis.test")
 
-  protected def redisMaster = 4
+  final protected def host: String = ClusterRedis.host
+  final protected def redisMaster: Int = ClusterRedis.masters
+  final protected def initialPort: Int = ClusterRedis.initialPort
 
-  protected def redisSlaves = 1
+  protected def container: DockerComposeContainer = ClusterRedis.container
 
-  final protected def initialPort = 7000
-
-  private val waitForStart = 10.seconds
-
-  override protected lazy val redisConfig: RedisContainerConfig =
-    RedisContainerConfig(
-      redisDockerImage = "grokzen/redis-cluster:7.0.10",
-      redisMappedPorts = Seq.empty,
-      redisFixedPorts = 0.until(redisMaster * (redisSlaves + 1)).map(initialPort + _),
-      redisEnvironment = Map(
-        "IP"                -> "0.0.0.0",
-        "INITIAL_PORT"      -> initialPort.toString,
-        "MASTERS"           -> redisMaster.toString,
-        "SLAVES_PER_MASTER" -> redisSlaves.toString,
-      ),
-    )
-
-  @SuppressWarnings(Array("org.wartremover.warts.ThreadSleep"))
-  override def beforeAll(): Unit = {
+  override protected def beforeAll(): Unit = {
+    container
     super.beforeAll()
-    log.info(s"Waiting for Redis Cluster to start on ${container.containerIpAddress}, will wait for $waitForStart")
-    Thread.sleep(waitForStart.toMillis)
-    log.info(s"Finished waiting for Redis Cluster to start on ${container.containerIpAddress}")
   }
 
 }

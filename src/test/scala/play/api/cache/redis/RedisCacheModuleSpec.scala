@@ -15,7 +15,7 @@ class RedisCacheModuleSpec extends IntegrationSpec with RedisStandaloneContainer
   final private val defaultCacheName: String = "play"
 
   test("bind defaults") {
-    _.bindings(new RedisCacheModule).configure("play.cache.redis.port" -> container.mappedPort(defaultPort))
+    _.bindings(new RedisCacheModule).configure("play.cache.redis.port" -> port, "play.cache.redis.database" -> database)
   } { injector =>
     injector.checkBinding[RedisConnector]
     injector.checkBinding[CacheApi]
@@ -30,7 +30,7 @@ class RedisCacheModuleSpec extends IntegrationSpec with RedisStandaloneContainer
   test("not bind defaults") {
     _.bindings(new RedisCacheModule)
       .configure("play.cache.redis.bind-default" -> false)
-      .configure("play.cache.redis.port" -> container.mappedPort(defaultPort))
+      .configure("play.cache.redis.port" -> port, "play.cache.redis.database" -> database)
   } { injector =>
     // bind named caches
     injector.checkNamedBinding[CacheApi]
@@ -46,7 +46,7 @@ class RedisCacheModuleSpec extends IntegrationSpec with RedisStandaloneContainer
   }
 
   test("bind named cache in simple mode") {
-    _.bindings(new RedisCacheModule).configure("play.cache.redis.port" -> container.mappedPort(defaultPort))
+    _.bindings(new RedisCacheModule).configure("play.cache.redis.port" -> port, "play.cache.redis.database" -> database)
   } { injector =>
     injector.checkNamedBinding[RedisConnector]
     injector.checkNamedBinding[CacheApi]
@@ -64,13 +64,13 @@ class RedisCacheModuleSpec extends IntegrationSpec with RedisStandaloneContainer
            |play.cache.redis {
            |  instances {
            |    play {
-           |      host:     ${container.host}
-           |      port:     ${container.mappedPort(defaultPort)}
+           |      host:     $host
+           |      port:     $port
            |      database: 1
            |    }
            |    other {
-           |      host:     ${container.host}
-           |      port:     ${container.mappedPort(defaultPort)}
+           |      host:     $host
+           |      port:     $port
            |      database: 2
            |      password: something
            |    }
@@ -125,9 +125,9 @@ class RedisCacheModuleSpec extends IntegrationSpec with RedisStandaloneContainer
     RedisStandalone(
       name = defaultCacheName,
       host = RedisHost(
-        host = container.host,
-        port = container.mappedPort(defaultPort),
-        database = None,
+        host = host,
+        port = port,
+        database = Some(database),
         username = None,
         password = None,
       ),

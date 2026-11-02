@@ -1,0 +1,25 @@
+name: play-redis-cluster
+
+services:
+
+  redis-cluster:
+    image: "redis:7.2-alpine"
+    # nodes advertise 127.0.0.1 and their own port, thus host and container ports must match
+    ports:
+      - "${CLUSTER_FIRST_PORT}-${CLUSTER_LAST_PORT}:${CLUSTER_FIRST_PORT}-${CLUSTER_LAST_PORT}"
+    # 8 nodes, i.e. 4 masters with 1 replica each
+    command:
+      - sh
+      - -c
+      - |
+        nodes=""
+        for port in $$(seq ${CLUSTER_FIRST_PORT} ${CLUSTER_LAST_PORT}); do
+          mkdir -p /data/$$port
+          redis-server --port $$port --dir /data/$$port --cluster-enabled yes --cluster-announce-ip 127.0.0.1 --save "" --appendonly no --daemonize yes > /dev/null
+          nodes="$$nodes 127.0.0.1:$$port"
+        done
+        until redis-cli -p ${CLUSTER_FIRST_PORT} ping > /dev/null 2>&1; do sleep 0.2; done
+        redis-cli --cluster create $$nodes --cluster-replicas 1 --cluster-yes
+        until redis-cli -p ${CLUSTER_FIRST_PORT} cluster info | grep -q cluster_state:ok; do sleep 0.2; done
+        echo "Cluster is ready"
+        exec tail -f /dev/null

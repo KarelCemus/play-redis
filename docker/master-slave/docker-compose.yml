@@ -1,16 +1,18 @@
-version: '3.9'
+name: play-redis-master-slave
 
 services:
 
   redis-master:
-    image: redis:7.2
+    image: "redis:7.2-alpine"
     hostname: redis-master
     ports:
-      - '${REDIS_MASTER_PORT}:6379'
+      - "${REDIS_MASTER_PORT}:6379"
 
   redis-slave:
-    image: redis:7.2
+    image: "redis:7.2-alpine"
     hostname: redis-slave
+    command: redis-server --replicaof redis-master 6379
     ports:
-      - '${REDIS_SLAVE_PORT}:6379'
-    command: redis-server --slaveof redis-master 6379
+      - "${REDIS_SLAVE_PORT}:6379"
+    depends_on:
+      - redis-master

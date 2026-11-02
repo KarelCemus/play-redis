@@ -1,79 +1,62 @@
-version: '3.9'
+name: play-redis-sentinel
+
+x-sentinel: &sentinel
+  image: "redis:7.2-alpine"
+  networks:
+    - redis-sentinel
+  depends_on:
+    - redis-master
+    - redis-slave
+  command:
+    - sh
+    - -c
+    - |
+      cat > /tmp/sentinel.conf <<EOF
+      port 26379
+      sentinel resolve-hostnames yes
+      sentinel monitor mymaster redis-master 6379 2
+      sentinel down-after-milliseconds mymaster 10000
+      EOF
+      exec redis-sentinel /tmp/sentinel.conf
 
 services:
 
   redis-master:
-    image: "bitnamilegacy/redis:7.2"
+    image: "redis:7.2-alpine"
     hostname: redis-master
     ports:
       - "${REDIS_MASTER_PORT}:6379"
     networks:
       - redis-sentinel
-    environment:
-      - REDIS_REPLICATION_MODE=master
-      - ALLOW_EMPTY_PASSWORD=yes
 
   redis-slave:
-    image: "bitnamilegacy/redis:7.2"
+    image: "redis:7.2-alpine"
     hostname: redis-slave
+    command: redis-server --replicaof redis-master 6379
     ports:
       - "${REDIS_SLAVE_PORT}:6379"
     networks:
       - redis-sentinel
-    environment:
-      - REDIS_REPLICATION_MODE=slave
-      - REDIS_MASTER_HOST=redis-master
-      - ALLOW_EMPTY_PASSWORD=yes
     depends_on:
       - redis-master
 
-  redis-sentinel-1:
-    image: "bitnamilegacy/redis-sentinel:7.2"
-    hostname: redis-sentinel-1
+  redis-sentinel-a:
+    <<: *sentinel
+    hostname: redis-sentinel-a
     ports:
       - "${REDIS_SENTINEL_1_PORT}:26379"
-    networks:
-      - redis-sentinel
-    environment:
-      - REDIS_MASTER_SET=mymaster
-      - REDIS_MASTER_HOST=redis-master
-      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=10000
-      - ALLOW_EMPTY_PASSWORD=yes
-    depends_on:
-      - redis-master
-      - redis-slave
 
-  redis-sentinel-2:
-    image: "bitnamilegacy/redis-sentinel:7.2"
-    hostname: redis-sentinel-2
+  redis-sentinel-b:
+    <<: *sentinel
+    hostname: redis-sentinel-b
     ports:
       - "${REDIS_SENTINEL_2_PORT}:26379"
-    networks:
-      - redis-sentinel
-    environment:
-      - REDIS_MASTER_SET=mymaster
-      - REDIS_MASTER_HOST=redis-master
-      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=10000
-      - ALLOW_EMPTY_PASSWORD=yes
-    depends_on:
-      - redis-master
-      - redis-slave
 
-  redis-sentinel-3:
-    image: "bitnamilegacy/redis-sentinel:7.2"
-    hostname: redis-sentinel-3
+  redis-sentinel-c:
+    <<: *sentinel
+    hostname: redis-sentinel-c
     ports:
       - "${REDIS_SENTINEL_3_PORT}:26379"
-    networks:
-      - redis-sentinel
-    environment:
-      - REDIS_MASTER_SET=mymaster
-      - REDIS_MASTER_HOST=redis-master
-      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=10000
-      - ALLOW_EMPTY_PASSWORD=yes
-    depends_on:
-      - redis-master
-      - redis-slave
 
 networks:
   redis-sentinel:
