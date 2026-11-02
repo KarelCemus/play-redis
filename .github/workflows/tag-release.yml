@@ -11,14 +11,14 @@ jobs:
   tag:
     # the release pull request is titled "Documentation updated to version X"
     if: startsWith(github.event.head_commit.message, 'Documentation updated to version ')
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
       GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
       COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           token: ${{ secrets.RELEASE_TOKEN }}
 
