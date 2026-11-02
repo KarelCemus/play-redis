@@ -1,7 +1,7 @@
 name: play-redis-sentinel
 
 x-sentinel: &sentinel
-  image: "redis:7.2-alpine"
+  image: "redis:8.10-alpine"
   networks:
     - redis-sentinel
   depends_on:
@@ -22,7 +22,7 @@ x-sentinel: &sentinel
 services:
 
   redis-master:
-    image: "redis:7.2-alpine"
+    image: "redis:8.10-alpine"
     hostname: redis-master
     ports:
       - "${REDIS_MASTER_PORT}:6379"
@@ -30,7 +30,7 @@ services:
       - redis-sentinel
 
   redis-slave:
-    image: "redis:7.2-alpine"
+    image: "redis:8.10-alpine"
     hostname: redis-slave
     command: redis-server --replicaof redis-master 6379
     ports:

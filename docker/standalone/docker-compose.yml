@@ -3,8 +3,8 @@ name: play-redis-standalone
 services:
 
   redis:
-    image: "redis:7.2-alpine"
+    image: "redis:8.10-alpine"
     # suites share the instance and use a dedicated database each
-    command: redis-server --databases 256
+    command: redis-server --databases 10
     ports:
       - "${REDIS_PORT}:6379"

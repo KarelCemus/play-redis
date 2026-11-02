@@ -3,7 +3,7 @@ name: play-redis-cluster
 services:
 
   redis-cluster:
-    image: "redis:7.2-alpine"
+    image: "redis:8.10-alpine"
     # nodes advertise 127.0.0.1 and their own port, thus host and container ports must match
     ports:
       - "${CLUSTER_FIRST_PORT}-${CLUSTER_LAST_PORT}:${CLUSTER_FIRST_PORT}-${CLUSTER_LAST_PORT}"
