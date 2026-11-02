@@ -64,7 +64,7 @@ object DocumentationUpdate {
         .replaceAll(sbtDependency(latest), sbtDependency(next))
     }
     // stage the changes
-    vcs.stage((readme +: documentationSources)*)
+    vcs.stage((readme +: documentationSources) *)
     st
   }
 

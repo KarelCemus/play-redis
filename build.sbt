@@ -48,8 +48,8 @@ enablePlugins(CustomReleasePlugin)
 // exclude from tests coverage
 coverageExcludedFiles := ".*exceptions.*"
 
-Test / fork               := true
-Test / test               := (Test / testOnly).toTask(" * -- -l \"org.scalatest.Ignore\"").value
+Test / fork := true
+Test / test := (Test / testOnly).toTask(" * -- -l \"org.scalatest.Ignore\"").value
 Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oF")
 
 semanticdbEnabled := true
