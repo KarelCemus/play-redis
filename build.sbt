@@ -21,7 +21,7 @@ libraryDependencies ++= Seq(
   // play framework cache API
   "org.playframework" %% "play-cache"                % playVersion.value % Provided,
   // redis connector
-  "io.lettuce"         % "lettuce-core"              % "6.7.1.RELEASE",
+  "io.lettuce"         % "lettuce-core"              % "7.9.0.RELEASE",
   // test framework with mockito extension
   "org.scalatest"     %% "scalatest"                 % "3.2.19"          % Test,
   "org.scalamock"     %% "scalamock"                 % "7.4.0"           % Test,
