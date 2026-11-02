@@ -1,16 +1,14 @@
 package play.api.cache.redis.connector
 
-import org.apache.pekko.actor.ActorSystem
 import play.api.cache.redis._
 import play.api.cache.redis.configuration._
 import play.api.cache.redis.impl._
 import play.api.cache.redis.test._
-import play.api.inject.{ApplicationLifecycle, Injector}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-class RedisStandaloneSpec extends IntegrationSpec with RedisStandaloneContainer with DefaultInjector {
+class RedisStandaloneSpec extends IntegrationSpec with RedisStandaloneContainer with SuiteApplication {
 
   test("pong on ping") { (_, connector) =>
     for {
@@ -583,34 +581,28 @@ class RedisStandaloneSpec extends IntegrationSpec with RedisStandaloneContainer 
     } yield Passed
   }
 
+  implicit private lazy val runtime: RedisRuntime =
+    RedisRuntime("standalone", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
+
+  private lazy val connector: RedisConnector = {
+    val instance = RedisStandalone(
+      name = "play",
+      host = RedisHost(host, port, database = Some(database)),
+      settings = RedisSettings.load(
+        config = Helpers.configuration.default.underlying,
+        path = "play.cache.redis",
+      ),
+    )
+    new RedisConnectorProvider(instance, new PekkoSerializerImpl(actorSystem)).get
+  }
+
   def test(name: String)(f: (String, RedisConnector) => Future[Assertion]): Unit =
     name in {
-      val injector: Injector = newInjector.build()
-      implicit val system: ActorSystem = injector.instanceOf[ActorSystem]
-      implicit val lifecycle: ApplicationLifecycle = injector.instanceOf[ApplicationLifecycle]
-      implicit val runtime: RedisRuntime = RedisRuntime("standalone", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
-      val serializer = new PekkoSerializerImpl(system)
-
-      lazy val instance = RedisStandalone(
-        name = "play",
-        host = RedisHost(container.containerIpAddress, container.mappedPort(defaultPort)),
-        settings = RedisSettings.load(
-          config = Helpers.configuration.default.underlying,
-          path = "play.cache.redis",
-        ),
-      )
-
       val cacheKey = name.toLowerCase().replace(" ", "-")
-
-      TestApplication.runAsync(injector) {
-        for {
-          connector <- Future(new RedisConnectorProvider(instance, serializer).get)
-          // initialize the connector by flushing the database
-          _         <- connector.invalidate()
-          // run the test
-          _         <- f(cacheKey, connector)
-        } yield Passed
-      }
+      for {
+        _ <- connector.invalidate()
+        _ <- f(cacheKey, connector)
+      } yield Passed
     }
 
 }

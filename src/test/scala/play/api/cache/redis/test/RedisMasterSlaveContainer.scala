@@ -1,32 +1,19 @@
 package play.api.cache.redis.test
 
-import com.dimafeng.testcontainers.{DockerComposeContainer, ExposedService}
-import org.scalatest.Suite
-import org.testcontainers.containers.wait.strategy.Wait
+import com.dimafeng.testcontainers.DockerComposeContainer
+import org.scalatest.{BeforeAndAfterAll, Suite}
 
-import java.io.File
+trait RedisMasterSlaveContainer extends BeforeAndAfterAll { this: Suite =>
 
-trait RedisMasterSlaveContainer extends ForAllTestContainer {
-  this: Suite =>
+  final protected def host: String = MasterSlaveRedis.host
+  final protected def masterPort: Int = MasterSlaveRedis.masterPort
+  final protected def slavePort: Int = MasterSlaveRedis.slavePort
 
-  override protected type TestContainer = DockerComposeContainer
+  protected def container: DockerComposeContainer = MasterSlaveRedis.container
 
-  final protected val host = "localhost"
-  final protected val masterPort = 6379
-  final protected val slavePort = 6479
-
-  protected def newContainer: TestContainerDef[TestContainer] =
-    DockerComposeContainer.Def(
-      new File("docker/master-slave/docker-compose.yml"),
-      tailChildContainers = true,
-      env = Map(
-        "REDIS_MASTER_PORT" -> s"$masterPort",
-        "REDIS_SLAVE_PORT"  -> s"$slavePort",
-      ),
-      exposedServices = Seq(
-        ExposedService("redis-master", masterPort, Wait.forLogMessage(".*Ready to accept connections tcp.*\\n", 1)),
-        ExposedService("redis-slave", slavePort, Wait.forLogMessage(".*MASTER <-> REPLICA sync: Finished with success.*\\n", 1)),
-      ),
-    )
+  override protected def beforeAll(): Unit = {
+    container
+    super.beforeAll()
+  }
 
 }

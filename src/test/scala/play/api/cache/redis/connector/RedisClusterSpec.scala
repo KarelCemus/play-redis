@@ -1,16 +1,14 @@
 package play.api.cache.redis.connector
 
-import org.apache.pekko.actor.ActorSystem
 import play.api.cache.redis._
 import play.api.cache.redis.configuration._
 import play.api.cache.redis.impl._
 import play.api.cache.redis.test._
-import play.api.inject.ApplicationLifecycle
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-class RedisClusterSpec extends IntegrationSpec with RedisClusterContainer with DefaultInjector {
+class RedisClusterSpec extends IntegrationSpec with RedisClusterContainer with SuiteApplication {
 
   override protected def testTimeout: FiniteDuration = 60.seconds
 
@@ -58,41 +56,34 @@ class RedisClusterSpec extends IntegrationSpec with RedisClusterContainer with D
     } yield Passed
   }
 
+  implicit private lazy val runtime: RedisRuntime =
+    RedisRuntime("cluster", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
+
+  private lazy val connector: RedisConnector = {
+    val instance = RedisCluster(
+      name = "play",
+      nodes = 0
+        .until(redisMaster)
+        .map(i => RedisHost(host, initialPort + i))
+        .toList,
+      settings = RedisSettings.load(
+        config = Helpers.configuration.default.underlying,
+        path = "play.cache.redis",
+      ),
+    )
+    new RedisConnectorProvider(instance, new PekkoSerializerImpl(actorSystem)).get
+  }
+
   def test(name: String)(f: RedisConnector => Future[Assertion]): Unit =
     name in {
 
-      lazy val clusterInstance = RedisCluster(
-        name = "play",
-        nodes = 0
-          .until(redisMaster)
-          .map { i =>
-            RedisHost(container.containerIpAddress, container.mappedPort(initialPort + i))
-          }
-          .toList,
-        settings = RedisSettings.load(
-          config = Helpers.configuration.default.underlying,
-          path = "play.cache.redis",
-        ),
-      )
-
-      def runTest: Future[Assertion] = {
-        val injector = newInjector.build()
-        implicit val system: ActorSystem = injector.instanceOf[ActorSystem]
-        implicit val lifecycle: ApplicationLifecycle = injector.instanceOf[ApplicationLifecycle]
-        implicit val runtime: RedisRuntime = RedisRuntime("cluster", syncTimeout = 5.seconds, ExecutionContext.global, new LogAndFailPolicy, LazyInvocation)
-        val serializer = new PekkoSerializerImpl(system)
-
-        TestApplication.runAsync(injector) {
-          for {
-            connector <- Future(new RedisConnectorProvider(clusterInstance, serializer).get)
-            // initialize the connector by flushing the database
-            keys      <- connector.matching("*")
-            _         <- Future.sequence(keys.map(connector.remove(_)))
-            // run the test
-            _         <- f(connector)
-          } yield Passed
-        }
-      }
+      def runTest: Future[Assertion] =
+        for {
+          // initialize the connector by flushing the database
+          keys <- connector.matching("*")
+          _    <- Future.sequence(keys.map(connector.remove(_)))
+          _    <- f(connector)
+        } yield Passed
 
       @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
       def makeAttempt(id: Int): Future[Assertion] =

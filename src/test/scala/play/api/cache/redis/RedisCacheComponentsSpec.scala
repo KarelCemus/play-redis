@@ -34,7 +34,8 @@ class RedisCacheComponentsSpec extends IntegrationSpec with RedisStandaloneConta
         override lazy val configuration: Configuration = Helpers
           .configuration
           .fromHocon(
-            s"play.cache.redis.port: ${container.mappedPort(defaultPort)}",
+            s"""play.cache.redis.port: $port
+               |play.cache.redis.database: $database""".stripMargin,
           )
         override lazy val actorSystem: ActorSystem = system
         override lazy val applicationLifecycle: ApplicationLifecycle = injector.instanceOf[ApplicationLifecycle]
