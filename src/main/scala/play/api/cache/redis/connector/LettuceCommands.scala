@@ -3,10 +3,12 @@ package play.api.cache.redis.connector
 import io.lettuce.core.cluster.api.async.RedisClusterAsyncCommands
 import io.lettuce.core.{KeyValue, RedisFuture, ScoredValue, SetArgs}
 
+import scala.annotation.nowarn
+
 /**
-  * The subset of the Lettuce commands the connector uses. The connector
-  * depends on this subset rather than on the whole Lettuce API, so a mock of
-  * it in tests stays small while Lettuce keeps adding commands.
+  * The subset of the Lettuce commands the connector uses. The connector depends
+  * on this subset rather than on the whole Lettuce API, so a mock of it in
+  * tests stays small while Lettuce keeps adding commands.
   */
 private[connector] trait LettuceCommands {
 
@@ -145,7 +147,10 @@ private[connector] object LettuceCommands {
       override def zcard(key: String): RedisFuture[java.lang.Long] = redis.zcard(key)
       override def zrange(key: String, start: Long, stop: Long): RedisFuture[java.util.List[String]] = redis.zrange(key, start, stop)
       override def zrem(key: String, members: String*): RedisFuture[java.lang.Long] = redis.zrem(key, members: _*)
+
+      @nowarn("cat=deprecation")
       override def zrevrange(key: String, start: Long, stop: Long): RedisFuture[java.util.List[String]] = redis.zrevrange(key, start, stop)
+
       override def zscore(key: String, member: String): RedisFuture[java.lang.Double] = redis.zscore(key, member)
     }
 
