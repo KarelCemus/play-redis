@@ -12,23 +12,24 @@ concurrency:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
       SBT_OPTS: "-Dfile.encoding=UTF-8 -Duser.timezone=UTC -Xmx2g"
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
 
       - name: Cache Coursier
-        uses: coursier/cache-action@v6.4
+        uses: coursier/cache-action@v9
 
       - name: Setup JDK
-        uses: coursier/setup-action@v1.3.4
+        uses: coursier/setup-action@v3
         with:
           jvm: adoptium:1.25
+          apps: sbt
 
       - name: Build
         timeout-minutes: 15
