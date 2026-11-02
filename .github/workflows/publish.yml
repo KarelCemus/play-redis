@@ -27,6 +27,7 @@ jobs:
         uses: coursier/setup-action@v3
         with:
           jvm: adoptium:1.25
+          apps: sbt
 
       - name: Import GPG Key
         timeout-minutes: 10

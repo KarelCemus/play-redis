@@ -33,6 +33,7 @@ jobs:
         uses: coursier/setup-action@v3
         with:
           jvm: adoptium:1.25
+          apps: sbt
 
       - name: Resolve version
         id: version
