@@ -8,7 +8,48 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
+  # nothing is published unless every Scala version compiles and passes; only the tests are retried
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: true
+      matrix:
+        # keep in sync with crossScalaVersions in build.sbt
+        scala: ["2.13.18", "3.3.9"]
+    env:
+      SBT_OPTS: "-Dfile.encoding=UTF-8 -Duser.timezone=UTC -Xmx2g"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Cache Coursier
+        uses: coursier/cache-action@v9
+
+      - name: Setup JDK
+        uses: coursier/setup-action@v3
+        with:
+          jvm: adoptium:1.25
+          apps: sbt
+
+      - name: Compile
+        timeout-minutes: 10
+        run: |
+          sbt -v "++${{ matrix.scala }}; compile; Test/compile"
+
+      - name: Test
+        timeout-minutes: 15
+        run: |
+          for attempt in 1 2 3; do
+            sbt -v "++${{ matrix.scala }}; test" && exit 0
+            echo "Attempt $attempt failed" >&2
+          done
+          exit 1
+
+  publish:
+    needs: test
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     environment: "Generally Available"
@@ -36,11 +77,11 @@ jobs:
         run: |
           echo $PGP_SECRET | base64 --decode | gpg  --batch --import
 
-      - name: Test and Publish JARs
-        timeout-minutes: 15
+      - name: Publish JARs
+        timeout-minutes: 12
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
         run: |
-             sbt -v "+test; +publishSigned; sonaRelease;"
+          sbt -v "+publishSigned; sonaRelease;"

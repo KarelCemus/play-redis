@@ -1,7 +1,6 @@
 package play.api.cache.redis.test
 
 import com.dimafeng.testcontainers.{DockerComposeContainer, ExposedService}
-import org.testcontainers.containers.wait.strategy.Wait
 
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -22,7 +21,7 @@ object StandaloneRedis {
     ComposeRedis.start(
       "standalone",
       Map("REDIS_PORT" -> port.toString),
-      ExposedService("redis", 6379, Wait.forLogMessage(".*Ready to accept connections tcp.*\\n", 1)),
+      ExposedService("redis", 6379, ComposeRedis.waitForLog(".*Ready to accept connections tcp.*\\n")),
     )
 
   def newDatabase(): Int = {
