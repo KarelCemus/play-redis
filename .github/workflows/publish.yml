@@ -8,15 +8,48 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  versions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      scala: ${{ steps.versions.outputs.scala }}
+    env:
+      SBT_OPTS: "-Dfile.encoding=UTF-8 -Duser.timezone=UTC -Xmx2g"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Cache Coursier
+        uses: coursier/cache-action@v9
+
+      - name: Setup JDK
+        uses: coursier/setup-action@v3
+        with:
+          jvm: adoptium:1.25
+          apps: sbt
+
+      # crossScalaVersions in build.sbt is the single source of truth
+      - name: Resolve Scala versions
+        id: versions
+        run: |
+          versions=$(sbt "print crossScalaVersions" | sed 's/\x1b\[[0-9;]*[A-Za-z]//g' | sed -n 's/^\* //p' | jq -R . | jq -sc .)
+          if [ "$versions" = "[]" ]; then
+            echo "No Scala versions found" >&2
+            exit 1
+          fi
+          echo "scala=$versions" >> "$GITHUB_OUTPUT"
+
   # nothing is published unless every Scala version compiles and passes; only the tests are retried
   test:
+    needs: versions
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     strategy:
       fail-fast: true
       matrix:
-        # keep in sync with crossScalaVersions in build.sbt
-        scala: ["2.13.18", "3.3.9"]
+        scala: ${{ fromJSON(needs.versions.outputs.scala) }}
     env:
       SBT_OPTS: "-Dfile.encoding=UTF-8 -Duser.timezone=UTC -Xmx2g"
     steps:
