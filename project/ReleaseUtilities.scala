@@ -24,7 +24,7 @@ object ReleaseUtilities {
   }
 
   implicit class ExecutableVcs(val vcs: Vcs) extends AnyVal {
-    def stage(files: File*)(implicit st: State): Unit = vcs.add(files.getAbsolutePaths: _*) !! processLogger
+    def stage(files: File*)(implicit st: State): Unit = vcs.add(files.getAbsolutePaths*) !! processLogger
   }
 
   /**

@@ -47,9 +47,9 @@ object DocumentationUpdate {
   def updateDocumentation: ReleaseStep = ReleaseStep { implicit st: State =>
     val commitMessage = s"Documentation updated to version $next"
     val program = List[State => State](
-      bumpVersionInDoc(_),
-      bumpLatestVersionInReadme(_),
-      commitVersion(commitMessage)(_),
+      bumpVersionInDoc(using _),
+      bumpLatestVersionInReadme(using _),
+      commitVersion(commitMessage)(using _),
     ).reduce(_ andThen _)
 
     program(st)
@@ -64,7 +64,7 @@ object DocumentationUpdate {
         .replaceAll(sbtDependency(latest), sbtDependency(next))
     }
     // stage the changes
-    vcs.stage(readme +: documentationSources: _*)
+    vcs.stage((readme +: documentationSources)*)
     st
   }
 
@@ -83,14 +83,14 @@ object DocumentationUpdate {
 
   private def commitVersion(commitMessage: String)(implicit st: State): State = {
     val log = processLogger
-    val base = vcs(st).baseDir.getCanonicalFile
+    val base = vcs.baseDir.getCanonicalFile
     val sign = st.extracted.get(releaseVcsSign)
     val signOff = st.extracted.get(releaseVcsSignOff)
 
-    val status = vcs(st).status.!!.trim
+    val status = vcs.status.!!.trim
 
     val newState = if (status.nonEmpty) {
-      vcs(st).commit(commitMessage, sign, signOff) ! log
+      vcs.commit(commitMessage, sign, signOff) ! log
       st
     } else {
       // nothing to commit

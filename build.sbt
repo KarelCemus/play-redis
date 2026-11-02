@@ -49,7 +49,6 @@ enablePlugins(CustomReleasePlugin)
 coverageExcludedFiles := ".*exceptions.*"
 
 Test / fork               := true
-Test / testForkedParallel := true
 Test / test               := (Test / testOnly).toTask(" * -- -l \"org.scalatest.Ignore\"").value
 Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oF")
 
