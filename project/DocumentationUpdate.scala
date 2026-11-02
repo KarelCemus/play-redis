@@ -18,7 +18,7 @@ object DocumentationUpdate {
   /** all documentation files */
   private def documentationSources(implicit st: State) = {
     documentationDirectory ** (-DirectoryFilter && "*.md")
-  }.get
+  }.get()
 
   /** readme file */
   private def readme(implicit st: State) = st.extracted.get(baseDirectory) / "README.md"

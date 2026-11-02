@@ -28,11 +28,30 @@ jobs:
       - name: Setup JDK
         uses: coursier/setup-action@v1.3.4
         with:
-          jvm: adoptium:1.11
+          jvm: adoptium:1.25
 
       - name: Build
         timeout-minutes: 15
-        env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          sbt -v "+clean; +compile; +Test/compile; lint; +coverage; +test; +coverageReport; +coveralls;"
+          sbt -v "+clean; +compile; +Test/compile; lint; +coverage; +test; +coverageReport;"
+
+      - name: Coveralls (Scala 2.13)
+        uses: coverallsapp/github-action@v2
+        with:
+          file: target/out/jvm/scala-2.13.18/play-redis/coverage-report/cobertura.xml
+          format: cobertura
+          flag-name: scala-2.13
+          parallel: true
+
+      - name: Coveralls (Scala 3)
+        uses: coverallsapp/github-action@v2
+        with:
+          file: target/out/jvm/scala-3.3.9/play-redis/coverage-report/cobertura.xml
+          format: cobertura
+          flag-name: scala-3
+          parallel: true
+
+      - name: Coveralls (finish)
+        uses: coverallsapp/github-action@v2
+        with:
+          parallel-finished: true
