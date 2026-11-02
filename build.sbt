@@ -71,6 +71,7 @@ wartremoverWarnings ++= Warts.allBut(
   Wart.Null,
   Wart.OptionPartial,
   Wart.Overloading,
+  Wart.PartialFunctionApply,
   Wart.PlatformDefault,
   Wart.StringPlusAny,
   Wart.Throw,
