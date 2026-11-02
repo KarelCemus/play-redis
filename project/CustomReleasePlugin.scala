@@ -32,16 +32,16 @@ object CustomReleasePlugin extends AutoPlugin {
     // sbt-release 1.5+ expects a snapshot version unless the bump is not Next, we start from the latest tag
     releaseVersionBump               := Version.Bump.Minor,
     // release details
-    homepage                         := Some(url("https://github.com/KarelCemus/play-redis")),
+    homepage                         := Some(uri("https://github.com/KarelCemus/play-redis")),
     licenses                         := Seq(License.Apache2),
     scmInfo                          := Some(
       ScmInfo(
-        url("https://github.com/KarelCemus/play-redis.git"),
+        uri("https://github.com/KarelCemus/play-redis.git"),
         "scm:git@github.com:KarelCemus/play-redis.git",
       ),
     ),
     developers                       := List(
-      Developer(id = "karel.cemus", name = "Karel Cemus", email = "", url = url("https://github.com/KarelCemus/")),
+      Developer(id = "karel.cemus", name = "Karel Cemus", email = "", url = uri("https://github.com/KarelCemus/")),
     ),
     // Publish settings
     // Central Portal: releases are staged locally and uploaded as a bundle by sonaRelease
@@ -51,7 +51,7 @@ object CustomReleasePlugin extends AutoPlugin {
     },
     // git tags without "v" prefix
     SbtGit.git.gitTagToVersionNumber := { (tag: String) =>
-      if (tag matches "[0-9]+\\..*") Some(tag)
+      if (tag.matches("[0-9]+\\..*")) Some(tag)
       else None
     },
   )
