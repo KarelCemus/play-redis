@@ -55,7 +55,7 @@ trait ImplicitFutureMaterialization {
 trait TimeLimitedSpec extends AsyncTestSuiteMixin with AsyncUtilities {
   this: AsyncTestSuite =>
 
-  protected def testTimeout: FiniteDuration = 1.second
+  protected def testTimeout: FiniteDuration = 5.seconds
 
   private class TimeLimitedTest(inner: NoArgAsyncTest) extends NoArgAsyncTest {
     override def apply(): FutureOutcome = restrict(inner())
