@@ -29,6 +29,8 @@ object CustomReleasePlugin extends AutoPlugin {
     pomIncludeRepository             := { _ => false },
     // customized release process
     releaseProcess                   := customizedReleaseProcess,
+    // sbt-release 1.5+ expects a snapshot version unless the bump is not Next, we start from the latest tag
+    releaseVersionBump               := Version.Bump.Minor,
     // release details
     homepage                         := Some(url("https://github.com/KarelCemus/play-redis")),
     licenses                         := Seq(License.Apache2),
