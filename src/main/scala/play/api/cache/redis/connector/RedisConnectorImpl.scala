@@ -1,6 +1,5 @@
 package play.api.cache.redis.connector
 
-import io.lettuce.core.cluster.api.async.RedisClusterAsyncCommands
 import io.lettuce.core.{KeyValue, RedisFuture, ScoredValue, SetArgs}
 import play.api.Logger
 import play.api.cache.redis._
@@ -26,7 +25,7 @@ import scala.reflect.ClassTag
   */
 private[connector] class RedisConnectorImpl(
   serializer: PekkoSerializer,
-  redis: RedisClusterAsyncCommands[String, String],
+  redis: LettuceCommands,
 )(implicit
   runtime: RedisRuntime,
 ) extends RedisConnector {

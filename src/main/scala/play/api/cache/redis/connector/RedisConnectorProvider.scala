@@ -16,5 +16,5 @@ private[redis] class RedisConnectorProvider(
 
   private[connector] lazy val commands = new RedisCommandsProvider(instance)(lifecycle, runtime.context).get
 
-  lazy val get = new RedisConnectorImpl(serializer, commands)
+  lazy val get = new RedisConnectorImpl(serializer, LettuceCommands(commands))
 }

@@ -1,6 +1,5 @@
 package play.api.cache.redis.connector
 
-import io.lettuce.core.cluster.ClusterTopologyRefreshOptions.RefreshTrigger
 import io.lettuce.core.cluster.api.async.RedisClusterAsyncCommands
 import io.lettuce.core.cluster.{ClusterClientOptions, ClusterTopologyRefreshOptions, RedisClusterClient}
 import io.lettuce.core.codec.StringCodec
@@ -185,7 +184,6 @@ private[connector] class RedisCommandsCluster(
           .withSslSettings(configuration.sslUriSettings, configuration.sslSettings)
           .topologyRefreshOptions(
             ClusterTopologyRefreshOptions.builder
-              .enableAdaptiveRefreshTrigger(RefreshTrigger.MOVED_REDIRECT, RefreshTrigger.PERSISTENT_RECONNECTS)
               .adaptiveRefreshTriggersTimeout(Duration.ofNanos(TimeUnit.SECONDS.toNanos(30)))
               .build,
           )

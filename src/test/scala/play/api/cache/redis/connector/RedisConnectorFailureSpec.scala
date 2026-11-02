@@ -2,14 +2,13 @@ package play.api.cache.redis.connector
 
 import io.lettuce.core.codec.StringCodec
 import io.lettuce.core.protocol.CommandArgs
-import io.lettuce.core.{RedisFuture, ScoredValue, SetArgs}
+import io.lettuce.core.{RedisFuture, SetArgs}
 import org.scalamock.handlers.CallHandler
 import org.scalamock.matchers.MatcherBase
 import play.api.cache.redis._
 import play.api.cache.redis.test._
 
 import java.util.concurrent.CompletableFuture
-import scala.annotation.nowarn
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.MapHasAsJava
@@ -45,7 +44,7 @@ class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMateria
     test("SET returning false") { (serializer, commands, connector) =>
       for {
         _ <- serializer.encode(cacheValue, encodedValue)
-        _ = (commands.setWithArgs(_: String, _: String, _: SetArgs))
+        _ = (commands.set(_: String, _: String, _: SetArgs))
               .expects(cacheKey, encodedValue, *)
               .returnsFuture("Failure")
         _ <- connector.set(cacheKey, cacheValue).assertingEqual(false)
@@ -54,7 +53,7 @@ class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMateria
 
     test("EXPIRE returning false") { (_, commands, connector) =>
       for {
-        _ <- (commands.expireSeconds(_: String, _: Long))
+        _ <- (commands.expire(_: String, _: Long))
                .expects(cacheKey, 1.minute.toSeconds)
                .returnsFuture(false)
         _ <- connector.expire(cacheKey, 1.minute).assertingSuccess
@@ -68,17 +67,17 @@ class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMateria
     test("failed SET") { (serializer, commands, connector) =>
       for {
         _ <- serializer.encode(cacheValue, encodedValue)
-        _ = (commands.setWithArgs(_: String, _: String, _: SetArgs))
+        _ = (commands.set(_: String, _: String, _: SetArgs))
               .expects(cacheKey, encodedValue, Matcher.setArgs(new SetArgs()))
               .fails(disconnected)
 
         _ <- serializer.encode(cacheValue, encodedValue)
-        _ = (commands.setWithArgs(_: String, _: String, _: SetArgs))
+        _ = (commands.set(_: String, _: String, _: SetArgs))
               .expects(cacheKey, encodedValue, Matcher.setArgs(new SetArgs().px(1.minute.toMillis)))
               .fails(disconnected)
 
         _ <- serializer.encode(cacheValue, encodedValue)
-        _ = (commands.setWithArgs(_: String, _: String, _: SetArgs))
+        _ = (commands.set(_: String, _: String, _: SetArgs))
               .expects(cacheKey, encodedValue, Matcher.setArgs(new SetArgs().nx()))
               .fails(disconnected)
 
@@ -106,7 +105,7 @@ class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMateria
 
     test("failed EXPIRE") { (_, commands, connector) =>
       for {
-        _ <- (commands.expireSeconds(_: String, _: Long)).expects(cacheKey, 1.minute.toSeconds).fails(disconnected)
+        _ <- (commands.expire(_: String, _: Long)).expects(cacheKey, 1.minute.toSeconds).fails(disconnected)
         _ <- connector.expire(cacheKey, 1.minute).assertingFailure[ExecutionFailedException, SimulatedException]
       } yield Passed
     }
@@ -120,7 +119,7 @@ class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMateria
 
     test("failed LRANGE") { (_, commands, connector) =>
       for {
-        _ <- (commands.lrangeLong(_: String, _: Long, _: Long)).expects(cacheKey, 0, -1).fails(disconnected)
+        _ <- (commands.lrange(_: String, _: Long, _: Long)).expects(cacheKey, 0, -1).fails(disconnected)
         _ <- connector.listSlice[String](cacheKey, 0, -1).assertingFailure[ExecutionFailedException, SimulatedException]
       } yield Passed
     }
@@ -164,7 +163,7 @@ class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMateria
       for {
         _ <- serializer.encode(cacheValue, encodedValue)
         _ = (commands
-              .hsetSimple(_: String, _: String, _: String))
+              .hset(_: String, _: String, _: String))
               .expects(cacheKey, "field", encodedValue)
               .fails(disconnected)
         _ <- connector.hashSet(cacheKey, "field", cacheValue).assertingFailure[ExecutionFailedException, SimulatedException]
@@ -174,7 +173,7 @@ class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMateria
     test("failed ZADD") { (serializer, commands, connector) =>
       for {
         _ <- serializer.encode(cacheValue, encodedValue)
-        _ = (commands.zaddMock(_: String, _: Array[ScoredValue[String]]))
+        _ = (commands.zadd _)
               .expects(cacheKey, *)
               .fails(disconnected)
         _ <- connector.sortedSetAdd(cacheKey, (score, cacheValue)).assertingFailure[ExecutionFailedException, SimulatedException]
@@ -202,8 +201,8 @@ class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMateria
     test("failed ZREM") { (serializer, commands, connector) =>
       for {
         _ <- serializer.encode(cacheValue, encodedValue)
-        _ = (commands.zremMock(_: String, _: Array[String]))
-              .expects(cacheKey, Matcher.array(encodedValue))
+        _ = (commands.zrem _)
+              .expects(cacheKey, Seq(encodedValue))
               .fails(disconnected)
         _ <- connector.sortedSetRemove(cacheKey, cacheValue).assertingFailure[ExecutionFailedException, SimulatedException]
       } yield Passed
@@ -211,7 +210,7 @@ class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMateria
 
     test("failed ZRANGE") { (_, commands, connector) =>
       for {
-        _ <- (commands.zrangeMock(_: String, _: Long, _: Long))
+        _ <- (commands.zrange(_: String, _: Long, _: Long))
                .expects(cacheKey, 1, 5)
                .fails(disconnected)
         _ <- connector.sortedSetRange[String](cacheKey, 1, 5).assertingFailure[ExecutionFailedException, SimulatedException]
@@ -220,7 +219,7 @@ class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMateria
 
     test("failed ZREVRANGE") { (_, commands, connector) =>
       for {
-        _ <- (commands.zrevrangeMock(_: String, _: Long, _: Long))
+        _ <- (commands.zrevrange(_: String, _: Long, _: Long))
                .expects(cacheKey, 1, 5)
                .fails(disconnected)
         _ <- connector.sortedSetReverseRange[String](cacheKey, 1, 5).assertingFailure[ExecutionFailedException, SimulatedException]
@@ -228,13 +227,12 @@ class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMateria
     }
   }
 
-  private def test(name: String)(f: (SerializerAssertions, RedisCommandsMock, RedisConnector) => Future[Assertion]): Unit =
+  private def test(name: String)(f: (SerializerAssertions, LettuceCommands, RedisConnector) => Future[Assertion]): Unit =
     name in {
       implicit val runtime: RedisRuntime = mock[RedisRuntime]
       val serializer: PekkoSerializer = mock[PekkoSerializer]
 
-      @nowarn("cat=deprecation")
-      val mockedCommands: RedisCommandsMock = mock[RedisCommandsMock]
+      val mockedCommands: LettuceCommands = mock[LettuceCommands]
       val connector: RedisConnector = new RedisConnectorImpl(serializer, mockedCommands)
 
       (() => runtime.context).expects().returns(ExecutionContext.global).anyNumberOfTimes()
@@ -307,18 +305,6 @@ class RedisConnectorFailureSpec extends AsyncUnitSpec with ImplicitFutureMateria
           val args = new CommandArgs[String, String](new StringCodec())
           setArgs.build(args)
           args.toCommandString
-        }
-
-      }
-
-    def array[T](expected: T*): MatcherBase =
-      new MatcherBase {
-        override def canEqual(that: Any): Boolean = true
-
-        @SuppressWarnings(Array("org.wartremover.warts.Equals"))
-        override def equals(obj: Any): Boolean = obj match {
-          case that: Array[?] => that.length == expected.length && expected.zip(that).forall { case (a, b) => a == b }
-          case _              => false
         }
 
       }
