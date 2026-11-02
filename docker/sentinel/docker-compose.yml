@@ -1,62 +1,29 @@
 name: play-redis-sentinel
 
-x-sentinel: &sentinel
-  image: "redis:8.10-alpine"
-  networks:
-    - redis-sentinel
-  depends_on:
-    - redis-master
-    - redis-slave
-  command:
-    - sh
-    - -c
-    - |
-      cat > /tmp/sentinel.conf <<EOF
-      port 26379
-      sentinel resolve-hostnames yes
-      sentinel monitor mymaster redis-master 6379 2
-      sentinel down-after-milliseconds mymaster 10000
-      EOF
-      exec redis-sentinel /tmp/sentinel.conf
-
 services:
 
-  redis-master:
-    image: "redis:8.10-alpine"
-    hostname: redis-master
-    ports:
-      - "${REDIS_MASTER_PORT}:6379"
-    networks:
-      - redis-sentinel
-
-  redis-slave:
-    image: "redis:8.10-alpine"
-    hostname: redis-slave
-    command: redis-server --replicaof redis-master 6379
-    ports:
-      - "${REDIS_SLAVE_PORT}:6379"
-    networks:
-      - redis-sentinel
-    depends_on:
-      - redis-master
-
-  redis-sentinel-a:
-    <<: *sentinel
-    hostname: redis-sentinel-a
-    ports:
-      - "${REDIS_SENTINEL_1_PORT}:26379"
-
-  redis-sentinel-b:
-    <<: *sentinel
-    hostname: redis-sentinel-b
-    ports:
-      - "${REDIS_SENTINEL_2_PORT}:26379"
-
-  redis-sentinel-c:
-    <<: *sentinel
-    hostname: redis-sentinel-c
-    ports:
-      - "${REDIS_SENTINEL_3_PORT}:26379"
-
-networks:
   redis-sentinel:
+    image: "redis:8.10-alpine"
+    # Everything runs in a single container on loopback with ports published 1:1. Sentinel hands out the addresses
+    # of the master and replicas, and clients outside docker must be able to reach them, which is not possible
+    # with container IPs on Docker Desktop (macOS, Windows).
+    # Ports: master, replica, then the sentinels.
+    ports:
+      - "${SENTINEL_FIRST_PORT}-${SENTINEL_LAST_PORT}:${SENTINEL_FIRST_PORT}-${SENTINEL_LAST_PORT}"
+    command:
+      - sh
+      - -c
+      - |
+        master=${SENTINEL_FIRST_PORT}
+        replica=$$((master + 1))
+        redis-server --port $$master --save "" --appendonly no --daemonize yes > /dev/null
+        redis-server --port $$replica --replicaof 127.0.0.1 $$master --save "" --appendonly no --daemonize yes > /dev/null
+        for port in $$(seq $$((master + 2)) ${SENTINEL_LAST_PORT}); do
+          mkdir -p /data/$$port
+          printf '%s\n' "port $$port" "dir /data/$$port" "sentinel monitor mymaster 127.0.0.1 $$master 2" "sentinel down-after-milliseconds mymaster 10000" > /data/$$port/sentinel.conf
+          redis-server /data/$$port/sentinel.conf --sentinel --daemonize yes > /dev/null
+        done
+        first=$$((master + 2))
+        until redis-cli -p $$first sentinel ckquorum mymaster 2> /dev/null | grep -q OK && redis-cli -p $$first sentinel replicas mymaster | grep -q ip; do sleep 0.2; done
+        echo "Sentinels are ready"
+        exec tail -f /dev/null
