@@ -48,10 +48,10 @@ enablePlugins(CustomReleasePlugin)
 // exclude from tests coverage
 coverageExcludedFiles := ".*exceptions.*"
 
-Test / fork := true
+Test / fork               := true
 // sbt 2 runs forked suites in parallel; the integration tests bind fixed ports
 Test / testForkedParallel := false
-Test / test := (Test / testOnly).toTask(" * -- -l \"org.scalatest.Ignore\"").value
+Test / test               := (Test / testOnly).toTask(" * -- -l \"org.scalatest.Ignore\"").value
 Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oF")
 
 semanticdbEnabled := true
