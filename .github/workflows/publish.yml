@@ -26,7 +26,7 @@ jobs:
       - name: Setup JDK
         uses: coursier/setup-action@v1.3.4
         with:
-          jvm: adoptium:1.11
+          jvm: adoptium:1.25
 
       - name: Import GPG Key
         timeout-minutes: 10
@@ -42,4 +42,4 @@ jobs:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
         run: |
-             sbt -v "+test; +publishSigned; sonatypeBundleRelease;"
+             sbt -v "+test; +publishSigned; sonaRelease;"

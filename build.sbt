@@ -11,11 +11,11 @@ description := "Redis cache plugin for the Play framework 2"
 
 organization := "com.github.karelcemus"
 
-crossScalaVersions := Seq("2.13.16", "3.3.6")
+crossScalaVersions := Seq("2.13.18", "3.3.9")
 
 scalaVersion := crossScalaVersions.value.head
 
-playVersion := "3.0.8"
+playVersion := "3.0.12"
 
 libraryDependencies ++= Seq(
   // play framework cache API
@@ -23,21 +23,21 @@ libraryDependencies ++= Seq(
   // redis connector
   "io.lettuce"         % "lettuce-core"              % "7.9.0.RELEASE",
   // test framework with mockito extension
-  "org.scalatest"     %% "scalatest"                 % "3.2.19"          % Test,
-  "org.scalamock"     %% "scalamock"                 % "7.4.0"           % Test,
+  "org.scalatest"     %% "scalatest"                 % "3.2.20"          % Test,
+  "org.scalamock"     %% "scalamock"                 % "7.5.5"           % Test,
   // test module for play framework
   "org.playframework" %% "play-test"                 % playVersion.value % Test,
   // to run integration tests
-  "com.dimafeng"      %% "testcontainers-scala-core" % "0.43.0"          % Test,
+  "com.dimafeng"      %% "testcontainers-scala-core" % "0.44.1"          % Test,
 )
 
 resolvers ++= Seq(
   "Typesafe repository" at "https://repo.typesafe.com/typesafe/releases/",
 )
 
-javacOptions ++= Seq("-Xlint:unchecked", "-encoding", "UTF-8")
+javacOptions ++= Seq("-Xlint:unchecked", "-encoding", "UTF-8", "--release", "11")
 
-scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked")
+scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-release", "11")
 
 scalacOptions ++= {
   if (scalaVersion.value.startsWith("2.")) Seq("-Ywarn-unused") else Seq.empty

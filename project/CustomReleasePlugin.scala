@@ -2,14 +2,12 @@ import com.github.sbt.git.{GitVersioning, SbtGit}
 import sbt._
 import sbt.Keys._
 import sbtrelease._
-import xerial.sbt.Sonatype
 
 object CustomReleasePlugin extends AutoPlugin {
 
   import ReleasePlugin.autoImport._
   import ReleaseStateTransformations._
   import ReleaseUtilities._
-  import Sonatype.autoImport._
 
   object autoImport {
     val playVersion = settingKey[String]("Version of Play framework")
@@ -17,7 +15,7 @@ object CustomReleasePlugin extends AutoPlugin {
 
   override def trigger = allRequirements
 
-  override def requires: Plugins = ReleasePlugin && GitVersioning && Sonatype
+  override def requires: Plugins = ReleasePlugin && GitVersioning
 
   private def customizedReleaseProcess: Seq[ReleaseStep] =
     Seq[ReleaseStep](
@@ -27,27 +25,30 @@ object CustomReleasePlugin extends AutoPlugin {
     )
 
   override def projectSettings: Seq[Setting[?]] = Seq[Setting[?]](
-    publishMavenStyle                  := true,
-    pomIncludeRepository               := { _ => false },
+    publishMavenStyle                := true,
+    pomIncludeRepository             := { _ => false },
     // customized release process
-    releaseProcess                     := customizedReleaseProcess,
+    releaseProcess                   := customizedReleaseProcess,
     // release details
-    homepage                           := Some(url("https://github.com/KarelCemus/play-redis")),
-    licenses                           := Seq("Apache 2" -> url("https://www.apache.org/licenses/LICENSE-2.0")),
-    scmInfo                            := Some(
+    homepage                         := Some(url("https://github.com/KarelCemus/play-redis")),
+    licenses                         := Seq(License.Apache2),
+    scmInfo                          := Some(
       ScmInfo(
         url("https://github.com/KarelCemus/play-redis.git"),
         "scm:git@github.com:KarelCemus/play-redis.git",
       ),
     ),
-    developers                         := List(
+    developers                       := List(
       Developer(id = "karel.cemus", name = "Karel Cemus", email = "", url = url("https://github.com/KarelCemus/")),
     ),
     // Publish settings
-    publishTo                          := sonatypePublishToBundle.value,
-    ThisBuild / sonatypeCredentialHost := Sonatype.sonatypeCentralHost,
+    // Central Portal: releases are staged locally and uploaded as a bundle by sonaRelease
+    publishTo                        := {
+      if (version.value.endsWith("-SNAPSHOT")) Some("central-snapshots" at "https://central.sonatype.com/repository/maven-snapshots/")
+      else localStaging.value
+    },
     // git tags without "v" prefix
-    SbtGit.git.gitTagToVersionNumber   := { tag: String =>
+    SbtGit.git.gitTagToVersionNumber := { (tag: String) =>
       if (tag matches "[0-9]+\\..*") Some(tag)
       else None
     },
