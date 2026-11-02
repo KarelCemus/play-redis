@@ -1,0 +1,47 @@
+name: Tag Release
+on:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: "${{ github.workflow }}"
+
+jobs:
+  tag:
+    # the release pull request is titled "Documentation updated to version X"
+    if: startsWith(github.event.head_commit.message, 'Documentation updated to version ')
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Resolve version
+        id: version
+        run: |
+          if ! [[ "$COMMIT_MESSAGE" =~ ^Documentation\ updated\ to\ version\ ([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+            echo "No version in the commit message" >&2
+            exit 1
+          fi
+          echo "version=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+
+      # the token is not the default GITHUB_TOKEN, thus the tag triggers the Publish workflow
+      - name: Tag and release
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" > /dev/null; then
+            echo "Tag $VERSION already exists" >&2
+            exit 1
+          fi
+          git config user.name "Karel Cemus"
+          git config user.email "karel.cemus@gmail.com"
+          git tag "$VERSION"
+          git push origin "$VERSION"
+          gh release create "$VERSION" --verify-tag --title "$VERSION" --generate-notes
