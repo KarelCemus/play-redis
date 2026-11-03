@@ -8,9 +8,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
+  # nothing is published unless every Scala version compiles and passes; only the tests are retried
+  publish:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 25
     environment: "Generally Available"
     env:
       SBT_OPTS: "-Dfile.encoding=UTF-8 -Duser.timezone=UTC -Xmx2g"
@@ -30,17 +31,39 @@ jobs:
           apps: sbt
 
       - name: Import GPG Key
-        timeout-minutes: 10
+        timeout-minutes: 5
         env:
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
         run: |
           echo $PGP_SECRET | base64 --decode | gpg  --batch --import
 
-      - name: Test and Publish JARs
-        timeout-minutes: 15
+      - name: Compile
+        timeout-minutes: 10
+        run: |
+          sbt -v "+compile; +Test/compile"
+
+      # versions come from crossScalaVersions in build.sbt
+      - name: Test
+        timeout-minutes: 25
+        run: |
+          versions=$(sbt "print crossScalaVersions" | sed 's/\x1b\[[0-9;]*[A-Za-z]//g' | sed -n 's/^\* //p')
+          if [ -z "$versions" ]; then
+            echo "No Scala versions found" >&2
+            exit 1
+          fi
+          for version in $versions; do
+            for attempt in 1 2 3; do
+              sbt -v "++$version; test" && continue 2
+              echo "Scala $version, attempt $attempt failed" >&2
+            done
+            exit 1
+          done
+
+      - name: Publish JARs
+        timeout-minutes: 12
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
         run: |
-             sbt -v "+test; +publishSigned; sonaRelease;"
+          sbt -v "+publishSigned; sonaRelease;"

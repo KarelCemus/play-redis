@@ -1,7 +1,6 @@
 package play.api.cache.redis.test
 
 import com.dimafeng.testcontainers.{DockerComposeContainer, ExposedService}
-import org.testcontainers.containers.wait.strategy.Wait
 
 object MasterSlaveRedis {
 
@@ -19,8 +18,8 @@ object MasterSlaveRedis {
         "REDIS_MASTER_PORT" -> masterPort.toString,
         "REDIS_SLAVE_PORT"  -> slavePort.toString,
       ),
-      ExposedService("redis-master", redisPort, Wait.forLogMessage(".*Ready to accept connections tcp.*\\n", 1)),
-      ExposedService("redis-slave", redisPort, Wait.forLogMessage(".*MASTER <-> REPLICA sync: Finished with success.*\\n", 1)),
+      ExposedService("redis-master", redisPort, ComposeRedis.waitForLog(".*Ready to accept connections tcp.*\\n")),
+      ExposedService("redis-slave", redisPort, ComposeRedis.waitForLog(".*MASTER <-> REPLICA sync: Finished with success.*\\n")),
     )
 
 }

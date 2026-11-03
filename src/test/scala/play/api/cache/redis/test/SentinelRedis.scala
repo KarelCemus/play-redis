@@ -1,7 +1,6 @@
 package play.api.cache.redis.test
 
 import com.dimafeng.testcontainers.{DockerComposeContainer, ExposedService}
-import org.testcontainers.containers.wait.strategy.Wait
 
 object SentinelRedis {
 
@@ -21,7 +20,7 @@ object SentinelRedis {
         "SENTINEL_FIRST_PORT" -> masterPort.toString,
         "SENTINEL_LAST_PORT"  -> (sentinelPort + sentinels - 1).toString,
       ),
-      ExposedService("redis-sentinel", masterPort, Wait.forLogMessage(".*Sentinels are ready.*\\n", 1)),
+      ExposedService("redis-sentinel", masterPort, ComposeRedis.waitForLog(".*Sentinels are ready.*\\n")),
     )
 
 }
